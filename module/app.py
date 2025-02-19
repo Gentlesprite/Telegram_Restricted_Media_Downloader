@@ -837,7 +837,7 @@ class Application:
             _links: str or None = pre_load_config.get('links')
             _save_directory: str or None = pre_load_config.get('save_directory')
             _max_download_task: None = pre_load_config.get('max_download_task') if isinstance(
-                pre_load_config.get('max_download_task'), int) else 3
+                pre_load_config.get('max_download_task'), int) else None  # v1.4.0 修复同时下载任务数不询问是否配置问题。
             _download_type: list or None = pre_load_config.get('download_type')
             _is_shutdown: bool or None = pre_load_config.get('is_shutdown')
             _proxy_config: dict = pre_load_config.get('proxy', {})
