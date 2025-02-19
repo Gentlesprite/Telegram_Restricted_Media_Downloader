@@ -948,6 +948,7 @@ class Application:
                             _proxy_config['username'] = username
                             _proxy_config['password'] = password
         except KeyboardInterrupt:
+            n: bool = True
             try:
                 if self.record_flag:
                     print('\n')
@@ -959,10 +960,15 @@ class Application:
                 else:
                     raise SystemExit(0)
             except KeyboardInterrupt:
+                n: bool = False
                 print('\n')
                 console.log('不保存当前填写参数(用户手动终止配置参数)。')
-            self.ctrl_c()
-            raise SystemExit(0)
+            finally:
+                if n:
+                    print('\n')
+                    console.log('用户手动终止配置参数。')
+                self.ctrl_c()
+                raise SystemExit(0)
         self.save_config(pre_load_config)  # v1.3.0 修复不保存配置文件时,配置文件仍然保存的问题。
 
 
