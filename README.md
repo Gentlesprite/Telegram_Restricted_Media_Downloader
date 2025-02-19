@@ -284,6 +284,10 @@ save_path: F:\directory\media\where\you\save # 下载的媒体保存的目录。
    私密频道:`https://t.me/c/xxxxxxxxxx/111`
    
    注意这样写就**不会下载评论区**的内容了!链接中如果带`?single`或`?single&comment`字段，不用管，**直接复制**进来，程序会为你下载该链接的**所有内容**！
+   
+## 2.5.**软件更新教程**
+
+![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_5_1.png)
 
 # 3.0.在生产环境中运行
 
