@@ -3,4 +3,4 @@ PyYAML
 rich
 qrcode
 pyreadline3
-kurigram==2.1.38
+kurigram==2.1.39
