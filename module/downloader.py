@@ -7,6 +7,7 @@ import os
 import sys
 import asyncio
 from functools import partial
+from sqlite3 import OperationalError
 from typing import Tuple, Union
 
 import pyrogram
@@ -465,6 +466,7 @@ class TelegramRestrictedMediaDownloader(Bot):
     def run(self) -> None:
         record_error: bool = False
         try:
+
             MetaData.print_meta()
             self.app.print_config_table()
             self.loop.run_until_complete(self.__download_media_from_links())
@@ -481,6 +483,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             log.error(f'登录超时,请重新打开软件尝试登录,{KeyWord.REASON}:"{e}"')
         except KeyboardInterrupt:
             console.log('用户手动终止下载任务。')
+        except OperationalError as e:
+            record_error: bool = True
+            log.error(f'检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,{KeyWord.REASON}:"{e}"')
         except Exception as e:
             record_error: bool = True
             log.exception(msg=f'运行出错,{KeyWord.REASON}:"{e}"', exc_info=True)
