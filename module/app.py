@@ -48,7 +48,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             try:
                 if not self.phone_number:
                     while True:
-                        value = console.input('请输入「电话号码」或「bot token」([#6a2c70]电话号码[/#6a2c70]需以[#b83b5e]「+地区」'
+                        value = console.input('请输入「电话号码」([#6a2c70]电话号码[/#6a2c70]需以[#b83b5e]「+地区」'
                                               '[/#b83b5e]开头!如:[#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):').strip()
                         if not value:
                             continue
@@ -73,7 +73,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             except (PhoneNumberInvalid, AttributeError) as e:
                 self.phone_number = None
                 self.bot_token = None
-                log.error(f'「电话号码」或「bot token」错误,请重新输入!{KeyWord.REASON}:"{e.MESSAGE}"')
+                log.error(f'「电话号码」错误,请重新输入!{KeyWord.REASON}:"{e.MESSAGE}"')
             else:
                 break
 
