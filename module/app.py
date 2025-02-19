@@ -818,8 +818,9 @@ class Application:
         # v1.1.0 更替api_id和api_hash位置,与telegram申请的api位置对应以免输错。
         try:
             if not self.modified and pre_load_config != Application.CONFIG_TEMPLATE:
-                self.re_config: bool = gsp.get_is_re_config().get('is_re_config')
-                if self.re_config:
+                re_config: bool = gsp.get_is_re_config().get('is_re_config')
+                if re_config:
+                    self.re_config = re_config
                     pre_load_config: dict = Application.CONFIG_TEMPLATE.copy()
                     self.backup_config(backup_config=pre_load_config, error_config=False, force=True)
                     self.get_last_history_record()  # 更新到上次填写的记录。
