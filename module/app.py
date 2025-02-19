@@ -29,7 +29,7 @@ from module import MAX_FILE_REFERENCE_TIME, SOFTWARE_FULL_NAME, __version__, __c
 
 from module.process_path import split_path, validate_title, truncate_filename, move_to_save_directory, \
     gen_backup_config, get_extension, safe_delete, compare_file_size, get_file_size
-from module.enum_define import GradientColor, ArtFont, DownloadType, DownloadStatus, QrcodeRender, KeyWord, \
+from module.enum_define import GradientColor, Banner, DownloadType, DownloadStatus, QrcodeRender, KeyWord, \
     Status, GetStdioParams, ProcessConfig
 
 
@@ -1044,7 +1044,7 @@ class MetaData:
     @staticmethod
     def print_meta():
         console.print(GradientColor.gen_gradient_text(
-            text=ArtFont.author_art_3,
+            text=Banner.c,
             gradient_color=GradientColor.generate_gradient(
                 start_color='#fa709a',
                 end_color='#fee140',

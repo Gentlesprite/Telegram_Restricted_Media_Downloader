@@ -466,7 +466,6 @@ class TelegramRestrictedMediaDownloader(Bot):
     def run(self) -> None:
         record_error: bool = False
         try:
-
             MetaData.print_meta()
             self.app.print_config_table()
             self.loop.run_until_complete(self.__download_media_from_links())
