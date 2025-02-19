@@ -84,7 +84,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                                                  disable_web_page_preview=True
                                                  )
             await client.send_photo(chat_id=chat_id,
-                                    photo=Base64Image.base64_to_binaryio(Base64Image.pay),
+                                    photo=Base64Image.base64_to_binary_io(Base64Image.pay),
                                     disable_notification=True
                                     )
             await client.edit_message_text(chat_id=chat_id,

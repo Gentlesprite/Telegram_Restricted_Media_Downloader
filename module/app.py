@@ -212,9 +212,8 @@ class Application:
         self.get_last_history_record()
         self.is_change_account: bool = True
         self.re_config: bool = False
-        self._config: dict = self.load_config(with_check=True)  # v1.2.9 重新调整配置文件加载逻辑。
         self.config_guide() if guide else None
-        self.config: dict = self.load_config(with_check=False)  # v1.3.0 修复重复询问重新配置文件。
+        self.config: dict = self.load_config()  # v1.3.0 修复重复询问重新配置文件。
         self.api_hash = self.config.get('api_hash')
         self.api_id = self.config.get('api_id')
         self.bot_token = self.config.get('bot_token')
@@ -664,7 +663,7 @@ class Application:
         else:
             console.log('配置文件与模板文件完全一致,无需备份。')
 
-    def load_config(self, error_config: bool = False, with_check: bool = False) -> dict:
+    def load_config(self) -> dict:
         """加载一次当前的配置文件,并附带合法性验证、缺失参数的检测以及各种异常时的处理措施。"""
         config: dict = Application.CONFIG_TEMPLATE.copy()
         try:
@@ -681,56 +680,26 @@ class Application:
                 self.re_config = True
         except UnicodeDecodeError as e:  # v1.1.3 加入配置文件路径是中文或特殊字符时的错误提示,由于nuitka打包的性质决定,
             # 中文路径无法被打包好的二进制文件识别,故在配置文件时无论是链接路径还是媒体保存路径都请使用英文命名。
-            error_config: bool = True
-            self.re_config = error_config
+            self.re_config = True
             log.error(
                 f'读取配置文件遇到编码错误,可能保存路径中包含中文或特殊字符的文件夹。已生成新的模板文件. . .{KeyWord.REASON}:"{e}"')
-            self.backup_config(config, error_config=error_config)
+            self.backup_config(config, error_config=self.re_config)
         except Exception as e:
-            error_config: bool = True
-            self.re_config = error_config
+            self.re_config = True
             console.print('「注意」链接路径和保存路径不能有引号!', style='#B1DB74')
             log.error(f'检测到无效或损坏的配置文件。已生成新的模板文件. . .{KeyWord.REASON}:"{e}"')
-            self.backup_config(config, error_config=error_config)
+            self.backup_config(config, error_config=self.re_config)
         finally:
             if config is None:
                 self.re_config = True
                 log.warning('检测到空的配置文件。已生成新的模板文件. . .')
                 config: dict = Application.CONFIG_TEMPLATE.copy()
-            if error_config:  # 如果遇到报错或者全部参数都是空的。
-                return config
-            # v1.1.4 加入是否重新编辑配置文件的引导。保证配置文件没有缺少任何字段,否则不询问。
-            elif not self.modified and config != Application.CONFIG_TEMPLATE and with_check:
-                while True:
-                    try:
-                        question: str = console.input(
-                            '检测到已配置完成的配置文件,是否需要重新配置?(之前的配置文件将为你备份到当前目录下) - 「y|n」(默认n):').strip().lower()
-                        if question == 'y':
-                            config: dict = Application.CONFIG_TEMPLATE.copy()
-                            self.backup_config(backup_config=config, error_config=False, force=True)
-                            self.get_last_history_record()  # 更新到上次填写的记录。
-                            self.is_change_account = GetStdioParams.get_is_change_account(valid_format='y|n').get(
-                                'is_change_account')
-                            self.re_config = True
-                            if self.is_change_account:
-                                if safe_delete(file_p_d=os.path.join(self.DIRECTORY_NAME, 'sessions')):
-                                    console.log('已删除旧会话文件,稍后需重新登录。')
-                                else:
-                                    console.log(
-                                        '删除旧会话文件失败,请手动删除软件目录下的sessions文件夹,再进行下一步操作!')
-                            break
-                        elif question in ('n', ''):
-                            break
-                        else:
-                            log.warning(f'意外的参数:"{question}",支持的参数 - 「y|n」(默认n)')
-                    except KeyboardInterrupt:
-                        self.__keyboard_interrupt()
             return config
 
-    def save_config(self) -> None:
+    def save_config(self, config: dict) -> None:
         """保存配置文件。"""
         with open(self.config_path, 'w') as f:
-            yaml.dump(self._config, f)
+            yaml.dump(config, f)
 
     def __check_params(self, config: dict, history=False) -> dict:
         """检查配置文件的参数是否完整。"""
@@ -776,37 +745,6 @@ class Application:
         remove_extra_keys(config, Application.CONFIG_TEMPLATE, '"{}"不在模板中,已删除。')
 
         return config
-
-    def __keyboard_interrupt(self) -> None:
-        """处理配置文件交互时,当已配置了任意部分时的用户键盘中断。"""
-        new_line: bool = True
-        try:
-            if self.record_flag:
-                print('\n')
-                while True:
-                    question: str = console.input('「退出提示」是否需要保存当前已填写的参数? - 「y|n」:').strip().lower()
-                    if question == 'y':
-                        console.log('配置已保存!')
-                        self.save_config()
-                        break
-                    elif question == 'n':
-                        console.log('不保存当前填写参数。')
-                        break
-                    else:
-                        log.warning(f'意外的参数:"{question}",支持的参数 - 「y|n」')
-            else:
-                raise SystemExit(0)
-        except KeyboardInterrupt:
-            new_line: bool = False
-            print('\n')
-            console.log('用户放弃保存,手动终止配置参数。')
-        finally:
-            if new_line is True:
-                print('\n')
-                console.log('用户手动终止配置参数。')
-            os.system('pause')
-            self.ctrl_c()
-            raise SystemExit(0)
 
     def ctrl_c(self):
         os.system('pause') if self.platform == 'Windows' else console.input('请按「Enter」键继续. . .')
@@ -875,88 +813,102 @@ class Application:
 
     def config_guide(self) -> None:
         """引导用户以交互式的方式修改、保存配置文件。"""
-        # input user to input necessary configurations
+        pre_load_config: dict = self.load_config()
+        gsp = GetStdioParams()
         # v1.1.0 更替api_id和api_hash位置,与telegram申请的api位置对应以免输错。
-        _api_id: str or None = self._config.get('api_id')
-        _api_hash: str or None = self._config.get('api_hash')
-        _bot_token: str or None = self._config.get('bot_token')
-        _links: str or None = self._config.get('links')
-        _save_directory: str or None = self._config.get('save_directory')
-        _max_download_task: int or None = self._config.get('max_download_task') if isinstance(
-            self._config.get('max_download_task'), int) else 3
-        _download_type: list or None = self._config.get('download_type')
-        _is_shutdown: bool or None = self._config.get('is_shutdown')
-        _proxy_config: dict = self._config.get('proxy', {})
-        _proxy_enable_proxy: str or bool = _proxy_config.get('enable_proxy', False)
-        _proxy_scheme: str or bool = _proxy_config.get('scheme', False)
-        _proxy_hostname: str or bool = _proxy_config.get('hostname', False)
-        _proxy_port: str or bool = _proxy_config.get('port', False)
-        _proxy_username: str or bool = _proxy_config.get('username', False)
-        _proxy_password: str or bool = _proxy_config.get('password', False)
-        proxy_record: dict = self.last_record.get('proxy', {})  # proxy的历史记录。
-
-        if any([not _api_id, not _api_hash, not _save_directory, not _max_download_task, not _download_type]):
-            console.print('「注意」直接回车代表使用上次的记录。',
-                          style='#B1DB74')
         try:
+            if not self.modified and pre_load_config != Application.CONFIG_TEMPLATE:
+                self.re_config: bool = gsp.get_is_re_config().get('is_re_config')
+                if self.re_config:
+                    pre_load_config: dict = Application.CONFIG_TEMPLATE.copy()
+                    self.backup_config(backup_config=pre_load_config, error_config=False, force=True)
+                    self.get_last_history_record()  # 更新到上次填写的记录。
+                    self.is_change_account = gsp.get_is_change_account(valid_format='y|n').get(
+                        'is_change_account')
+                    if self.is_change_account:
+                        if safe_delete(file_p_d=os.path.join(self.DIRECTORY_NAME, 'sessions')):
+                            console.log('已删除旧会话文件,稍后需重新登录。')
+                        else:
+                            console.log(
+                                '删除旧会话文件失败,请手动删除软件目录下的sessions文件夹,再进行下一步操作!')
+            _api_id: str or None = pre_load_config.get('api_id')
+            _api_hash: str or None = pre_load_config.get('api_hash')
+            _bot_token: str or None = pre_load_config.get('bot_token')
+            _links: str or None = pre_load_config.get('links')
+            _save_directory: str or None = pre_load_config.get('save_directory')
+            _max_download_task: None = pre_load_config.get('max_download_task') if isinstance(
+                pre_load_config.get('max_download_task'), int) else 3
+            _download_type: list or None = pre_load_config.get('download_type')
+            _is_shutdown: bool or None = pre_load_config.get('is_shutdown')
+            _proxy_config: dict = pre_load_config.get('proxy', {})
+            _enable_proxy: str or bool = _proxy_config.get('enable_proxy', False)
+            _proxy_scheme: str or bool = _proxy_config.get('scheme', False)
+            _proxy_hostname: str or bool = _proxy_config.get('hostname', False)
+            _proxy_port: str or bool = _proxy_config.get('port', False)
+            _proxy_username: str or bool = _proxy_config.get('username', False)
+            _proxy_password: str or bool = _proxy_config.get('password', False)
+            proxy_record: dict = self.last_record.get('proxy', {})  # proxy的历史记录。
+            if any([not _api_id, not _api_hash, not _save_directory, not _max_download_task, not _download_type]):
+                console.print('「注意」直接回车代表使用上次的记录。',
+                              style='#B1DB74')
             if self.is_change_account or _api_id is None or _api_hash is None or self.re_config:
                 if not _api_id:
-                    api_id, record_flag = GetStdioParams.get_api_id(
+                    api_id, record_flag = gsp.get_api_id(
                         last_record=self.last_record.get('api_id')).values()
                     if record_flag:
                         self.record_flag = record_flag
-                        self._config['api_id'] = api_id
+                        pre_load_config['api_id'] = api_id
                 if not _api_hash:
-                    api_hash, record_flag = GetStdioParams.get_api_hash(
+                    api_hash, record_flag = gsp.get_api_hash(
                         last_record=self.last_record.get('api_hash'),
                         valid_length=32).values()
                     if record_flag:
                         self.record_flag = record_flag
-                        self._config['api_hash'] = api_hash
+                        pre_load_config['api_hash'] = api_hash
             if not _bot_token and self.re_config:
-                enable_bot: bool = GetStdioParams.get_enable_bot(valid_format='y|n').get('enable_bot')
+                enable_bot: bool = gsp.get_enable_bot(valid_format='y|n').get('enable_bot')
                 if enable_bot:
-                    bot_token, record_flag = GetStdioParams.get_bot_token(
+                    bot_token, record_flag = gsp.get_bot_token(
                         last_record=self.last_record.get('bot_token'),
                         valid_format=':').values()
                     if record_flag:
                         self.record_flag = record_flag
-                        self._config['bot_token'] = bot_token
+                        pre_load_config['bot_token'] = bot_token
             if not _links or not _bot_token and self.re_config:
-                links, record_flag = GetStdioParams.get_links(last_record=self.last_record.get('links'),
-                                                              valid_format='.txt').values()
+                links, record_flag = gsp.get_links(last_record=self.last_record.get('links'),
+                                                   valid_format='.txt').values()
                 if record_flag:
                     self.record_flag = record_flag
-                    self._config['links'] = links
+                    pre_load_config['links'] = links
             if not _save_directory or self.re_config:
-                save_directory, record_flag = GetStdioParams.get_save_directory(
+                save_directory, record_flag = gsp.get_save_directory(
                     last_record=self.last_record.get('save_directory')).values()
                 if record_flag:
                     self.record_flag = record_flag
-                    self._config['save_directory'] = save_directory
+                    pre_load_config['save_directory'] = save_directory
             if not _max_download_task or self.re_config:
-                max_download_task, record_flag = GetStdioParams.get_max_download_task(
+                max_download_task, record_flag = gsp.get_max_download_task(
                     last_record=self.last_record.get('max_download_task')).values()
                 if record_flag:
                     self.record_flag = record_flag
-                    self._config['max_download_task'] = max_download_task
+                    pre_load_config['max_download_task'] = max_download_task
             if not _download_type or self.re_config:
-                download_type, record_flag = GetStdioParams.get_download_type(
+                download_type, record_flag = gsp.get_download_type(
                     last_record=self.last_record.get('download_type')).values()
                 if record_flag:
                     self.record_flag = record_flag
-                    self._config['download_type'] = download_type
-            if _is_shutdown is None:
-                is_shutdown, _is_shutdown_record_flag = GetStdioParams.get_is_shutdown(
+                    pre_load_config['download_type'] = download_type
+            if _is_shutdown is None or self.re_config:
+                is_shutdown, _is_shutdown_record_flag = gsp.get_is_shutdown(
                     last_record=self.last_record.get('is_shutdown'),
                     valid_format='y|n').values()
                 if _is_shutdown_record_flag:
                     self.record_flag = True
-                    self._config['is_shutdown'] = is_shutdown
+                    pre_load_config['is_shutdown'] = is_shutdown
             # 是否开启代理
-            if not _proxy_enable_proxy and self.re_config:
+            if not _enable_proxy and self.re_config:
                 valid_format: str = 'y|n'
-                is_enable_proxy, is_ep_record_flag = GetStdioParams.get_enable_proxy(
+                is_enable_proxy, is_ep_record_flag = gsp.get_enable_proxy(
                     last_record=proxy_record.get('enable_proxy', False),
                     valid_format=valid_format).values()
                 if is_ep_record_flag:
@@ -964,17 +916,17 @@ class Application:
                     _proxy_config['enable_proxy'] = is_enable_proxy
             # 如果需要使用代理。
             # 如果上面配置的enable_proxy为True或本来配置文件中的enable_proxy就为True。
-            if _proxy_config.get('enable_proxy') is True or _proxy_enable_proxy is True:
+            if _proxy_config.get('enable_proxy') is True or _enable_proxy is True:
                 if ProcessConfig.is_proxy_input(proxy_config=_proxy_config):
                     if not _proxy_scheme:
-                        scheme, record_flag = GetStdioParams.get_scheme(last_record=proxy_record.get('scheme'),
-                                                                        valid_format=['http', 'socks4',
-                                                                                      'socks5']).values()
+                        scheme, record_flag = gsp.get_scheme(last_record=proxy_record.get('scheme'),
+                                                             valid_format=['http', 'socks4',
+                                                                           'socks5']).values()
                         if record_flag:
                             self.record_flag = True
                             _proxy_config['scheme'] = scheme
                     if not _proxy_hostname:
-                        hostname, record_flag = GetStdioParams.get_hostname(
+                        hostname, record_flag = gsp.get_hostname(
                             proxy_config=_proxy_config,
                             last_record=proxy_record.get('hostname'),
                             valid_format='x.x.x.x').values()
@@ -982,7 +934,7 @@ class Application:
                             self.record_flag = True
                             _proxy_config['hostname'] = hostname
                     if not _proxy_port:
-                        port, record_flag = GetStdioParams.get_port(
+                        port, record_flag = gsp.get_port(
                             proxy_config=_proxy_config,
                             last_record=proxy_record.get('port'),
                             valid_format='0~65535').values()
@@ -990,14 +942,28 @@ class Application:
                             self.record_flag = True
                             _proxy_config['port'] = port
                     if not all([_proxy_username, _proxy_password]):
-                        username, password, record_flag = GetStdioParams.get_proxy_authentication().values()
+                        username, password, record_flag = gsp.get_proxy_authentication().values()
                         if record_flag:
                             self.record_flag = True
                             _proxy_config['username'] = username
                             _proxy_config['password'] = password
         except KeyboardInterrupt:
-            self.__keyboard_interrupt()
-        self.save_config()  # v1.3.0 修复不保存配置文件时,配置文件仍然保存的问题。
+            try:
+                if self.record_flag:
+                    print('\n')
+                    if gsp.get_is_ki_save_config().get('is_ki_save_config'):
+                        self.save_config(pre_load_config)
+                        console.log('配置已保存!')
+                    else:
+                        console.log('不保存当前填写参数。')
+                else:
+                    raise SystemExit(0)
+            except KeyboardInterrupt:
+                print('\n')
+                console.log('不保存当前填写参数(用户手动终止配置参数)。')
+            self.ctrl_c()
+            raise SystemExit(0)
+        self.save_config(pre_load_config)  # v1.3.0 修复不保存配置文件时,配置文件仍然保存的问题。
 
 
 class PanelTable:
