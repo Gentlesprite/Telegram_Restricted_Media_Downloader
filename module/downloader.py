@@ -112,7 +112,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         callback_data = await super().callback_data(client, callback_query)
         if callback_data is None:
             return
-        elif callback_data == BotCallbackText.pay:
+        elif callback_data == BotCallbackText.PAY:
             res: dict = await self.__send_pay_qr(client=client,
                                                  chat_id=callback_query.message.chat.id,
                                                  load_name='收款码')
@@ -122,7 +122,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             else:
                 msg = '🥰🥰🥰\n收款「二维码」已发送至您的「终端」与「对话框」十分感谢您的支持!'
             await callback_query.message.reply_text(msg)
-        elif callback_data == BotCallbackText.link_table:
+        elif callback_data == BotCallbackText.LINK_TABLE:
             res: bool or str = self.app.print_link_table()
             if isinstance(res, str):
                 await callback_query.message.edit_text(
@@ -131,10 +131,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await callback_query.message.edit_text('🫡🫡🫡`链接统计表`已发送至您的「终端」请注意查收。')
             else:
                 await callback_query.message.edit_text('😵😵😵没有链接需要统计。')
-        elif callback_data == BotCallbackText.count_table:
+        elif callback_data == BotCallbackText.COUNT_TABLE:
             self.app.print_count_table()
             await callback_query.message.edit_text('👌👌👌`计数统计表`已发送至您的「终端」请注意查收。')
-        elif callback_data == BotCallbackText.back_help:
+        elif callback_data == BotCallbackText.BACK_HELP:
             await callback_query.message.delete()
             await self.help(client, callback_query.message)
 

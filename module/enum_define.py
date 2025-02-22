@@ -923,10 +923,10 @@ class BotCommandText:
 
 
 class BotCallbackText:
-    pay = 'pay'
-    link_table = 'link_table'
-    count_table = 'count_table'
-    back_help = 'back_help'
+    PAY = 'pay'
+    LINK_TABLE = 'link_table'
+    COUNT_TABLE = 'count_table'
+    BACK_HELP = 'back_help'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():

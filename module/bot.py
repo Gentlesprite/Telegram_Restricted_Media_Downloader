@@ -90,7 +90,7 @@ class Bot:
                         url='https://www.bilibili.com/video/BV1nCp8evEwv'),
                     InlineKeyboardButton(
                         '💰支持作者',
-                        callback_data=BotCallbackText.pay)
+                        callback_data=BotCallbackText.PAY)
                 ]
             ]
         )
@@ -132,17 +132,17 @@ class Bot:
                     InlineKeyboardButton(
                         '🔗链接统计表',
                         url='https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases',
-                        callback_data=BotCallbackText.link_table
+                        callback_data=BotCallbackText.LINK_TABLE
                     ),
                     InlineKeyboardButton(
                         '➕计数统计表', url='https://t.me/RestrictedMediaDownloader',
-                        callback_data=BotCallbackText.count_table
+                        callback_data=BotCallbackText.COUNT_TABLE
                     )
                 ],
                 [
                     InlineKeyboardButton(
                         '🛎️帮助页面',
-                        callback_data=BotCallbackText.back_help
+                        callback_data=BotCallbackText.BACK_HELP
                     )
                 ]
             ]
