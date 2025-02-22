@@ -24,3 +24,5 @@ if __name__ == '__main__':
         os.system(build_command)
     except ImportError:
         print('请先使用命令:"pip install nuitka==2.4.8"安装Nuitka后重试。')
+    except KeyboardInterrupt:
+        print('键盘中断。')
