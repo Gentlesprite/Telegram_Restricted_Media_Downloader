@@ -14,16 +14,16 @@ from module import console, log
 
 
 class LinkType:
-    single: str = 'single'
-    group: str = 'group'
-    comment: str = 'comment'
+    SINGLE: str = 'single'
+    GROUP: str = 'group'
+    COMMENT: str = 'comment'
 
     @staticmethod
     def t(text: str) -> str:
         translation = {
-            LinkType.single: '单文件',
-            LinkType.group: '组文件',
-            LinkType.comment: '评论区文件',
+            LinkType.SINGLE: '单文件',
+            LinkType.GROUP: '组文件',
+            LinkType.COMMENT: '评论区文件',
         }
         if text in translation:
             return translation[text]
@@ -32,16 +32,16 @@ class LinkType:
 
 
 class DownloadType(Enum):
-    video = 0
-    photo = 1
-    document = 2
+    VIDEO = 0
+    PHOTO = 1
+    DOCUMENT = 2
 
     @property
     def text(self) -> str:
         return {
-            DownloadType.video: 'video',
-            DownloadType.photo: 'photo',
-            DownloadType.document: 'document'
+            DownloadType.VIDEO: 'video',
+            DownloadType.PHOTO: 'photo',
+            DownloadType.DOCUMENT: 'document'
         }[self]
 
     @staticmethod
@@ -51,9 +51,9 @@ class DownloadType(Enum):
     @staticmethod
     def t(text: 'DownloadType.text') -> str:
         translation = {
-            DownloadType.video.text: '视频',
-            DownloadType.photo.text: '图片',
-            DownloadType.document.text: '文档'
+            DownloadType.VIDEO.text: '视频',
+            DownloadType.PHOTO.text: '图片',
+            DownloadType.DOCUMENT.text: '文档'
         }
         if text in translation:
             return translation[text]
@@ -62,30 +62,30 @@ class DownloadType(Enum):
 
 
 class DownloadStatus(Enum):
-    downloading = 0
-    success = 1
-    failure = 2
-    skip = 3
-    retry = 4
+    DOWNLOADING = 0
+    SUCCESS = 1
+    FAILURE = 2
+    SKIP = 3
+    RETRY = 4
 
     @property
     def text(self) -> str:
         return {
-            DownloadStatus.downloading: 'downloading',
-            DownloadStatus.success: 'success',
-            DownloadStatus.failure: 'failure',
-            DownloadStatus.skip: 'skip',
-            DownloadStatus.retry: 'retry'
+            DownloadStatus.DOWNLOADING: 'downloading',
+            DownloadStatus.SUCCESS: 'success',
+            DownloadStatus.FAILURE: 'failure',
+            DownloadStatus.SKIP: 'skip',
+            DownloadStatus.RETRY: 'retry'
         }[self]
 
     @staticmethod
     def t(text: 'DownloadStatus.text', key_note: bool = False) -> str:
         translation = {
-            DownloadStatus.downloading.text: '下载中',
-            DownloadStatus.success.text: '成功',
-            DownloadStatus.failure.text: '失败',
-            DownloadStatus.skip.text: '跳过',
-            DownloadStatus.retry.text: '重试'
+            DownloadStatus.DOWNLOADING.text: '下载中',
+            DownloadStatus.SUCCESS.text: '成功',
+            DownloadStatus.FAILURE.text: '失败',
+            DownloadStatus.SKIP.text: '跳过',
+            DownloadStatus.RETRY.text: '重试'
         }
         if text in translation:
             if key_note:
@@ -101,39 +101,39 @@ class DownloadStatus(Enum):
 
 
 class Status:
-    DOWNLOADING = DownloadStatus.t(DownloadStatus.downloading.text)
-    SUCCESS = DownloadStatus.t(DownloadStatus.success.text)
-    FAILURE = DownloadStatus.t(DownloadStatus.failure.text)
-    SKIP = DownloadStatus.t(DownloadStatus.skip.text)
+    DOWNLOADING = DownloadStatus.t(DownloadStatus.DOWNLOADING.text)
+    SUCCESS = DownloadStatus.t(DownloadStatus.SUCCESS.text)
+    FAILURE = DownloadStatus.t(DownloadStatus.FAILURE.text)
+    SKIP = DownloadStatus.t(DownloadStatus.SKIP.text)
 
 
 class _KeyWord:
-    link: str = 'link'
-    link_type: str = 'link_type'
-    size: str = 'size'
-    status: str = 'status'
-    file: str = 'file'
-    error_size: str = 'error_size'
-    actual_size: str = 'actual_size'
-    already_exist: str = 'already_exist'
-    channel: str = 'channel'
-    type: str = 'type'
-    reason: str = 'reason'
+    LINK: str = 'link'
+    LINK_TYPE: str = 'link_type'
+    SIZE: str = 'size'
+    STATUS: str = 'status'
+    FILE: str = 'file'
+    ERROR_SIZE: str = 'error_size'
+    ACTUAL_SIZE: str = 'actual_size'
+    ALREADY_EXIST: str = 'already_exist'
+    CHANNEL: str = 'channel'
+    TYPE: str = 'type'
+    REASON: str = 'reason'
 
     @staticmethod
     def t(text: str, key_note: bool = False) -> str:
         translation = {
-            _KeyWord.link: '链接',
-            _KeyWord.link_type: '链接类型',
-            _KeyWord.size: '大小',
-            _KeyWord.status: '状态',
-            _KeyWord.file: '文件',
-            _KeyWord.error_size: '错误大小',
-            _KeyWord.actual_size: '实际大小',
-            _KeyWord.already_exist: '已存在',
-            _KeyWord.channel: '频道',
-            _KeyWord.type: '类型',
-            _KeyWord.reason: '原因'
+            _KeyWord.LINK: '链接',
+            _KeyWord.LINK_TYPE: '链接类型',
+            _KeyWord.SIZE: '大小',
+            _KeyWord.STATUS: '状态',
+            _KeyWord.FILE: '文件',
+            _KeyWord.ERROR_SIZE: '错误大小',
+            _KeyWord.ACTUAL_SIZE: '实际大小',
+            _KeyWord.ALREADY_EXIST: '已存在',
+            _KeyWord.CHANNEL: '频道',
+            _KeyWord.TYPE: '类型',
+            _KeyWord.REASON: '原因'
         }
 
         if text in translation:
@@ -146,21 +146,21 @@ class _KeyWord:
 
 
 class KeyWord:
-    LINK = _KeyWord.t(_KeyWord.link, True)
-    LINK_TYPE = _KeyWord.t(_KeyWord.link_type, True)
-    SIZE = _KeyWord.t(_KeyWord.size, True)
-    STATUS = _KeyWord.t(_KeyWord.status, True)
-    FILE = _KeyWord.t(_KeyWord.file, True)
-    ERROR_SIZE = _KeyWord.t(_KeyWord.error_size, True)
-    ACTUAL_SIZE = _KeyWord.t(_KeyWord.actual_size, True)
-    ALREADY_EXIST = _KeyWord.t(_KeyWord.already_exist, True)
-    CHANNEL = _KeyWord.t(_KeyWord.channel, True)
-    TYPE = _KeyWord.t(_KeyWord.type, True)
-    REASON = _KeyWord.t(_KeyWord.reason, False)
+    LINK = _KeyWord.t(_KeyWord.LINK, True)
+    LINK_TYPE = _KeyWord.t(_KeyWord.LINK_TYPE, True)
+    SIZE = _KeyWord.t(_KeyWord.SIZE, True)
+    STATUS = _KeyWord.t(_KeyWord.STATUS, True)
+    FILE = _KeyWord.t(_KeyWord.FILE, True)
+    ERROR_SIZE = _KeyWord.t(_KeyWord.ERROR_SIZE, True)
+    ACTUAL_SIZE = _KeyWord.t(_KeyWord.ACTUAL_SIZE, True)
+    ALREADY_EXIST = _KeyWord.t(_KeyWord.ALREADY_EXIST, True)
+    CHANNEL = _KeyWord.t(_KeyWord.CHANNEL, True)
+    TYPE = _KeyWord.t(_KeyWord.TYPE, True)
+    REASON = _KeyWord.t(_KeyWord.REASON, False)
 
 
 class Extension:
-    photo = {'image/avif': 'avif',
+    PHOTO = {'image/avif': 'avif',
              'image/bmp': 'bmp',
              'image/gif': 'gif',
              'image/ief': 'ief',
@@ -181,7 +181,7 @@ class Extension:
              'image/x-xbitmap': 'xbm',
              'image/x-xpixmap': 'xpm',
              'image/x-xwindowdump': 'xwd'}
-    video = {'video/mp4': 'mp4',
+    VIDEO = {'video/mp4': 'mp4',
              'video/mpeg': 'mpg',
              'video/quicktime': 'qt',
              'video/webm': 'webm',
@@ -192,7 +192,7 @@ class Extension:
 
 class GradientColor:
     # 生成渐变色:https://photokit.com/colors/color-gradient/?lang=zh
-    blue_to_purple = ['#0ebeff',
+    BLUE2PURPLE_14 = ['#0ebeff',
                       '#21b4f9',
                       '#33abf3',
                       '#46a1ed',
@@ -206,7 +206,7 @@ class GradientColor:
                       '#da55bf',
                       '#ec4cb9',
                       '#ff42b3']
-    green_to_pink = ['#00ff40',
+    GREEN2PINK_11 = ['#00ff40',
                      '#14f54c',
                      '#29eb58',
                      '#3de064',
@@ -217,7 +217,7 @@ class GradientColor:
                      '#a3ada0',
                      '#b8a3ac',
                      '#cc99b8']
-    green_to_blue = ['#84fab0',
+    GREEN2BLUE_10 = ['#84fab0',
                      '#85f6b8',
                      '#86f1bf',
                      '#88edc7',
@@ -227,7 +227,7 @@ class GradientColor:
                      '#8ddce5',
                      '#8ed7ec',
                      '#8fd3f4']
-    yellow_to_green = ['#d4fc79',
+    YELLOW2GREEN_10 = ['#d4fc79',
                        '#cdfa7d',
                        '#c6f782',
                        '#bff586',
@@ -247,7 +247,7 @@ class GradientColor:
                 '#3af5c3',
                 '#39f7cd',
                 '#38f9d7']
-    orange_to_yellow = ['#f08a5d',
+    ORANGE2YELLOW_15 = ['#f08a5d',
                         '#f1915e',
                         '#f1985f',
                         '#f29f60',
@@ -318,7 +318,7 @@ class GradientColor:
 
 
 class Banner:
-    a = r'''
+    A = r'''
        ______           __  __                     _ __          
       / ____/__  ____  / /_/ /__  _________  _____(_) /____      
      / / __/ _ \/ __ \/ __/ / _ \/ ___/ __ \/ ___/ / __/ _ \     
@@ -326,12 +326,12 @@ class Banner:
     \____/\___/_/ /_/\__/_/\___/____/ .___/_/  /_/\__/\___/      
                                    /_/                           
         '''
-    b = r'''
+    B = r'''
     ╔═╗┌─┐┌┐┌┌┬┐┬  ┌─┐┌─┐┌─┐┬─┐┬┌┬┐┌─┐  
     ║ ╦├┤ │││ │ │  ├┤ └─┐├─┘├┬┘│ │ ├┤   
     ╚═╝└─┘┘└┘ ┴ ┴─┘└─┘└─┘┴  ┴└─┴ ┴ └─┘  
         '''
-    c = r'''
+    C = r'''
      ██████╗ ███████╗███╗   ██╗████████╗██╗     ███████╗███████╗██████╗ ██████╗ ██╗████████╗███████╗    
     ██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝██║     ██╔════╝██╔════╝██╔══██╗██╔══██╗██║╚══██╔══╝██╔════╝    
     ██║  ███╗█████╗  ██╔██╗ ██║   ██║   ██║     █████╗  ███████╗██████╔╝██████╔╝██║   ██║   █████╗      
@@ -339,7 +339,7 @@ class Banner:
     ╚██████╔╝███████╗██║ ╚████║   ██║   ███████╗███████╗███████║██║     ██║  ██║██║   ██║   ███████╗    
      ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚══════╝╚══════╝╚═╝     ╚═╝  ╚═╝╚═╝   ╚═╝   ╚══════╝           
             '''
-    d = r'''                                                                          
+    D = r'''                                                                          
                                         ,,                                       ,,                    
   .g8"""bgd                      mm   `7MM                                       db   mm               
 .dP'     `M                      MM     MM                                            MM               
@@ -514,23 +514,23 @@ class ProcessConfig:
     def set_dtype(_dtype) -> list:
         i_dtype = int(_dtype)  # 因为终端输入是字符串，这里需要转换为整数。
         if i_dtype == 1:
-            return [DownloadType.video.text]
+            return [DownloadType.VIDEO.text]
         elif i_dtype == 2:
-            return [DownloadType.photo.text]
+            return [DownloadType.PHOTO.text]
         elif i_dtype == 3:
-            return [DownloadType.video.text, DownloadType.photo.text]
+            return [DownloadType.VIDEO.text, DownloadType.PHOTO.text]
 
     @staticmethod
     def get_dtype(download_dtype: list) -> dict:
         """获取所需下载文件的类型。"""
-        if DownloadType.document.text in download_dtype:
-            download_dtype.remove(DownloadType.document.text)
+        if DownloadType.DOCUMENT.text in download_dtype:
+            download_dtype.remove(DownloadType.DOCUMENT.text)
         dt_length = len(download_dtype)
         if dt_length == 1:
             dtype: str = download_dtype[0]
-            if dtype == DownloadType.video.text:
+            if dtype == DownloadType.VIDEO.text:
                 return {'video': True, 'photo': False}
-            elif dtype == DownloadType.photo.text:
+            elif dtype == DownloadType.PHOTO.text:
                 return {'video': False, 'photo': True}
         elif dt_length == 2:
             return {'video': True, 'photo': True}
@@ -540,7 +540,7 @@ class ProcessConfig:
     def stdio_style(key: str, color=None) -> str:
         """控制用户交互时打印出不同的颜色(渐变)。"""
         if color is None:
-            color = GradientColor.orange_to_yellow
+            color = GradientColor.ORANGE2YELLOW_15
         _stdio_queue: dict = {'api_id': 0,
                               'api_hash': 1,
                               'bot_token': 2,

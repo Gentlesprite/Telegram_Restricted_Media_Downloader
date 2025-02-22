@@ -220,13 +220,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                         console.log(f'{KeyWord.ALREADY_EXIST}:"{save_directory}"')
                         console.log(f'{KeyWord.FILE}:"{file_name}",'
                                     f'{KeyWord.SIZE}:{format_file_size},'
-                                    f'{KeyWord.TYPE}:{DownloadType.t(self.app.guess_file_type(file_name=file_name, status=DownloadStatus.skip)[0].text)},'
+                                    f'{KeyWord.TYPE}:{DownloadType.t(self.app.guess_file_type(file_name=file_name, status=DownloadStatus.SKIP)[0].text)},'
                                     f'{KeyWord.STATUS}:{Status.SKIP}。', style='#e6db74')
                     self.__listen_link_complete(link=link, file_name=file_name)
                 else:
                     console.log(f'{KeyWord.FILE}:"{file_name}",'
                                 f'{KeyWord.SIZE}:{format_file_size},'
-                                f'{KeyWord.TYPE}:{DownloadType.t(self.app.guess_file_type(file_name=file_name, status=DownloadStatus.downloading)[0].text)},'
+                                f'{KeyWord.TYPE}:{DownloadType.t(self.app.guess_file_type(file_name=file_name, status=DownloadStatus.DOWNLOADING)[0].text)},'
                                 f'{KeyWord.STATUS}:{Status.DOWNLOADING}。')
                     task_id = self.app.progress.add_task(description='',
                                                          filename=truncate_display_filename(file_name),
@@ -274,7 +274,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _error = f'(达到最大重试次数:{self.app.max_retry_count}次)。'
                 console.log(f'{KeyWord.FILE}:"{file_name}",'
                             f'{KeyWord.SIZE}:{format_file_size},'
-                            f'{KeyWord.TYPE}:{DownloadType.t(self.app.guess_file_type(file_name=file_name, status=DownloadStatus.failure)[0].text)},'
+                            f'{KeyWord.TYPE}:{DownloadType.t(self.app.guess_file_type(file_name=file_name, status=DownloadStatus.FAILURE)[0].text)},'
                             f'{KeyWord.STATUS}:{Status.FAILURE}'
                             f'{_error}')
                 self.app.link_info.get(link).get('error_msg')[file_name] = _error.replace('。', '')
@@ -301,7 +301,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     if comment_message and group is None:
                         group = []
                         group.extend(comment_message)
-                link_type = LinkType.comment if comment_message else LinkType.group
+                link_type = LinkType.COMMENT if comment_message else LinkType.GROUP
                 self.app.link_info[link] = {'link_type': link_type,
                                             'member_num': len(group),
                                             'complete_num': 0,
@@ -314,7 +314,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await self.__add_task(link, group, retry)
                 return True
             elif res is False and group is None:  # 单文件。
-                link_type = LinkType.single
+                link_type = LinkType.SINGLE
                 self.app.link_info[link] = {'link_type': link_type,
                                             'member_num': 1,
                                             'complete_num': 0,

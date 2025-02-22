@@ -270,7 +270,7 @@ class Application:
         """打印统计的下载信息的表格。"""
         header: tuple = ('种类&状态', '成功下载', '失败下载', '跳过下载', '合计')
         self.download_type.remove(
-            DownloadType.document.text) if DownloadType.document.text in self.download_type else None
+            DownloadType.DOCUMENT.text) if DownloadType.DOCUMENT.text in self.download_type else None
         success_video: int = len(self.success_video)
         failure_video: int = len(self.failure_video)
         skip_video: int = len(self.skip_video)
@@ -282,11 +282,11 @@ class Application:
         rdt_length: int = len(self.record_dtype)
         if rdt_length == 1:
             _compare_dtype: list = list(self.record_dtype)[0]
-            if _compare_dtype == DownloadType.video.text:  # 只有视频的情况。
+            if _compare_dtype == DownloadType.VIDEO.text:  # 只有视频的情况。
                 video_table = PanelTable(title='视频下载统计',
                                          header=header,
                                          data=[
-                                             [DownloadType.t(DownloadType.video.text),
+                                             [DownloadType.t(DownloadType.VIDEO.text),
                                               success_video,
                                               failure_video,
                                               skip_video,
@@ -298,11 +298,11 @@ class Application:
                                          ]
                                          )
                 video_table.print_meta()
-            if _compare_dtype == DownloadType.photo.text:  # 只有图片的情况。
+            if _compare_dtype == DownloadType.PHOTO.text:  # 只有图片的情况。
                 photo_table = PanelTable(title='图片下载统计',
                                          header=header,
                                          data=[
-                                             [DownloadType.t(DownloadType.photo.text),
+                                             [DownloadType.t(DownloadType.PHOTO.text),
                                               success_photo,
                                               failure_photo,
                                               skip_photo,
@@ -318,12 +318,12 @@ class Application:
             media_table = PanelTable(title='媒体下载统计',
                                      header=header,
                                      data=[
-                                         [DownloadType.t(DownloadType.video.text),
+                                         [DownloadType.t(DownloadType.VIDEO.text),
                                           success_video,
                                           failure_video,
                                           skip_video,
                                           total_video],
-                                         [DownloadType.t(DownloadType.photo.text),
+                                         [DownloadType.t(DownloadType.PHOTO.text),
                                           success_photo,
                                           failure_photo,
                                           skip_photo,
@@ -393,7 +393,7 @@ class Application:
             console.log(
                 f'{KeyWord.FILE}:"{file_path}",'
                 f'{KeyWord.SIZE}:{format_local_size},'
-                f'{KeyWord.TYPE}:{DownloadType.t(self.guess_file_type(file_name=temp_file_path, status=DownloadStatus.success)[0].text)},'
+                f'{KeyWord.TYPE}:{DownloadType.t(self.guess_file_type(file_name=temp_file_path, status=DownloadStatus.SUCCESS)[0].text)},'
                 f'{KeyWord.STATUS}:{Status.SUCCESS}。',
             )
             return True
@@ -401,7 +401,7 @@ class Application:
             f'{KeyWord.FILE}:"{file_path}",'
             f'{KeyWord.ERROR_SIZE}:{format_local_size},'
             f'{KeyWord.ACTUAL_SIZE}:{format_sever_size},'
-            f'{KeyWord.TYPE}:{DownloadType.t(self.guess_file_type(file_name=temp_file_path, status=DownloadStatus.failure)[0].text)},'
+            f'{KeyWord.TYPE}:{DownloadType.t(self.guess_file_type(file_name=temp_file_path, status=DownloadStatus.FAILURE)[0].text)},'
             f'{KeyWord.STATUS}:{Status.FAILURE}。')
         safe_delete(file_p_d=temp_file_path)  # v1.2.9 修复临时文件删除失败的问题。
         return False
@@ -428,16 +428,16 @@ class Application:
                            None)  # 判断该链接是否为视频或图片,文档。
         is_document_type_valid = None
         # 当媒体文件是文档形式的,需要根据配置需求将视频和图片过滤出来。
-        if getattr(message, 'document'):
+        if getattr(message, DownloadType.DOCUMENT.text):
             mime_type = message.document.mime_type  # 获取 document 的 mime_type 。
             # 只下载视频的情况。
-            if DownloadType.video.text in self.download_type and DownloadType.photo.text not in self.download_type:
+            if DownloadType.VIDEO.text in self.download_type and DownloadType.PHOTO.text not in self.download_type:
                 if 'video' in mime_type:
                     is_document_type_valid = True  # 允许下载视频。
                 elif 'image' in mime_type:
                     is_document_type_valid = False  # 跳过下载图片。
             # 只下载图片的情况。
-            elif DownloadType.photo.text in self.download_type and DownloadType.video.text not in self.download_type:
+            elif DownloadType.PHOTO.text in self.download_type and DownloadType.VIDEO.text not in self.download_type:
                 if 'video' in mime_type:
                     is_document_type_valid = False  # 跳过下载视频。
                 elif 'image' in mime_type:
@@ -482,10 +482,10 @@ class Application:
             _default_mtype: str = 'image/jpg'  # v1.2.8 健全获取文件名逻辑。
             _meta_obj = getattr(msg_obj, _dtype)
             _extension: str = 'unknown'
-            if _dtype == DownloadType.photo.text:
+            if _dtype == DownloadType.PHOTO.text:
                 _extension: str = get_extension(file_id=_meta_obj.file_id, mime_type=_default_mtype,
                                                 dot=False)
-            elif _dtype == DownloadType.document.text:
+            elif _dtype == DownloadType.DOCUMENT.text:
                 _extension: str = get_extension(file_id=_meta_obj.file_id,
                                                 mime_type=getattr(_meta_obj, 'mime_type', _default_mtype),
                                                 dot=False)
@@ -497,11 +497,11 @@ class Application:
             _file: str = os.path.join(self.temp_directory, validate_title(_file_name))
             return _file
 
-        if dtype == DownloadType.video.text:
+        if dtype == DownloadType.VIDEO.text:
             file: str = _process_video(msg_obj=message, _dtype=dtype)
-        elif dtype == DownloadType.photo.text:
+        elif dtype == DownloadType.PHOTO.text:
             file: str = _process_photo(msg_obj=message, _dtype=dtype)
-        elif dtype == DownloadType.document.text:
+        elif dtype == DownloadType.DOCUMENT.text:
             _mime_type = getattr(getattr(message, dtype), 'mime_type')
             if 'video' in _mime_type:
                 file: str = _process_video(msg_obj=message, _dtype=dtype)
@@ -519,23 +519,23 @@ class Application:
         def wrapper(self, file_name, status):
             res = func(self, file_name, status)
             file_type, status = res
-            if file_type == DownloadType.photo:
-                if status == DownloadStatus.success:
+            if file_type == DownloadType.PHOTO:
+                if status == DownloadStatus.SUCCESS:
                     self.success_photo.add(file_name)
-                elif status == DownloadStatus.failure:
+                elif status == DownloadStatus.FAILURE:
                     self.failure_photo.add(file_name)
-                elif status == DownloadStatus.skip:
+                elif status == DownloadStatus.SKIP:
                     self.skip_photo.add(file_name)
-                elif status == DownloadStatus.downloading:
+                elif status == DownloadStatus.DOWNLOADING:
                     self.current_task_num += 1
-            elif file_type == DownloadType.video:
-                if status == DownloadStatus.success:
+            elif file_type == DownloadType.VIDEO:
+                if status == DownloadStatus.SUCCESS:
                     self.success_video.add(file_name)
-                elif status == DownloadStatus.failure:
+                elif status == DownloadStatus.FAILURE:
                     self.failure_video.add(file_name)
-                elif status == DownloadStatus.skip:
+                elif status == DownloadStatus.SKIP:
                     self.skip_video.add(file_name)
-                elif status == DownloadStatus.downloading:
+                elif status == DownloadStatus.DOWNLOADING:
                     self.current_task_num += 1
             # v1.2.9 修复失败时重新下载时会抛出RuntimeError的问题。
             if self.failure_video and self.success_video:
@@ -554,21 +554,21 @@ class Application:
         if file_type is not None:
             file_main_type: str = file_type.split('/')[0]
             if file_main_type == 'image':
-                result = DownloadType.photo
+                result = DownloadType.PHOTO
             elif file_main_type == 'video':
-                result = DownloadType.video
+                result = DownloadType.VIDEO
         return result, status
 
     def __get_download_type(self) -> None:
         """获取需要下载的文件类型。"""
         if self.download_type is not None and (
-                DownloadType.video.text in self.download_type or DownloadType.photo.text in self.download_type):
+                DownloadType.VIDEO.text in self.download_type or DownloadType.PHOTO.text in self.download_type):
             self.record_dtype.update(self.download_type)  # v1.2.4 修复特定情况结束后不显示表格问题。
-            self.download_type.append(DownloadType.document.text)
+            self.download_type.append(DownloadType.DOCUMENT.text)
         else:
             self.download_type: list = DownloadType.support_type()
-            self.record_dtype: set = {DownloadType.video.text,
-                                      DownloadType.photo.text}  # v1.2.4 修复此处报错问题v1.2.3此处有致命错误。
+            self.record_dtype: set = {DownloadType.VIDEO.text,
+                                      DownloadType.PHOTO.text}  # v1.2.4 修复此处报错问题v1.2.3此处有致命错误。
             console.log('已使用[#f08a5d]「默认」[/#f08a5d]下载类型:3.视频和图片。')
 
     def print_config_table(self) -> None:
@@ -577,7 +577,7 @@ class Application:
             if self.enable_proxy:
                 console.log(GradientColor.gen_gradient_text(
                     text='当前正在使用代理!',
-                    gradient_color=GradientColor.green_to_blue))
+                    gradient_color=GradientColor.GREEN2BLUE_10))
                 proxy_key: list = []
                 proxy_value: list = []
                 for i in self.proxy.items():
@@ -609,9 +609,9 @@ class Application:
             log.error(f'打印链接内容统计表时出错,{KeyWord.REASON}:"{e}"')
         try:
             _dtype: list = self.download_type.copy()  # 浅拷贝赋值给_dtype,避免传入函数后改变原数据。
-            data: list = [[DownloadType.t(DownloadType.video.text),
+            data: list = [[DownloadType.t(DownloadType.VIDEO.text),
                            ProcessConfig.get_dtype(_dtype).get('video')],
-                          [DownloadType.t(DownloadType.photo.text),
+                          [DownloadType.t(DownloadType.PHOTO.text),
                            ProcessConfig.get_dtype(_dtype).get('photo')]]
             download_type_table = PanelTable(title='下载类型', header=('类型', '是否下载'), data=data)
             download_type_table.print_meta()
@@ -1009,7 +1009,7 @@ class MetaData:
                     justify='center')
                 console.print(
                     GradientColor.gen_gradient_text(text='微信扫码支持作者,您的支持是我持续更新的动力。',
-                                                    gradient_color=GradientColor.yellow_to_green),
+                                                    gradient_color=GradientColor.YELLOW2GREEN_10),
                     justify='center')
             except Exception as _:
                 return _
@@ -1017,7 +1017,7 @@ class MetaData:
     @staticmethod
     def print_meta():
         console.print(GradientColor.gen_gradient_text(
-            text=Banner.c,
+            text=Banner.C,
             gradient_color=GradientColor.generate_gradient(
                 start_color='#fa709a',
                 end_color='#fee140',
@@ -1028,7 +1028,7 @@ class MetaData:
                       )
         console.print(f'Licensed under the terms of the {__license__}', end='\n')
         console.print(GradientColor.gen_gradient_text('\t软件免费使用!并且在GitHub开源,如果你付费那就是被骗了。',
-                                                      gradient_color=GradientColor.blue_to_purple))
+                                                      gradient_color=GradientColor.BLUE2PURPLE_14))
 
     @staticmethod
     def suitable_units_display(number: int) -> str:

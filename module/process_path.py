@@ -129,7 +129,7 @@ def move_to_save_directory(temp_file_path: str, save_directory: str) -> dict:
 
 def get_extension(file_id: str, mime_type: str, dot: bool = True) -> str:
     """获取文件的扩展名。
-    更多扩展名见:http://www.iana.org/assignments/media-types/media-types.xhtml
+    更多扩展名见: https://www.iana.org/assignments/media-types/media-types.xhtml
     """
 
     if not file_id:
@@ -142,16 +142,16 @@ def get_extension(file_id: str, mime_type: str, dot: bool = True) -> str:
     guessed_extension = __guess_extension(mime_type)
 
     if file_type in PHOTO_TYPES:
-        extension = Extension.photo.get(mime_type, 'jpg')
+        extension = Extension.PHOTO.get(mime_type, 'jpg')
     elif file_type == FileType.VOICE:
         extension = guessed_extension or 'ogg'
     elif file_type in (FileType.VIDEO, FileType.ANIMATION, FileType.VIDEO_NOTE):
-        extension = guessed_extension or Extension.video.get(mime_type, 'mp4')
+        extension = guessed_extension or Extension.VIDEO.get(mime_type, 'mp4')
     elif file_type == FileType.DOCUMENT:
         if 'video' in mime_type:
-            extension = guessed_extension or Extension.video.get(mime_type, 'mp4')
+            extension = guessed_extension or Extension.VIDEO.get(mime_type, 'mp4')
         elif 'image' in mime_type:
-            extension = guessed_extension or Extension.photo.get(mime_type, 'jpg')  # v1.2.8 修复获取图片格式时,实际指向为视频字典的错误。
+            extension = guessed_extension or Extension.PHOTO.get(mime_type, 'jpg')  # v1.2.8 修复获取图片格式时,实际指向为视频字典的错误。
         else:
             extension = guessed_extension or 'zip'
     elif file_type == FileType.STICKER:
