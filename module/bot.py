@@ -15,10 +15,10 @@ from module.enum_define import BotCommandText, BotMessage, BotCallbackText
 
 
 class Bot:
-    commands: List[BotCommand] = [BotCommand(BotCommandText.help[0], BotCommandText.help[1]),
-                                  BotCommand(BotCommandText.download[0], BotCommandText.download[1].replace('`', '')),
-                                  BotCommand(BotCommandText.table[0], BotCommandText.table[1]),
-                                  BotCommand(BotCommandText.exit[0], BotCommandText.exit[1])]
+    commands: List[BotCommand] = [BotCommand(BotCommandText.HELP[0], BotCommandText.HELP[1]),
+                                  BotCommand(BotCommandText.DOWNLOAD[0], BotCommandText.DOWNLOAD[1].replace('`', '')),
+                                  BotCommand(BotCommandText.TABLE[0], BotCommandText.TABLE[1]),
+                                  BotCommand(BotCommandText.EXIT[0], BotCommandText.EXIT[1])]
 
     def __init__(self):
         self.user = None
@@ -100,10 +100,10 @@ class Bot:
             f'©️ {__copyright__.replace(" <https://github.com/Gentlesprite>", ".")}\n'
             f'📖 Licensed under the terms of the {__license__}.`\n'
             f'🎮️ 可用命令:\n'
-            f'🛎️ {BotCommandText.with_description(BotCommandText.help)}\n'
-            f'📁 {BotCommandText.with_description(BotCommandText.download)}\n'
-            f'📝 {BotCommandText.with_description(BotCommandText.table)}\n'
-            f'❌ {BotCommandText.with_description(BotCommandText.exit)}\n'
+            f'🛎️ {BotCommandText.with_description(BotCommandText.HELP)}\n'
+            f'📁 {BotCommandText.with_description(BotCommandText.DOWNLOAD)}\n'
+            f'📝 {BotCommandText.with_description(BotCommandText.TABLE)}\n'
+            f'❌ {BotCommandText.with_description(BotCommandText.EXIT)}\n'
         )
 
         await client.send_message(chat_id=message.chat.id,
