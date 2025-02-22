@@ -935,9 +935,9 @@ class BotCallbackText:
 
 
 class BotMessage:
-    right = '✅以下链接已创建下载任务:\n'
-    exist = '⚠️以下链接已存在已被移除:\n'
-    invalid = '🚫以下链接不合法已被移除:\n'
+    RIGHT = '✅以下链接已创建下载任务:\n'
+    EXIST = '⚠️以下链接已存在已被移除:\n'
+    INVALID = '🚫以下链接不合法已被移除:\n'
 
 
 class Base64Image:
