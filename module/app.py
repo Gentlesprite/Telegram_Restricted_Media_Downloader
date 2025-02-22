@@ -28,7 +28,7 @@ from module import console, log
 from module import MAX_FILE_REFERENCE_TIME, SOFTWARE_FULL_NAME, __version__, __copyright__, __license__
 
 from module.process_path import split_path, validate_title, truncate_filename, move_to_save_directory, \
-    gen_backup_config, get_extension, safe_delete, compare_file_size, get_file_size
+    gen_backup_config, get_extension, safe_delete, compare_file_size, get_file_size, get_terminal_width
 from module.enum_define import GradientColor, Banner, DownloadType, DownloadStatus, QrcodeRender, KeyWord, \
     Status, GetStdioParams, ProcessConfig
 
@@ -235,7 +235,7 @@ class Application:
         self.link_info: dict = {}
         self.global_retry_task: int = 0
         self.progress = Progress(TextColumn('[bold blue]{task.fields[filename]}', justify='right'),
-                                 BarColumn(bar_width=40),
+                                 BarColumn(bar_width=max(int(get_terminal_width() * 0.2), 1)),
                                  '[progress.percentage]{task.percentage:>3.1f}%',
                                  '•',
                                  '[bold green]{task.fields[info]}',

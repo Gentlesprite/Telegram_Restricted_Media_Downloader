@@ -3,7 +3,6 @@
 # Software:PyCharm
 # Time:2023/11/13 20:34:13
 # File:process_path.py
-# 部分代码源于作者:tangyoha
 import os
 import re
 import struct
@@ -13,6 +12,7 @@ import mimetypes
 import unicodedata
 
 from io import BytesIO
+from rich.text import Text
 from typing import Optional
 
 from pyrogram.file_id import (
@@ -58,7 +58,7 @@ def validate_title(title: str) -> str:
 
 
 def truncate_filename(path: str, limit: int = 230) -> str:
-    # 作者:tangyoha
+    # https://github.com/tangyoha/telegram_media_downloader/blob/a3a9c2bed89ea8fd4db0b6616f055dfa11208362/utils/format.py#L195
     """将文件名截断到最大长度。
     Parameters
     ----------
@@ -71,7 +71,7 @@ def truncate_filename(path: str, limit: int = 230) -> str:
     Returns
     -------
     str
-        如果文件名的长度超过限制，则返回截断后的文件名；否则返回原始文件名。
+        如果文件名的长度超过限制，则返回截断后的文件名;否则返回原始文件名。
     """
     p, f = os.path.split(os.path.normpath(path))
     f, e = os.path.splitext(f)
@@ -205,3 +205,24 @@ def get_file_size(file_path: str, temp_ext: str = '.temp'):
         return os.path.getsize(file_path + temp_ext)
     else:
         return 0
+
+
+def get_terminal_width() -> int:
+    terminal_width: int = 120
+    try:
+        terminal_width: int = os.get_terminal_size().columns
+    except OSError:
+        pass
+    finally:
+        return terminal_width
+
+
+def truncate_display_filename(file_name: str) -> Text:
+    terminal_width: int = get_terminal_width()
+    max_width: int = max(int(terminal_width * 0.3), 1)
+    text = Text(file_name)
+    text.truncate(
+        max_width=max_width,
+        overflow='ellipsis'
+    )
+    return text
