@@ -12,12 +12,12 @@ main = 'main.py'
 years = __update_date__[:4]
 include_module = '--include-module=pygments.lexers.data'
 copy_right = f'Copyright (C) 2024-{years} {AUTHOR}.All rights reserved.'
-build_command = f'nuitka --standalone --show-memory --show-progress --onefile {include_module} '
-build_command += f'--output-dir={output} --file-version={__version__} '
-build_command += f'--windows-icon-from-ico="{ico_path}" '
+build_command = f'nuitka --standalone --onefile {include_module} '
+build_command += f'--output-dir={output} --file-version={__version__} --product-version={__version__} '
+build_command += f'--windows-icon-from-ico="{ico_path}" --assume-yes-for-downloads '
 build_command += f'--output-filename="{SOFTWARE_SHORT_NAME}.exe" --copyright="{copy_right}"  --mingw64 '
 build_command += f'--remove-output '
-build_command += main
+build_command += f'--script-name={main}'
 if __name__ == '__main__':
     try:
         print(build_command)
