@@ -459,7 +459,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if self.app.global_retry_task != 0 and self.app.current_task_num < self.app.max_download_task:
                     continue  # v1.3.8 修复:正常下载任务未达上限时,重试任务需等待当前任务完成后再创建。
                 else:
-                    await result
+                    try:
+                        await result
+                    except PermissionError as e:
+                        log.error(
+                            f'临时文件无法移动至下载路径,检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,{KeyWord.REASON}:"{e}"')
         # 等待所有任务完成。
         await self.queue.join()
 
