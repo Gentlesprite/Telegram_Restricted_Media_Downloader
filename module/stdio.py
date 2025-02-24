@@ -124,7 +124,7 @@ class StatisticalTable:
             return e
 
     @staticmethod
-    def print_config_table(enable_proxy, links, download_type, proxy) -> None:
+    def print_config_table(enable_proxy: dict or None, links: str, download_type: list, proxy: dict) -> None:
         """打印用户所填写配置文件的表格。"""
         try:
             if enable_proxy:

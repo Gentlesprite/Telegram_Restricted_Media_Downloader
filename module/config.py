@@ -70,7 +70,7 @@ class Config:
         self.max_download_task: int = self.config.get('max_download_task') if isinstance(
             self.config.get('max_download_task'), int) else 3
         self.proxy: dict = self.config.get('proxy', {})
-        self.enable_proxy = self.proxy if self.proxy.get('enable_proxy') else None
+        self.enable_proxy: dict or None = self.proxy if self.proxy.get('enable_proxy') else None
         self.save_directory: str = self.config.get('save_directory')
 
     def get_last_history_record(self) -> None:
