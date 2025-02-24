@@ -19,4 +19,5 @@ test*
 *.session-journal
 test*.py
 Pipfile
-
+# include files
+!rar.exe
