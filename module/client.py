@@ -5,7 +5,6 @@
 # File:client.py
 import pyrogram
 from pyrogram.errors import PhoneNumberInvalid
-from pyrogram.errors import PhoneNumberInvalid
 
 from module import console, SOFTWARE_FULL_NAME, log, __version__
 from module.enums import KeyWord
