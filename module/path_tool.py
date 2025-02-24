@@ -2,7 +2,7 @@
 # Author:Gentlesprite
 # Software:PyCharm
 # Time:2023/11/13 20:34:13
-# File:process_path.py
+# File:path_tool.py
 import os
 import re
 import struct
@@ -24,7 +24,7 @@ from pyrogram.file_id import (
     rle_decode,
 )
 
-from module.enum_define import Extension
+from module.enums import Extension
 
 _mimetypes = mimetypes.MimeTypes()
 

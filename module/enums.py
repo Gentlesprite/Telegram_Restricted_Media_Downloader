@@ -2,7 +2,7 @@
 # Author:Gentlesprite
 # Software:PyCharm
 # Time:2024/7/2 0:59
-# File:enum_define.py
+# File:enums.py
 import os
 import base64
 import ipaddress

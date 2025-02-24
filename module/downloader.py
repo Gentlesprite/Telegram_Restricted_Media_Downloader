@@ -18,8 +18,8 @@ from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyU
 from module import console, log
 from module.bot import Bot
 from module.app import Application, MetaData
-from module.process_path import is_file_duplicate, safe_delete, truncate_display_filename
-from module.enum_define import LinkType, DownloadStatus, DownloadType, KeyWord, Status, BotCallbackText, Base64Image
+from module.path_tool import is_file_duplicate, safe_delete, truncate_display_filename
+from module.enums import LinkType, DownloadStatus, DownloadType, KeyWord, Status, BotCallbackText, Base64Image
 
 
 class TelegramRestrictedMediaDownloader(Bot):
@@ -123,7 +123,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 msg = '🥰🥰🥰\n收款「二维码」已发送至您的「终端」与「对话框」十分感谢您的支持!'
             await callback_query.message.reply_text(msg)
         elif callback_data == BotCallbackText.LINK_TABLE:
-            res: bool or str = self.app.print_link_table()
+            res: bool or str = self.app.print_link_table(self.app.link_info)
             if isinstance(res, str):
                 await callback_query.message.edit_text(
                     '😵‍💫😵‍💫😵‍💫`链接统计表`打印失败。\n(具体原因请前往终端查看报错信息)')
@@ -132,7 +132,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             else:
                 await callback_query.message.edit_text('😵😵😵没有链接需要统计。')
         elif callback_data == BotCallbackText.COUNT_TABLE:
-            self.app.print_count_table()
+            self.app.print_count_table(download_type=self.app.download_type, record_dtype=self.app.record_dtype)
             await callback_query.message.edit_text('👌👌👌`计数统计表`已发送至您的「终端」请注意查收。')
         elif callback_data == BotCallbackText.BACK_HELP:
             await callback_query.message.delete()
@@ -473,7 +473,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         record_error: bool = False
         try:
             MetaData.print_meta()
-            self.app.print_config_table()
+            self.app.print_config_table(enable_proxy=self.app.enable_proxy, links=self.app.links,
+                                        download_type=self.app.download_type, proxy=self.app.proxy)
             self.loop.run_until_complete(self.__download_media_from_links())
         except (SessionRevoked, AuthKeyUnregistered, SessionExpired, ConnectionError) as e:
             log.error(f'登录时遇到错误,{KeyWord.REASON}:"{e}"')
@@ -500,8 +501,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.client.stop() if self.client.is_connected else None
             self.app.progress.stop()
             if not record_error:
-                self.app.print_link_table()
-                self.app.print_count_table()
+                self.app.print_link_table(link_info=self.app.link_info)
+                self.app.print_count_table(download_type=self.app.download_type, record_dtype=self.app.record_dtype)
                 MetaData.pay()
                 self.app.process_shutdown(60) if len(self.running_log) == 2 else None  # v1.2.8如果并未打开客户端执行任何下载,则不执行关机。
             self.app.ctrl_c()

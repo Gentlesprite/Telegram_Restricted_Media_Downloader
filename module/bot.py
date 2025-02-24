@@ -11,7 +11,7 @@ from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified, Acces
 from pyrogram.types import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 
 from module import __version__, __copyright__, SOFTWARE_FULL_NAME, __license__
-from module.enum_define import BotCommandText, BotMessage, BotCallbackText
+from module.enums import BotCommandText, BotMessage, BotCallbackText
 
 
 class Bot:
