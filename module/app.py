@@ -595,7 +595,7 @@ class Application:
         try:
             # 展示链接内容表格。
             with open(file=self.links, mode='r', encoding='UTF-8') as _:
-                res: list = [content.strip() for content in _.readlines()]
+                res: list = [content.strip() for content in _.readlines() if content.strip()]
             if res:
                 format_res: list = []
                 for i in enumerate(res, start=1):
