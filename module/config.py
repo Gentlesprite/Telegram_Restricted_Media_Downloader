@@ -8,7 +8,7 @@ import sys
 import datetime
 import platform
 
-import yaml
+from module import yaml
 
 from module import log, console, CustomDumper
 from module.path_tool import gen_backup_config, safe_delete
