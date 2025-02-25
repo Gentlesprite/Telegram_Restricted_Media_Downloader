@@ -22,10 +22,11 @@
 </p>
 
 
-
 作者:[Gentlesprite](https://github.com/Gentlesprite)
 
 B站视频教程:[点击观看](https://www.bilibili.com/video/BV1nCp8evEwv)
+
+Telegram交流群:[点击加入](https://t.me/+6KKA-buFaixmNTE1)
 
 软件免费使用!并且在GitHub开源，如果你付费那就是被骗了。
 
@@ -301,8 +302,6 @@ python main.py
 
 
 # 4.0.联系作者:
-
-  Telegram交流群:[点击加入](https://t.me/+6KKA-buFaixmNTE1)
 
   Telegram:[@Gentlesprite](https://t.me/Gentlesprite)
 
