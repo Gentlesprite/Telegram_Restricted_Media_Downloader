@@ -15,7 +15,8 @@ from module.enums import BotCommandText, BotMessage, BotCallbackText
 
 
 class Bot:
-    commands: List[BotCommand] = [BotCommand(BotCommandText.HELP[0], BotCommandText.HELP[1]),
+    BOT_NAME: str = 'TRMD_BOT'
+    COMMANDS: List[BotCommand] = [BotCommand(BotCommandText.HELP[0], BotCommandText.HELP[1]),
                                   BotCommand(BotCommandText.DOWNLOAD[0], BotCommandText.DOWNLOAD[1].replace('`', '')),
                                   BotCommand(BotCommandText.TABLE[0], BotCommandText.TABLE[1]),
                                   BotCommand(BotCommandText.EXIT[0], BotCommandText.EXIT[1])]
@@ -174,7 +175,7 @@ class Bot:
             self.bot = bot_client_obj
             self.user = user_client_obj
             await bot_client_obj.start()
-            await self.bot.set_bot_commands(self.commands)
+            await self.bot.set_bot_commands(self.COMMANDS)
             self.bot.add_handler(
                 MessageHandler(
                     self.help,

@@ -12,13 +12,12 @@ from typing import Dict, Tuple
 from functools import wraps
 
 import pyrogram
-from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, TransferSpeedColumn
 
 from module import Session
 from module import console, log
 from module import MAX_FILE_REFERENCE_TIME, SOFTWARE_FULL_NAME
 from module.path_tool import split_path, validate_title, truncate_filename, move_to_save_directory, get_extension, \
-    safe_delete, compare_file_size, get_file_size, get_terminal_width
+    safe_delete, compare_file_size,get_file_size
 from module.enums import DownloadType, DownloadStatus, KeyWord, Status
 from module.stdio import StatisticalTable, MetaData
 from module.client import TelegramRestrictedMediaDownloaderClient
@@ -38,24 +37,6 @@ class Application(Config, StatisticalTable):
         self.complete_link: set = set()
         self.link_info: dict = {}
         self.global_retry_task: int = 0
-        self.progress = Progress(TextColumn('[bold blue]{task.fields[filename]}', justify='right'),
-                                 BarColumn(bar_width=max(int(get_terminal_width() * 0.2), 1)),
-                                 '[progress.percentage]{task.percentage:>3.1f}%',
-                                 '•',
-                                 '[bold green]{task.fields[info]}',
-                                 '•',
-                                 TransferSpeedColumn(),
-                                 '•',
-                                 TimeRemainingColumn(),
-                                 console=console
-                                 )
-
-    @staticmethod
-    def download_bar(current, total, progress, task_id) -> None:
-        progress.update(task_id,
-                        completed=current,
-                        info=f'{MetaData.suitable_units_display(current)}/{MetaData.suitable_units_display(total)}',
-                        total=total)
 
     def build_client(self) -> pyrogram.Client:
         """用填写的配置文件,构造pyrogram客户端。"""

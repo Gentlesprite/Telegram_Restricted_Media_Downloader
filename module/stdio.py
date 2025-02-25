@@ -7,8 +7,10 @@ import qrcode
 from rich.style import Style
 from rich.table import Table
 from rich.markdown import Markdown
+from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, TransferSpeedColumn
 
 from module import log, console, README, SOFTWARE_FULL_NAME, __version__, __copyright__, __license__
+from module.path_tool import get_terminal_width
 from module.enums import DownloadType, KeyWord, GradientColor, ProcessConfig, Banner, QrcodeRender
 
 
@@ -267,3 +269,25 @@ class MetaData:
             for col_id, pixel in enumerate(row):
                 qr_map[row_id + 1][col_id + 1] = pixel
         return render(qr_map)
+
+
+class ProgressBar:
+    def __init__(self):
+        self.progress = Progress(TextColumn('[bold blue]{task.fields[filename]}', justify='right'),
+                                 BarColumn(bar_width=max(int(get_terminal_width() * 0.2), 1)),
+                                 '[progress.percentage]{task.percentage:>3.1f}%',
+                                 '•',
+                                 '[bold green]{task.fields[info]}',
+                                 '•',
+                                 TransferSpeedColumn(),
+                                 '•',
+                                 TimeRemainingColumn(),
+                                 console=console
+                                 )
+
+    @staticmethod
+    def download_bar(current, total, progress, task_id) -> None:
+        progress.update(task_id,
+                        completed=current,
+                        info=f'{MetaData.suitable_units_display(current)}/{MetaData.suitable_units_display(total)}',
+                        total=total)

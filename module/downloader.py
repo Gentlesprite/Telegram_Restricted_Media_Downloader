@@ -17,6 +17,7 @@ from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyU
 
 from module import console, log
 from module.bot import Bot
+from module.stdio import ProgressBar
 from module.app import Application, MetaData
 from module.path_tool import is_file_duplicate, safe_delete, truncate_display_filename
 from module.enums import LinkType, DownloadStatus, DownloadType, KeyWord, Status, BotCallbackText, Base64Image
@@ -35,6 +36,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.is_running: bool = False
         self.running_log: set = set()
         self.running_log.add(self.is_running)
+        self.pb = ProgressBar()
 
     async def get_link_from_bot(self,
                                 client: pyrogram.Client,
@@ -228,14 +230,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 f'{KeyWord.SIZE}:{format_file_size},'
                                 f'{KeyWord.TYPE}:{DownloadType.t(self.app.guess_file_type(file_name=file_name, status=DownloadStatus.DOWNLOADING)[0].text)},'
                                 f'{KeyWord.STATUS}:{Status.DOWNLOADING}。')
-                    task_id = self.app.progress.add_task(description='',
-                                                         filename=truncate_display_filename(file_name),
-                                                         info=f'0.00B/{format_file_size}',
-                                                         total=sever_file_size)
+                    task_id = self.pb.progress.add_task(description='',
+                                                        filename=truncate_display_filename(file_name),
+                                                        info=f'0.00B/{format_file_size}',
+                                                        total=sever_file_size)
                     _task = self.loop.create_task(
                         self.client.download_media(message=message,
-                                                   progress_args=(self.app.progress, task_id),
-                                                   progress=self.app.download_bar,
+                                                   progress_args=(self.pb.progress, task_id),
+                                                   progress=self.pb.download_bar,
                                                    file_name=temp_file_path))
                     console.log(f'[当前任务数]:{self.app.current_task_num}。', justify='right')
                     _task.add_done_callback(
@@ -279,7 +281,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'{_error}')
                 self.app.link_info.get(link).get('error_msg')[file_name] = _error.replace('。', '')
                 self.bot_task_link.discard(link)
-        self.app.progress.remove_task(task_id=task_id)
+        self.pb.progress.remove_task(task_id=task_id)
 
     async def __create_download_task(self,
                                      link: str,
@@ -429,11 +431,11 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     async def __download_media_from_links(self) -> None:
         await self.client.start()
-        self.app.progress.start()  # v1.1.8修复登录输入手机号不显示文本问题。
+        self.pb.progress.start()  # v1.1.8修复登录输入手机号不显示文本问题。
         if self.app.bot_token is not None:
             result = await self.start_bot(self.client,
                                           pyrogram.Client(
-                                              name=self.app.BOT_NAME,
+                                              name=self.BOT_NAME,
                                               api_hash=self.app.api_hash,
                                               api_id=self.app.api_id,
                                               bot_token=self.app.bot_token,
@@ -499,7 +501,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         finally:
             self.is_running = False
             self.client.stop() if self.client.is_connected else None
-            self.app.progress.stop()
+            self.pb.progress.stop()
             if not record_error:
                 self.app.print_link_table(link_info=self.app.link_info)
                 self.app.print_count_table(download_type=self.app.download_type, record_dtype=self.app.record_dtype)
