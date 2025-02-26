@@ -22,14 +22,13 @@
 </p>
 
 
-
 作者:[Gentlesprite](https://github.com/Gentlesprite)
 
 B站视频教程:[点击观看](https://www.bilibili.com/video/BV1nCp8evEwv)
 
+Telegram交流群:[点击加入](https://t.me/+6KKA-buFaixmNTE1)
+
 软件免费使用!并且在GitHub开源，如果你付费那就是被骗了。
-
-
 
 # 1.0.下载地址:
 
@@ -37,7 +36,7 @@ B站视频教程:[点击观看](https://www.bilibili.com/video/BV1nCp8evEwv)
 
 Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases)
 
-## 1.1.推荐终端（选看）:
+## 1.1.(选看)推荐终端:
 
 1. 对于Windows11用户，`Winodws Terminal`默认**已经安装好**，可直接**跳过**此步骤。
 
@@ -55,7 +54,7 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 # 2.0.快速开始:
 
-## 2.1.申请电报API
+## 2.1.申请电报API:
 
 1. 前往网站:**https://my.telegram.org/auth**
 
@@ -83,9 +82,9 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 5. 申请成功会得到一个`api_hash`和`api_id`保存下载，**切记不要泄露给任何人！**
 
-## 2.2.电报机器人(bot_token)申请及使用教程(选看)
+## 2.2.(选看)电报机器人(bot_token)申请及使用教程:
 
-### 	2.2.1.申请教程
+### 	2.2.1.申请教程:
 
 1. 前往网站:https://t.me/BotFather 
 
@@ -123,7 +122,7 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
    如果结果如**上图**所示，则代表`bot_token`申请成功了，箭头指的红框处就是你所申请的`bot_token`，**切记不要泄露给任何人！**
 
-### 	2.2.2.使用教程
+### 	2.2.2.使用教程:
 
 1. 申请完成后，在软件配置时询问"是否启用「机器人」(需要提供bot_token)? - 「y|n」(默认n)"选择`y`代表**需要**使用，如下图所示：
 
@@ -196,7 +195,7 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
    ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_21.png)
 
-## 2.3.配置文件说明
+## 2.3.配置文件说明:
 
 ```yaml
 # 这里只是介绍每个参数的含义,软件会详细地引导配置参数。
@@ -224,7 +223,7 @@ proxy: # 代理部分,如不使用请全部填null注意冒号后面有空格,�
 save_path: F:\directory\media\where\you\save # 下载的媒体保存的目录。
 ```
 
-## 2.4.**使用注意事项**
+## 2.4.**使用注意事项:**
 
 1. 链接获取方法：对想要保存的媒体文件点击**鼠标右键**然后选择**复制消息直链**如下图所示：
 
@@ -285,24 +284,21 @@ save_path: F:\directory\media\where\you\save # 下载的媒体保存的目录。
    
    注意这样写就**不会下载评论区**的内容了!链接中如果带`?single`或`?single&comment`字段，不用管，**直接复制**进来，程序会为你下载该链接的**所有内容**！
    
-## 2.5.**软件更新教程**
+## 2.5.**软件更新教程**:
 
 ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_5_1.png)
 
-# 3.0.在生产环境中运行
+# 3.0.在生产环境中运行:
 
 ```bash
 git clone https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader.git
 cd Telegram_Restricted_Media_Downloader
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 python main.py
 ```
 
-
-
 # 4.0.联系作者:
-
-  Telegram交流群:[点击加入](https://t.me/+6KKA-buFaixmNTE1)
 
   Telegram:[@Gentlesprite](https://t.me/Gentlesprite)
 
