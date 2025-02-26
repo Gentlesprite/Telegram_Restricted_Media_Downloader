@@ -4,6 +4,8 @@
 # Time:2024/7/22 22:37
 # File:build.py
 import os
+import sys
+
 from module import AUTHOR, __version__, __update_date__, SOFTWARE_SHORT_NAME
 
 ico_path = 'res/icon.ico'
@@ -18,11 +20,19 @@ build_command += f'--windows-icon-from-ico="{ico_path}" --assume-yes-for-downloa
 build_command += f'--output-filename="{SOFTWARE_SHORT_NAME}.exe" --copyright="{copy_right}" --msvc=latest '
 build_command += f'--remove-output '
 build_command += f'--script-name={main}'
-if __name__ == '__main__':
+
+
+def build(command):
+    print(command)
     try:
-        print(build_command)
-        os.system(build_command)
+        import nuitka
+        os.system(command)
     except ImportError:
-        print('如果Python版本满足3.13请使用命令:"pip install nuitka==2.6.7"安装Nuitka后重试。')
+        os.system('pip install nuitka==2.6.7') if sys.version_info >= (3, 13) else os.system('pip install nuitka')
+        build(command)
     except KeyboardInterrupt:
         print('键盘中断。')
+
+
+if __name__ == '__main__':
+    build(build_command)
