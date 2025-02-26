@@ -17,7 +17,7 @@ from module import Session
 from module import console, log
 from module import MAX_FILE_REFERENCE_TIME, SOFTWARE_FULL_NAME
 from module.path_tool import split_path, validate_title, truncate_filename, move_to_save_directory, get_extension, \
-    safe_delete, compare_file_size,get_file_size
+    safe_delete, compare_file_size, get_file_size
 from module.enums import DownloadType, DownloadStatus, KeyWord, Status
 from module.stdio import StatisticalTable, MetaData
 from module.client import TelegramRestrictedMediaDownloaderClient

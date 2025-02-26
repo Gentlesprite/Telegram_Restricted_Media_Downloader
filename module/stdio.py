@@ -227,7 +227,7 @@ class MetaData:
             highlight=False)
         console.print(f'[bold]{SOFTWARE_FULL_NAME} v{__version__}[/bold],\n[i]{__copyright__}[/i]'
                       )
-        console.print(f'Licensed under the terms of the {__license__}', end='\n')
+        console.print(f'Licensed under the terms of the {__license__}.', end='\n')
         console.print(GradientColor.gen_gradient_text('\t软件免费使用!并且在GitHub开源,如果你付费那就是被骗了。',
                                                       gradient_color=GradientColor.BLUE2PURPLE_14))
 

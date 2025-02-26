@@ -15,7 +15,7 @@ copy_right = f'Copyright (C) 2024-{years} {AUTHOR}.All rights reserved.'
 build_command = f'nuitka --standalone --onefile {include_module} '
 build_command += f'--output-dir={output} --file-version={__version__} --product-version={__version__} '
 build_command += f'--windows-icon-from-ico="{ico_path}" --assume-yes-for-downloads '
-build_command += f'--output-filename="{SOFTWARE_SHORT_NAME}.exe" --copyright="{copy_right}"  --mingw64 '
+build_command += f'--output-filename="{SOFTWARE_SHORT_NAME}.exe" --copyright="{copy_right}" --msvc=latest '
 build_command += f'--remove-output '
 build_command += f'--script-name={main}'
 if __name__ == '__main__':
@@ -23,6 +23,6 @@ if __name__ == '__main__':
         print(build_command)
         os.system(build_command)
     except ImportError:
-        print('请先使用命令:"pip install nuitka==2.4.8"安装Nuitka后重试。')
+        print('如果Python版本满足3.13请使用命令:"pip install nuitka==2.6.7"安装Nuitka后重试。')
     except KeyboardInterrupt:
         print('键盘中断。')
