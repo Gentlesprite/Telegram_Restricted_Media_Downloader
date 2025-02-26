@@ -444,6 +444,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.running_log.add(self.is_running)
         links: set or None = self.__process_links(link=self.app.links)
         # 将初始任务添加到队列中。
+        # todo 一个链接若存在多个媒体时,在"当前下载数"<"最大下载数"的情况下,其中的任意一个失败时,也会一直等待,直到当前所有媒体下载完成才创建重试任务。
         [await self.loop.create_task(self.__create_download_task(link=link)) for link in links] if links else None
         # 处理队列中的任务与机器人事件。
         while not self.queue.empty() or self.is_bot_running:
