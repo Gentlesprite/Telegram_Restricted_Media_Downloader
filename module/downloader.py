@@ -41,13 +41,13 @@ class TelegramRestrictedMediaDownloader(Bot):
     async def get_link_from_bot(self,
                                 client: pyrogram.Client,
                                 message: pyrogram.types.Message):
-        res: dict or None = await super().get_link_from_bot(client, message)
-        if res is None:
+        link_meta: dict or None = await super().get_link_from_bot(client, message)
+        if link_meta is None:
             return
         else:
-            right_link: set = res.get('right_link')
-            invalid_link: set = res.get('invalid_link')
-            last_bot_message = res.get('last_bot_message')
+            right_link: set = link_meta.get('right_link')
+            invalid_link: set = link_meta.get('invalid_link')
+            last_bot_message = link_meta.get('last_bot_message')
         chat_id: Union[int, str] = message.chat.id
         last_message_id: int = last_bot_message.id
         exist_link: set = set([_ for _ in right_link if _ in self.bot_task_link])
@@ -64,11 +64,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             return
         else:
             for link in links:
-                res = await self.__create_download_task(link=link)
-                if res is False:
-                    invalid_link.add(link)
-                else:
-                    self.bot_task_link.add(link)
+                task = await self.__create_download_task(link=link)
+                invalid_link.add(link) if task is False else self.bot_task_link.add(link)
             right_link -= invalid_link
             await self.edit_message_text(client=client,
                                          chat_id=chat_id,
@@ -412,9 +409,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                 links.add(link)
         elif isinstance(link, list):
             for i in link:
-                res = self.__process_links(link=i)
-                if res is not None:
-                    links.update(res)
+                _link: set or None = self.__process_links(link=i)
+                if _link is not None:
+                    links.update(_link)
         if links:
             return links
         elif not self.app.bot_token:
@@ -445,13 +442,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             console.log(result, style='#B1DB74' if self.is_bot_running else '#FF4689')
         self.is_running = True
         self.running_log.add(self.is_running)
-        txt_links = self.__process_links(link=self.app.links)
+        links: set or None = self.__process_links(link=self.app.links)
         # 将初始任务添加到队列中。
-        if txt_links:
-            for _link in txt_links:
-                await self.__create_download_task(link=_link)
-
-        # 处理队列中的任务,与机器人事件。
+        [await self.loop.create_task(self.__create_download_task(link=link)) for link in links] if links else None
+        # 处理队列中的任务与机器人事件。
         while not self.queue.empty() or self.is_bot_running:
             result = await self.queue.get()
             if isinstance(result, tuple):
