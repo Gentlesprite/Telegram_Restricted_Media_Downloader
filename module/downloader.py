@@ -470,6 +470,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'临时文件无法移动至下载路径,检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,{KeyWord.REASON}:"{e}"')
         # 等待所有任务完成。
         await self.queue.join()
+        await self.client.stop() if self.client.is_connected else None
 
     def run(self) -> None:
         record_error: bool = False
@@ -500,7 +501,6 @@ class TelegramRestrictedMediaDownloader(Bot):
             log.exception(msg=f'运行出错,{KeyWord.REASON}:"{e}"', exc_info=True)
         finally:
             self.is_running = False
-            self.client.stop() if self.client.is_connected else None
             self.pb.progress.stop()
             if not record_error:
                 self.app.print_link_table(link_info=self.app.link_info)
