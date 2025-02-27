@@ -17,6 +17,7 @@ from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyU
 
 from module import console, log
 from module.bot import Bot
+from module.task import Task
 from module.stdio import ProgressBar
 from module.app import Application, MetaData
 from module.path_tool import is_file_duplicate, safe_delete, truncate_display_filename
@@ -51,7 +52,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         chat_id: Union[int, str] = message.chat.id
         last_message_id: int = last_bot_message.id
         exist_link: set = set([_ for _ in right_link if _ in self.bot_task_link])
-        exist_link.update(right_link & self.app.complete_link)
+        exist_link.update(right_link & Task.COMPLETE_LINK)
         right_link -= exist_link
         await self.edit_message_text(client=client,
                                      chat_id=chat_id,
@@ -64,8 +65,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             return
         else:
             for link in links:
-                task = await self.__create_download_task(link=link)
-                invalid_link.add(link) if task is False else self.bot_task_link.add(link)
+                task: dict = await self.__create_download_task(link=link, retry=None)
+                invalid_link.add(link) if task.get('status') == DownloadStatus.FAILURE else self.bot_task_link.add(link)
             right_link -= invalid_link
             await self.edit_message_text(client=client,
                                          chat_id=chat_id,
@@ -122,7 +123,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 msg = '🥰🥰🥰\n收款「二维码」已发送至您的「终端」与「对话框」十分感谢您的支持!'
             await callback_query.message.reply_text(msg)
         elif callback_data == BotCallbackText.LINK_TABLE:
-            res: bool or str = self.app.print_link_table(self.app.link_info)
+            res: bool or str = self.app.print_link_table(Task.LINK_INFO)
             if isinstance(res, str):
                 await callback_query.message.edit_text(
                     '😵‍💫😵‍💫😵‍💫`链接统计表`打印失败。\n(具体原因请前往终端查看报错信息)')
@@ -171,24 +172,6 @@ class TelegramRestrictedMediaDownloader(Bot):
         except AttributeError:
             return None, None
 
-    def __listen_link_complete(self, link, file_name) -> bool:
-        self.app.link_info.get(link).get('file_name').add(file_name)
-        for i in self.app.link_info.items():
-            compare_link: str = i[0]
-            info: dict = i[1]
-            if compare_link == link:
-                info['complete_num'] = len(info.get('file_name'))
-        all_num: int = self.app.link_info.get(link).get('member_num')
-        complete_num: int = self.app.link_info.get(link).get('complete_num')
-        if all_num == complete_num:
-            console.log(f'{KeyWord.LINK}:"{link}",'
-                        f'{KeyWord.STATUS}:{Status.SUCCESS}。')
-            self.app.link_info.get(link)['error_msg'] = {}
-            self.app.complete_link.add(link)
-            return True
-        else:
-            return False
-
     async def __add_task(self, link, message: pyrogram.types.Message or list, retry: dict) -> None:
         retry_count = retry.get('count')
         retry_id = retry.get('id')
@@ -215,13 +198,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                 retry['id'] = file_id
                 if is_file_duplicate(save_directory=save_directory,
                                      sever_file_size=sever_file_size):  # 检测是否存在。
-                    if retry_count == 0:  # v1.2.9 下载失败时,不再重复打印已存在的文件信息。
-                        console.log(f'{KeyWord.ALREADY_EXIST}:"{save_directory}"')
-                        console.log(f'{KeyWord.FILE}:"{file_name}",'
-                                    f'{KeyWord.SIZE}:{format_file_size},'
-                                    f'{KeyWord.TYPE}:{DownloadType.t(self.app.guess_file_type(file_name=file_name, status=DownloadStatus.SKIP)[0].text)},'
-                                    f'{KeyWord.STATUS}:{Status.SKIP}。', style='#e6db74')
-                    self.__listen_link_complete(link=link, file_name=file_name)
+                    self.__complete_call(sever_file_size=sever_file_size,
+                                         temp_file_path=temp_file_path,
+                                         link=link,
+                                         file_name=file_name,
+                                         retry_count=retry_count,
+                                         file_id=file_id,
+                                         format_file_size=format_file_size,
+                                         task_id=None,
+                                         _future=save_directory)
                 else:
                     console.log(f'{KeyWord.FILE}:"{file_name}",'
                                 f'{KeyWord.SIZE}:{format_file_size},'
@@ -248,48 +233,53 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 task_id))
             self.queue.put_nowait(_task) if _task else None
 
+    @Task.on_complete
     def __complete_call(self, sever_file_size,
                         temp_file_path,
                         link, file_name,
                         retry_count, file_id,
                         format_file_size,
                         task_id, _future):
-        self.app.current_task_num -= 1
-        self.event.set()  # v1.3.4 修复重试下载被阻塞的问题。
-        self.queue.task_done()
-        if self.app.check_download_finish(sever_file_size=sever_file_size,
-                                          temp_file_path=temp_file_path,
-                                          save_directory=self.app.save_directory,
-                                          with_move=True):
-            self.__listen_link_complete(link=link, file_name=file_name)
-            console.log(f'[当前任务数]:{self.app.current_task_num}。', justify='right')
-        else:
-            if retry_count < self.app.max_retry_count:
-                retry_count += 1
-                task = self.loop.create_task(
-                    self.__create_download_task(link=link, retry={'id': file_id, 'count': retry_count}))
-                task.add_done_callback(partial(self.__retry_call,
-                                               f'[重新下载]:"{file_name}",[重试次数]:{retry_count}/{self.app.max_retry_count}。'))
-            else:
-                _error = f'(达到最大重试次数:{self.app.max_retry_count}次)。'
+        if task_id is None:
+            if retry_count == 0:
+                console.log(f'{KeyWord.ALREADY_EXIST}:"{_future}"')
                 console.log(f'{KeyWord.FILE}:"{file_name}",'
                             f'{KeyWord.SIZE}:{format_file_size},'
-                            f'{KeyWord.TYPE}:{DownloadType.t(self.app.guess_file_type(file_name=file_name, status=DownloadStatus.FAILURE)[0].text)},'
-                            f'{KeyWord.STATUS}:{Status.FAILURE}'
-                            f'{_error}')
-                self.app.link_info.get(link).get('error_msg')[file_name] = _error.replace('。', '')
-                self.bot_task_link.discard(link)
-        self.pb.progress.remove_task(task_id=task_id)
+                            f'{KeyWord.TYPE}:{DownloadType.t(self.app.guess_file_type(file_name=file_name, status=DownloadStatus.SKIP)[0].text)},'
+                            f'{KeyWord.STATUS}:{Status.SKIP}。', style='#e6db74')
+        else:
+            self.app.current_task_num -= 1
+            self.event.set()  # v1.3.4 修复重试下载被阻塞的问题。
+            self.queue.task_done()
+            if self.app.check_download_finish(sever_file_size=sever_file_size,
+                                              temp_file_path=temp_file_path,
+                                              save_directory=self.app.save_directory,
+                                              with_move=True):
+                console.log(f'[当前任务数]:{self.app.current_task_num}。', justify='right')
+            else:
+                if retry_count < self.app.max_retry_count:
+                    retry_count += 1
+                    task = self.loop.create_task(
+                        self.__create_download_task(link=link, retry={'id': file_id, 'count': retry_count}))
+                    task.add_done_callback(partial(self.__retry_call,
+                                                   f'[重新下载]:"{file_name}",[重试次数]:{retry_count}/{self.app.max_retry_count}。'))
+                else:
+                    _error = f'(达到最大重试次数:{self.app.max_retry_count}次)。'
+                    console.log(f'{KeyWord.FILE}:"{file_name}",'
+                                f'{KeyWord.SIZE}:{format_file_size},'
+                                f'{KeyWord.TYPE}:{DownloadType.t(self.app.guess_file_type(file_name=file_name, status=DownloadStatus.FAILURE)[0].text)},'
+                                f'{KeyWord.STATUS}:{Status.FAILURE}'
+                                f'{_error}')
+                    Task.LINK_INFO.get(link).get('error_msg')[file_name] = _error.replace('。', '')
+                    self.bot_task_link.discard(link)
+            self.pb.progress.remove_task(task_id=task_id)
+        return link, file_name
 
+    @Task.on_create_task
     async def __create_download_task(self,
                                      link: str,
-                                     retry: dict or None = None) -> bool:
+                                     retry: dict or None = None) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
-        self.app.link_info[link] = {'link_type': None,
-                                    'member_num': 0,
-                                    'complete_num': 0,
-                                    'file_name': set(),
-                                    'error_msg': {}}
         try:
             chat_id, message_id, comment_message = await self.__extract_link_content(link)
             msg = await self.client.get_messages(chat_id=chat_id, message_ids=message_id)  # 该消息的信息。
@@ -301,94 +291,76 @@ class TelegramRestrictedMediaDownloader(Bot):
                     if comment_message and group is None:
                         group = []
                         group.extend(comment_message)
-                link_type = LinkType.COMMENT if comment_message else LinkType.GROUP
-                self.app.link_info[link] = {'link_type': link_type,
-                                            'member_num': len(group),
-                                            'complete_num': 0,
-                                            'file_name': set(),
-                                            'error_msg': {}}
-                console.log(
-                    f'{KeyWord.CHANNEL}:"{chat_id}",'  # 频道名。
-                    f'{KeyWord.LINK}:"{link}",'  # 链接。
-                    f'{KeyWord.LINK_TYPE}:{LinkType.t(link_type)}。')  # 链接类型。
                 await self.__add_task(link, group, retry)
-                return True
+                return {'chat_id': chat_id,
+                        'link_type': LinkType.COMMENT if comment_message else LinkType.GROUP,
+                        'member_num': len(group),
+                        'status': DownloadStatus.DOWNLOADING,
+                        'e_code': None}
             elif res is False and group is None:  # 单文件。
-                link_type = LinkType.SINGLE
-                self.app.link_info[link] = {'link_type': link_type,
-                                            'member_num': 1,
-                                            'complete_num': 0,
-                                            'file_name': set(),
-                                            'error_msg': {}}
-                console.log(
-                    f'{KeyWord.CHANNEL}:"{chat_id}",'  # 频道名。
-                    f'{KeyWord.LINK}:"{link}",'  # 链接。
-                    f'{KeyWord.LINK_TYPE}:{LinkType.t(link_type)}。')  # 链接类型。
                 await self.__add_task(link, msg, retry)
-                return True
+                return {'chat_id': chat_id,
+                        'link_type': LinkType.SINGLE,
+                        'member_num': 1,
+                        'status': DownloadStatus.DOWNLOADING,
+                        'e_code': None}
             elif res is None and group is None:
-                error = '消息不存在,频道已解散或未在频道中'
-                self.app.link_info.get(link)['error_msg'] = {'all_member': error}
-                log.warning(
-                    f'{KeyWord.LINK}:"{link}"{error},{Status.FAILURE}。')
-                return False
+                return {'chat_id': chat_id,
+                        'link_type': None,
+                        'member_num': 0,
+                        'status': DownloadStatus.FAILURE,
+                        'e_code': {'all_member': '消息不存在,频道已解散或未在频道中', 'error_msg': None}}
             elif res is None and group == 0:
-                error = '未收录到的错误'
-                self.app.link_info.get(link)['error_msg'] = {'all_member': error}
-                log.error(f'{KeyWord.LINK}:"{link}"{error},'
-                          f'{KeyWord.STATUS}:{Status.FAILURE}。')
-                return False
+                return {'chat_id': chat_id,
+                        'member_num': 0,
+                        'link_type': None,
+                        'status': DownloadStatus.FAILURE,
+                        'e_code': {'all_member': '未收录到的错误', 'error_msg': None}}
         except UnicodeEncodeError as e:
-            error = '频道标题存在特殊字符,请移步终端下载'
-            self.app.link_info.get(link)['error_msg'] = {'all_member': e}
-            log.error(f'{KeyWord.LINK}:"{link}"{error},'
-                      f'{KeyWord.REASON}:"{e}",'
-                      f'{KeyWord.STATUS}:{Status.FAILURE}。')
-            return False
+            return {'chat_id': None,
+                    'member_num': 0,
+                    'link_type': None,
+                    'status': DownloadStatus.FAILURE,
+                    'e_code': {'all_member': '频道标题存在特殊字符,请移步终端下载', 'error_msg': str(e)}}
         except MsgIdInvalid as e:
-            self.app.link_info.get(link)['error_msg'] = {'all_member': e}
-            log.error(f'{KeyWord.LINK}:"{link}"消息不存在,可能已删除,'
-                      f'{KeyWord.REASON}:"{e}",'
-                      f'{KeyWord.STATUS}:{Status.FAILURE}。')
-            return False
+            return {'chat_id': None, 'member_num': 0,
+                    'link_type': None,
+                    'status': DownloadStatus.FAILURE,
+                    'e_code': {'all_member': '消息不存在,可能已删除,', 'error_msg': str(e)}}
         except UsernameInvalid as e:
-            self.app.link_info.get(link)['error_msg'] = {'all_member': e}
-            log.error(
-                f'{KeyWord.LINK}:"{link}"频道用户名无效,该链接的频道用户名可能已更改或频道已解散,'
-                f'{KeyWord.REASON}:"{e}",'
-                f'{KeyWord.STATUS}:{Status.FAILURE}。')
-            return False
+            return {'chat_id': None, 'member_num': 0,
+                    'link_type': None,
+                    'status': DownloadStatus.FAILURE,
+                    'e_code': {'all_member': '频道用户名无效,该链接的频道用户名可能已更改或频道已解散',
+                               'error_msg': str(e)}}
         except ChannelInvalid as e:
-            self.app.link_info.get(link)['error_msg'] = {'all_member': e}
-            log.error(
-                f'{KeyWord.LINK}:"{link}"频道可能为私密频道,请让当前账号加入该频道后再重试,'
-                f'{KeyWord.REASON}:"{e}",'
-                f'{KeyWord.STATUS}:{Status.FAILURE}。')
-            return False
+            return {'chat_id': None, 'member_num': 0,
+                    'link_type': None,
+                    'status': DownloadStatus.FAILURE,
+                    'e_code': {'all_member': '频道可能为私密频道,请让当前账号加入该频道后再重试', 'error_msg': str(e)}}
         except ChannelPrivate as e:
-            self.app.link_info.get(link)['error_msg'] = {'all_member': e}
-            log.error(
-                f'{KeyWord.LINK}:"{link}"频道可能为私密频道,当前账号可能已不在该频道,请让当前账号加入该频道后再重试,'
-                f'{KeyWord.REASON}:"{e}",'
-                f'{KeyWord.STATUS}:{Status.FAILURE}。')
-            return False
+            return {'chat_id': None, 'member_num': 0,
+                    'link_type': None,
+                    'status': DownloadStatus.FAILURE,
+                    'e_code': {
+                        'all_member': '频道可能为私密频道,当前账号可能已不在该频道,请让当前账号加入该频道后再重试',
+                        'error_msg': str(e)}}
         except BotMethodInvalid as e:
-            self.app.link_info.get(link)['error_msg'] = {'all_member': e}
             res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
-            msg = '已删除旧会话文件' if res else '请手动删除软件目录下的sessions文件夹'
-            log.error(
-                f'{KeyWord.LINK}:"{link}"检测到使用了「bot_token」方式登录了主账号的行为,{msg},请重启软件以「手机号码」方式重新登录,'
-                f'{KeyWord.REASON}:"{e}",'
-                f'{KeyWord.STATUS}:{Status.FAILURE}。')
-            return False
+            return {'chat_id': None, 'member_num': 0,
+                    'link_type': None,
+                    'status': DownloadStatus.FAILURE,
+                    'e_code': {
+                        'all_member': f'检测到使用了「bot_token」方式登录了主账号的行为,'
+                                      f'{'已删除旧会话文件' if res else '请手动删除软件目录下的sessions文件夹'},'
+                                      f'请重启软件以「手机号码」方式重新登录',
+                        'error_msg': str(e)}}
         except Exception as e:
-            self.app.link_info.get(link)['error_msg'] = {'all_member': e}
-            log.error(
-                f'{KeyWord.LINK}:"{link}"未收录到的错误,'
-                f'{KeyWord.REASON}:"{e}",'
-                f'{KeyWord.STATUS}:{Status.FAILURE}。')
             log.exception(e)
-            return False
+            return {'chat_id': None, 'member_num': 0,
+                    'link_type': None,
+                    'status': DownloadStatus.FAILURE,
+                    'e_code': {'all_member': '未收录到的错误', 'error_msg': str(e)}}
 
     def __process_links(self, link: str or list) -> set or None:
         """将链接(文本格式或链接)处理成集合。"""
@@ -416,7 +388,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         if links:
             return links
         elif not self.app.bot_token:
-            console.log('没有找到有效链接,程序已退出。')
+            console.log('没有找到有效链接,程序已退出。', style='#FF4689')
             sys.exit(0)
         else:
             console.log('没有找到有效链接。', style='#FF4689')
@@ -444,7 +416,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.running_log.add(self.is_running)
         links: set or None = self.__process_links(link=self.app.links)
         # 将初始任务添加到队列中。
-        [await self.loop.create_task(self.__create_download_task(link=link)) for link in links] if links else None
+        [await self.loop.create_task(self.__create_download_task(link=link, retry=None)) for link in
+         links] if links else None
         # 处理队列中的任务与机器人事件。
         while not self.queue.empty() or self.is_bot_running:
             result = await self.queue.get()
@@ -484,11 +457,12 @@ class TelegramRestrictedMediaDownloader(Bot):
         except Exception as e:
             record_error: bool = True
             log.exception(msg=f'运行出错,{KeyWord.REASON}:"{e}"', exc_info=True)
+
         finally:
             self.is_running = False
             self.pb.progress.stop()
             if not record_error:
-                self.app.print_link_table(link_info=self.app.link_info)
+                self.app.print_link_table(link_info=Task.LINK_INFO)
                 self.app.print_count_table(download_type=self.app.download_type, record_dtype=self.app.record_dtype)
                 MetaData.pay()
                 self.app.process_shutdown(60) if len(self.running_log) == 2 else None  # v1.2.8如果并未打开客户端执行任何下载,则不执行关机。

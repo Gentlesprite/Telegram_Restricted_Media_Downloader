@@ -34,8 +34,6 @@ class Application(Config, StatisticalTable):
         self.__get_download_type()
         self.current_task_num: int = 0
         self.max_retry_count: int = 3
-        self.complete_link: set = set()
-        self.link_info: dict = {}
 
     def build_client(self) -> pyrogram.Client:
         """用填写的配置文件,构造pyrogram客户端。"""
@@ -192,7 +190,7 @@ class Application(Config, StatisticalTable):
                                      f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} - undefined.unknown')
         return truncate_filename(file)
 
-    def __media_counter(func):
+    def __media_record(func):
         """统计媒体下载情况(数量)的装饰器。"""
 
         @wraps(func)
@@ -226,7 +224,7 @@ class Application(Config, StatisticalTable):
 
         return wrapper
 
-    @__media_counter
+    @__media_record
     def guess_file_type(self, file_name: str, status: DownloadStatus) -> Tuple[DownloadType, DownloadStatus]:
         """预测文件类型。"""
         result = ''
@@ -249,7 +247,7 @@ class Application(Config, StatisticalTable):
             self.download_type: list = DownloadType.support_type()
             self.record_dtype: set = {DownloadType.VIDEO.text,
                                       DownloadType.PHOTO.text}  # v1.2.4 修复此处报错问题v1.2.3此处有致命错误。
-            console.log('已使用[#f08a5d]「默认」[/#f08a5d]下载类型:3.视频和图片。')
+            console.log('已使用[#f08a5d]「默认」[/#f08a5d]下载类型:「3.视频和图片」。')
 
     def shutdown_task(self, second: int) -> None:
         """下载完成后自动关机的功能。"""

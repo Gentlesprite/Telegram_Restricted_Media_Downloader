@@ -18,6 +18,11 @@ class LinkType:
     GROUP: str = 'group'
     COMMENT: str = 'comment'
 
+    def __iter__(self):
+        for key, value in vars(self.__class__).items():
+            if not key.startswith('__') and not callable(value):  # 排除特殊方法和属性
+                yield value
+
     @staticmethod
     def t(text: str) -> str:
         translation = {
@@ -28,7 +33,7 @@ class LinkType:
         if text in translation:
             return translation[text]
         else:
-            raise ValueError(f'Unsupported Keyword:{text}')
+            return text
 
 
 class DownloadType(Enum):
@@ -58,7 +63,7 @@ class DownloadType(Enum):
         if text in translation:
             return translation[text]
         else:
-            raise ValueError(f'Unsupported Keyword:{text}')
+            return text
 
 
 class DownloadStatus(Enum):
@@ -78,6 +83,11 @@ class DownloadStatus(Enum):
             DownloadStatus.RETRY: 'retry'
         }[self]
 
+    def __iter__(self):
+        for key, value in vars(self.__class__).items():
+            if not key.startswith('__') and not callable(value):  # 排除特殊方法和属性
+                yield value
+
     @staticmethod
     def t(text: 'DownloadStatus.text', key_note: bool = False) -> str:
         translation = {
@@ -93,11 +103,7 @@ class DownloadStatus(Enum):
             else:
                 return translation[text]
         else:
-            raise ValueError(f'Unsupported Keyword:{text}')
-
-    @staticmethod
-    def all_status() -> list:
-        return [i.text for i in DownloadStatus]
+            return text
 
 
 class Status:
@@ -142,7 +148,7 @@ class _KeyWord:
             else:
                 return translation[text]
         else:
-            raise ValueError(f'Unsupported Keyword:{text}')
+            return text
 
 
 class KeyWord:
@@ -930,7 +936,7 @@ class BotCallbackText:
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
-            if not key.startswith('__'):  # 排除特殊方法和属性
+            if not key.startswith('__') and not callable(value):  # 排除特殊方法和属性
                 yield value
 
 
