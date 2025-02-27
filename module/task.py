@@ -37,14 +37,14 @@ class Task:
             chat_id, link_type, member_num, status, e_code = res.values()
             if status == DownloadStatus.FAILURE:
                 Task.LINK_INFO.get(link)['error_msg'] = e_code
-                reason: str = e_code.get('all_member')
+                reason: str = e_code.get('error_msg')
                 if reason:
-                    log.error(f'{KeyWord.LINK}:"{link}"{e_code.get('error_msg')},'
-                              f'{KeyWord.REASON}:"{reason},"'
+                    log.error(f'{KeyWord.LINK}:"{link}"{reason},'
+                              f'{KeyWord.REASON}:"{e_code.get('all_member')},"'
                               f'{KeyWord.STATUS}:{Status.FAILURE}。')
                 else:
                     log.warning(
-                        f'{KeyWord.LINK}:"{link}"{e_code.get('error_msg')},'
+                        f'{KeyWord.LINK}:"{link}"{e_code.get('all_member')},'
                         f'{KeyWord.STATUS}:{Status.FAILURE}。')
             elif status == DownloadStatus.DOWNLOADING:
                 Task.LINK_INFO.get(link)['link_type'] = link_type
