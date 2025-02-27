@@ -36,7 +36,6 @@ class Application(Config, StatisticalTable):
         self.max_retry_count: int = 3
         self.complete_link: set = set()
         self.link_info: dict = {}
-        self.global_retry_task: int = 0
 
     def build_client(self) -> pyrogram.Client:
         """用填写的配置文件,构造pyrogram客户端。"""

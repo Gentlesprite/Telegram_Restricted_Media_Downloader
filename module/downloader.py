@@ -266,9 +266,10 @@ class TelegramRestrictedMediaDownloader(Bot):
         else:
             if retry_count < self.app.max_retry_count:
                 retry_count += 1
-                self.app.global_retry_task += 1
-                notice = f'[重新下载]:"{file_name}",[重试次数]:{retry_count}/{self.app.max_retry_count}。'
-                self.queue.put_nowait((link, {'id': file_id, 'count': retry_count}, notice))
+                task = self.loop.create_task(
+                    self.__create_download_task(link=link, retry={'id': file_id, 'count': retry_count}))
+                task.add_done_callback(partial(self.__retry_call,
+                                               f'[重新下载]:"{file_name}",[重试次数]:{retry_count}/{self.app.max_retry_count}。'))
             else:
                 _error = f'(达到最大重试次数:{self.app.max_retry_count}次)。'
                 console.log(f'{KeyWord.FILE}:"{file_name}",'
@@ -421,10 +422,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             console.log('没有找到有效链接。', style='#FF4689')
             return None
 
-    def __retry_call(self, notice, _future):
+    @staticmethod
+    def __retry_call(notice, _future):
         console.log(notice)
-        self.app.global_retry_task -= 1
-        self.queue.task_done()
 
     async def __download_media_from_links(self) -> None:
         await self.client.start()
@@ -444,25 +444,15 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.running_log.add(self.is_running)
         links: set or None = self.__process_links(link=self.app.links)
         # 将初始任务添加到队列中。
-        # todo 一个链接若存在多个媒体时,在"当前下载数"<"最大下载数"的情况下,其中的任意一个失败时,也会一直等待,直到当前所有媒体下载完成才创建重试任务。
         [await self.loop.create_task(self.__create_download_task(link=link)) for link in links] if links else None
         # 处理队列中的任务与机器人事件。
         while not self.queue.empty() or self.is_bot_running:
             result = await self.queue.get()
-            if isinstance(result, tuple):
-                link, retry, notice = result
-                task = self.loop.create_task(self.__create_download_task(link=link, retry=retry))
-                task.add_done_callback(partial(self.__retry_call, notice))
-                await task
-            else:
-                if self.app.global_retry_task != 0 and self.app.current_task_num < self.app.max_download_task:
-                    continue  # v1.3.8 修复:正常下载任务未达上限时,重试任务需等待当前任务完成后再创建。
-                else:
-                    try:
-                        await result
-                    except PermissionError as e:
-                        log.error(
-                            f'临时文件无法移动至下载路径,检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,{KeyWord.REASON}:"{e}"')
+            try:
+                await result
+            except PermissionError as e:
+                log.error(
+                    f'临时文件无法移动至下载路径,检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,{KeyWord.REASON}:"{e}"')
         # 等待所有任务完成。
         await self.queue.join()
         await self.client.stop() if self.client.is_connected else None
