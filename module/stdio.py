@@ -193,6 +193,10 @@ class PanelTable:
 
 class MetaData:
     @staticmethod
+    def print_current_task_num(num: int) -> None:
+        console.log(f'[当前任务数]:{num}。', justify='right', style='#B1DB74')
+
+    @staticmethod
     def check_run_env() -> bool:  # 检测是windows平台下控制台运行还是IDE运行。
         try:
             from ctypes import windll  # v1.2.9 避免非Windows平台运行时报错。

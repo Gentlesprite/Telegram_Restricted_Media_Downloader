@@ -221,7 +221,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                                                    progress_args=(self.pb.progress, task_id),
                                                    progress=self.pb.download_bar,
                                                    file_name=temp_file_path))
-                    console.log(f'[当前任务数]:{self.app.current_task_num}。', justify='right')
+                    MetaData.print_current_task_num(self.app.current_task_num)
                     _task.add_done_callback(
                         partial(self.__complete_call, sever_file_size,
                                 temp_file_path,
@@ -255,7 +255,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                                               temp_file_path=temp_file_path,
                                               save_directory=self.app.save_directory,
                                               with_move=True):
-                console.log(f'[当前任务数]:{self.app.current_task_num}。', justify='right')
+                MetaData.print_current_task_num(self.app.current_task_num)
             else:
                 if retry_count < self.app.max_retry_count:
                     retry_count += 1
@@ -396,7 +396,7 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     @staticmethod
     def __retry_call(notice, _future):
-        console.log(notice)
+        console.log(notice, style='#FF4689')
 
     async def __download_media_from_links(self) -> None:
         await self.client.start()
