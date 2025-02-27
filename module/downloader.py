@@ -321,46 +321,46 @@ class TelegramRestrictedMediaDownloader(Bot):
                     'member_num': 0,
                     'link_type': None,
                     'status': DownloadStatus.FAILURE,
-                    'e_code': {'all_member': '频道标题存在特殊字符,请移步终端下载', 'error_msg': str(e)}}
+                    'e_code': {'all_member': str(e), 'error_msg': '频道标题存在特殊字符,请移步终端下载'}}
         except MsgIdInvalid as e:
             return {'chat_id': None, 'member_num': 0,
                     'link_type': None,
                     'status': DownloadStatus.FAILURE,
-                    'e_code': {'all_member': '消息不存在,可能已删除,', 'error_msg': str(e)}}
+                    'e_code': {'all_member': str(e), 'error_msg': '消息不存在,可能已删除'}}
         except UsernameInvalid as e:
             return {'chat_id': None, 'member_num': 0,
                     'link_type': None,
                     'status': DownloadStatus.FAILURE,
-                    'e_code': {'all_member': '频道用户名无效,该链接的频道用户名可能已更改或频道已解散',
-                               'error_msg': str(e)}}
+                    'e_code': {'all_member': str(e),
+                               'error_msg': '频道用户名无效,该链接的频道用户名可能已更改或频道已解散'}}
         except ChannelInvalid as e:
             return {'chat_id': None, 'member_num': 0,
                     'link_type': None,
                     'status': DownloadStatus.FAILURE,
-                    'e_code': {'all_member': '频道可能为私密频道,请让当前账号加入该频道后再重试', 'error_msg': str(e)}}
+                    'e_code': {'all_member': str(e), 'error_msg': '频道可能为私密频道,请让当前账号加入该频道后再重试'}}
         except ChannelPrivate as e:
             return {'chat_id': None, 'member_num': 0,
                     'link_type': None,
                     'status': DownloadStatus.FAILURE,
                     'e_code': {
-                        'all_member': '频道可能为私密频道,当前账号可能已不在该频道,请让当前账号加入该频道后再重试',
-                        'error_msg': str(e)}}
+                        'all_member': str(e),
+                        'error_msg': '频道可能为私密频道,当前账号可能已不在该频道,请让当前账号加入该频道后再重试'}}
         except BotMethodInvalid as e:
             res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
             return {'chat_id': None, 'member_num': 0,
                     'link_type': None,
                     'status': DownloadStatus.FAILURE,
                     'e_code': {
-                        'all_member': f'检测到使用了「bot_token」方式登录了主账号的行为,'
-                                      f'{'已删除旧会话文件' if res else '请手动删除软件目录下的sessions文件夹'},'
-                                      f'请重启软件以「手机号码」方式重新登录',
-                        'error_msg': str(e)}}
+                        'all_member': str(e),
+                        'error_msg': f'检测到使用了「bot_token」方式登录了主账号的行为,'
+                                     f'{'已删除旧会话文件' if res else '请手动删除软件目录下的sessions文件夹'},'
+                                     f'请重启软件以「手机号码」方式重新登录'}}
         except Exception as e:
             log.exception(e)
             return {'chat_id': None, 'member_num': 0,
                     'link_type': None,
                     'status': DownloadStatus.FAILURE,
-                    'e_code': {'all_member': '未收录到的错误', 'error_msg': str(e)}}
+                    'e_code': {'all_member': str(e), 'error_msg': '未收录到的错误'}}
 
     def __process_links(self, link: str or list) -> set or None:
         """将链接(文本格式或链接)处理成集合。"""
