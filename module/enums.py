@@ -8,8 +8,6 @@ import base64
 import ipaddress
 from io import BytesIO
 
-from enum import Enum
-
 from module import console, log
 
 
@@ -18,151 +16,44 @@ class LinkType:
     GROUP: str = 'group'
     COMMENT: str = 'comment'
 
-    def __iter__(self):
-        for key, value in vars(self.__class__).items():
-            if not key.startswith('__') and not callable(value):  # 排除特殊方法和属性
-                yield value
 
-    @staticmethod
-    def t(text: str) -> str:
-        translation = {
-            LinkType.SINGLE: '单文件',
-            LinkType.GROUP: '组文件',
-            LinkType.COMMENT: '评论区文件',
-        }
-        if text in translation:
-            return translation[text]
-        else:
-            return text
-
-
-class DownloadType(Enum):
-    VIDEO = 0
-    PHOTO = 1
-    DOCUMENT = 2
-
-    @property
-    def text(self) -> str:
-        return {
-            DownloadType.VIDEO: 'video',
-            DownloadType.PHOTO: 'photo',
-            DownloadType.DOCUMENT: 'document'
-        }[self]
-
-    @staticmethod
-    def support_type() -> list:
-        return [i.text for i in DownloadType]
-
-    @staticmethod
-    def t(text: 'DownloadType.text') -> str:
-        translation = {
-            DownloadType.VIDEO.text: '视频',
-            DownloadType.PHOTO.text: '图片',
-            DownloadType.DOCUMENT.text: '文档'
-        }
-        if text in translation:
-            return translation[text]
-        else:
-            return text
-
-
-class DownloadStatus(Enum):
-    DOWNLOADING = 0
-    SUCCESS = 1
-    FAILURE = 2
-    SKIP = 3
-    RETRY = 4
-
-    @property
-    def text(self) -> str:
-        return {
-            DownloadStatus.DOWNLOADING: 'downloading',
-            DownloadStatus.SUCCESS: 'success',
-            DownloadStatus.FAILURE: 'failure',
-            DownloadStatus.SKIP: 'skip',
-            DownloadStatus.RETRY: 'retry'
-        }[self]
+class DownloadType:
+    VIDEO: str = 'video'
+    PHOTO: str = 'photo'
+    DOCUMENT: str = 'document'
+    __t: dict = {VIDEO: 'video',
+                 PHOTO: 'photo',
+                 DOCUMENT: 'document'}
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
-            if not key.startswith('__') and not callable(value):  # 排除特殊方法和属性
+            if not key.startswith('_') and not callable(value):  # 排除特殊方法和属性。
                 yield value
 
-    @staticmethod
-    def t(text: 'DownloadStatus.text', key_note: bool = False) -> str:
-        translation = {
-            DownloadStatus.DOWNLOADING.text: '下载中',
-            DownloadStatus.SUCCESS.text: '成功',
-            DownloadStatus.FAILURE.text: '失败',
-            DownloadStatus.SKIP.text: '跳过',
-            DownloadStatus.RETRY.text: '重试'
-        }
-        if text in translation:
-            if key_note:
-                return f'[{translation[text]}]'
-            else:
-                return translation[text]
-        else:
-            return text
 
-
-class Status:
-    DOWNLOADING = DownloadStatus.t(DownloadStatus.DOWNLOADING.text)
-    SUCCESS = DownloadStatus.t(DownloadStatus.SUCCESS.text)
-    FAILURE = DownloadStatus.t(DownloadStatus.FAILURE.text)
-    SKIP = DownloadStatus.t(DownloadStatus.SKIP.text)
-
-
-class _KeyWord:
-    LINK: str = 'link'
-    LINK_TYPE: str = 'link_type'
-    SIZE: str = 'size'
-    STATUS: str = 'status'
-    FILE: str = 'file'
-    ERROR_SIZE: str = 'error_size'
-    ACTUAL_SIZE: str = 'actual_size'
-    ALREADY_EXIST: str = 'already_exist'
-    CHANNEL: str = 'channel'
-    TYPE: str = 'type'
-    REASON: str = 'reason'
-
-    @staticmethod
-    def t(text: str, key_note: bool = False) -> str:
-        translation = {
-            _KeyWord.LINK: '链接',
-            _KeyWord.LINK_TYPE: '链接类型',
-            _KeyWord.SIZE: '大小',
-            _KeyWord.STATUS: '状态',
-            _KeyWord.FILE: '文件',
-            _KeyWord.ERROR_SIZE: '错误大小',
-            _KeyWord.ACTUAL_SIZE: '实际大小',
-            _KeyWord.ALREADY_EXIST: '已存在',
-            _KeyWord.CHANNEL: '频道',
-            _KeyWord.TYPE: '类型',
-            _KeyWord.REASON: '原因'
-        }
-
-        if text in translation:
-            if key_note:
-                return f'[{translation[text]}]'
-            else:
-                return translation[text]
-        else:
-            return text
+class DownloadStatus:
+    DOWNLOADING = 'downloading'
+    SUCCESS = 'success'
+    FAILURE = 'failure'
+    SKIP = 'skip'
+    RETRY = 'retry'
 
 
 class KeyWord:
-    LINK = _KeyWord.t(_KeyWord.LINK, True)
-    LINK_TYPE = _KeyWord.t(_KeyWord.LINK_TYPE, True)
-    SIZE = _KeyWord.t(_KeyWord.SIZE, True)
-    STATUS = _KeyWord.t(_KeyWord.STATUS, True)
-    FILE = _KeyWord.t(_KeyWord.FILE, True)
-    ERROR_SIZE = _KeyWord.t(_KeyWord.ERROR_SIZE, True)
-    ACTUAL_SIZE = _KeyWord.t(_KeyWord.ACTUAL_SIZE, True)
-    ALREADY_EXIST = _KeyWord.t(_KeyWord.ALREADY_EXIST, True)
-    CHANNEL = _KeyWord.t(_KeyWord.CHANNEL, True)
-    TYPE = _KeyWord.t(_KeyWord.TYPE, True)
-    REASON = _KeyWord.t(_KeyWord.REASON, False)
+    LINK: str = '[link]'
+    LINK_TYPE: str = '[link type]'
+    SIZE: str = '[size]'
+    STATUS: str = '[status]'
+    FILE: str = '[file]'
+    ERROR_SIZE: str = '[error size]'
+    ACTUAL_SIZE: str = '[actual size]'
+    ALREADY_EXIST: str = '[already exist]'
+    CHANNEL: str = '[channel]'
+    TYPE: str = '[type]'
+    RELOAD: str = '[reload]'
+    RELOAD_TIMES: str = '[reload times]'
+    CURRENT_TASK: str = '[current task]'
+    REASON: str = 'reason'
 
 
 class Extension:
@@ -198,76 +89,18 @@ class Extension:
 
 class GradientColor:
     # 生成渐变色:https://photokit.com/colors/color-gradient/?lang=zh
-    BLUE2PURPLE_14 = ['#0ebeff',
-                      '#21b4f9',
-                      '#33abf3',
-                      '#46a1ed',
-                      '#5898e8',
-                      '#6b8ee2',
-                      '#7d85dc',
-                      '#907bd6',
-                      '#a272d0',
-                      '#b568ca',
-                      '#c75fc5',
-                      '#da55bf',
-                      '#ec4cb9',
-                      '#ff42b3']
-    GREEN2PINK_11 = ['#00ff40',
-                     '#14f54c',
-                     '#29eb58',
-                     '#3de064',
-                     '#52d670',
-                     '#66cc7c',
-                     '#7ac288',
-                     '#8fb894',
-                     '#a3ada0',
-                     '#b8a3ac',
-                     '#cc99b8']
-    GREEN2BLUE_10 = ['#84fab0',
-                     '#85f6b8',
-                     '#86f1bf',
-                     '#88edc7',
-                     '#89e9ce',
-                     '#8ae4d6',
-                     '#8be0dd',
-                     '#8ddce5',
-                     '#8ed7ec',
+    BLUE2PURPLE_14 = ['#0ebeff', '#21b4f9', '#33abf3', '#46a1ed', '#5898e8', '#6b8ee2', '#7d85dc', '#907bd6', '#a272d0',
+                      '#b568ca', '#c75fc5', '#da55bf', '#ec4cb9', '#ff42b3']
+    GREEN2PINK_11 = ['#00ff40', '#14f54c', '#29eb58', '#3de064', '#52d670', '#66cc7c', '#7ac288', '#8fb894', '#a3ada0',
+                     '#b8a3ac', '#cc99b8']
+    GREEN2BLUE_10 = ['#84fab0', '#85f6b8', '#86f1bf', '#88edc7', '#89e9ce', '#8ae4d6', '#8be0dd', '#8ddce5', '#8ed7ec',
                      '#8fd3f4']
-    YELLOW2GREEN_10 = ['#d4fc79',
-                       '#cdfa7d',
-                       '#c6f782',
-                       '#bff586',
-                       '#b8f28b',
-                       '#b2f08f',
-                       '#abed94',
-                       '#a4eb98',
-                       '#9de89d',
-                       '#96e6a1']
-    new_life = ['#43e97b',
-                '#42eb85',
-                '#41ed8f',
-                '#3fee9a',
-                '#3ef0a4',
-                '#3df2ae',
-                '#3cf4b8',
-                '#3af5c3',
-                '#39f7cd',
+    YELLOW2GREEN_10 = ['#d4fc79', '#cdfa7d', '#c6f782', '#bff586', '#b8f28b', '#b2f08f', '#abed94', '#a4eb98',
+                       '#9de89d', '#96e6a1']
+    ORANGE2YELLOW_15 = ['#f08a5d', '#f1915e', '#f1985f', '#f29f60', '#f3a660', '#f3ad61', '#f4b462', '#f5bc63',
+                        '#f5c364', '#f6ca65', '#f6d166', '#f7d866', '#f8df67', '#f8e668', '#f9ed69']
+    NEW_LIFE = ['#43e97b', '#42eb85', '#41ed8f', '#3fee9a', '#3ef0a4', '#3df2ae', '#3cf4b8', '#3af5c3', '#39f7cd',
                 '#38f9d7']
-    ORANGE2YELLOW_15 = ['#f08a5d',
-                        '#f1915e',
-                        '#f1985f',
-                        '#f29f60',
-                        '#f3a660',
-                        '#f3ad61',
-                        '#f4b462',
-                        '#f5bc63',
-                        '#f5c364',
-                        '#f6ca65',
-                        '#f6d166',
-                        '#f7d866',
-                        '#f8df67',
-                        '#f8e668',
-                        '#f9ed69']
 
     @staticmethod
     def __extend_gradient_colors(colors: list, target_length: int) -> list:
@@ -346,17 +179,17 @@ class Banner:
      ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚══════╝╚══════╝╚═╝     ╚═╝  ╚═╝╚═╝   ╚═╝   ╚══════╝           
             '''
     D = r'''                                                                          
-                                        ,,                                       ,,                    
-  .g8"""bgd                      mm   `7MM                                       db   mm               
-.dP'     `M                      MM     MM                                            MM               
-dM'       `   .gP"Ya `7MMpMMMb.mmMMmm   MM  .gP"Ya  ,pP"Ybd `7MMpdMAo.`7Mb,od8 `7MM mmMMmm .gP"Ya      
-MM           ,M'   Yb  MM    MM  MM     MM ,M'   Yb 8I   `"   MM   `Wb  MM' "'   MM   MM  ,M'   Yb     
-MM.    `7MMF'8M""""""  MM    MM  MM     MM 8M"""""" `YMMMa.   MM    M8  MM       MM   MM  8M""""""     
-`Mb.     MM  YM.    ,  MM    MM  MM     MM YM.    , L.   I8   MM   ,AP  MM       MM   MM  YM.    ,     
-  `"bmmmdPY   `Mbmmd'.JMML  JMML.`Mbmo.JMML.`Mbmmd' M9mmmP'   MMbmmd' .JMML.   .JMML. `Mbmo`Mbmmd'     
-                                                              MM                                       
-                                                            .JMML.                                     
-    '''
+                                            ,,                                       ,,                    
+      .g8"""bgd                      mm   `7MM                                       db   mm               
+    .dP'     `M                      MM     MM                                            MM               
+    dM'       `   .gP"Ya `7MMpMMMb.mmMMmm   MM  .gP"Ya  ,pP"Ybd `7MMpdMAo.`7Mb,od8 `7MM mmMMmm .gP"Ya      
+    MM           ,M'   Yb  MM    MM  MM     MM ,M'   Yb 8I   `"   MM   `Wb  MM' "'   MM   MM  ,M'   Yb     
+    MM.    `7MMF'8M""""""  MM    MM  MM     MM 8M"""""" `YMMMa.   MM    M8  MM       MM   MM  8M""""""     
+    `Mb.     MM  YM.    ,  MM    MM  MM     MM YM.    , L.   I8   MM   ,AP  MM       MM   MM  YM.    ,     
+      `"bmmmdPY   `Mbmmd'.JMML  JMML.`Mbmo.JMML.`Mbmmd' M9mmmP'   MMbmmd' .JMML.   .JMML. `Mbmo`Mbmmd'     
+                                                                  MM                                       
+                                                                .JMML.                                     
+        '''
 
 
 class Validator:
@@ -520,23 +353,23 @@ class ProcessConfig:
     def set_dtype(_dtype) -> list:
         i_dtype = int(_dtype)  # 因为终端输入是字符串，这里需要转换为整数。
         if i_dtype == 1:
-            return [DownloadType.VIDEO.text]
+            return [DownloadType.VIDEO]
         elif i_dtype == 2:
-            return [DownloadType.PHOTO.text]
+            return [DownloadType.PHOTO]
         elif i_dtype == 3:
-            return [DownloadType.VIDEO.text, DownloadType.PHOTO.text]
+            return [DownloadType.VIDEO, DownloadType.PHOTO]
 
     @staticmethod
     def get_dtype(download_dtype: list) -> dict:
         """获取所需下载文件的类型。"""
-        if DownloadType.DOCUMENT.text in download_dtype:
-            download_dtype.remove(DownloadType.DOCUMENT.text)
+        if DownloadType.DOCUMENT in download_dtype:
+            download_dtype.remove(DownloadType.DOCUMENT)
         dt_length = len(download_dtype)
         if dt_length == 1:
             dtype: str = download_dtype[0]
-            if dtype == DownloadType.VIDEO.text:
+            if dtype == DownloadType.VIDEO:
                 return {'video': True, 'photo': False}
-            elif dtype == DownloadType.PHOTO.text:
+            elif dtype == DownloadType.PHOTO:
                 return {'video': False, 'photo': True}
         elif dt_length == 2:
             return {'video': True, 'photo': True}

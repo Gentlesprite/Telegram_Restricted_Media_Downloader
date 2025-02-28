@@ -18,10 +18,12 @@ from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyU
 from module import console, log
 from module.bot import Bot
 from module.task import Task
+from module.language import _t
 from module.stdio import ProgressBar
 from module.app import Application, MetaData
-from module.path_tool import is_file_duplicate, safe_delete, truncate_display_filename
-from module.enums import LinkType, DownloadStatus, DownloadType, KeyWord, Status, BotCallbackText, Base64Image
+from module.path_tool import is_file_duplicate, safe_delete, truncate_display_filename, get_file_size, split_path, \
+    compare_file_size, move_to_save_directory
+from module.enums import LinkType, DownloadStatus, KeyWord, BotCallbackText, Base64Image
 
 
 class TelegramRestrictedMediaDownloader(Bot):
@@ -132,7 +134,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             else:
                 await callback_query.message.edit_text('😵😵😵没有链接需要统计。')
         elif callback_data == BotCallbackText.COUNT_TABLE:
-            self.app.print_count_table(download_type=self.app.download_type, record_dtype=self.app.record_dtype)
+            self.app.print_count_table(record_dtype=self.app.record_dtype)
             await callback_query.message.edit_text('👌👌👌`计数统计表`已发送至您的「终端」请注意查收。')
         elif callback_data == BotCallbackText.BACK_HELP:
             await callback_query.message.delete()
@@ -208,10 +210,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                                          task_id=None,
                                          _future=save_directory)
                 else:
-                    console.log(f'{KeyWord.FILE}:"{file_name}",'
-                                f'{KeyWord.SIZE}:{format_file_size},'
-                                f'{KeyWord.TYPE}:{DownloadType.t(self.app.guess_file_type(file_name=file_name, status=DownloadStatus.DOWNLOADING)[0].text)},'
-                                f'{KeyWord.STATUS}:{Status.DOWNLOADING}。')
+                    console.log(f'{_t(KeyWord.FILE)}:"{file_name}",'
+                                f'{_t(KeyWord.SIZE)}:{format_file_size},'
+                                f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.DOWNLOADING))},'
+                                f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.DOWNLOADING)}。')
                     task_id = self.pb.progress.add_task(description='',
                                                         filename=truncate_display_filename(file_name),
                                                         info=f'0.00B/{format_file_size}',
@@ -233,6 +235,38 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 task_id))
             self.queue.put_nowait(_task) if _task else None
 
+    def check_download_finish(self, sever_file_size: int,
+                              temp_file_path: str,
+                              save_directory: str,
+                              with_move: bool = True) -> bool:
+        """检测文件是否下完。"""
+        temp_ext: str = '.temp'
+        local_file_size: int = get_file_size(file_path=temp_file_path, temp_ext=temp_ext)
+        format_local_size: str = MetaData.suitable_units_display(local_file_size)
+        format_sever_size: str = MetaData.suitable_units_display(sever_file_size)
+        _file_path: str = os.path.join(save_directory, split_path(temp_file_path).get('file_name'))
+        file_path: str = _file_path[:-len(temp_ext)] if _file_path.endswith(temp_ext) else _file_path
+        if compare_file_size(a_size=local_file_size, b_size=sever_file_size):
+            if with_move:
+                result: str = move_to_save_directory(temp_file_path=temp_file_path,
+                                                     save_directory=save_directory).get('e_code')
+                log.warning(result) if result is not None else None
+            console.log(
+                f'{_t(KeyWord.FILE)}:"{file_path}",'
+                f'{_t(KeyWord.SIZE)}:{format_local_size},'
+                f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(temp_file_path, DownloadStatus.SUCCESS))},'
+                f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SUCCESS)}。',
+            )
+            return True
+        console.log(
+            f'{_t(KeyWord.FILE)}:"{file_path}",'
+            f'{_t(KeyWord.ERROR_SIZE)}:{format_local_size},'
+            f'{_t(KeyWord.ACTUAL_SIZE)}:{format_sever_size},'
+            f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(temp_file_path, DownloadStatus.FAILURE))},'
+            f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。')
+        safe_delete(file_p_d=temp_file_path)  # v1.2.9 修复临时文件删除失败的问题。
+        return False
+
     @Task.on_complete
     def __complete_call(self, sever_file_size,
                         temp_file_path,
@@ -242,33 +276,36 @@ class TelegramRestrictedMediaDownloader(Bot):
                         task_id, _future):
         if task_id is None:
             if retry_count == 0:
-                console.log(f'{KeyWord.ALREADY_EXIST}:"{_future}"')
-                console.log(f'{KeyWord.FILE}:"{file_name}",'
-                            f'{KeyWord.SIZE}:{format_file_size},'
-                            f'{KeyWord.TYPE}:{DownloadType.t(self.app.guess_file_type(file_name=file_name, status=DownloadStatus.SKIP)[0].text)},'
-                            f'{KeyWord.STATUS}:{Status.SKIP}。', style='#e6db74')
+                console.log(f'{_t(KeyWord.ALREADY_EXIST)}:"{_future}"')
+                console.log(f'{_t(KeyWord.FILE)}:"{file_name}",'
+                            f'{_t(KeyWord.SIZE)}:{format_file_size},'
+                            f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.SKIP))},'
+                            f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。', style='#e6db74')
         else:
             self.app.current_task_num -= 1
             self.event.set()  # v1.3.4 修复重试下载被阻塞的问题。
             self.queue.task_done()
-            if self.app.check_download_finish(sever_file_size=sever_file_size,
-                                              temp_file_path=temp_file_path,
-                                              save_directory=self.app.save_directory,
-                                              with_move=True):
+            if self.check_download_finish(sever_file_size=sever_file_size,
+                                          temp_file_path=temp_file_path,
+                                          save_directory=self.app.save_directory,
+                                          with_move=True):
                 MetaData.print_current_task_num(self.app.current_task_num)
             else:
                 if retry_count < self.app.max_retry_count:
                     retry_count += 1
                     task = self.loop.create_task(
                         self.__create_download_task(link=link, retry={'id': file_id, 'count': retry_count}))
-                    task.add_done_callback(partial(self.__retry_call,
-                                                   f'[重新下载]:"{file_name}",[重试次数]:{retry_count}/{self.app.max_retry_count}。'))
+                    task.add_done_callback(
+                        partial(self.__retry_call,
+                                f'{_t(KeyWord.RELOAD)}:"{file_name}",'
+                                f'{_t(KeyWord.RELOAD_TIMES)}:{retry_count}/{self.app.max_retry_count}。'
+                                ))
                 else:
                     _error = f'(达到最大重试次数:{self.app.max_retry_count}次)。'
-                    console.log(f'{KeyWord.FILE}:"{file_name}",'
-                                f'{KeyWord.SIZE}:{format_file_size},'
-                                f'{KeyWord.TYPE}:{DownloadType.t(self.app.guess_file_type(file_name=file_name, status=DownloadStatus.FAILURE)[0].text)},'
-                                f'{KeyWord.STATUS}:{Status.FAILURE}'
+                    console.log(f'{_t(KeyWord.FILE)}:"{file_name}",'
+                                f'{_t(KeyWord.SIZE)}:{format_file_size},'
+                                f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.FAILURE))},'
+                                f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}'
                                 f'{_error}')
                     Task.LINK_INFO.get(link).get('error_msg')[file_name] = _error.replace('。', '')
                     self.bot_task_link.discard(link)
@@ -377,7 +414,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     elif i == '':
                         continue
                     else:
-                        log.warning(f'"{i}"是一个非法链接,{KeyWord.STATUS}:{Status.SKIP}。')
+                        log.warning(f'"{i}"是一个非法链接,{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。')
             elif link.startswith(start_content):
                 links.add(link)
         elif isinstance(link, list):
@@ -425,7 +462,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await result
             except PermissionError as e:
                 log.error(
-                    f'临时文件无法移动至下载路径,检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,{KeyWord.REASON}:"{e}"')
+                    f'临时文件无法移动至下载路径,检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,{_t(KeyWord.REASON)}:"{e}"')
         # 等待所有任务完成。
         await self.queue.join()
         await self.client.stop() if self.client.is_connected else None
@@ -438,7 +475,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                                         download_type=self.app.download_type, proxy=self.app.proxy)
             self.loop.run_until_complete(self.__download_media_from_links())
         except (SessionRevoked, AuthKeyUnregistered, SessionExpired, ConnectionError) as e:
-            log.error(f'登录时遇到错误,{KeyWord.REASON}:"{e}"')
+            log.error(f'登录时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
             record_error: bool = True
             if res:
@@ -447,23 +484,22 @@ class TelegramRestrictedMediaDownloader(Bot):
                 log.error('账号已失效,请手动删除软件目录下的sessions文件夹后重启软件。')
         except AttributeError as e:
             record_error: bool = True
-            log.error(f'登录超时,请重新打开软件尝试登录,{KeyWord.REASON}:"{e}"')
+            log.error(f'登录超时,请重新打开软件尝试登录,{_t(KeyWord.REASON)}:"{e}"')
         except KeyboardInterrupt:
             console.log('用户手动终止下载任务。')
         except OperationalError as e:
             record_error: bool = True
             log.error(
-                f'检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,{KeyWord.REASON}:"{e}"')
+                f'检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,{_t(KeyWord.REASON)}:"{e}"')
         except Exception as e:
             record_error: bool = True
-            log.exception(msg=f'运行出错,{KeyWord.REASON}:"{e}"', exc_info=True)
-
+            log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
         finally:
             self.is_running = False
             self.pb.progress.stop()
             if not record_error:
                 self.app.print_link_table(link_info=Task.LINK_INFO)
-                self.app.print_count_table(download_type=self.app.download_type, record_dtype=self.app.record_dtype)
+                self.app.print_count_table(record_dtype=self.app.record_dtype)
                 MetaData.pay()
                 self.app.process_shutdown(60) if len(self.running_log) == 2 else None  # v1.2.8如果并未打开客户端执行任何下载,则不执行关机。
             self.app.ctrl_c()

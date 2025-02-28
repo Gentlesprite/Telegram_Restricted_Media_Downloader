@@ -10,6 +10,7 @@ from rich.markdown import Markdown
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, TransferSpeedColumn
 
 from module import log, console, README, SOFTWARE_FULL_NAME, __version__, __copyright__, __license__
+from module.language import _t
 from module.path_tool import get_terminal_width
 from module.enums import DownloadType, KeyWord, GradientColor, ProcessConfig, Banner, QrcodeRender
 
@@ -20,11 +21,9 @@ class StatisticalTable:
         self.success_video, self.success_photo = set(), set()
         self.failure_video, self.failure_photo = set(), set()
 
-    def print_count_table(self, download_type: list, record_dtype: set) -> None:
+    def print_count_table(self, record_dtype: set) -> None:
         """打印统计的下载信息的表格。"""
         header: tuple = ('种类&状态', '成功下载', '失败下载', '跳过下载', '合计')
-        download_type.remove(
-            DownloadType.DOCUMENT.text) if DownloadType.DOCUMENT.text in download_type else None
         success_video: int = len(self.success_video)
         failure_video: int = len(self.failure_video)
         skip_video: int = len(self.skip_video)
@@ -36,11 +35,11 @@ class StatisticalTable:
         rdt_length: int = len(record_dtype)
         if rdt_length == 1:
             _compare_dtype: list = list(record_dtype)[0]
-            if _compare_dtype == DownloadType.VIDEO.text:  # 只有视频的情况。
+            if _compare_dtype == DownloadType.VIDEO:  # 只有视频的情况。
                 video_table = PanelTable(title='视频下载统计',
                                          header=header,
                                          data=[
-                                             [DownloadType.t(DownloadType.VIDEO.text),
+                                             [_t(DownloadType.VIDEO),
                                               success_video,
                                               failure_video,
                                               skip_video,
@@ -52,11 +51,11 @@ class StatisticalTable:
                                          ]
                                          )
                 video_table.print_meta()
-            if _compare_dtype == DownloadType.PHOTO.text:  # 只有图片的情况。
+            if _compare_dtype == DownloadType.PHOTO:  # 只有图片的情况。
                 photo_table = PanelTable(title='图片下载统计',
                                          header=header,
                                          data=[
-                                             [DownloadType.t(DownloadType.PHOTO.text),
+                                             [_t(DownloadType.PHOTO),
                                               success_photo,
                                               failure_photo,
                                               skip_photo,
@@ -72,12 +71,12 @@ class StatisticalTable:
             media_table = PanelTable(title='媒体下载统计',
                                      header=header,
                                      data=[
-                                         [DownloadType.t(DownloadType.VIDEO.text),
+                                         [_t(DownloadType.VIDEO),
                                           success_video,
                                           failure_video,
                                           skip_video,
                                           total_video],
-                                         [DownloadType.t(DownloadType.PHOTO.text),
+                                         [_t(DownloadType.PHOTO),
                                           success_photo,
                                           failure_photo,
                                           skip_photo,
@@ -122,7 +121,7 @@ class StatisticalTable:
             else:
                 return False
         except Exception as e:
-            log.error(f'打印下载链接统计表时出错,{KeyWord.REASON}:"{e}"')
+            log.error(f'打印下载链接统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
             return e
 
     @staticmethod
@@ -144,9 +143,9 @@ class StatisticalTable:
                 proxy_table.print_meta()
             else:
                 console.log(GradientColor.gen_gradient_text(text='当前没有使用代理!',
-                                                            gradient_color=GradientColor.new_life))
+                                                            gradient_color=GradientColor.NEW_LIFE))
         except Exception as e:
-            log.error(f'打印代理配置表时出错,{KeyWord.REASON}:"{e}"')
+            log.error(f'打印代理配置表时出错,{_t(KeyWord.REASON)}:"{e}"')
         try:
             # 展示链接内容表格。
             with open(file=links, mode='r', encoding='UTF-8') as _:
@@ -159,19 +158,19 @@ class StatisticalTable:
                                         data=format_res)
                 link_table.print_meta()
         except (FileNotFoundError, PermissionError, AttributeError) as e:  # v1.1.3 用户错误填写路径提示。
-            log.error(f'读取"{links}"时出错,{KeyWord.REASON}:"{e}"')
+            log.error(f'读取"{links}"时出错,{_t(KeyWord.REASON)}:"{e}"')
         except Exception as e:
-            log.error(f'打印链接内容统计表时出错,{KeyWord.REASON}:"{e}"')
+            log.error(f'打印链接内容统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
         try:
             _dtype: list = download_type.copy()  # 浅拷贝赋值给_dtype,避免传入函数后改变原数据。
-            data: list = [[DownloadType.t(DownloadType.VIDEO.text),
+            data: list = [[_t(DownloadType.VIDEO),
                            ProcessConfig.get_dtype(_dtype).get('video')],
-                          [DownloadType.t(DownloadType.PHOTO.text),
+                          [_t(DownloadType.PHOTO),
                            ProcessConfig.get_dtype(_dtype).get('photo')]]
             download_type_table = PanelTable(title='下载类型', header=('类型', '是否下载'), data=data)
             download_type_table.print_meta()
         except Exception as e:
-            log.error(f'打印下载类型统计表时出错,{KeyWord.REASON}:"{e}"')
+            log.error(f'打印下载类型统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
 
 
 class PanelTable:
@@ -194,7 +193,7 @@ class PanelTable:
 class MetaData:
     @staticmethod
     def print_current_task_num(num: int) -> None:
-        console.log(f'[当前任务数]:{num}。', justify='right', style='#B1DB74')
+        console.log(f'{KeyWord.CURRENT_TASK}:{num}。', justify='right', style='#B1DB74')
 
     @staticmethod
     def check_run_env() -> bool:  # 检测是windows平台下控制台运行还是IDE运行。
