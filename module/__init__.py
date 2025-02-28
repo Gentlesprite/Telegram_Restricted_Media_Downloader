@@ -59,7 +59,9 @@ __update_date__ = '2025/02/28 15:37:45'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/Gentlesprite>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
-APPDATA_PATH = os.path.join(os.environ.get('APPDATA'), SOFTWARE_SHORT_NAME)
+APPDATA_PATH = os.path.join(
+    os.environ.get('APPDATA') or os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config')),
+    SOFTWARE_SHORT_NAME)
 os.makedirs(APPDATA_PATH, exist_ok=True)  # v1.2.6修复初次运行打开报错问题。
 INPUT_HISTORY_PATH = os.path.join(APPDATA_PATH, f'.{SOFTWARE_SHORT_NAME}_HISTORY')
 MAX_RECORD_LENGTH = 1000
