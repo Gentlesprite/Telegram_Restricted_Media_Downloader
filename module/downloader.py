@@ -35,7 +35,6 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.event = asyncio.Event()
         self.queue = asyncio.Queue()
         self.app = Application()
-        self.client = self.app.build_client()
         self.is_running: bool = False
         self.running_log: set = set()
         self.running_log.add(self.is_running)
@@ -161,7 +160,7 @@ class TelegramRestrictedMediaDownloader(Bot):
 
         if is_comment:
             # 如果用户需要同时下载媒体下面的评论,把评论中的所有信息放入列表一起返回。
-            async for comment in self.client.get_discussion_replies(chat_id, message_id):
+            async for comment in self.app.client.get_discussion_replies(chat_id, message_id):
                 comment_message.append(comment)
         return chat_id, message_id, comment_message
 
@@ -219,7 +218,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                                                         info=f'0.00B/{format_file_size}',
                                                         total=sever_file_size)
                     _task = self.loop.create_task(
-                        self.client.download_media(message=message,
+                        self.app.client.download_media(message=message,
                                                    progress_args=(self.pb.progress, task_id),
                                                    progress=self.pb.download_bar,
                                                    file_name=temp_file_path))
@@ -319,7 +318,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         retry = retry if retry else {'id': -1, 'count': 0}
         try:
             chat_id, message_id, comment_message = await self.__extract_link_content(link)
-            msg = await self.client.get_messages(chat_id=chat_id, message_ids=message_id)  # 该消息的信息。
+            msg = await self.app.client.get_messages(chat_id=chat_id, message_ids=message_id)  # 该消息的信息。
             res, group = await self.__is_group(msg)
             if res or comment_message:  # 组或评论区。
                 try:  # v1.1.2解决当group返回None时出现comment无法下载的问题。
@@ -436,10 +435,10 @@ class TelegramRestrictedMediaDownloader(Bot):
         console.log(notice, style='#FF4689')
 
     async def __download_media_from_links(self) -> None:
-        await self.client.start()
+        await self.app.client.start()
         self.pb.progress.start()  # v1.1.8修复登录输入手机号不显示文本问题。
         if self.app.bot_token is not None:
-            result = await self.start_bot(self.client,
+            result = await self.start_bot(self.app.client,
                                           pyrogram.Client(
                                               name=self.BOT_NAME,
                                               api_hash=self.app.api_hash,
@@ -465,7 +464,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'临时文件无法移动至下载路径,检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,{_t(KeyWord.REASON)}:"{e}"')
         # 等待所有任务完成。
         await self.queue.join()
-        await self.client.stop() if self.client.is_connected else None
+        await self.app.client.stop() if self.app.client.is_connected else None
 
     def run(self) -> None:
         record_error: bool = False

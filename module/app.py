@@ -26,11 +26,10 @@ from module.path_tool import split_path, validate_title, truncate_filename, get_
 
 class Application(Config, StatisticalTable):
 
-    def __init__(self,
-                 client_obj: callable = TelegramRestrictedMediaDownloaderClient):
+    def __init__(self):
         Config.__init__(self)
         StatisticalTable.__init__(self)
-        self.client_obj: callable = client_obj
+        self.client = self.build_client()
         self.__get_download_type()
         self.current_task_num: int = 0
         self.max_retry_count: int = 3
@@ -39,12 +38,12 @@ class Application(Config, StatisticalTable):
         """用填写的配置文件,构造pyrogram客户端。"""
         os.makedirs(self.work_directory, exist_ok=True)
         Session.WAIT_TIMEOUT = min(Session.WAIT_TIMEOUT + self.max_download_task ** 2, MAX_FILE_REFERENCE_TIME)
-        return self.client_obj(name=SOFTWARE_FULL_NAME.replace(' ', ''),
-                               api_id=self.api_id,
-                               api_hash=self.api_hash,
-                               proxy=self.enable_proxy,
-                               workdir=self.work_directory,
-                               max_concurrent_transmissions=self.max_download_task)
+        return TelegramRestrictedMediaDownloaderClient(name=SOFTWARE_FULL_NAME.replace(' ', ''),
+                                                       api_id=self.api_id,
+                                                       api_hash=self.api_hash,
+                                                       proxy=self.enable_proxy,
+                                                       workdir=self.work_directory,
+                                                       max_concurrent_transmissions=self.max_download_task)
         # v1.3.7 新增多任务下载功能,无论是否Telegram会员。
         # https://stackoverflow.com/questions/76714896/pyrogram-download-multiple-files-at-the-same-time
 
