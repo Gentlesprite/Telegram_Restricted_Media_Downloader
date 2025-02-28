@@ -21,9 +21,6 @@ class DownloadType:
     VIDEO: str = 'video'
     PHOTO: str = 'photo'
     DOCUMENT: str = 'document'
-    __t: dict = {VIDEO: 'video',
-                 PHOTO: 'photo',
-                 DOCUMENT: 'document'}
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
