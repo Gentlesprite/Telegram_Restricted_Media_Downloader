@@ -7,7 +7,7 @@
 <p align="center">
 </p>
 <p align="center">
-  A telegram downloader on windows platform based on Python.
+  A telegram downloader on windows and linux platform based on Python.
 </p>
 <p align="center">
   <a style="text-decoration:none">
@@ -17,10 +17,13 @@
     <img src="https://img.shields.io/badge/pyrogram@kurigram-2.1.39-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.1.39"/>
   </a>
   <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/Platform-Windows%20-blue?color=00B16A" alt="Platform Windows"/>
+    <img src="https://img.shields.io/badge/Platform-Windows & Linux%20-blue?color=00B16A" alt="Platform Windows & Linux"/>
   </a>
 </p>
 
+> [!NOTE]
+> 由于本项目**没有提供**Linux环境下的二进制文件，但**支持**Linux环境运行。  
+> 故Linux用户请**阅读**:[_"3.0.在生产环境中运行(对于Linux用户)"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7)。
 
 
 作者:[Gentlesprite](https://github.com/Gentlesprite)
@@ -84,7 +87,10 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 5. 申请成功会得到一个`api_hash`和`api_id`保存下载，**切记不要泄露给任何人！**
 
 ## 2.2.(选看)电报机器人(bot_token)申请及使用教程:
-
+> [!NOTE]
+> 如果配置了机器人，只要**保持软件运行**，就能实现**多端发送下载命令**。  
+> 故可以将软件部署在服务器上，无论`Winodws`还是`Linux`平台，随时进行下载。  
+> 部署教程请阅读:[_"3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)。
 ### 	2.2.1.申请教程:
 
 1. 前往网站:https://t.me/BotFather 
