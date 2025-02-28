@@ -6,7 +6,6 @@
 import os
 import atexit
 import logging
-import readline
 import platform
 from logging.handlers import RotatingFileHandler
 
@@ -31,6 +30,7 @@ def get_peer_type_new(peer_id: int) -> str:
 def read_input_history(history_path: str, max_record_len: int, **kwargs) -> None:
     if kwargs.get('platform') == 'Windows':
         # 尝试读取历史记录文件。
+        import readline
         try:
             readline.read_history_file(history_path)
         except FileNotFoundError:
