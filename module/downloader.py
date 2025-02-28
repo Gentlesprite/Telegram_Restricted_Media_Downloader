@@ -353,7 +353,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     'e_code': {
                         'all_member': str(e),
                         'error_msg': f'检测到使用了「bot_token」方式登录了主账号的行为,'
-                                     f'{'已删除旧会话文件' if res else '请手动删除软件目录下的sessions文件夹'},'
+                                     f'{"已删除旧会话文件" if res else "请手动删除软件目录下的sessions文件夹"},'
                                      f'请重启软件以「手机号码」方式重新登录'}}
         except Exception as e:
             log.exception(e)
