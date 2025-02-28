@@ -193,7 +193,7 @@ class PanelTable:
 class MetaData:
     @staticmethod
     def print_current_task_num(num: int) -> None:
-        console.log(f'{KeyWord.CURRENT_TASK}:{num}。', justify='right', style='#B1DB74')
+        console.log(f'{_t(KeyWord.CURRENT_TASK)}:{num}。', justify='right', style='#B1DB74')
 
     @staticmethod
     def check_run_env() -> bool:  # 检测是windows平台下控制台运行还是IDE运行。
