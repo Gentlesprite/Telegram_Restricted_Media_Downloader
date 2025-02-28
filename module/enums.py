@@ -40,19 +40,19 @@ class DownloadStatus:
 
 
 class KeyWord:
-    LINK: str = '[link]'
-    LINK_TYPE: str = '[link type]'
-    SIZE: str = '[size]'
-    STATUS: str = '[status]'
-    FILE: str = '[file]'
-    ERROR_SIZE: str = '[error size]'
-    ACTUAL_SIZE: str = '[actual size]'
-    ALREADY_EXIST: str = '[already exist]'
-    CHANNEL: str = '[channel]'
-    TYPE: str = '[type]'
-    RELOAD: str = '[reload]'
-    RELOAD_TIMES: str = '[reload times]'
-    CURRENT_TASK: str = '[current task]'
+    LINK: str = 'link'
+    LINK_TYPE: str = 'link type'
+    SIZE: str = 'size'
+    STATUS: str = 'status'
+    FILE: str = 'file'
+    ERROR_SIZE: str = 'error size'
+    ACTUAL_SIZE: str = 'actual size'
+    ALREADY_EXIST: str = 'already exist'
+    CHANNEL: str = 'channel'
+    TYPE: str = 'type'
+    RELOAD: str = 'reload'
+    RELOAD_TIMES: str = 'reload times'
+    CURRENT_TASK: str = 'current task'
     REASON: str = 'reason'
 
 
