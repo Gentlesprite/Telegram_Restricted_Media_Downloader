@@ -39,9 +39,9 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 ## 1.1.(选看)推荐终端:
 
-1. 对于Windows11用户，`Winodws Terminal`默认**已经安装好**，可直接**跳过**此步骤。
+1. _对于Windows11用户_，`Winodws Terminal`默认**已经安装好**，可直接**跳过**此步骤。
 
-2. 对于Windows10用户，推荐使用`Winodws Terminal`作为**默认终端**，仅作为推荐安装，无论安装与否**不会影响本软件的使用**，`Winodws Terminal`能提供更出色的显示、交互、体验效果，以及避免出现**文字显示**乱码。
+2. _对于Windows10用户_，推荐使用`Winodws Terminal`作为**默认终端**，仅作为推荐安装，无论安装与否**不会影响本软件的使用**，`Winodws Terminal`能提供更出色的显示、交互、体验效果，以及避免出现**文字显示**乱码。
 
    Winodws Terminal 微软商店:[点击跳转下载](https://apps.microsoft.com/detail/9n0dx20hk701?launch=true&mode=full&hl=zh-cn&gl=cn&ocid=bingwebsearch)
 
@@ -291,12 +291,39 @@ save_path: F:\directory\media\where\you\save # 下载的媒体保存的目录。
 
 # 3.0.在生产环境中运行:
 
-```bash
+_**推荐**使用`Python==3.13.2`作为该项目环境。_
+
+## 对于Windows用户:
+
+```shell
+# 需安装git并配置好环境变量。
 git clone https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader.git
 cd Telegram_Restricted_Media_Downloader
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 python main.py
+```
+## 对于Linux用户:
+
+```bash
+git clone https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader.git
+cd Telegram_Restricted_Media_Downloader
+python3 -m pip install --upgrade pip
+pip3 install -r requirements.txt
+python3 main.py
+```
+
+```bash
+# 如果提示没有安装pip使用如下命令进行安装:
+sudo apt update
+sudo apt-get install python3-pip
+```
+
+## 关于更新:
+
+```shell
+# 在项目目录下打开终端使用如下命令进行拉取最新版本:
+git pull
 ```
 
 # 4.0.联系作者:
