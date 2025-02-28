@@ -312,17 +312,18 @@ python3 -m pip install --upgrade pip
 pip3 install -r requirements.txt
 python3 main.py
 ```
+_如果提示**没有安装pip**使用如下命令进行安装:_
 
 ```bash
-# 如果提示没有安装pip使用如下命令进行安装:
 sudo apt update
 sudo apt-get install python3-pip
 ```
 
 ## 关于更新:
 
+_在**项目目录**下打开终端使用如下命令拉取仓库当前的**最新版本**:_
+
 ```shell
-# 在项目目录下打开终端使用如下命令进行拉取最新版本:
 git pull
 ```
 
