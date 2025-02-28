@@ -6,11 +6,10 @@
 import os
 import sys
 import datetime
-import platform
 
 from module import yaml
 
-from module import log, console, CustomDumper
+from module import log, console, CustomDumper, PLATFORM
 from module.path_tool import gen_backup_config, safe_delete
 from module.enums import KeyWord, GetStdioParams, ProcessConfig
 
@@ -43,7 +42,7 @@ class Config:
     WORK_DIRECTORY: str = os.path.join(os.getcwd(), 'sessions')
 
     def __init__(self):
-        self.platform: str = platform.system()
+        self.platform: str = PLATFORM
         self.history_timestamp: dict = {}
         self.input_link: list = []
         self.last_record: dict = {}

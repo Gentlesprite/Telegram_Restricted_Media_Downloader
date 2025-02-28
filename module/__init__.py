@@ -7,6 +7,7 @@ import os
 import atexit
 import logging
 import readline
+import platform
 from logging.handlers import RotatingFileHandler
 
 import yaml
@@ -27,16 +28,17 @@ def get_peer_type_new(peer_id: int) -> str:
         return 'chat'
 
 
-def read_input_history(history_path: str, max_record_len: int) -> None:
-    # 尝试读取历史记录文件。
-    try:
-        readline.read_history_file(history_path)
-    except FileNotFoundError:
-        pass
-    # 设置历史记录的最大长度。
-    readline.set_history_length(max_record_len)
-    # 注册退出时保存历史记录。
-    atexit.register(readline.write_history_file, history_path)
+def read_input_history(history_path: str, max_record_len: int, **kwargs) -> None:
+    if kwargs.get('platform') == 'Windows':
+        # 尝试读取历史记录文件。
+        try:
+            readline.read_history_file(history_path)
+        except FileNotFoundError:
+            pass
+        # 设置历史记录的最大长度。
+        readline.set_history_length(max_record_len)
+        # 注册退出时保存历史记录。
+        atexit.register(readline.write_history_file, history_path)
 
 
 class CustomDumper(yaml.Dumper):
@@ -62,10 +64,11 @@ SOFTWARE_SHORT_NAME = 'TRMD'
 APPDATA_PATH = os.path.join(
     os.environ.get('APPDATA') or os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config')),
     SOFTWARE_SHORT_NAME)
+PLATFORM = platform.system()
 os.makedirs(APPDATA_PATH, exist_ok=True)  # v1.2.6修复初次运行打开报错问题。
 INPUT_HISTORY_PATH = os.path.join(APPDATA_PATH, f'.{SOFTWARE_SHORT_NAME}_HISTORY')
 MAX_RECORD_LENGTH = 1000
-read_input_history(history_path=INPUT_HISTORY_PATH, max_record_len=MAX_RECORD_LENGTH)
+read_input_history(history_path=INPUT_HISTORY_PATH, max_record_len=MAX_RECORD_LENGTH, platform=PLATFORM)
 # 配置日志输出到文件
 LOG_PATH = os.path.join(APPDATA_PATH, f'{SOFTWARE_SHORT_NAME}_LOG.log')
 MAX_LOG_SIZE = 10 * 1024 * 1024  # 10 MB
