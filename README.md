@@ -296,7 +296,7 @@ _**推荐**使用`Python==3.13.2`作为该项目环境。_
 ## 对于Windows用户:
 
 ```shell
-# 需安装git并配置好环境变量。
+# 需安装git与python并配置好环境变量。
 git clone https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader.git
 cd Telegram_Restricted_Media_Downloader
 python -m pip install --upgrade pip
