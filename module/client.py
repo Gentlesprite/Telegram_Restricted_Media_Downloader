@@ -8,13 +8,12 @@ from pyrogram.errors import PhoneNumberInvalid
 
 from module import console, SOFTWARE_FULL_NAME, log, __version__
 from module.enums import KeyWord
+from module.language import _t
 
 
 class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
 
     async def authorize(self) -> pyrogram.types.User:
-        if self.bot_token:
-            return await self.sign_in_bot(self.bot_token)
         console.print(
             f'Pyrogram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n'
             f'under the terms of the {pyrogram.__license__}.')
@@ -23,34 +22,32 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             f'基于Pyrogram(版本 {pyrogram.__version__})。')
         while True:
             try:
-                if not self.phone_number:
-                    while True:
-                        value = console.input('请输入「电话号码」([#6a2c70]电话号码[/#6a2c70]需以[#b83b5e]「+地区」'
-                                              '[/#b83b5e]开头!如:[#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):').strip()
-                        if not value:
-                            continue
+                while True:
+                    value = console.input('请输入「电话号码」([#6a2c70]电话号码[/#6a2c70]需以[#b83b5e]「+地区」[/#b83b5e]开头!'
+                                          '如:[#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):').strip()
+                    if not value.startswith('+'):
+                        log.warning(f'意外的参数:"{value}",电话号码需以「+地区」开头!')
+                        continue
+                    if len(value) < 8 or len(value) > 16:
+                        log.warning(f'意外的参数:"{value}",电话号码无效!')
+                        continue
+                    if not value:
+                        continue
 
-                        confirm = console.input(
-                            f'所输入的「{value}」是否[#B1DB74]正确[/#B1DB74]? - 「y|n」(默认y): ').strip().lower()
-                        if confirm in ('y', ''):
-                            break
-                        else:
-                            log.warning(f'意外的参数:"{confirm}",支持的参数 - 「y|n」')
-                    if ':' in value:
-                        self.bot_token = value
-                        return await self.sign_in_bot(value)
+                    confirm = console.input(
+                        f'所输入的「{value}」是否[#B1DB74]正确[/#B1DB74]? - 「y|n」(默认y): ').strip().lower()
+                    if confirm in ('y', ''):
+                        break
                     else:
-                        self.phone_number = value
-
+                        log.warning(f'意外的参数:"{confirm}",支持的参数 - 「y|n」')
+                self.phone_number = value
                 sent_code = await self.send_code(self.phone_number)
             except pyrogram.errors.BadRequest as e:
                 console.print(e.MESSAGE)
                 self.phone_number = None
-                self.bot_token = None
             except (PhoneNumberInvalid, AttributeError) as e:
                 self.phone_number = None
-                self.bot_token = None
-                log.error(f'「电话号码」错误,请重新输入!{KeyWord.REASON}:"{e.MESSAGE}"')
+                log.error(f'「电话号码」错误,请重新输入!{_t(KeyWord.REASON)}:"{e.MESSAGE}"')
             else:
                 break
 

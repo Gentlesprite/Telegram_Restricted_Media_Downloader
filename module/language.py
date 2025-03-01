@@ -3,8 +3,6 @@
 # Software:PyCharm
 # Time:2025/3/1 1:15
 # File:language.py
-
-
 translations: dict = {'single': ['单文件'],
                       'group': ['组文件'],
                       'comment': ['评论区文件'],
@@ -38,5 +36,5 @@ def _t(text: str):
             return translations[text][0]
         else:
             return text
-    except Exception as _:
+    except Exception:
         return text
