@@ -42,15 +42,15 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 ## 1.1.(选看)推荐终端:
 
-1. _对于Windows11用户_，`Winodws Terminal`默认**已经安装好**，可直接**跳过**此步骤。
+1. _对于Windows11用户_，`Windows Terminal`默认**已经安装好**，可直接**跳过**此步骤。
 
-2. _对于Windows10用户_，推荐使用`Winodws Terminal`作为**默认终端**，仅作为推荐安装，无论安装与否**不会影响本软件的使用**，`Winodws Terminal`能提供更出色的显示、交互、体验效果，以及避免出现**文字显示**乱码。
+2. _对于Windows10用户_，推荐使用`Windows Terminal`作为**默认终端**，仅作为推荐安装，无论安装与否**不会影响本软件的使用**，`Windows Terminal`能提供更出色的显示、交互、体验效果，以及避免出现**文字显示**乱码。
 
-   Winodws Terminal 微软商店:[点击跳转下载](https://apps.microsoft.com/detail/9n0dx20hk701?launch=true&mode=full&hl=zh-cn&gl=cn&ocid=bingwebsearch)
+   Windows Terminal 微软商店:[点击跳转下载](https://apps.microsoft.com/detail/9n0dx20hk701?launch=true&mode=full&hl=zh-cn&gl=cn&ocid=bingwebsearch)
 
-   Winodws Terminal Github:[点击跳转下载](https://github.com/microsoft/terminal/releases)
+   Windows Terminal Github:[点击跳转下载](https://github.com/microsoft/terminal/releases)
 
-3. 下载完成完成后`win+r`输入`wt`回车打开，然后将`Winodws Terminal`设为**默认终端**再启动软件，教程如下:
+3. 下载完成完成后`win+r`输入`wt`回车打开，然后将`Windows Terminal`设为**默认终端**再启动软件，教程如下:
 
    ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/1_1_1.png)
 
@@ -161,12 +161,12 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 5. 目前机器人支持的命令用法及解释如下表所示：
 
-   | 命令        | 用法                                                         | 解释                                           |
-   | ----------- | ------------------------------------------------------------ | ---------------------------------------------- |
-   | `/help`     | 向机器人发送发送`/help`即可。                                | 展示**可用**命令。                             |
-   | `/download` | 向机器人发送`/download 视频链接1 视频链接2 视频链接3 视频链接n`即可。 | 分配**新的**下载任务。                         |
-   | `/table`    | 向机器人发送`/table`即可。                                   | 在**终端**输出**当前**下载情况的**统计信息**。 |
-   | `/exit`     | 向机器人发送`/exit`即可。                                    | **退出**软件。                                 |
+   | 命令        | 用法                                                  | 解释                                           |
+   | ----------- | ----------------------------------------------------- | ---------------------------------------------- |
+   | `/help`     | 向机器人发送发送`/help`即可。                         | 展示**可用**命令。                             |
+   | `/download` | 向机器人发送`/download 链接1 链接2 链接3 链接n`即可。 | 分配**新的**下载任务。                         |
+   | `/table`    | 向机器人发送`/table`即可。                            | 在**终端**输出**当前**下载情况的**统计信息**。 |
+   | `/exit`     | 向机器人发送`/exit`即可。                             | **退出**软件。                                 |
 
 6. `/help`命令使用教程，如下图所示：
 
