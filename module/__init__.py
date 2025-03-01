@@ -31,6 +31,7 @@ def read_input_history(history_path: str, max_record_len: int, **kwargs) -> None
     if kwargs.get('platform') == 'Windows':
         # 尝试读取历史记录文件。
         import readline
+        readline.backend = 'readline'
         try:
             readline.read_history_file(history_path)
         except FileNotFoundError:
@@ -55,9 +56,9 @@ MAX_FILE_REFERENCE_TIME = 600
 Session.WAIT_TIMEOUT = 100
 Session.START_TIMEOUT = 60
 AUTHOR = 'Gentlesprite'
-__version__ = '1.4.5'
+__version__ = '1.4.6'
 __license__ = 'MIT License'
-__update_date__ = '2025/03/01 02:22:06'
+__update_date__ = '2025/03/01 15:18:44'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/Gentlesprite>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
