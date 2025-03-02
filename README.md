@@ -89,8 +89,8 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 ## 2.2.(选看)电报机器人(bot_token)申请及使用教程:
 > [!NOTE]
 > 如果配置了机器人，只要**保持软件运行**，就能实现**多端发送下载命令**并且**随时进行下载**。  
-> 故可以将软件部署在服务器上，无论是_Winodws_还是_Linux_平台。  
-> Winodws平台可直接使用[releases](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases)里发布的二进制文件放在服务器运行。  
+> 故可以将软件部署在服务器上，无论是Windows还是Linux平台。  
+> Windows平台可直接使用[releases](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases)里发布的二进制文件放在服务器运行。  
 > Linux平台的部署教程请**阅读**:[_"3.0.在生产环境中运行(对于Linux用户)"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7)。
 
 ### 	2.2.1.申请教程:
