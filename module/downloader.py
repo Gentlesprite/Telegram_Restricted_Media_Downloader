@@ -145,22 +145,19 @@ class TelegramRestrictedMediaDownloader(Bot):
         is_topic: bool = False
         if link.endswith('/'):
             link = link[:-1]
-        if '?single&comment' in link:  # v1.1.0修复讨论组中附带?single时不下载的问题，
+        if '?single&comment' in link:  # v1.1.0修复讨论组中附带?single时不下载的问题。
             is_comment = True
-        if '?single' in link:  # todo 如果只想下载组中的其一。
+        if '?single' in link:
             link = link.split('?single')[0]
         if '?comment' in link:  # 链接中包含?comment表示用户需要同时下载评论中的媒体。
             link = link.split('?comment')[0]
             is_comment = True
         message_id = int(link.split('/')[-1])
         if 't.me/c/' in link:
-            if 't.me/b/' in link:
-                chat_id = str(link.split('/')[-2])
-            else:
-                chat_id = int('-100' + str(link.split('/')[-2]))  # 得到频道的id。
+            chat_id = int('-100' + str(link.split('/')[-2]))  # 得到频道的id。
         else:
             chat_id = link.split('/')[-2]  # 频道的名字。
-        if link.split('/')[-3] not in ('t.me', 'c', 'b'):  # v1.4.6 新增"topic in groups"类型链接的解析。
+        if link.split('/')[-3] not in ('t.me', 'c'):  # v1.4.6 新增"topic in groups"类型链接的解析。
             is_topic = True
             chat_id = link.split('/')[-3]
         if is_comment:
