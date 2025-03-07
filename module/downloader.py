@@ -12,11 +12,12 @@ from sqlite3 import OperationalError
 from typing import Tuple, Union
 
 import pyrogram
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate
 from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, BotMethodInvalid
 from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired
 
-from module import console, log, utils
+from module import console, log, utils, AUTHOR
 from module.bot import Bot
 from module.task import Task
 from module.language import _t
@@ -107,13 +108,27 @@ class TelegramRestrictedMediaDownloader(Bot):
                 msg = '😊😊😊欢迎使用😊😊😊'
             else:
                 msg = '😊😊😊欢迎使用😊😊😊您的支持是我持续更新的动力。'
-            await client.send_message(chat_id=chat_id, text=msg, disable_web_page_preview=True)
+            await client.send_message(chat_id=chat_id, text=msg, disable_web_page_preview=True,
+                                      reply_markup=InlineKeyboardMarkup(
+                                          [[InlineKeyboardButton(
+                                              '⏰下次不再提醒',
+                                              callback_data=BotCallbackText.NOTICE)]]))
         await super().help(client, message)
 
     async def callback_data(self, client: pyrogram.Client, callback_query: pyrogram.types.CallbackQuery):
         callback_data = await super().callback_data(client, callback_query)
         if callback_data is None:
             return
+        elif callback_data == BotCallbackText.NOTICE:
+            await callback_query.message.reply_text(
+                '❤️❤️❤️作者维护需要成本和精力,请您谅解。❤️❤️❤️\n'
+                f'点击下方「支持作者💰」(>10¥)\n'
+                f'截图备注后联系作者@{AUTHOR}关闭提醒。\n'
+                '😊😊😊您的支持是我持续更新的动力。😊😊😊',
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton(
+                        '💰支持作者',
+                        callback_data=BotCallbackText.PAY)]]))
         elif callback_data == BotCallbackText.PAY:
             res: dict = await self.__send_pay_qr(client=client,
                                                  chat_id=callback_query.message.chat.id,

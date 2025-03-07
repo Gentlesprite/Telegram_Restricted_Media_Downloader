@@ -764,6 +764,7 @@ class BotCallbackText:
     LINK_TABLE = 'link_table'
     COUNT_TABLE = 'count_table'
     BACK_HELP = 'back_help'
+    NOTICE = 'notice'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():

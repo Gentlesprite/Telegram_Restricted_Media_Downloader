@@ -16,10 +16,12 @@ from module.enums import BotCommandText, BotMessage, BotCallbackText
 
 class Bot:
     BOT_NAME: str = 'TRMD_BOT'
-    COMMANDS: List[BotCommand] = [BotCommand(BotCommandText.HELP[0], BotCommandText.HELP[1]),
-                                  BotCommand(BotCommandText.DOWNLOAD[0], BotCommandText.DOWNLOAD[1].replace('`', '')),
-                                  BotCommand(BotCommandText.TABLE[0], BotCommandText.TABLE[1]),
-                                  BotCommand(BotCommandText.EXIT[0], BotCommandText.EXIT[1])]
+    COMMANDS: List[BotCommand] = [
+        BotCommand(BotCommandText.HELP[0], BotCommandText.HELP[1]),
+        BotCommand(BotCommandText.DOWNLOAD[0], BotCommandText.DOWNLOAD[1].replace('`', '')),
+        BotCommand(BotCommandText.TABLE[0], BotCommandText.TABLE[1]),
+        BotCommand(BotCommandText.EXIT[0], BotCommandText.EXIT[1])
+    ]
 
     def __init__(self):
         self.user = None
