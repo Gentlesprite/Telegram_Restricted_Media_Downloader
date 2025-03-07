@@ -234,7 +234,7 @@ class Bot:
         try:
             bot_username = getattr(await self.bot.get_me(), 'username', None)
             if bot_username:
-                return await self.user.send_message(chat_id=bot_username, text=text, disable_web_page_preview=False)
+                return await self.user.send_message(chat_id=bot_username, text=text, disable_web_page_preview=True)
         except Exception as e:
             if catch:
                 raise Exception(str(e))
