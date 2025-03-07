@@ -15,6 +15,7 @@ class LinkType:
     SINGLE: str = 'single'
     GROUP: str = 'group'
     COMMENT: str = 'comment'
+    TOPIC: str = 'topic'
 
 
 class DownloadType:

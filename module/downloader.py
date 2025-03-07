@@ -139,9 +139,12 @@ class TelegramRestrictedMediaDownloader(Bot):
             await callback_query.message.delete()
             await self.help(client, callback_query.message)
 
-    async def __extract_link_content(self, link) -> Tuple[str, int, list]:
-        comment_message = []
-        is_comment = False
+    async def __extract_link_content(self, link) -> dict:
+        comment_message: list = []
+        is_comment: bool = False
+        is_topic: bool = False
+        if link.endswith('/'):
+            link = link[:-1]
         if '?single&comment' in link:  # v1.1.0修复讨论组中附带?single时不下载的问题，
             is_comment = True
         if '?single' in link:  # todo 如果只想下载组中的其一。
@@ -157,12 +160,43 @@ class TelegramRestrictedMediaDownloader(Bot):
                 chat_id = int('-100' + str(link.split('/')[-2]))  # 得到频道的id。
         else:
             chat_id = link.split('/')[-2]  # 频道的名字。
-
+        if link.split('/')[-3] != 't.me':  # v1.4.6 新增"topic in groups"类型链接的解析。
+            is_topic = True
+            chat_id = link.split('/')[-3]
         if is_comment:
             # 如果用户需要同时下载媒体下面的评论,把评论中的所有信息放入列表一起返回。
             async for comment in self.app.client.get_discussion_replies(chat_id, message_id):
                 comment_message.append(comment)
-        return chat_id, message_id, comment_message
+        message = await self.app.client.get_messages(chat_id=chat_id, message_ids=message_id)
+        result, message_group = await self.__is_group(message)
+        if result or comment_message:  # 组或评论区。
+            try:  # v1.1.2解决当group返回None时出现comment无法下载的问题。
+                message_group.extend(comment_message) if comment_message else None
+            except AttributeError:
+                if comment_message and message_group is None:
+                    message_group = []
+                    message_group.extend(comment_message)
+            if comment_message:
+                return {'link_type': LinkType.TOPIC if is_topic else LinkType.COMMENT,
+                        'chat_id': chat_id,
+                        'message_id': message_group,
+                        'member_num': len(message_group)}
+            else:
+                return {'link_type': LinkType.TOPIC if is_topic else LinkType.GROUP,
+                        'chat_id': chat_id,
+                        'message_id': message_group,
+                        'member_num': len(message_group)}
+        elif result is False and message_group is None:  # 单文件。
+            return {'link_type': LinkType.TOPIC if is_topic else LinkType.SINGLE,
+                    'chat_id': chat_id,
+                    'message_id': message,
+                    'member_num': 1}
+        elif result is None and message_group is None:
+            raise MsgIdInvalid('The message does not exist, the channel has been disbanded or is not in the channel.')
+        elif result is None and message_group == 0:
+            raise Exception('Link parsing error.')
+        else:
+            raise Exception('Unknown error.')
 
     @staticmethod
     async def __is_group(message) -> Tuple[bool or None, bool or None]:
@@ -219,9 +253,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                                                         total=sever_file_size)
                     _task = self.loop.create_task(
                         self.app.client.download_media(message=message,
-                                                   progress_args=(self.pb.progress, task_id),
-                                                   progress=self.pb.download_bar,
-                                                   file_name=temp_file_path))
+                                                       progress_args=(self.pb.progress, task_id),
+                                                       progress=self.pb.download_bar,
+                                                       file_name=temp_file_path))
                     MetaData.print_current_task_num(self.app.current_task_num)
                     _task.add_done_callback(
                         partial(self.__complete_call, sever_file_size,
@@ -317,41 +351,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                                      retry: dict or None = None) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
         try:
-            chat_id, message_id, comment_message = await self.__extract_link_content(link)
-            msg = await self.app.client.get_messages(chat_id=chat_id, message_ids=message_id)  # 该消息的信息。
-            res, group = await self.__is_group(msg)
-            if res or comment_message:  # 组或评论区。
-                try:  # v1.1.2解决当group返回None时出现comment无法下载的问题。
-                    group.extend(comment_message) if comment_message else None
-                except AttributeError:
-                    if comment_message and group is None:
-                        group = []
-                        group.extend(comment_message)
-                await self.__add_task(link, group, retry)
-                return {'chat_id': chat_id,
-                        'link_type': LinkType.COMMENT if comment_message else LinkType.GROUP,
-                        'member_num': len(group),
-                        'status': DownloadStatus.DOWNLOADING,
-                        'e_code': None}
-            elif res is False and group is None:  # 单文件。
-                await self.__add_task(link, msg, retry)
-                return {'chat_id': chat_id,
-                        'link_type': LinkType.SINGLE,
-                        'member_num': 1,
-                        'status': DownloadStatus.DOWNLOADING,
-                        'e_code': None}
-            elif res is None and group is None:
-                return {'chat_id': chat_id,
-                        'link_type': None,
-                        'member_num': 0,
-                        'status': DownloadStatus.FAILURE,
-                        'e_code': {'all_member': '消息不存在,频道已解散或未在频道中', 'error_msg': None}}
-            elif res is None and group == 0:
-                return {'chat_id': chat_id,
-                        'member_num': 0,
-                        'link_type': None,
-                        'status': DownloadStatus.FAILURE,
-                        'e_code': {'all_member': '未收录到的错误', 'error_msg': None}}
+            meta: dict = await self.__extract_link_content(link)
+            link_type, chat_id, message_id, member_num = meta.values()
+            await self.__add_task(link, message_id, retry)
+            return {'chat_id': chat_id,
+                    'link_type': link_type,
+                    'member_num': member_num,
+                    'status': DownloadStatus.DOWNLOADING,
+                    'e_code': None}
         except UnicodeEncodeError as e:
             return {'chat_id': None,
                     'member_num': 0,
