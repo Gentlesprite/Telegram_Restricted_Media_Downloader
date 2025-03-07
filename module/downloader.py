@@ -266,10 +266,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 task_id))
             self.queue.put_nowait(_task) if _task else None
 
-    def check_download_finish(self, sever_file_size: int,
-                              temp_file_path: str,
-                              save_directory: str,
-                              with_move: bool = True) -> bool:
+    def __check_download_finish(self, sever_file_size: int,
+                                temp_file_path: str,
+                                save_directory: str,
+                                with_move: bool = True) -> bool:
         """检测文件是否下完。"""
         temp_ext: str = '.temp'
         local_file_size: int = get_file_size(file_path=temp_file_path, temp_ext=temp_ext)
@@ -317,10 +317,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.app.current_task_num -= 1
             self.event.set()  # v1.3.4 修复重试下载被阻塞的问题。
             self.queue.task_done()
-            if self.check_download_finish(sever_file_size=sever_file_size,
-                                          temp_file_path=temp_file_path,
-                                          save_directory=self.app.save_directory,
-                                          with_move=True):
+            if self.__check_download_finish(sever_file_size=sever_file_size,
+                                            temp_file_path=temp_file_path,
+                                            save_directory=self.app.save_directory,
+                                            with_move=True):
                 MetaData.print_current_task_num(self.app.current_task_num)
             else:
                 if retry_count < self.app.max_retry_count:
