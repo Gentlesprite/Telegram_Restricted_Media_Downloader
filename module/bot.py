@@ -43,9 +43,13 @@ class Bot:
                                       disable_web_page_preview=True)
         elif text.startswith('https://t.me/'):
             if text[len('https://t.me/'):].count('/') >= 1:
-                await client.send_message(chat_id=message.chat.id,
-                                          text=f'🚫🚫🚫请使用以下命令,分配下载任务:\n`/download {text}`',
-                                          disable_web_page_preview=True)
+                try:
+                    await client.delete_messages(chat_id=message.chat.id, message_ids=message.id)
+                    await self.send_message_to_bot(text=f'/download {text}', catch=True)
+                except Exception as e:
+                    await client.send_message(chat_id=message.chat.id,
+                                              text=f'{e}\n🚫🚫🚫请使用以下命令,分配下载任务:\n`/download {text}`',
+                                              disable_web_page_preview=True)
             else:
                 await client.send_message(chat_id=message.chat.id,
                                           text=f'❗️❗️❗️请使用以下命令,分配下载任务:\n`/download https://t.me/x/x`',
@@ -217,7 +221,7 @@ class Bot:
                 )
             )
             self.is_bot_running: bool = True
-            await self.get_start()
+            await self.send_message_to_bot(text='/start')
             return '「机器人」启动成功。'
         except AccessTokenInvalid as e:
             self.is_bot_running: bool = False
@@ -226,13 +230,16 @@ class Bot:
             self.is_bot_running: bool = False
             return f'「机器人」启动失败,原因:"{e}"'
 
-    async def get_start(self):
+    async def send_message_to_bot(self, text: str, catch: bool = False):
         try:
             bot_username = getattr(await self.bot.get_me(), 'username', None)
             if bot_username:
-                await self.user.send_message(chat_id=bot_username, text='/start', disable_web_page_preview=False)
-        except Exception as _:
-            return _
+                return await self.user.send_message(chat_id=bot_username, text=text, disable_web_page_preview=False)
+        except Exception as e:
+            if catch:
+                raise Exception(str(e))
+            else:
+                return e
 
     @staticmethod
     def update_text(right_link: set, invalid_link: set, exist_link: set or None = None):
