@@ -160,7 +160,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 chat_id = int('-100' + str(link.split('/')[-2]))  # 得到频道的id。
         else:
             chat_id = link.split('/')[-2]  # 频道的名字。
-        if link.split('/')[-3] != 't.me':  # v1.4.6 新增"topic in groups"类型链接的解析。
+        if link.split('/')[-3] not in ('t.me', 'c', 'b'):  # v1.4.6 新增"topic in groups"类型链接的解析。
             is_topic = True
             chat_id = link.split('/')[-3]
         if is_comment:
@@ -243,10 +243,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                                          task_id=None,
                                          _future=save_directory)
                 else:
-                    console.log(f'{_t(KeyWord.FILE)}:"{file_name}",'
-                                f'{_t(KeyWord.SIZE)}:{format_file_size},'
-                                f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.DOWNLOADING))},'
-                                f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.DOWNLOADING)}。')
+                    console.log(
+                        f'{_t(KeyWord.FILE)}:"{file_name}",'
+                        f'{_t(KeyWord.SIZE)}:{format_file_size},'
+                        f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.DOWNLOADING))},'
+                        f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.DOWNLOADING)}。')
                     task_id = self.pb.progress.add_task(description='',
                                                         filename=truncate_display_filename(file_name),
                                                         info=f'0.00B/{format_file_size}',
@@ -310,10 +311,11 @@ class TelegramRestrictedMediaDownloader(Bot):
         if task_id is None:
             if retry_count == 0:
                 console.log(f'{_t(KeyWord.ALREADY_EXIST)}:"{_future}"')
-                console.log(f'{_t(KeyWord.FILE)}:"{file_name}",'
-                            f'{_t(KeyWord.SIZE)}:{format_file_size},'
-                            f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.SKIP))},'
-                            f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。', style='#e6db74')
+                console.log(
+                    f'{_t(KeyWord.FILE)}:"{file_name}",'
+                    f'{_t(KeyWord.SIZE)}:{format_file_size},'
+                    f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.SKIP))},'
+                    f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。', style='#e6db74')
         else:
             self.app.current_task_num -= 1
             self.event.set()  # v1.3.4 修复重试下载被阻塞的问题。
