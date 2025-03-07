@@ -5,7 +5,7 @@
 # File:language.py
 translations: dict = {'single': ['单文件'],
                       'group': ['组文件'],
-                      'comment': ['评论区文件'],
+                      'comment': ['评论文件'],
                       'topic': ['话题文件'],
                       'video': ['视频'],
                       'photo': ['图片'],
