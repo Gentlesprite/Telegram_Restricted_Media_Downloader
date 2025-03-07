@@ -12,12 +12,11 @@ from sqlite3 import OperationalError
 from typing import Tuple, Union
 
 import pyrogram
-from pyrogram import utils
 from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate
 from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, BotMethodInvalid
 from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired
 
-from module import console, log
+from module import console, log, utils
 from module.bot import Bot
 from module.task import Task
 from module.language import _t
