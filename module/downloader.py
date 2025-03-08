@@ -14,19 +14,19 @@ from typing import Tuple, Union
 import pyrogram
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate
-from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, BotMethodInvalid, \
-    MessageNotModified
 from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired
+from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, \
+    BotMethodInvalid, MessageNotModified
 
 from module import console, log, utils
 from module.bot import Bot
 from module.task import Task
 from module.language import _t
-from module.stdio import ProgressBar
 from module.app import Application, MetaData
+from module.stdio import ProgressBar, Base64Image
 from module.path_tool import is_file_duplicate, safe_delete, truncate_display_filename, get_file_size, split_path, \
     compare_file_size, move_to_save_directory
-from module.enums import LinkType, DownloadStatus, KeyWord, BotCallbackText, Base64Image
+from module.enums import LinkType, DownloadStatus, KeyWord, BotCallbackText, BotButton
 
 
 class TelegramRestrictedMediaDownloader(Bot):
@@ -126,7 +126,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     for button in row:
                         if getattr(button, 'callback_data', None) == BotCallbackText.NOTICE:
                             new_row.append(InlineKeyboardButton(
-                                text='⏰关闭提醒' if self.gc.config.get(BotCallbackText.NOTICE) else '⏰开启提醒',
+                                text=BotButton.CLOSE_NOTICE if self.gc.config.get(
+                                    BotCallbackText.NOTICE) else BotButton.OPEN_NOTICE,
                                 callback_data=button.callback_data
                             ))
                             continue

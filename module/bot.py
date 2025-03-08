@@ -11,8 +11,9 @@ from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified, Acces
 from pyrogram.types import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 
 from module import __version__, __copyright__, SOFTWARE_FULL_NAME, __license__
+from module.language import _t
 from module.config import GlobalConfig
-from module.enums import BotCommandText, BotMessage, BotCallbackText
+from module.enums import BotCommandText, BotMessage, BotCallbackText, BotButton, KeyWord
 
 
 class Bot:
@@ -86,24 +87,25 @@ class Bot:
             [
                 [
                     InlineKeyboardButton(
-                        '📦GitHub',
+                        BotButton.GITHUB,
                         url='https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases',
                     ),
                     InlineKeyboardButton(
-                        '📌订阅频道', url='https://t.me/RestrictedMediaDownloader'
+                        BotButton.SUBSCRIBE_CHANNEL,
+                        url='https://t.me/RestrictedMediaDownloader'
                     )
                 ],
                 [
                     InlineKeyboardButton(
-                        '🎬视频教程',
+                        BotButton.VIDEO_TUTORIAL,
                         url='https://www.bilibili.com/video/BV1nCp8evEwv'),
                     InlineKeyboardButton(
-                        '💰支持作者',
+                        BotButton.PAY,
                         callback_data=BotCallbackText.PAY)
                 ],
                 [
                     InlineKeyboardButton(
-                        '⏰关闭提醒' if self.gc.config.get(BotCallbackText.NOTICE) else '⏰开启提醒',
+                        BotButton.CLOSE_NOTICE if self.gc.config.get(BotCallbackText.NOTICE) else BotButton.OPEN_NOTICE,
                         callback_data=BotCallbackText.NOTICE
                     )
                 ]
@@ -145,18 +147,18 @@ class Bot:
             [
                 [
                     InlineKeyboardButton(
-                        '🔗链接统计表',
+                        BotButton.LINK_TABLE,
                         url='https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases',
                         callback_data=BotCallbackText.LINK_TABLE
                     ),
                     InlineKeyboardButton(
-                        '➕计数统计表', url='https://t.me/RestrictedMediaDownloader',
+                        BotButton.COUNT_TABLE, url='https://t.me/RestrictedMediaDownloader',
                         callback_data=BotCallbackText.COUNT_TABLE
                     )
                 ],
                 [
                     InlineKeyboardButton(
-                        '🛎️帮助页面',
+                        BotButton.HELP_PAGE,
                         callback_data=BotCallbackText.BACK_HELP
                     )
                 ]
@@ -231,14 +233,18 @@ class Bot:
                 )
             )
             self.is_bot_running: bool = True
-            await self.send_message_to_bot(text='/start') if self.gc.config.get('notice') else None
-            return '「机器人」启动成功。'
+            if self.gc.config.get('notice'):
+                await self.send_message_to_bot(text='/start')
+                notice_status = BotButton.OPEN_NOTICE
+            else:
+                notice_status = BotButton.CLOSE_NOTICE
+            return f'🤖「机器人」启动成功。({notice_status})'
         except AccessTokenInvalid as e:
             self.is_bot_running: bool = False
-            return f'「机器人」启动失败,「bot_token」错误,原因:"{e}"'
+            return f'🤖「机器人」启动失败,「bot_token」错误,{_t(KeyWord.REASON)}:"{e}"'
         except Exception as e:
             self.is_bot_running: bool = False
-            return f'「机器人」启动失败,原因:"{e}"'
+            return f'🤖「机器人」启动失败,{_t(KeyWord.REASON)}:"{e}"'
 
     async def send_message_to_bot(self, text: str, catch: bool = False):
         try:
