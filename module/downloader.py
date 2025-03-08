@@ -14,10 +14,11 @@ from typing import Tuple, Union
 import pyrogram
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate
-from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, BotMethodInvalid
+from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, BotMethodInvalid, \
+    MessageNotModified
 from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired
 
-from module import console, log, utils, AUTHOR
+from module import console, log, utils
 from module.bot import Bot
 from module.task import Task
 from module.language import _t
@@ -108,11 +109,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 msg = '😊😊😊欢迎使用😊😊😊'
             else:
                 msg = '😊😊😊欢迎使用😊😊😊您的支持是我持续更新的动力。'
-            await client.send_message(chat_id=chat_id, text=msg, disable_web_page_preview=True,
-                                      reply_markup=InlineKeyboardMarkup(
-                                          [[InlineKeyboardButton(
-                                              '⏰下次不再提醒',
-                                              callback_data=BotCallbackText.NOTICE)]]))
+            await client.send_message(chat_id=chat_id, text=msg, disable_web_page_preview=True)
         await super().help(client, message)
 
     async def callback_data(self, client: pyrogram.Client, callback_query: pyrogram.types.CallbackQuery):
@@ -120,15 +117,29 @@ class TelegramRestrictedMediaDownloader(Bot):
         if callback_data is None:
             return
         elif callback_data == BotCallbackText.NOTICE:
-            await callback_query.message.reply_text(
-                '❤️❤️❤️作者维护需要成本和精力,请您谅解。❤️❤️❤️\n'
-                f'点击下方「支持作者💰」(>10¥)\n'
-                f'截图备注后联系作者@{AUTHOR}关闭提醒。\n'
-                '😊😊😊您的支持是我持续更新的动力。😊😊😊',
-                reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton(
-                        '💰支持作者',
-                        callback_data=BotCallbackText.PAY)]]))
+            try:
+                self.gc.config[BotCallbackText.NOTICE] = not self.gc.config.get(BotCallbackText.NOTICE)
+                self.gc.save_config(self.gc.config)
+                new_keyboard = []
+                for row in callback_query.message.reply_markup.inline_keyboard:
+                    new_row = []
+                    for button in row:
+                        if getattr(button, 'callback_data', None) == BotCallbackText.NOTICE:
+                            new_row.append(InlineKeyboardButton(
+                                text='⏰关闭提醒' if self.gc.config.get(BotCallbackText.NOTICE) else '⏰开启提醒',
+                                callback_data=button.callback_data
+                            ))
+                            continue
+                        new_row.append(button)
+                    new_keyboard.append(new_row)
+                await callback_query.message.edit_reply_markup(
+                    InlineKeyboardMarkup(new_keyboard)
+                )
+            except MessageNotModified:
+                pass
+            except Exception as e:
+                await callback_query.message.reply_text('关闭提醒失败\n(具体原因请前往终端查看报错信息)')
+                log.error(f'关闭提醒失败,{_t(KeyWord.REASON)}:"{e}"')
         elif callback_data == BotCallbackText.PAY:
             res: dict = await self.__send_pay_qr(client=client,
                                                  chat_id=callback_query.message.chat.id,

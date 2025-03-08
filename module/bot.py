@@ -11,6 +11,7 @@ from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified, Acces
 from pyrogram.types import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 
 from module import __version__, __copyright__, SOFTWARE_FULL_NAME, __license__
+from module.config import GlobalConfig
 from module.enums import BotCommandText, BotMessage, BotCallbackText
 
 
@@ -28,6 +29,7 @@ class Bot:
         self.bot = None
         self.is_bot_running: bool = False
         self.bot_task_link: set = set()
+        self.gc = GlobalConfig()
 
     async def process_error_message(self, client: pyrogram.Client, message: pyrogram.types.Message) -> None:
         await self.help(client, message)
@@ -98,6 +100,12 @@ class Bot:
                     InlineKeyboardButton(
                         '💰支持作者',
                         callback_data=BotCallbackText.PAY)
+                ],
+                [
+                    InlineKeyboardButton(
+                        '⏰关闭提醒' if self.gc.config.get(BotCallbackText.NOTICE) else '⏰开启提醒',
+                        callback_data=BotCallbackText.NOTICE
+                    )
                 ]
             ]
         )
@@ -223,7 +231,7 @@ class Bot:
                 )
             )
             self.is_bot_running: bool = True
-            await self.send_message_to_bot(text='/start')
+            await self.send_message_to_bot(text='/start') if self.gc.config.get('notice') else None
             return '「机器人」启动成功。'
         except AccessTokenInvalid as e:
             self.is_bot_running: bool = False

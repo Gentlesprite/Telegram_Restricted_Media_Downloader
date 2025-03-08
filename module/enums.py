@@ -9,6 +9,7 @@ import ipaddress
 from io import BytesIO
 
 from module import console, log
+from module.language import _t
 
 
 class LinkType:
@@ -535,7 +536,7 @@ class GetStdioParams:
                         f'意外的参数:"{links_file_path}",文件「必须存在」,请重新输入!')
             except Exception as _e:
                 log.warning(
-                    f'意外的参数:"{links_file_path}",文件路径必须以「{valid_format}」结尾,并且「必须存在」,请重新输入!{KeyWord.REASON}:"{_e}"')
+                    f'意外的参数:"{links_file_path}",文件路径必须以「{valid_format}」结尾,并且「必须存在」,请重新输入!{_t(KeyWord.REASON)}:"{_e}"')
 
     @staticmethod
     def get_save_directory(last_record) -> dict:
@@ -573,7 +574,7 @@ class GetStdioParams:
                 else:
                     log.warning(f'意外的参数:"{max_download_task}",任务数必须是「正整数」,请重新输入!')
             except Exception as _e:
-                log.error(f'意外的错误,{KeyWord.REASON}:"{_e}"')
+                log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{_e}"')
 
     @staticmethod
     def get_download_type(last_record: list or None) -> dict:
@@ -638,7 +639,7 @@ class GetStdioParams:
                     log.warning(f'意外的参数:"{is_shutdown}",支持的参数 - 「{valid_format}」')
 
             except Exception as _e:
-                log.error(f'意外的错误,{KeyWord.REASON}:"{_e}"')
+                log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{_e}"')
 
     @staticmethod
     def get_enable_proxy(last_record: str or bool, valid_format: str = 'y|n') -> dict:
@@ -727,7 +728,7 @@ class GetStdioParams:
             except ValueError:
                 log.warning(f'意外的参数:"{port}",请输入一个有效的整数!支持的参数 - 「{valid_format}」')
             except Exception as e:
-                log.error(f'意外的错误,{KeyWord.REASON}:"{e}"')
+                log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{e}"')
 
     @staticmethod
     def get_proxy_authentication():

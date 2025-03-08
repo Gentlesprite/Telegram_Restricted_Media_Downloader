@@ -8,8 +8,8 @@ import sys
 import datetime
 
 from module import yaml
-
-from module import log, console, CustomDumper, PLATFORM
+from module import log, console, PLATFORM, APPDATA_PATH, CustomDumper
+from module.language import _t
 from module.path_tool import gen_backup_config, safe_delete
 from module.enums import KeyWord, GetStdioParams, ProcessConfig
 
@@ -79,7 +79,7 @@ class Config:
         except FileNotFoundError:
             return
         except Exception as e:
-            log.error(f'读取历史文件时发生错误,{KeyWord.REASON}:"{e}"')
+            log.error(f'读取历史文件时发生错误,{_t(KeyWord.REASON)}:"{e}"')
             return
         file_start: str = 'history_'
         file_end: str = '_config.yaml'
@@ -187,7 +187,7 @@ class Config:
                     yaml.dump(Config.TEMPLATE, f, Dumper=CustomDumper)
                 console.log('未找到配置文件,已生成新的模板文件. . .')
                 self.re_config = True  # v1.3.4 修复配置文件不存在时,无法重新生成配置文件的问题。
-            with open(self.config_path, 'r') as f:
+            with open(self.config_path, 'r', encoding='UTF-8') as f:
                 config: dict = yaml.safe_load(f)  # v1.1.4 加入对每个字段的完整性检测。
             compare_config: dict = config.copy()
             config: dict = self.__check_params(config)  # 检查所有字段是否完整,modified代表是否有修改记录(只记录缺少的)
@@ -197,12 +197,12 @@ class Config:
             # 中文路径无法被打包好的二进制文件识别,故在配置文件时无论是链接路径还是媒体保存路径都请使用英文命名。
             self.re_config = True
             log.error(
-                f'读取配置文件遇到编码错误,可能保存路径中包含中文或特殊字符的文件夹。已生成新的模板文件. . .{KeyWord.REASON}:"{e}"')
+                f'读取配置文件遇到编码错误,可能保存路径中包含中文或特殊字符的文件夹。已生成新的模板文件. . .{_t(KeyWord.REASON)}:"{e}"')
             self.backup_config(config, error_config=self.re_config)
         except Exception as e:
             self.re_config = True
             console.print('「注意」链接路径和保存路径不能有引号!', style='#B1DB74')
-            log.error(f'检测到无效或损坏的配置文件。已生成新的模板文件. . .{KeyWord.REASON}:"{e}"')
+            log.error(f'检测到无效或损坏的配置文件。已生成新的模板文件. . .{_t(KeyWord.REASON)}:"{e}"')
             self.backup_config(config, error_config=self.re_config)
         finally:
             if config is None:
@@ -387,8 +387,46 @@ class Config:
 
     def save_config(self, config: dict) -> None:
         """保存配置文件。"""
-        with open(self.config_path, 'w') as f:
-            yaml.dump(config, f)
+        try:
+            with open(file=self.config_path, mode='w', encoding='UTF-8') as f:
+                yaml.dump(config, f)
+        except Exception as e:
+            log.error(f'保存配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
 
     def ctrl_c(self):
         os.system('pause') if self.platform == 'Windows' else console.input('请按「Enter」键继续. . .')
+
+
+class GlobalConfig:
+    FILE_NAME: str = '.CONFIG.yaml'
+    PATH: str = os.path.join(APPDATA_PATH, FILE_NAME)
+    TEMPLATE: dict = {
+        'notice': True
+    }
+
+    def __init__(self):
+        self.config_path: str = GlobalConfig.PATH
+        self.config: dict = GlobalConfig.TEMPLATE
+        self.load_config()
+
+    def load_config(self) -> None:
+        """加载全局配置文件。"""
+        try:
+            if not os.path.exists(GlobalConfig.PATH):
+                with open(file=GlobalConfig.PATH, mode='w', encoding='UTF-8') as f:
+                    yaml.dump(GlobalConfig.TEMPLATE, f, Dumper=CustomDumper)
+            else:
+                with open(file=GlobalConfig.PATH, mode='r', encoding='UTF-8') as f:
+                    self.config = yaml.safe_load(f)
+        except Exception as e:
+            log.error(f'读取全局配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
+            self.config: dict = GlobalConfig.TEMPLATE
+
+    def save_config(self, config: dict) -> None:
+        """保存配置文件。"""
+        try:
+            with open(file=self.config_path, mode='w', encoding='UTF-8') as f:
+                yaml.dump(config, f)
+            self.config = config
+        except Exception as e:
+            log.error(f'保存全局配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
