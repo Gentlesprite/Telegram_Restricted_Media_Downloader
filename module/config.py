@@ -427,6 +427,7 @@ class GlobalConfig:
         try:
             with open(file=self.config_path, mode='w', encoding='UTF-8') as f:
                 yaml.dump(config, f)
-            self.config = config
         except Exception as e:
             log.error(f'保存全局配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
+        finally:
+            self.config = config
