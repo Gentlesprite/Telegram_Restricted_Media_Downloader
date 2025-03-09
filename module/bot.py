@@ -36,7 +36,8 @@ class Bot:
 
     async def process_error_message(self, client: pyrogram.Client, message: pyrogram.types.Message) -> None:
         await self.help(client, message)
-        await client.send_message(chat_id=message.chat.id,
+        await client.send_message(chat_id=message.from_user.id,
+                                  reply_to_message_id=message.id,
                                   text='未知命令,请查看帮助后重试。',
                                   disable_web_page_preview=True)
 
@@ -45,25 +46,29 @@ class Bot:
                                 message: pyrogram.types.Message) -> Dict[str, set] or None:
         text: str = message.text
         if text == '/download':
-            await client.send_message(chat_id=message.chat.id,
+            await client.send_message(chat_id=message.from_user.id,
+                                      reply_to_message_id=message.id,
                                       text='❓❓❓请提供下载链接,格式:\n`/download https://t.me/x/x`',
                                       disable_web_page_preview=True)
         elif text.startswith('https://t.me/'):
             if text[len('https://t.me/'):].count('/') >= 1:
                 try:
-                    await client.delete_messages(chat_id=message.chat.id, message_ids=message.id)
+                    await client.delete_messages(chat_id=message.from_user.id, message_ids=message.id)
                     await self.send_message_to_bot(text=f'/download {text}', catch=True)
                 except Exception as e:
-                    await client.send_message(chat_id=message.chat.id,
+                    await client.send_message(chat_id=message.from_user.id,
+                                              reply_to_message_id=message.id,
                                               text=f'{e}\n🚫🚫🚫请使用以下命令,分配下载任务:\n`/download {text}`',
                                               disable_web_page_preview=True)
             else:
-                await client.send_message(chat_id=message.chat.id,
+                await client.send_message(chat_id=message.from_user.id,
+                                          reply_to_message_id=message.id,
                                           text=f'❗️❗️❗️请使用以下命令,分配下载任务:\n`/download https://t.me/x/x`',
                                           disable_web_page_preview=True)
         elif len(text) <= 25 or text == '/download https://t.me/x/x' or text.endswith('.txt'):
             await self.help(client, message)
-            await client.send_message(chat_id=message.chat.id,
+            await client.send_message(chat_id=message.from_user.id,
+                                      reply_to_message_id=message.id,
                                       text='⁉️⁉️⁉️链接错误,请查看帮助后重试。',
                                       disable_web_page_preview=True)
         else:
@@ -71,7 +76,8 @@ class Bot:
             link.remove('/download') if '/download' in link else None
             right_link: set = set([_ for _ in link if _.startswith('https://t.me/')])
             invalid_link: set = set([_ for _ in link if not _.startswith('https://t.me/')])
-            last_bot_message = await client.send_message(chat_id=message.chat.id,
+            last_bot_message = await client.send_message(chat_id=message.from_user.id,
+                                                         reply_to_message_id=message.id,
                                                          text=self.update_text(right_link=right_link,
                                                                                invalid_link=invalid_link),
                                                          disable_web_page_preview=True)
@@ -125,7 +131,7 @@ class Bot:
             f'❌ {BotCommandText.with_description(BotCommandText.EXIT)}\n'
         )
 
-        await client.send_message(chat_id=message.chat.id,
+        await client.send_message(chat_id=message.from_user.id,
                                   text=msg,
                                   disable_web_page_preview=True,
                                   reply_markup=func_keyboard)
@@ -166,7 +172,7 @@ class Bot:
                 ]
             ]
         )
-        await client.send_message(chat_id=message.chat.id,
+        await client.send_message(chat_id=message.from_user.id,
                                   text='🧐🧐🧐请选择输出「统计表」的类型:',
                                   disable_web_page_preview=True,
                                   reply_markup=choice_keyboard)
@@ -179,8 +185,9 @@ class Bot:
         args = text.split(maxsplit=5)
         if text == '/forward' or len(args) <= 1:
             await client.send_message(
-                message.from_user.id,
-                '❌❌❌命令格式无效,请使用`/forward https://t.me/c/src_chat https://t.me/c/dst_chat 1 100`'
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text='❌❌❌命令格式无效❌❌❌\n请使用`/forward https://t.me/c/src_chat https://t.me/c/dst_chat 1 100`'
             )
             return None
         try:
@@ -189,23 +196,26 @@ class Bot:
             if end_id:
                 if start_id > end_id:
                     raise ValueError('起始ID<结束ID。')
+                # todo 当start_id end_id 不存在时抛出list index out of range.
             message_ids: list = [start_id, end_id]
         except Exception as e:
             await client.send_message(
-                message.from_user.id,
-                f'❌❌❌命令错误,{e}。'
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text=f'❌❌❌命令错误,{e}。'
             )
             return None
         return {'origin_link': args[1], 'target_link': args[2], 'message_ids': message_ids}
 
     async def exit(self, client: pyrogram.Client,
                    message: pyrogram.types.Message) -> None:
-        last_message = await client.send_message(chat_id=message.chat.id,
+        last_message = await client.send_message(chat_id=message.from_user.id,
                                                  text='🫡🫡🫡已收到退出命令。',
+                                                 reply_to_message_id=message.id,
                                                  disable_web_page_preview=True)
         self.is_bot_running = False
         await self.edit_message_text(client=client,
-                                     chat_id=message.chat.id,
+                                     chat_id=message.from_user.id,
                                      last_message_id=last_message.id,
                                      text='👌👌👌退出成功。')
         raise SystemExit(0)
@@ -299,10 +309,10 @@ class Bot:
     @staticmethod
     def update_text(right_link: set, invalid_link: set, exist_link: set or None = None):
         n = '\n'
-        right_msg = f'{BotMessage.RIGHT}`{n.join(right_link)}`' if right_link else ''
-        invalid_msg = f'{BotMessage.INVALID}`{n.join(invalid_link)}`{n}(具体原因请前往终端查看报错信息)' if invalid_link else ''
+        right_msg = f'{BotMessage.RIGHT}{n.join(right_link)}' if right_link else ''
+        invalid_msg = f'{BotMessage.INVALID}{n.join(invalid_link)}{n}(具体原因请前往终端查看报错信息)' if invalid_link else ''
         if exist_link:
-            exist_msg = f'{BotMessage.EXIST}`{n.join(exist_link)}`' if exist_link else ''
+            exist_msg = f'{BotMessage.EXIST}{n.join(exist_link)}' if exist_link else ''
             return right_msg + n + exist_msg + n + invalid_msg
         else:
             return right_msg + n + invalid_msg

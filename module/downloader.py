@@ -13,7 +13,7 @@ from typing import Tuple, Union
 
 import pyrogram
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate
+from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate, ChatForwardsRestricted
 from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired
 from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, \
     BotMethodInvalid, MessageNotModified
@@ -26,7 +26,7 @@ from module.app import Application, MetaData
 from module.stdio import ProgressBar, Base64Image
 from module.path_tool import is_file_duplicate, safe_delete, truncate_display_filename, get_file_size, split_path, \
     compare_file_size, move_to_save_directory
-from module.enums import LinkType, DownloadStatus, KeyWord, BotCallbackText, BotButton
+from module.enums import LinkType, DownloadStatus, KeyWord, BotCallbackText, BotButton, BotMessage
 
 
 class TelegramRestrictedMediaDownloader(Bot):
@@ -53,7 +53,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             right_link: set = link_meta.get('right_link')
             invalid_link: set = link_meta.get('invalid_link')
             last_bot_message = link_meta.get('last_bot_message')
-        chat_id: Union[int, str] = message.chat.id
+        chat_id: Union[int, str] = message.from_user.id
         last_message_id: int = last_bot_message.id
         exist_link: set = set([_ for _ in right_link if _ in self.bot_task_link])
         exist_link.update(right_link & Task.COMPLETE_LINK)
@@ -102,7 +102,7 @@ class TelegramRestrictedMediaDownloader(Bot):
     async def help(self,
                    client: pyrogram.Client,
                    message: pyrogram.types.Message) -> None:
-        chat_id = message.chat.id
+        chat_id = message.from_user.id
         if message.text == '/start':
             res: dict = await self.__send_pay_qr(client=client, chat_id=chat_id, load_name='机器人')
             if res.get('e_code'):
@@ -143,7 +143,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 log.error(f'关闭提醒失败,{_t(KeyWord.REASON)}:"{e}"')
         elif callback_data == BotCallbackText.PAY:
             res: dict = await self.__send_pay_qr(client=client,
-                                                 chat_id=callback_query.message.chat.id,
+                                                 chat_id=callback_query.message.from_user.id,
                                                  load_name='收款码')
             MetaData.pay()
             if res.get('e_code'):
@@ -166,46 +166,82 @@ class TelegramRestrictedMediaDownloader(Bot):
         elif callback_data == BotCallbackText.BACK_HELP:
             await callback_query.message.delete()
             await self.help(client, callback_query.message)
+        elif callback_data == BotCallbackText.DOWNLOAD:
+            await self.app.client.send_message('/download ')
+            # todo 重构/download逻辑。
 
     async def get_forward_link_from_bot(self, client: pyrogram.Client,
                                         message: pyrogram.types.Message) -> dict or None:
         meta: dict or None = await super().get_forward_link_from_bot(client, message)
         if meta is None:
             return
-        else:
-            try:
-                origin_meta: dict = await self.__extract_link_content(meta.get('origin_link'), only_chat_id=True)
-                target_meta: dict = await self.__extract_link_content(meta.get('target_link'), only_chat_id=True)
-                origin_chat = await self.app.client.get_chat(origin_meta.get('chat_id'))
-                target_chat = await self.app.client.get_chat(target_meta.get('chat_id'))
-                me = await self.app.client.get_me()
-                if target_chat.id == me.id:
-                    await client.send_message(
-                        message.from_user.id, '⚠️⚠️⚠️无法转发到此机器人。',
-                        reply_to_message_id=message.id,
+        origin_link: str = meta.get('origin_link')
+        target_link: str = meta.get('target_link')
+        try:
+            origin_meta: dict = await self.__extract_link_content(origin_link, only_chat_id=True)
+            target_meta: dict = await self.__extract_link_content(target_link, only_chat_id=True)
+            origin_chat = await self.app.client.get_chat(origin_meta.get('chat_id'))
+            target_chat = await self.app.client.get_chat(target_meta.get('chat_id'))
+            me = await self.app.client.get_me()
+            if target_chat.id == me.id:
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    text='⚠️⚠️⚠️无法转发到此机器人。',
+                    reply_to_message_id=message.id,
+                )
+                return None
+            last_message = None
+            async for i in self.app.client.get_chat_history(
+                    chat_id=origin_chat.id,
+                    offset_id=meta.get('message_ids')[0],
+                    max_id=meta.get('message_ids')[1],
+                    reverse=True
+            ):
+                try:
+                    await self.app.client.forward_messages(
+                        chat_id=target_chat.id,
+                        from_chat_id=origin_chat.id,
+                        message_ids=i.id,
+                        disable_notification=True,
+                        hide_sender_name=True,
+                        hide_captions=True
                     )
-                    return None
-                if not origin_chat.has_protected_content:
-                    async for i in self.app.client.get_chat_history(
-                            chat_id=origin_chat.id,
-                            min_id=meta.get('message_ids')[0],
-                            max_id=meta.get('message_ids')[1]
-                    ):
-                        await self.app.client.forward_messages(
-                            chat_id=target_chat.id,
-                            from_chat_id=origin_chat.id,
-                            message_ids=i.id,
-                            disable_notification=True,
-                            hide_sender_name=True,
-                            hide_captions=True
+                except Exception as e:
+                    if not last_message:
+                        last_message = await client.send_message(
+                            chat_id=message.from_user.id,
+                            reply_to_message_id=message.id,
+                            text=BotMessage.INVALID
                         )
-                else:
-                    await client.send_message(
-                        message.from_user.id, '⚠️⚠️⚠️当前频道存在内容保护限制,无法转发。',
-                        reply_to_message_id=message.id
+                    last_message = await client.edit_message_text(
+                        chat_id=message.from_user.id,
+                        message_id=last_message.id,
+                        text=f'{last_message.text}\n{origin_link}/{i.id}'
                     )
-            except Exception as e:
-                log.error(e)
+                    log.warning(f'{_t(KeyWord.LINK)}:"{origin_link}/{i.id}"无效,{_t(KeyWord.REASON)}:{e}')
+            await client.edit_message_text(
+                message.from_user.id,
+                message_id=last_message.id,
+                text=f'{last_message.text}\n🌟🌟🌟转发任务已完成🌟🌟🌟',
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton(
+                        BotButton.CLICK_VIEW,
+                        url=target_link
+                    )
+                ]]))
+        except ChatForwardsRestricted:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{origin_link}`存在内容保护限制。',
+                reply_to_message_id=message.id,
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton(
+                        BotButton.CLICK_DOWNLOAD,
+                        callback_data=BotCallbackText.DOWNLOAD
+                    )
+                ]]))
+        except Exception as e:
+            log.error(e)
 
     async def __extract_link_content(self, link: str, only_chat_id=False) -> dict or None:
         record_type: set = set()

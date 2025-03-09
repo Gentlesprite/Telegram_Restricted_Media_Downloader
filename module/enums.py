@@ -709,6 +709,7 @@ class BotCallbackText:
     COUNT_TABLE: str = 'count_table'
     BACK_HELP: str = 'back_help'
     NOTICE: str = 'notice'
+    DOWNLOAD: str = 'download'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
@@ -732,3 +733,5 @@ class BotButton:
     LINK_TABLE: str = '🔗链接统计表'
     COUNT_TABLE: str = '➕计数统计表'
     HELP_PAGE: str = '🛎️帮助页面'
+    CLICK_VIEW: str = '🖱点击查看'
+    CLICK_DOWNLOAD: str = '🖱点击下载'
