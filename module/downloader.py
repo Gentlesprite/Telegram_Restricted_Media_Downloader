@@ -181,7 +181,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 me = await self.app.client.get_me()
                 if target_chat.id == me.id:
                     await client.send_message(
-                        message.from_user.id, '无法转发到此机器人。',
+                        message.from_user.id, '⚠️⚠️⚠️无法转发到此机器人。',
                         reply_to_message_id=message.id,
                     )
                     return None
@@ -191,13 +191,19 @@ class TelegramRestrictedMediaDownloader(Bot):
                             min_id=meta.get('message_ids')[0],
                             max_id=meta.get('message_ids')[1]
                     ):
-                        res = await self.app.client.forward_media_group(
-                            chat_id=origin_chat.id,
-                            from_chat_id=target_chat.id,
-                            message_id=i.id)
-                        console.print(res)
-                else:  # download or send a message.
-                    ...
+                        await self.app.client.forward_messages(
+                            chat_id=target_chat.id,
+                            from_chat_id=origin_chat.id,
+                            message_ids=i.id,
+                            disable_notification=True,
+                            hide_sender_name=True,
+                            hide_captions=True
+                        )
+                else:
+                    await client.send_message(
+                        message.from_user.id, '⚠️⚠️⚠️当前频道存在内容保护限制,无法转发。',
+                        reply_to_message_id=message.id
+                    )
             except Exception as e:
                 log.error(e)
 
