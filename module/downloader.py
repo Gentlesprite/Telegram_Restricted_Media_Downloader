@@ -176,10 +176,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             await callback_query.message.delete()
             await self.help(client, callback_query.message)
         elif callback_data == BotCallbackText.DOWNLOAD:
-            command: str = callback_query.message.text
-            command.split()
-            # todo
-            await self.app.client.send_message('/download ')
+            origin_link, start_id, end_id = callback_data.split()
+            await self.app.client.send_message(chat_id=callback_query.message.from_user.id,
+                                               text=f'/download {origin_link} {start_id} {end_id}',
+                                               disable_web_page_preview=True)
 
     async def get_forward_link_from_bot(self, client: pyrogram.Client,
                                         message: pyrogram.types.Message) -> dict or None:
@@ -188,6 +188,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             return
         origin_link: str = meta.get('origin_link')
         target_link: str = meta.get('target_link')
+        start_id: int = meta.get('message_range')[0]
+        end_id: int = meta.get('message_range')[1]
         try:
             origin_meta: dict = await self.__extract_link_content(origin_link, only_chat_id=True)
             target_meta: dict = await self.__extract_link_content(target_link, only_chat_id=True)
@@ -204,8 +206,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             last_message = None
             async for i in self.app.client.get_chat_history(
                     chat_id=origin_chat.id,
-                    offset_id=meta.get('message_ids')[0],
-                    max_id=meta.get('message_ids')[1],
+                    offset_id=start_id,
+                    max_id=end_id,
                     reverse=True
             ):
                 try:
@@ -217,6 +219,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         hide_sender_name=True,
                         hide_captions=True
                     )
+                except ChatForwardsRestricted:
+                    raise ChatForwardsRestricted
                 except Exception as e:
                     if not last_message:
                         last_message = await client.send_message(
@@ -241,6 +245,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                 ]]))
         except ChatForwardsRestricted:
+            BotCallbackText.DOWNLOAD = f'{origin_link} {start_id} {end_id}'
             await client.send_message(
                 chat_id=message.from_user.id,
                 text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{origin_link}`存在内容保护限制。',
@@ -254,6 +259,11 @@ class TelegramRestrictedMediaDownloader(Bot):
         except ValueError:
             console.log('没有找到有效链接。', style='#FF4689')
         except Exception as e:
+            '''
+            /forward https://t.me/c/2166304091/82 https://t.me/test_trmd_forward_1 1 5
+            '''
+            # todo 当目标频道(https://t.me/test_trmd_forward_1)不存在时 The username is not occupied by anyone (caused by "contacts.ResolveUsername")
+            # todo 测试话题频道是否能够被正确转发。
             log.error(e)
 
     async def __extract_link_content(self, link: str, only_chat_id=False) -> dict or None:

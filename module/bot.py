@@ -56,14 +56,13 @@ class Bot:
                 )
                 return False
         if start_id == -1 or end_id == -1:
+            text: str = '未知错误'
             if start_id == -1:
                 text: str = '没有指定起始ID'
-            elif end_id == -1:
+            if end_id == -1:
                 text: str = '没有指定结束ID'
-            elif start_id == end_id:
+            if start_id == end_id:
                 text: str = '没有指定起始ID和结束ID'
-            else:
-                text: str = '未知错误'
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
@@ -111,9 +110,9 @@ class Bot:
             link: list = text.split()
             link.remove('/download') if '/download' in link else None
             if (
-                safe_index(link, 0, '').startswith('https://t.me/') and
-                not safe_index(link, 1, 'https://t.me/').startswith('https://t.me/') and
-                len(link) == 3
+                    safe_index(link, 0, '').startswith('https://t.me/') and
+                    not safe_index(link, 1, 'https://t.me/').startswith('https://t.me/') and
+                    len(link) == 3
             ):
                 # 范围下载。
                 start_id: int = int(safe_index(link, 1, -1))
@@ -132,6 +131,7 @@ class Bot:
             else:
                 right_link: set = set([_ for _ in link if _.startswith('https://t.me/')])
                 invalid_link: set = set([_ for _ in link if not _.startswith('https://t.me/')])
+            # todo 当text长度超过4096时,会抛出 The message text is too long.
             last_bot_message = await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
@@ -252,7 +252,6 @@ class Bot:
             )
             return None
         try:
-
             start_id: int = int(safe_index(args, 3, -1))
             end_id: int = int(safe_index(args, 4, -1))
             if not await self.check_download_range(
@@ -261,7 +260,6 @@ class Bot:
                     client=client,
                     message=message):
                 return None
-            message_ids: list = [start_id, end_id]
         except Exception as e:
             await client.send_message(
                 chat_id=message.from_user.id,
@@ -269,7 +267,7 @@ class Bot:
                 text=f'❌❌❌命令错误❌❌❌\n{e}\n请使用`/forward https://t.me/A https://t.me/B 1 100`'
             )
             return None
-        return {'origin_link': args[1], 'target_link': args[2], 'message_ids': message_ids}
+        return {'origin_link': args[1], 'target_link': args[2], 'message_range': [start_id, end_id]}
 
     async def exit(self, client: pyrogram.Client,
                    message: pyrogram.types.Message) -> None:
