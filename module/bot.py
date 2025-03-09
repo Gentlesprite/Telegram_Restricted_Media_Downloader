@@ -22,6 +22,7 @@ class Bot:
         BotCommand(BotCommandText.HELP[0], BotCommandText.HELP[1]),
         BotCommand(BotCommandText.DOWNLOAD[0], BotCommandText.DOWNLOAD[1].replace('`', '')),
         BotCommand(BotCommandText.TABLE[0], BotCommandText.TABLE[1]),
+        BotCommand(BotCommandText.FORWARD[0], BotCommandText.FORWARD[1]),
         BotCommand(BotCommandText.EXIT[0], BotCommandText.EXIT[1])
     ]
 
@@ -170,6 +171,33 @@ class Bot:
                                   disable_web_page_preview=True,
                                   reply_markup=choice_keyboard)
 
+    @staticmethod
+    async def get_forward_link_from_bot(client: pyrogram.Client,
+                                        message: pyrogram.types.Message) -> Dict[str, list] or None:
+
+        text: str = message.text
+        args = text.split(maxsplit=5)
+        if text == '/forward' or len(args) <= 1:
+            await client.send_message(
+                message.from_user.id,
+                '❌❌❌命令格式无效,请使用`/forward https://t.me/c/src_chat https://t.me/c/dst_chat 1 100`'
+            )
+            return None
+        try:
+            start_id: int = int(args[3])
+            end_id: int = int(args[4])
+            if end_id:
+                if start_id > end_id:
+                    raise ValueError('起始ID<结束ID。')
+            message_ids: list = [start_id, end_id]
+        except Exception as e:
+            await client.send_message(
+                message.from_user.id,
+                f'❌❌❌命令错误,{e}。'
+            )
+            return None
+        return {'origin_link': args[1], 'target_link': args[2], 'message_ids': message_ids}
+
     async def exit(self, client: pyrogram.Client,
                    message: pyrogram.types.Message) -> None:
         last_message = await client.send_message(chat_id=message.chat.id,
@@ -211,6 +239,12 @@ class Bot:
                 MessageHandler(
                     self.table,
                     filters=pyrogram.filters.command(['table']) & pyrogram.filters.user(self.root)
+                )
+            )
+            self.bot.add_handler(
+                MessageHandler(
+                    self.get_forward_link_from_bot,
+                    filters=pyrogram.filters.command(['forward']) & pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(
