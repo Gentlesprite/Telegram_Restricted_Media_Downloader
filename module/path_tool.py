@@ -12,7 +12,6 @@ import mimetypes
 import unicodedata
 
 from io import BytesIO
-from rich.text import Text
 from typing import Optional
 
 from pyrogram.file_id import (
@@ -205,24 +204,3 @@ def get_file_size(file_path: str, temp_ext: str = '.temp'):
         return os.path.getsize(file_path + temp_ext)
     else:
         return 0
-
-
-def get_terminal_width() -> int:
-    terminal_width: int = 120
-    try:
-        terminal_width: int = os.get_terminal_size().columns
-    except OSError:
-        pass
-    finally:
-        return terminal_width
-
-
-def truncate_display_filename(file_name: str) -> Text:
-    terminal_width: int = get_terminal_width()
-    max_width: int = max(int(terminal_width * 0.3), 1)
-    text = Text(file_name)
-    text.truncate(
-        max_width=max_width,
-        overflow='ellipsis'
-    )
-    return text

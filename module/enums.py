@@ -695,7 +695,7 @@ class BotCommandText:
     HELP: tuple = ('help', '展示可用命令。')
     DOWNLOAD: tuple = ('download', '分配新的下载任务。`/download https://t.me/x/x`')
     TABLE: tuple = ('table', '在终端输出当前下载情况的统计信息。')
-    FORWARD: tuple = ('forward', '转发。')
+    FORWARD: tuple = ('forward', '从频道A转发至频道B 起始ID 结束ID。`/forward https://t.me/A https://t.me/B 1 100`')
     EXIT: tuple = ('exit', '退出软件。')
 
     @staticmethod

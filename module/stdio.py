@@ -14,7 +14,7 @@ from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, 
 
 from module import log, console, README, SOFTWARE_FULL_NAME, __version__, __copyright__, __license__
 from module.language import _t
-from module.path_tool import get_terminal_width
+from module.util import get_terminal_width
 from module.enums import DownloadType, KeyWord, GradientColor, ProcessConfig, Banner
 
 

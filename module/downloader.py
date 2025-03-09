@@ -23,10 +23,11 @@ from module.bot import Bot
 from module.task import Task
 from module.language import _t
 from module.app import Application, MetaData
+from module.util import truncate_display_filename
 from module.stdio import ProgressBar, Base64Image
-from module.path_tool import is_file_duplicate, safe_delete, truncate_display_filename, get_file_size, split_path, \
-    compare_file_size, move_to_save_directory
 from module.enums import LinkType, DownloadStatus, KeyWord, BotCallbackText, BotButton, BotMessage
+from module.path_tool import is_file_duplicate, safe_delete, get_file_size, split_path, compare_file_size, \
+    move_to_save_directory
 
 
 class TelegramRestrictedMediaDownloader(Bot):
@@ -58,12 +59,16 @@ class TelegramRestrictedMediaDownloader(Bot):
         exist_link: set = set([_ for _ in right_link if _ in self.bot_task_link])
         exist_link.update(right_link & Task.COMPLETE_LINK)
         right_link -= exist_link
-        await self.edit_message_text(client=client,
-                                     chat_id=chat_id,
-                                     last_message_id=last_message_id,
-                                     text=self.update_text(right_link=right_link,
-                                                           exist_link=exist_link,
-                                                           invalid_link=invalid_link))
+        await self.edit_message_text(
+            client=client,
+            chat_id=chat_id,
+            last_message_id=last_message_id,
+            text=self.update_text(
+                right_link=right_link,
+                exist_link=exist_link,
+                invalid_link=invalid_link
+            )
+        )
         links: set or None = self.__process_links(link=list(right_link))
         if links is None:
             return
@@ -72,12 +77,16 @@ class TelegramRestrictedMediaDownloader(Bot):
                 task: dict = await self.__create_download_task(link=link, retry=None)
                 invalid_link.add(link) if task.get('status') == DownloadStatus.FAILURE else self.bot_task_link.add(link)
             right_link -= invalid_link
-            await self.edit_message_text(client=client,
-                                         chat_id=chat_id,
-                                         last_message_id=last_message_id,
-                                         text=self.update_text(right_link=right_link,
-                                                               exist_link=exist_link,
-                                                               invalid_link=invalid_link))
+            await self.edit_message_text(
+                client=client,
+                chat_id=chat_id,
+                last_message_id=last_message_id,
+                text=self.update_text(
+                    right_link=right_link,
+                    exist_link=exist_link,
+                    invalid_link=invalid_link
+                )
+            )
 
     @staticmethod
     async def __send_pay_qr(client: pyrogram.Client, chat_id, load_name: str) -> dict:
@@ -167,8 +176,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             await callback_query.message.delete()
             await self.help(client, callback_query.message)
         elif callback_data == BotCallbackText.DOWNLOAD:
+            command: str = callback_query.message.text
+            command.split()
+            # todo
             await self.app.client.send_message('/download ')
-            # todo 重构/download逻辑。
 
     async def get_forward_link_from_bot(self, client: pyrogram.Client,
                                         message: pyrogram.types.Message) -> dict or None:
@@ -186,7 +197,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             if target_chat.id == me.id:
                 await client.send_message(
                     chat_id=message.from_user.id,
-                    text='⚠️⚠️⚠️无法转发到此机器人。',
+                    text='⚠️⚠️⚠️无法转发到此机器人⚠️⚠️⚠️',
                     reply_to_message_id=message.id,
                 )
                 return None
@@ -240,6 +251,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         callback_data=BotCallbackText.DOWNLOAD
                     )
                 ]]))
+        except ValueError:
+            console.log('没有找到有效链接。', style='#FF4689')
         except Exception as e:
             log.error(e)
 
@@ -259,15 +272,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                 record_type.add(LinkType.TOPIC)
         # https://github.com/KurimuzonAkuma/pyrogram/blob/dev/pyrogram/methods/messages/get_messages.py#L101
         if only_chat_id:
-            match = re.match(r"^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/(\d+))?$",
+            match = re.match(r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/(\d+))?$',
                              link.lower())
             if match:
                 try:
                     chat_id = utils.get_channel_id(int(match.group(1)))
                 except ValueError:
                     chat_id = match.group(1)
-                return {'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.SINGLE,
-                        'chat_id': chat_id}
+                return {'chat_id': chat_id}
         else:
             match = re.match(
                 r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/\d+)*/(\d+)/?$',
@@ -519,6 +531,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         'error_msg': f'检测到使用了「bot_token」方式登录了主账号的行为,'
                                      f'{"已删除旧会话文件" if res else "请手动删除软件目录下的sessions文件夹"},'
                                      f'请重启软件以「手机号码」方式重新登录'}}
+        except ValueError as e:
+            return {'chat_id': None, 'member_num': 0,
+                    'link_type': None,
+                    'status': DownloadStatus.FAILURE,
+                    'e_code': {'all_member': str(e), 'error_msg': '没有找到有效链接'}}
         except Exception as e:
             log.exception(e)
             return {'chat_id': None, 'member_num': 0,

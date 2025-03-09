@@ -12,6 +12,7 @@ from pyrogram.types import BotCommand, InlineKeyboardButton, InlineKeyboardMarku
 
 from module import __version__, __copyright__, SOFTWARE_FULL_NAME, __license__
 from module.language import _t
+from module.util import safe_index
 from module.config import GlobalConfig
 from module.enums import BotCommandText, BotMessage, BotCallbackText, BotButton, KeyWord
 
@@ -22,7 +23,7 @@ class Bot:
         BotCommand(BotCommandText.HELP[0], BotCommandText.HELP[1]),
         BotCommand(BotCommandText.DOWNLOAD[0], BotCommandText.DOWNLOAD[1].replace('`', '')),
         BotCommand(BotCommandText.TABLE[0], BotCommandText.TABLE[1]),
-        BotCommand(BotCommandText.FORWARD[0], BotCommandText.FORWARD[1]),
+        BotCommand(BotCommandText.FORWARD[0], BotCommandText.FORWARD[1].replace('`', '')),
         BotCommand(BotCommandText.EXIT[0], BotCommandText.EXIT[1])
     ]
 
@@ -38,8 +39,38 @@ class Bot:
         await self.help(client, message)
         await client.send_message(chat_id=message.from_user.id,
                                   reply_to_message_id=message.id,
-                                  text='未知命令,请查看帮助后重试。',
+                                  text='❓❓❓未知命令❓❓❓\n请查看帮助后重试。',
                                   disable_web_page_preview=True)
+
+    @staticmethod
+    async def check_download_range(start_id: int,
+                                   end_id: int,
+                                   client: pyrogram.Client,
+                                   message: pyrogram.types.Message) -> bool:
+        if end_id != -1:
+            if start_id > end_id:
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_to_message_id=message.id,
+                    text='❌❌❌起始ID>结束ID❌❌❌'
+                )
+                return False
+        if start_id == -1 or end_id == -1:
+            if start_id == -1:
+                text: str = '没有指定起始ID'
+            elif end_id == -1:
+                text: str = '没有指定结束ID'
+            elif start_id == end_id:
+                text: str = '没有指定起始ID和结束ID'
+            else:
+                text: str = '未知错误'
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text=f'❌❌❌{text}❌❌❌'
+            )
+            return False
+        return True
 
     async def get_link_from_bot(self,
                                 client: pyrogram.Client,
@@ -48,7 +79,7 @@ class Bot:
         if text == '/download':
             await client.send_message(chat_id=message.from_user.id,
                                       reply_to_message_id=message.id,
-                                      text='❓❓❓请提供下载链接,格式:\n`/download https://t.me/x/x`',
+                                      text='❓❓❓请提供下载链接❓❓❓格式:\n`/download https://t.me/x/x`',
                                       disable_web_page_preview=True)
         elif text.startswith('https://t.me/'):
             if text[len('https://t.me/'):].count('/') >= 1:
@@ -56,35 +87,66 @@ class Bot:
                     await client.delete_messages(chat_id=message.from_user.id, message_ids=message.id)
                     await self.send_message_to_bot(text=f'/download {text}', catch=True)
                 except Exception as e:
-                    await client.send_message(chat_id=message.from_user.id,
-                                              reply_to_message_id=message.id,
-                                              text=f'{e}\n🚫🚫🚫请使用以下命令,分配下载任务:\n`/download {text}`',
-                                              disable_web_page_preview=True)
+                    await client.send_message(
+                        chat_id=message.from_user.id,
+                        reply_to_message_id=message.id,
+                        text=f'{e}\n⬇️⬇️⬇️请使用以下命令分配下载任务⬇️⬇️⬇️\n`/download {text}`',
+                        disable_web_page_preview=True
+                    )
             else:
-                await client.send_message(chat_id=message.from_user.id,
-                                          reply_to_message_id=message.id,
-                                          text=f'❗️❗️❗️请使用以下命令,分配下载任务:\n`/download https://t.me/x/x`',
-                                          disable_web_page_preview=True)
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_to_message_id=message.id,
+                    text=f'⬇️⬇️⬇️请使用以下命令分配下载任务⬇️⬇️⬇️\n`/download https://t.me/x/x`',
+                    disable_web_page_preview=True
+                )
         elif len(text) <= 25 or text == '/download https://t.me/x/x' or text.endswith('.txt'):
             await self.help(client, message)
-            await client.send_message(chat_id=message.from_user.id,
-                                      reply_to_message_id=message.id,
-                                      text='⁉️⁉️⁉️链接错误,请查看帮助后重试。',
-                                      disable_web_page_preview=True)
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text='⁉️⁉️⁉️链接错误⁉️⁉️⁉️\n请查看帮助后重试。',
+                disable_web_page_preview=True)
         else:
             link: list = text.split()
             link.remove('/download') if '/download' in link else None
-            right_link: set = set([_ for _ in link if _.startswith('https://t.me/')])
-            invalid_link: set = set([_ for _ in link if not _.startswith('https://t.me/')])
-            last_bot_message = await client.send_message(chat_id=message.from_user.id,
-                                                         reply_to_message_id=message.id,
-                                                         text=self.update_text(right_link=right_link,
-                                                                               invalid_link=invalid_link),
-                                                         disable_web_page_preview=True)
+            if (
+                safe_index(link, 0, '').startswith('https://t.me/') and
+                not safe_index(link, 1, 'https://t.me/').startswith('https://t.me/') and
+                len(link) == 3
+            ):
+                # 范围下载。
+                start_id: int = int(safe_index(link, 1, -1))
+                end_id: int = int(safe_index(link, 2, -1))
+                if not await self.check_download_range(
+                        start_id=start_id,
+                        end_id=end_id,
+                        client=client,
+                        message=message
+                ):
+                    return None
+                right_link: set = set()
+                invalid_link: set = set()
+                for i in range(start_id, end_id + 1):
+                    right_link.add(f'{link[0]}/{i}')
+            else:
+                right_link: set = set([_ for _ in link if _.startswith('https://t.me/')])
+                invalid_link: set = set([_ for _ in link if not _.startswith('https://t.me/')])
+            last_bot_message = await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text=self.update_text(
+                    right_link=right_link,
+                    invalid_link=invalid_link if invalid_link else None
+                ),
+                disable_web_page_preview=True
+            )
             if right_link:
-                return {'right_link': right_link,
-                        'invalid_link': invalid_link,
-                        'last_bot_message': last_bot_message}
+                return {
+                    'right_link': right_link,
+                    'invalid_link': invalid_link,
+                    'last_bot_message': last_bot_message
+                }
             else:
                 return None
 
@@ -177,9 +239,8 @@ class Bot:
                                   disable_web_page_preview=True,
                                   reply_markup=choice_keyboard)
 
-    @staticmethod
-    async def get_forward_link_from_bot(client: pyrogram.Client,
-                                        message: pyrogram.types.Message) -> Dict[str, list] or None:
+    async def get_forward_link_from_bot(self, client: pyrogram.Client,
+                                        message: pyrogram.types.Message) -> Dict[str, list] or None or str:
 
         text: str = message.text
         args = text.split(maxsplit=5)
@@ -191,18 +252,21 @@ class Bot:
             )
             return None
         try:
-            start_id: int = int(args[3])
-            end_id: int = int(args[4])
-            if end_id:
-                if start_id > end_id:
-                    raise ValueError('起始ID<结束ID。')
-                # todo 当start_id end_id 不存在时抛出list index out of range.
+
+            start_id: int = int(safe_index(args, 3, -1))
+            end_id: int = int(safe_index(args, 4, -1))
+            if not await self.check_download_range(
+                    start_id=start_id,
+                    end_id=end_id,
+                    client=client,
+                    message=message):
+                return None
             message_ids: list = [start_id, end_id]
         except Exception as e:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
-                text=f'❌❌❌命令错误,{e}。'
+                text=f'❌❌❌命令错误❌❌❌\n{e}\n请使用`/forward https://t.me/A https://t.me/B 1 100`'
             )
             return None
         return {'origin_link': args[1], 'target_link': args[2], 'message_ids': message_ids}

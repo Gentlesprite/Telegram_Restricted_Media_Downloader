@@ -41,7 +41,7 @@ class Task:
                 reason: str = e_code.get('error_msg')
                 if reason:
                     log.error(f'{_t(KeyWord.LINK)}:"{link}"{reason},'
-                              f'{_t(KeyWord.REASON)}:"{e_code.get("all_member")},"'
+                              f'{_t(KeyWord.REASON)}:"{e_code.get("all_member")}",'
                               f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。')
                 else:
                     log.warning(
