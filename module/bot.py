@@ -31,6 +31,7 @@ class Bot:
         self.is_bot_running: bool = False
         self.bot_task_link: set = set()
         self.gc = GlobalConfig()
+        self.root: list = []
 
     async def process_error_message(self, client: pyrogram.Client, message: pyrogram.types.Message) -> None:
         await self.help(client, message)
@@ -190,46 +191,50 @@ class Bot:
         try:
             self.bot = bot_client_obj
             self.user = user_client_obj
+            root = await self.user.get_me()
+            self.root.append(root.id)
             await bot_client_obj.start()
             await self.bot.set_bot_commands(self.COMMANDS)
             self.bot.add_handler(
                 MessageHandler(
                     self.help,
-                    filters=pyrogram.filters.command(['help', 'start'])
+                    filters=pyrogram.filters.command(['help', 'start']) & pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.get_link_from_bot,
-                    filters=pyrogram.filters.command(['download'])
+                    filters=pyrogram.filters.command(['download']) & pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.table,
-                    filters=pyrogram.filters.command(['table'])
+                    filters=pyrogram.filters.command(['table']) & pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.exit,
-                    filters=pyrogram.filters.command(['exit'])
+                    filters=pyrogram.filters.command(['exit']) & pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.get_link_from_bot,
-                    filters=pyrogram.filters.regex(r'^https://t.me.*')
+                    filters=pyrogram.filters.regex(r'^https://t.me.*') & pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(
                 CallbackQueryHandler(
-                    self.callback_data
+                    self.callback_data,
+                    filters=pyrogram.filters.user(self.root) & pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
-                    self.process_error_message
+                    self.process_error_message,
+                    filters=pyrogram.filters.user(self.root)
                 )
             )
             self.is_bot_running: bool = True
