@@ -3,7 +3,7 @@
 # Software:PyCharm
 # Time:2025/1/24 21:27
 # File:bot.py
-from typing import List, Dict, Union
+from typing import List, Dict
 
 import pyrogram
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
@@ -214,6 +214,7 @@ class Bot:
             f'🛎️ {BotCommandText.with_description(BotCommandText.HELP)}\n'
             f'📁 {BotCommandText.with_description(BotCommandText.DOWNLOAD)}\n'
             f'📝 {BotCommandText.with_description(BotCommandText.TABLE)}\n'
+            f'↗️ {BotCommandText.with_description(BotCommandText.FORWARD)}\n'
             f'❌ {BotCommandText.with_description(BotCommandText.EXIT)}\n'
         )
 
@@ -418,8 +419,6 @@ class Bot:
                                 disable_web_page_preview: bool = True,
                                 reply_markup: pyrogram.types.InlineKeyboardMarkup | None = None):
         try:
-            # 转发验证:/forward https://t.me/c/2166304091 https://t.me/test_trmd_forward 1 50
-            # 下载验证:/download https://t.me/c/2166304091 1 50
             if isinstance(text, list):
                 last_message: pyrogram.types.Message = await self.safe_process_message(
                     client=client,
