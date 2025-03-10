@@ -314,7 +314,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 reply_to_message_id=message.id,
                 text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)\n❌❌❌注意:目前暂不支持转发话题频道❌❌❌'
             )
-        except ValueError:
+        except (ValueError, KeyError, UsernameInvalid):
             msg: str = ''
             if any('/c' in link for link in (origin_link, target_link)):
                 msg = '(私密频道或话题频道必须让当前账号加入该频道)'
