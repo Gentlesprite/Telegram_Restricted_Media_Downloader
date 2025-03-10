@@ -13,7 +13,7 @@ from pyrogram.types import BotCommand, InlineKeyboardButton, InlineKeyboardMarku
 from module import __version__, __copyright__, SOFTWARE_FULL_NAME, __license__
 from module.language import _t
 from module.config import GlobalConfig
-from module.util import safe_index, valid_message_length
+from module.util import safe_index, safe_message
 from module.enums import BotCommandText, BotMessage, BotCallbackText, BotButton, KeyWord
 
 
@@ -135,7 +135,7 @@ class Bot:
                 return {
                     'right_link': right_link,
                     'invalid_link': invalid_link,
-                    'last_bot_message_id': await self.safe_process_message(
+                    'last_bot_message': await self.safe_process_message(
                         client=client, message=message,
                         text=self.update_text(
                             right_link=right_link,
@@ -146,18 +146,32 @@ class Bot:
                 return None
 
     @staticmethod
-    async def safe_process_message(client: pyrogram.Client,
-                                   message: pyrogram.types.Message,
-                                   text: list) -> int:
+    async def safe_process_message(
+            client: pyrogram.Client,
+            message: pyrogram.types.Message,
+            text: list, last_message_id: int = -1,
+            disable_web_page_preview: bool = True,
+            reply_markup: pyrogram.types.InlineKeyboardMarkup | None = None
+    ) -> pyrogram.types.Message:
+        if len(text) == 1 and last_message_id != -1:
+            last_bot_message = await client.edit_message_text(
+                chat_id=message.from_user.id,
+                message_id=last_message_id,
+                text=text[0],
+                disable_web_page_preview=disable_web_page_preview,
+                reply_markup=reply_markup
+            )
+            return last_bot_message
+
         last_bot_messages: list = []
         for t in text:
-            last_bot_message = await client.send_message(
+            last_bot_message: pyrogram.types.Message = await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
                 text=t, disable_web_page_preview=True
             )
-            if last_bot_message.id not in last_bot_messages:
-                last_bot_messages.append(last_bot_message.id)
+            if last_bot_message not in last_bot_messages:
+                last_bot_messages.append(last_bot_message)
         return last_bot_messages[-1]
 
     async def help(self,
@@ -258,7 +272,11 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
-                text='❌❌❌命令格式无效❌❌❌\n请使用`/forward https://t.me/c/src_chat https://t.me/c/dst_chat 1 100`'
+                text='❌❌❌命令格式无效❌❌❌\n'
+                     '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
+                     '`/forward 原始频道 目标频道 起始ID 结束ID`\n'
+                     '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
+                     '`/forward https://t.me/A https://t.me/B 1 100`\n'
             )
             return None
         try:
@@ -286,9 +304,8 @@ class Bot:
                                                  reply_to_message_id=message.id,
                                                  disable_web_page_preview=True)
         self.is_bot_running = False
-        await self.edit_message_text(client=client,
+        await self.safe_edit_message(client=client,
                                      message=message,
-                                     chat_id=message.from_user.id,
                                      last_message_id=last_message.id,
                                      text='👌👌👌退出成功。')
         raise SystemExit(0)
@@ -387,30 +404,37 @@ class Bot:
         if exist_link:
             exist_msg = f'{BotMessage.EXIST}{n.join(exist_link)}' if exist_link else ''
             text: str = right_msg + n + exist_msg + n + invalid_msg
-            v_text: list = valid_message_length(text)
+            v_text: list = safe_message(text)
             return v_text
         else:
             text = right_msg + n + invalid_msg
-            v_text: list = valid_message_length(text)
+            v_text: list = safe_message(text)
             return v_text
 
-    async def edit_message_text(self, client: pyrogram.Client,
+    async def safe_edit_message(self, client: pyrogram.Client,
                                 message: pyrogram.types.Message,
-                                chat_id: Union[int, str],
                                 last_message_id: int,
                                 text: str | List[str],
-                                disable_web_page_preview: bool = True):
+                                disable_web_page_preview: bool = True,
+                                reply_markup: pyrogram.types.InlineKeyboardMarkup | None = None):
         try:
+            # 转发验证:/forward https://t.me/c/2166304091 https://t.me/test_trmd_forward 1 50
+            # 下载验证:/download https://t.me/c/2166304091 1 50
             if isinstance(text, list):
-                await self.safe_process_message(
+                last_message: pyrogram.types.Message = await self.safe_process_message(
                     client=client,
                     message=message,
-                    text=text
+                    last_message_id=last_message_id,
+                    text=text,
+                    disable_web_page_preview=disable_web_page_preview,
+                    reply_markup=reply_markup
                 )
-            else:
-                await client.edit_message_text(chat_id=chat_id,
+                return last_message
+            elif isinstance(text, str):
+                await client.edit_message_text(chat_id=message.from_user.id,
                                                message_id=last_message_id,
                                                text=text,
-                                               disable_web_page_preview=disable_web_page_preview)
+                                               disable_web_page_preview=disable_web_page_preview,
+                                               reply_markup=reply_markup)
         except MessageNotModified:
             pass

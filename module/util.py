@@ -37,10 +37,10 @@ def truncate_display_filename(file_name: str) -> Text:
     return text
 
 
-def valid_message_length(text: str, max_length: int = 3969) -> List[str]:
+def safe_message(text: str, max_length: int = 3969) -> List[str]:
     if len(text) <= max_length:
         return [text]
     else:
         part1 = text[:max_length]
         part2 = text[max_length:]
-        return [part1] + valid_message_length(part2, max_length)
+        return [part1] + safe_message(part2, max_length)

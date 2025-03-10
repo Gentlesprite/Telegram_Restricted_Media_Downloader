@@ -22,6 +22,7 @@ from module import console, log, utils
 from module.bot import Bot
 from module.task import Task
 from module.language import _t
+from module.util import safe_message
 from module.app import Application, MetaData
 from module.util import truncate_display_filename
 from module.stdio import ProgressBar, Base64Image
@@ -53,16 +54,14 @@ class TelegramRestrictedMediaDownloader(Bot):
         else:
             right_link: set = link_meta.get('right_link')
             invalid_link: set = link_meta.get('invalid_link')
-            last_bot_message_id: int | None = link_meta.get('last_bot_message_id')
-        chat_id: Union[int, str] = message.from_user.id
+            last_bot_message: pyrogram.types.Message | None = link_meta.get('last_bot_message')
         exist_link: set = set([_ for _ in right_link if _ in self.bot_task_link])
         exist_link.update(right_link & Task.COMPLETE_LINK)
         right_link -= exist_link
-        await self.edit_message_text(
+        await self.safe_edit_message(
             client=client,
             message=message,
-            chat_id=chat_id,
-            last_message_id=last_bot_message_id,
+            last_message_id=last_bot_message.id,
             text=self.update_text(
                 right_link=right_link,
                 exist_link=exist_link,
@@ -77,11 +76,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                 task: dict = await self.__create_download_task(link=link, retry=None)
                 invalid_link.add(link) if task.get('status') == DownloadStatus.FAILURE else self.bot_task_link.add(link)
             right_link -= invalid_link
-            await self.edit_message_text(
+            await self.safe_edit_message(
                 client=client,
                 message=message,
-                chat_id=chat_id,
-                last_message_id=last_bot_message_id,
+                last_message_id=last_bot_message.id,
                 text=self.update_text(
                     right_link=right_link,
                     exist_link=exist_link,
@@ -207,8 +205,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         start_id: int = meta.get('message_range')[0]
         end_id: int = meta.get('message_range')[1]
         try:
-            origin_meta: dict = await self.__extract_link_content(origin_link, only_chat_id=True)
-            target_meta: dict = await self.__extract_link_content(target_link, only_chat_id=True)
+            origin_meta: dict | None = await self.__extract_link_content(origin_link, only_chat_id=True)
+            target_meta: dict | None = await self.__extract_link_content(target_link, only_chat_id=True)
             origin_chat: pyrogram.types.Chat | None = await self.__get_chat(
                 bot_client=client, bot_message=message,
                 chat_id=origin_meta.get('chat_id'),
@@ -229,7 +227,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     reply_to_message_id=message.id,
                 )
                 return None
-            last_message = None
+            last_message: pyrogram.types.Message | None = None
             async for i in self.app.client.get_chat_history(
                     chat_id=origin_chat.id,
                     offset_id=start_id,
@@ -254,16 +252,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                             reply_to_message_id=message.id,
                             text=BotMessage.INVALID
                         )
-                    last_message = await client.edit_message_text(
-                        chat_id=message.from_user.id,
-                        message_id=last_message.id,
-                        text=f'{last_message.text}\n{origin_link}/{i.id}'
+                    last_message = await self.safe_edit_message(
+                        client=client,
+                        message=message,
+                        last_message_id=last_message.id,
+                        text=safe_message(f'{last_message.text}\n{origin_link}/{i.id}')
                     )
                     log.warning(f'{_t(KeyWord.LINK)}:"{origin_link}/{i.id}"无效,{_t(KeyWord.REASON)}:{e}')
-            await client.edit_message_text(
-                message.from_user.id,
-                message_id=last_message.id,
-                text=f'{last_message.text}\n🌟🌟🌟转发任务已完成🌟🌟🌟',
+            await self.safe_edit_message(
+                client=client,
+                message=message,
+                last_message_id=last_message.id,
+                text=safe_message(f'{last_message.text}\n🌟🌟🌟转发任务已完成🌟🌟🌟'),
                 reply_markup=InlineKeyboardMarkup([[
                     InlineKeyboardButton(
                         BotButton.CLICK_VIEW,
@@ -282,6 +282,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                         callback_data=BotCallbackText.DOWNLOAD
                     )
                 ]]))
+        except AttributeError as e:  # todo 支持话题频道的转发。
+            log.exception(e)
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text='❌❌❌目前暂不支持转发话题频道❌❌❌'
+            )
         except ValueError:
             msg: str = ''
             if any('/c' in link for link in (origin_link, target_link)):
@@ -299,7 +306,6 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
             log.exception(e)
             log.error(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
-            # todo 测试话题频道无法转发。
 
     async def __extract_link_content(self, link: str, only_chat_id=False) -> dict | None:
         record_type: set = set()
