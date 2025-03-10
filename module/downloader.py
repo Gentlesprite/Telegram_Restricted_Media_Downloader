@@ -179,6 +179,16 @@ class TelegramRestrictedMediaDownloader(Bot):
             await self.app.client.send_message(chat_id=callback_query.message.from_user.id,
                                                text=f'/download {origin_link} {start_id} {end_id}',
                                                disable_web_page_preview=True)
+            await callback_query.message.edit_reply_markup(
+                InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.TASK_ASSIGN,
+                            callback_data=BotCallbackText.NULL
+                        )
+                    ]
+                ])
+            )
 
     async def __get_chat(self, bot_client: pyrogram.Client,
                          bot_message: pyrogram.types.Message,

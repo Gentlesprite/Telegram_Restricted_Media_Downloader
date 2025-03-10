@@ -693,7 +693,8 @@ class GetStdioParams:
 
 class BotCommandText:
     HELP: tuple = ('help', '展示可用命令。')
-    DOWNLOAD: tuple = ('download', '分配新的下载任务(多种使用方式见使用说明)。\n`/download https://t.me/x/x 起始ID 结束ID`')
+    DOWNLOAD: tuple = (
+        'download', '分配新的下载任务(多种使用方式见使用说明)。\n`/download https://t.me/x/x 起始ID 结束ID`')
     TABLE: tuple = ('table', '在终端输出当前下载情况的统计信息。')
     FORWARD: tuple = ('forward', '从频道A转发至频道B 起始ID 结束ID。\n`/forward https://t.me/A https://t.me/B 1 100`')
     EXIT: tuple = ('exit', '退出软件。')
@@ -704,6 +705,7 @@ class BotCommandText:
 
 
 class BotCallbackText:
+    NULL: str = 'null'
     PAY: str = 'pay'
     LINK_TABLE: str = 'link_table'
     COUNT_TABLE: str = 'count_table'
@@ -735,3 +737,4 @@ class BotButton:
     HELP_PAGE: str = '🛎️帮助页面'
     CLICK_VIEW: str = '🖱点击查看'
     CLICK_DOWNLOAD: str = '🖱点击下载'
+    TASK_ASSIGN: str = '✅任务已分配'
