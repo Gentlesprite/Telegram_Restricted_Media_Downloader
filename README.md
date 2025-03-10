@@ -226,6 +226,11 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 # 举例：
 /forward https://t.me/test https://t.me/test2 1 500
 # 代表转发https://t.me/test频道中从消息ID=1到结束ID=500的消息到https://t.me/test2频道。
+# 若需转发至个人的收藏夹，请使用`https://t.me/用户名`。(用户名就是个人账户信息里@后面那一串)
+# 举例：
+# 在个人信息中查看到用户名为@developer
+# 此时使用/forward https://t.me/test https://t.me/developer 1 500
+# 代表转发https://t.me/test频道中从消息ID=1到结束ID=500的消息到个人收藏夹。
 ```
 
 11. `/exit`命令使用教程，如下图所示：
