@@ -282,20 +282,23 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                 ]]))
         except ValueError:
+            msg: str = ''
+            if any('/c' in link for link in (origin_link, target_link)):
+                msg = '(私密频道或话题频道必须让当前账号加入该频道)'
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
-                text='❌❌❌没有找到有效链接❌❌❌'
+                text='❌❌❌没有找到有效链接❌❌❌\n' + msg
             )
         except Exception as e:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
-                text=f'⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
+                text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
             )
             log.exception(e)
             log.error(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
-            # todo 测试话题频道是否能够被正确转发。
+            # todo 测试话题频道无法转发。
 
     async def __extract_link_content(self, link: str, only_chat_id=False) -> dict or None:
         record_type: set = set()
@@ -554,14 +557,15 @@ class TelegramRestrictedMediaDownloader(Bot):
             return {'chat_id': None, 'member_num': 0,
                     'link_type': None,
                     'status': DownloadStatus.FAILURE,
-                    'e_code': {'all_member': str(e), 'error_msg': '频道可能为私密频道,请让当前账号加入该频道后再重试'}}
+                    'e_code': {'all_member': str(e),
+                               'error_msg': '频道可能为私密频道或话题频道,请让当前账号加入该频道后再重试'}}
         except ChannelPrivate as e:
             return {'chat_id': None, 'member_num': 0,
                     'link_type': None,
                     'status': DownloadStatus.FAILURE,
                     'e_code': {
                         'all_member': str(e),
-                        'error_msg': '频道可能为私密频道,当前账号可能已不在该频道,请让当前账号加入该频道后再重试'}}
+                        'error_msg': '频道可能为私密频道或话题频道,当前账号可能已不在该频道,请让当前账号加入该频道后再重试'}}
         except BotMethodInvalid as e:
             res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
             return {'chat_id': None, 'member_num': 0,
