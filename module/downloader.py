@@ -582,6 +582,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                     'link_type': None,
                     'status': DownloadStatus.FAILURE,
                     'e_code': {'all_member': str(e), 'error_msg': '没有找到有效链接'}}
+        except UsernameNotOccupied as e:
+            return {'chat_id': None, 'member_num': 0,
+                    'link_type': None,
+                    'status': DownloadStatus.FAILURE,
+                    'e_code': {'all_member': str(e), 'error_msg': '频道不存在'}}
         except Exception as e:
             log.exception(e)
             return {'chat_id': None, 'member_num': 0,
