@@ -229,7 +229,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
             if not all([origin_chat, target_chat]):
                 return None
-            me = await self.app.client.get_me()
+            me = await client.get_me()
             if target_chat.id == me.id:
                 await client.send_message(
                     chat_id=message.from_user.id,
