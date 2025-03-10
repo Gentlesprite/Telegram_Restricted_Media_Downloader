@@ -4,6 +4,8 @@
 # Time:2025/3/10 0:45
 # File:util.py
 import os
+from typing import List
+
 from rich.text import Text
 
 
@@ -33,3 +35,12 @@ def truncate_display_filename(file_name: str) -> Text:
         overflow='ellipsis'
     )
     return text
+
+
+def valid_message_length(text: str, max_length: int = 3969) -> List[str]:
+    if len(text) <= max_length:
+        return [text]
+    else:
+        part1 = text[:max_length]
+        part2 = text[max_length:]
+        return [part1] + valid_message_length(part2, max_length)

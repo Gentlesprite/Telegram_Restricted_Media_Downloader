@@ -12,8 +12,8 @@ from pyrogram.types import BotCommand, InlineKeyboardButton, InlineKeyboardMarku
 
 from module import __version__, __copyright__, SOFTWARE_FULL_NAME, __license__
 from module.language import _t
-from module.util import safe_index
 from module.config import GlobalConfig
+from module.util import safe_index, valid_message_length
 from module.enums import BotCommandText, BotMessage, BotCallbackText, BotButton, KeyWord
 
 
@@ -73,7 +73,7 @@ class Bot:
 
     async def get_link_from_bot(self,
                                 client: pyrogram.Client,
-                                message: pyrogram.types.Message) -> Dict[str, set] or None:
+                                message: pyrogram.types.Message) -> Dict[str, set | pyrogram.types.Message] | None:
         text: str = message.text
         if text == '/download':
             await client.send_message(chat_id=message.from_user.id,
@@ -114,7 +114,7 @@ class Bot:
                     not safe_index(link, 1, 'https://t.me/').startswith('https://t.me/') and
                     len(link) == 3
             ):
-                # 范围下载。
+                # v1.5.1 支持范围下载。
                 start_id: int = int(safe_index(link, 1, -1))
                 end_id: int = int(safe_index(link, 2, -1))
                 if not await self.check_download_range(
@@ -131,24 +131,34 @@ class Bot:
             else:
                 right_link: set = set([_ for _ in link if _.startswith('https://t.me/')])
                 invalid_link: set = set([_ for _ in link if not _.startswith('https://t.me/')])
-            # todo 当text长度超过4096时,会抛出 The message text is too long.
-            last_bot_message = await client.send_message(
-                chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
-                text=self.update_text(
-                    right_link=right_link,
-                    invalid_link=invalid_link if invalid_link else None
-                ),
-                disable_web_page_preview=True
-            )
             if right_link:
                 return {
                     'right_link': right_link,
                     'invalid_link': invalid_link,
-                    'last_bot_message': last_bot_message
+                    'last_bot_message_id': await self.safe_process_message(
+                        client=client, message=message,
+                        text=self.update_text(
+                            right_link=right_link,
+                            invalid_link=invalid_link if invalid_link else None
+                        ))
                 }
             else:
                 return None
+
+    @staticmethod
+    async def safe_process_message(client: pyrogram.Client,
+                                   message: pyrogram.types.Message,
+                                   text: list) -> int:
+        last_bot_messages: list = []
+        for t in text:
+            last_bot_message = await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text=t, disable_web_page_preview=True
+            )
+            if last_bot_message.id not in last_bot_messages:
+                last_bot_messages.append(last_bot_message.id)
+        return last_bot_messages[-1]
 
     async def help(self,
                    client: pyrogram.Client,
@@ -199,7 +209,7 @@ class Bot:
                                   reply_markup=func_keyboard)
 
     @staticmethod
-    async def callback_data(client: pyrogram.Client, callback_query: CallbackQuery) -> str or None:
+    async def callback_data(client: pyrogram.Client, callback_query: CallbackQuery) -> str | None:
         await callback_query.answer()
         data = callback_query.data
         if not data:
@@ -240,7 +250,7 @@ class Bot:
                                   reply_markup=choice_keyboard)
 
     async def get_forward_link_from_bot(self, client: pyrogram.Client,
-                                        message: pyrogram.types.Message) -> Dict[str, list] or None or str:
+                                        message: pyrogram.types.Message) -> Dict[str, list | str] | None:
 
         text: str = message.text
         args = text.split(maxsplit=5)
@@ -277,6 +287,7 @@ class Bot:
                                                  disable_web_page_preview=True)
         self.is_bot_running = False
         await self.edit_message_text(client=client,
+                                     message=message,
                                      chat_id=message.from_user.id,
                                      last_message_id=last_message.id,
                                      text='👌👌👌退出成功。')
@@ -369,26 +380,37 @@ class Bot:
                 return e
 
     @staticmethod
-    def update_text(right_link: set, invalid_link: set, exist_link: set or None = None):
+    def update_text(right_link: set, invalid_link: set, exist_link: set or None = None) -> list:
         n = '\n'
         right_msg = f'{BotMessage.RIGHT}{n.join(right_link)}' if right_link else ''
         invalid_msg = f'{BotMessage.INVALID}{n.join(invalid_link)}{n}(具体原因请前往终端查看报错信息)' if invalid_link else ''
         if exist_link:
             exist_msg = f'{BotMessage.EXIST}{n.join(exist_link)}' if exist_link else ''
-            return right_msg + n + exist_msg + n + invalid_msg
+            text: str = right_msg + n + exist_msg + n + invalid_msg
+            v_text: list = valid_message_length(text)
+            return v_text
         else:
-            return right_msg + n + invalid_msg
+            text = right_msg + n + invalid_msg
+            v_text: list = valid_message_length(text)
+            return v_text
 
-    @staticmethod
-    async def edit_message_text(client: pyrogram.Client,
+    async def edit_message_text(self, client: pyrogram.Client,
+                                message: pyrogram.types.Message,
                                 chat_id: Union[int, str],
                                 last_message_id: int,
-                                text: str,
+                                text: str | List[str],
                                 disable_web_page_preview: bool = True):
         try:
-            await client.edit_message_text(chat_id=chat_id,
-                                           message_id=last_message_id,
-                                           text=text,
-                                           disable_web_page_preview=disable_web_page_preview)
+            if isinstance(text, list):
+                await self.safe_process_message(
+                    client=client,
+                    message=message,
+                    text=text
+                )
+            else:
+                await client.edit_message_text(chat_id=chat_id,
+                                               message_id=last_message_id,
+                                               text=text,
+                                               disable_web_page_preview=disable_web_page_preview)
         except MessageNotModified:
             pass

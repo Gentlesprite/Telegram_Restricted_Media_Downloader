@@ -53,16 +53,16 @@ class TelegramRestrictedMediaDownloader(Bot):
         else:
             right_link: set = link_meta.get('right_link')
             invalid_link: set = link_meta.get('invalid_link')
-            last_bot_message = link_meta.get('last_bot_message')
+            last_bot_message_id: int | None = link_meta.get('last_bot_message_id')
         chat_id: Union[int, str] = message.from_user.id
-        last_message_id: int = last_bot_message.id
         exist_link: set = set([_ for _ in right_link if _ in self.bot_task_link])
         exist_link.update(right_link & Task.COMPLETE_LINK)
         right_link -= exist_link
         await self.edit_message_text(
             client=client,
+            message=message,
             chat_id=chat_id,
-            last_message_id=last_message_id,
+            last_message_id=last_bot_message_id,
             text=self.update_text(
                 right_link=right_link,
                 exist_link=exist_link,
@@ -79,8 +79,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             right_link -= invalid_link
             await self.edit_message_text(
                 client=client,
+                message=message,
                 chat_id=chat_id,
-                last_message_id=last_message_id,
+                last_message_id=last_bot_message_id,
                 text=self.update_text(
                     right_link=right_link,
                     exist_link=exist_link,
