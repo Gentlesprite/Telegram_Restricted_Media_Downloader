@@ -93,7 +93,7 @@ class StatisticalTable:
             media_table.print_meta()
 
     @staticmethod
-    def print_link_table(link_info: dict) -> bool or str:
+    def print_link_table(link_info: dict) -> bool | str:
         """打印统计的下载链接信息的表格。"""
         try:
             data: list = []
@@ -128,7 +128,7 @@ class StatisticalTable:
             return e
 
     @staticmethod
-    def print_config_table(enable_proxy: dict or None, links: str, download_type: list, proxy: dict) -> None:
+    def print_config_table(enable_proxy: dict | None, links: str, download_type: list, proxy: dict) -> None:
         """打印用户所填写配置文件的表格。"""
         try:
             if enable_proxy:

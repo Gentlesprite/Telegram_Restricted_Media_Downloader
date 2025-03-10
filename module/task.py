@@ -16,7 +16,7 @@ class Task:
 
     def __init__(self,
                  link: str,
-                 link_type: str or None,
+                 link_type: str | None,
                  member_num: int,
                  complete_num: int,
                  file_name: set,

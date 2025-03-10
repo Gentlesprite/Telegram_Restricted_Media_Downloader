@@ -380,7 +380,7 @@ class Bot:
                 return e
 
     @staticmethod
-    def update_text(right_link: set, invalid_link: set, exist_link: set or None = None) -> list:
+    def update_text(right_link: set, invalid_link: set, exist_link: set | None = None) -> list:
         n = '\n'
         right_msg = f'{BotMessage.RIGHT}{n.join(right_link)}' if right_link else ''
         invalid_msg = f'{BotMessage.INVALID}{n.join(invalid_link)}{n}(具体原因请前往终端查看报错信息)' if invalid_link else ''

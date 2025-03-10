@@ -68,7 +68,7 @@ class Config:
         self.max_download_task: int = self.config.get('max_download_task') if isinstance(
             self.config.get('max_download_task'), int) else 3
         self.proxy: dict = self.config.get('proxy', {})
-        self.enable_proxy: dict or None = self.proxy if self.proxy.get('enable_proxy') else None
+        self.enable_proxy: dict | None = self.proxy if self.proxy.get('enable_proxy') else None
         self.save_directory: str = self.config.get('save_directory')
 
     def get_last_history_record(self) -> None:
@@ -245,22 +245,22 @@ class Config:
                         else:
                             console.log(
                                 '删除旧会话文件失败,请手动删除软件目录下的sessions文件夹,再进行下一步操作!')
-            _api_id: str or None = pre_load_config.get('api_id')
-            _api_hash: str or None = pre_load_config.get('api_hash')
-            _bot_token: str or None = pre_load_config.get('bot_token')
-            _links: str or None = pre_load_config.get('links')
-            _save_directory: str or None = pre_load_config.get('save_directory')
-            _max_download_task: int or None = pre_load_config.get('max_download_task') if isinstance(
+            _api_id: str | None = pre_load_config.get('api_id')
+            _api_hash: str | None = pre_load_config.get('api_hash')
+            _bot_token: str | None = pre_load_config.get('bot_token')
+            _links: str | None = pre_load_config.get('links')
+            _save_directory: str | None = pre_load_config.get('save_directory')
+            _max_download_task: int | None = pre_load_config.get('max_download_task') if isinstance(
                 pre_load_config.get('max_download_task'), int) else None  # v1.4.0 修复同时下载任务数不询问是否配置问题。
-            _download_type: list or None = pre_load_config.get('download_type')
-            _is_shutdown: bool or None = pre_load_config.get('is_shutdown')
+            _download_type: list | None = pre_load_config.get('download_type')
+            _is_shutdown: bool | None = pre_load_config.get('is_shutdown')
             _proxy_config: dict = pre_load_config.get('proxy', {})
-            _enable_proxy: str or bool = _proxy_config.get('enable_proxy', False)
-            _proxy_scheme: str or bool = _proxy_config.get('scheme', False)
-            _proxy_hostname: str or bool = _proxy_config.get('hostname', False)
-            _proxy_port: str or bool = _proxy_config.get('port', False)
-            _proxy_username: str or bool = _proxy_config.get('username', False)
-            _proxy_password: str or bool = _proxy_config.get('password', False)
+            _enable_proxy: str | bool = _proxy_config.get('enable_proxy', False)
+            _proxy_scheme: str | bool = _proxy_config.get('scheme', False)
+            _proxy_hostname: str | bool = _proxy_config.get('hostname', False)
+            _proxy_port: str | bool = _proxy_config.get('port', False)
+            _proxy_username: str | bool = _proxy_config.get('username', False)
+            _proxy_password: str | bool = _proxy_config.get('password', False)
             proxy_record: dict = self.last_record.get('proxy', {})  # proxy的历史记录。
             if any([not _api_id, not _api_hash, not _save_directory, not _max_download_task, not _download_type]):
                 console.print('「注意」直接回车代表使用上次的记录。',

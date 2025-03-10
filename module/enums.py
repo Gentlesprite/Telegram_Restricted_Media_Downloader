@@ -251,7 +251,7 @@ class Validator:
             log.error(f'意外的错误,原因:"{e}"')
 
     @staticmethod
-    def is_valid_enable_proxy(enable_proxy: str or bool) -> bool:
+    def is_valid_enable_proxy(enable_proxy: str | bool) -> bool:
         if enable_proxy in ('y', 'n'):
             return True
 
@@ -276,7 +276,7 @@ class Validator:
             return False
 
     @staticmethod
-    def is_valid_download_type(dtype: int or str) -> bool:
+    def is_valid_download_type(dtype: int | str) -> bool:
         try:
             _dtype = int(dtype) if isinstance(dtype, str) else dtype
             return 0 < _dtype < 4
@@ -519,7 +519,7 @@ class GetStdioParams:
                 log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{_e}"')
 
     @staticmethod
-    def get_download_type(last_record: list or None) -> dict:
+    def get_download_type(last_record: list | None) -> dict:
 
         if isinstance(last_record, list):
             res: dict = ProcessConfig.get_dtype(download_dtype=last_record)
@@ -584,7 +584,7 @@ class GetStdioParams:
                 log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{_e}"')
 
     @staticmethod
-    def get_enable_proxy(last_record: str or bool, valid_format: str = 'y|n') -> dict:
+    def get_enable_proxy(last_record: str | bool, valid_format: str = 'y|n') -> dict:
         if last_record:
             ep_notice: str = 'y' if last_record else 'n'
         else:
