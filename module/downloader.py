@@ -16,7 +16,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate, ChatForwardsRestricted
 from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired
 from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, \
-    BotMethodInvalid, MessageNotModified
+    BotMethodInvalid, MessageNotModified, UsernameNotOccupied
 
 from module import console, log, utils
 from module.bot import Bot
@@ -124,7 +124,7 @@ class TelegramRestrictedMediaDownloader(Bot):
     async def callback_data(self, client: pyrogram.Client, callback_query: pyrogram.types.CallbackQuery):
         callback_data = await super().callback_data(client, callback_query)
         if callback_data is None:
-            return
+            return None
         elif callback_data == BotCallbackText.NOTICE:
             try:
                 self.gc.config[BotCallbackText.NOTICE] = not self.gc.config.get(BotCallbackText.NOTICE)
@@ -181,11 +181,26 @@ class TelegramRestrictedMediaDownloader(Bot):
                                                text=f'/download {origin_link} {start_id} {end_id}',
                                                disable_web_page_preview=True)
 
+    async def __get_chat(self, bot_client: pyrogram.Client,
+                         bot_message: pyrogram.types.Message,
+                         chat_id: Union[int, str],
+                         error_msg: str) -> pyrogram.types.Chat or None:
+        try:
+            chat = await self.app.client.get_chat(chat_id)
+            return chat
+        except UsernameNotOccupied:
+            await bot_client.send_message(
+                chat_id=bot_message.from_user.id,
+                reply_to_message_id=bot_message.id,
+                text=error_msg
+            )
+            return None
+
     async def get_forward_link_from_bot(self, client: pyrogram.Client,
                                         message: pyrogram.types.Message) -> dict or None:
         meta: dict or None = await super().get_forward_link_from_bot(client, message)
         if meta is None:
-            return
+            return None
         origin_link: str = meta.get('origin_link')
         target_link: str = meta.get('target_link')
         start_id: int = meta.get('message_range')[0]
@@ -193,8 +208,18 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             origin_meta: dict = await self.__extract_link_content(origin_link, only_chat_id=True)
             target_meta: dict = await self.__extract_link_content(target_link, only_chat_id=True)
-            origin_chat = await self.app.client.get_chat(origin_meta.get('chat_id'))
-            target_chat = await self.app.client.get_chat(target_meta.get('chat_id'))
+            origin_chat: pyrogram.types.Chat or None = await self.__get_chat(
+                bot_client=client, bot_message=message,
+                chat_id=origin_meta.get('chat_id'),
+                error_msg=f'⬇️⬇️⬇️原始频道不存在⬇️⬇️⬇️\n{origin_link}'
+            )
+            target_chat: pyrogram.types.Chat or None = await self.__get_chat(
+                bot_client=client, bot_message=message,
+                chat_id=target_meta.get('chat_id'),
+                error_msg=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
+            )
+            if not all([origin_chat, target_chat]):
+                return None
             me = await self.app.client.get_me()
             if target_chat.id == me.id:
                 await client.send_message(
@@ -257,14 +282,20 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                 ]]))
         except ValueError:
-            console.log('没有找到有效链接。', style='#FF4689')
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text='❌❌❌没有找到有效链接❌❌❌'
+            )
         except Exception as e:
-            '''
-            /forward https://t.me/c/2166304091/82 https://t.me/test_trmd_forward_1 1 5
-            '''
-            # todo 当目标频道(https://t.me/test_trmd_forward_1)不存在时 The username is not occupied by anyone (caused by "contacts.ResolveUsername")
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text=f'⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
+            )
+            log.exception(e)
+            log.error(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             # todo 测试话题频道是否能够被正确转发。
-            log.error(e)
 
     async def __extract_link_content(self, link: str, only_chat_id=False) -> dict or None:
         record_type: set = set()
