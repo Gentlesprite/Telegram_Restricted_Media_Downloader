@@ -161,12 +161,13 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 5. 目前机器人支持的命令用法及解释如下表所示：
 
-   | 命令        | 用法                                                  | 解释                                           |
-   | ----------- | ----------------------------------------------------- | ---------------------------------------------- |
-   | `/help`     | 向机器人发送发送`/help`即可。                         | 展示**可用**命令。                             |
-   | `/download` | 向机器人发送`/download 链接1 链接2 链接3 链接n`即可。 | 分配**新的**下载任务。                         |
-   | `/table`    | 向机器人发送`/table`即可。                            | 在**终端**输出**当前**下载情况的**统计信息**。 |
-   | `/exit`     | 向机器人发送`/exit`即可。                             | **退出**软件。                                 |
+   | 命令        | 用法                                                         | 解释                                                         |
+   | ----------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+   | `/help`     | 向机器人发送发送`/help`即可。                                | 展示**可用**命令。                                           |
+   | `/download` | `/download 链接1 链接2 链接3 链接n`或`/download 频道链接 1 100` | 分配**新的**下载任务，两种方式可选(**指定链接下载**和**范围下载**，具体使用方法请见下方说明)。 |
+   | `/table`    | 向机器人发送`/table`即可。                                   | 在**终端**输出**当前**下载情况的**统计信息**。               |
+   | `/forward`  | `/forward https://t.me/A https://t.me/B 1 100 `              | 将**频道A**的消息转发至**频道B**，其中`1`代表`起始ID`，`100`代表截止`ID`。 |
+   | `/exit`     | 向机器人发送`/exit`即可。                                    | **退出**软件。                                               |
 
 6. `/help`命令使用教程，如下图所示：
 
@@ -178,11 +179,22 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 8. `/download`命令使用教程，如下图所示：
 
-   ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_15.png)
+   - 方式一：
+     - ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_15.png)
+     - 只要发送了正确的下载命令，终端就会创建对应的下载任务，如下图所示：
+     - ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_16.png)
 
-   只要发送了正确的下载命令，终端就会创建对应的下载任务，如下图所示：
+   - 方式二：
 
-   ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_16.png)
+     - 该功能为版本`>=v1.5.1`的新增功能，用于对于**单一链接**的范围下载，只需指定频道ID即可，并且该方式要求必须指定起始ID：
+
+       ```bash
+       # 语法格式如下：
+       /download 频道链接 起始ID 结束ID
+       # 举例：
+       /download https://t.me/test 1 500
+       # 代表下载https://t.me/test从消息ID=1到结束ID=500的媒体。
+       ```
 
 9. `/table`命令使用教程：
 
@@ -200,7 +212,17 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
    ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_20.png)
 
-10. `/exit`命令使用教程，如下图所示：
+10. `/forward`命令使用教程：
+
+    ```bash
+    # 语法格式如下：
+    /forward 频道A 频道B 起始ID 结束ID
+    # 举例：
+    /forward https://t.me/test https://t.me/test2 1 500
+    # 代表转发https://t.me/test频道中从消息ID=1到结束ID=500的消息到https://t.me/test2频道。
+    ```
+
+11. `/exit`命令使用教程，如下图所示：
 
    ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_21.png)
 
