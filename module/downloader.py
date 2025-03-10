@@ -217,6 +217,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             origin_meta: dict | None = await self.__extract_link_content(origin_link, only_chat_id=True)
             target_meta: dict | None = await self.__extract_link_content(target_link, only_chat_id=True)
+            if not all([origin_meta, target_meta]):
+                raise Exception('Invalid origin_link or target_link.')
             origin_chat: pyrogram.types.Chat | None = await self.__get_chat(
                 bot_client=client, bot_message=message,
                 chat_id=origin_meta.get('chat_id'),
@@ -269,17 +271,30 @@ class TelegramRestrictedMediaDownloader(Bot):
                         text=safe_message(f'{last_message.text}\n{origin_link}/{i.id}')
                     )
                     log.warning(f'{_t(KeyWord.LINK)}:"{origin_link}/{i.id}"无效,{_t(KeyWord.REASON)}:{e}')
-            await self.safe_edit_message(
-                client=client,
-                message=message,
-                last_message_id=last_message.id,
-                text=safe_message(f'{last_message.text}\n🌟🌟🌟转发任务已完成🌟🌟🌟'),
-                reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton(
-                        BotButton.CLICK_VIEW,
-                        url=target_link
-                    )
-                ]]))
+            if not last_message:
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_to_message_id=message.id,
+                    text='🌟🌟🌟转发任务已完成🌟🌟🌟',
+                    reply_markup=InlineKeyboardMarkup([[
+                        InlineKeyboardButton(
+                            BotButton.CLICK_VIEW,
+                            url=target_link
+                        )
+                    ]])
+                )
+            else:
+                await self.safe_edit_message(
+                    client=client,
+                    message=message,
+                    last_message_id=last_message.id,
+                    text=safe_message(f'{last_message.text}\n🌟🌟🌟转发任务已完成🌟🌟🌟'),
+                    reply_markup=InlineKeyboardMarkup([[
+                        InlineKeyboardButton(
+                            BotButton.CLICK_VIEW,
+                            url=target_link
+                        )
+                    ]]))
         except ChatForwardsRestricted:
             BotCallbackText.DOWNLOAD = f'{origin_link} {start_id} {end_id}'
             await client.send_message(
@@ -297,7 +312,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
-                text='❌❌❌目前暂不支持转发话题频道❌❌❌'
+                text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)\n❌❌❌注意:目前暂不支持转发话题频道❌❌❌'
             )
         except ValueError:
             msg: str = ''
