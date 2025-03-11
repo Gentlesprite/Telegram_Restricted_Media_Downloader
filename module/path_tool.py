@@ -31,7 +31,10 @@ _mimetypes = mimetypes.MimeTypes()
 def split_path(path: str) -> dict:
     """将传入路径拆分为目录名和文件名并以字典形式返回。"""
     directory, file_name = os.path.split(path)
-    return {'directory': directory, 'file_name': file_name}
+    return {
+        'directory': directory,
+        'file_name': file_name
+    }
 
 
 def __is_exist(file_path: str) -> bool:
@@ -83,8 +86,10 @@ def truncate_filename(path: str, limit: int = 230) -> str:
 def gen_backup_config(old_path: str, absolute_backup_dir: str, error_config: bool = False) -> str:
     """备份配置文件。"""
     os.makedirs(absolute_backup_dir, exist_ok=True)
-    new_path = os.path.join(absolute_backup_dir,
-                            f'{"error_" if error_config else ""}history_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_config.yaml')
+    new_path = os.path.join(
+        absolute_backup_dir,
+        f'{"error_" if error_config else ""}history_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_config.yaml'
+    )
     os.rename(old_path, new_path)
     return new_path
 
@@ -191,8 +196,7 @@ def __get_file_type(file_id: str) -> FileType:
     try:
         file_type = FileType(file_type)
     except ValueError as exc:
-        raise ValueError(f'Unknown file_type {file_type} of file_id {file_id}') from exc
-
+        raise ValueError(f'文件ID:"{file_id}",未知的文件类型:"{file_type}"。') from exc
     return file_type
 
 

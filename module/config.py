@@ -217,9 +217,11 @@ class Config:
                       force: bool = False) -> None:  # v1.2.9 更正backup_config参数类型。
         """备份当前的配置文件。"""
         if backup_config != Config.TEMPLATE or force:  # v1.2.9 修复比较变量错误的问题。
-            backup_path: str = gen_backup_config(old_path=self.config_path,
-                                                 absolute_backup_dir=Config.ABSOLUTE_BACKUP_DIRECTORY,
-                                                 error_config=error_config)
+            backup_path: str = gen_backup_config(
+                old_path=self.config_path,
+                absolute_backup_dir=Config.ABSOLUTE_BACKUP_DIRECTORY,
+                error_config=error_config
+            )
             console.log(f'原来的配置文件已备份至"{backup_path}"', style='#B1DB74')
         else:
             console.log('配置文件与模板文件完全一致,无需备份。')
@@ -333,9 +335,11 @@ class Config:
             if _proxy_config.get('enable_proxy') is True or _enable_proxy is True:
                 if ProcessConfig.is_proxy_input(proxy_config=_proxy_config):
                     if not _proxy_scheme:
-                        scheme, record_flag = gsp.get_scheme(last_record=proxy_record.get('scheme'),
-                                                             valid_format=['http', 'socks4',
-                                                                           'socks5']).values()
+                        scheme, record_flag = gsp.get_scheme(
+                            last_record=proxy_record.get('scheme'),
+                            valid_format=['http', 'socks4',
+                                          'socks5']
+                        ).values()
                         if record_flag:
                             self.record_flag = True
                             _proxy_config['scheme'] = scheme

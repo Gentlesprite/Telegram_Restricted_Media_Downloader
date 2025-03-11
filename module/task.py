@@ -14,13 +14,15 @@ class Task:
     LINK_INFO: dict = {}
     COMPLETE_LINK: set = set()
 
-    def __init__(self,
-                 link: str,
-                 link_type: str | None,
-                 member_num: int,
-                 complete_num: int,
-                 file_name: set,
-                 error_msg: dict):
+    def __init__(
+            self,
+            link: str,
+            link_type: str | None,
+            member_num: int,
+            complete_num: int,
+            file_name: set,
+            error_msg: dict
+    ):
         Task.LINK_INFO[link] = {
             'link_type': link_type,
             'member_num': member_num,
@@ -40,20 +42,24 @@ class Task:
                 Task.LINK_INFO.get(link)['error_msg'] = e_code
                 reason: str = e_code.get('error_msg')
                 if reason:
-                    log.error(f'{_t(KeyWord.LINK)}:"{link}"{reason},'
-                              f'{_t(KeyWord.REASON)}:"{e_code.get("all_member")}",'
-                              f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。')
+                    log.error(
+                        f'{_t(KeyWord.LINK)}:"{link}"{reason},'
+                        f'{_t(KeyWord.REASON)}:"{e_code.get("all_member")}",'
+                        f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
+                    )
                 else:
                     log.warning(
                         f'{_t(KeyWord.LINK)}:"{link}"{e_code.get("all_member")},'
-                        f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。')
+                        f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
+                    )
             elif status == DownloadStatus.DOWNLOADING:
                 Task.LINK_INFO.get(link)['link_type'] = link_type
                 Task.LINK_INFO.get(link)['member_num'] = member_num
                 console.log(
                     f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
                     f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
-                    f'{_t(KeyWord.LINK_TYPE)}:{_t(link_type)}。')  # 链接类型。
+                    f'{_t(KeyWord.LINK_TYPE)}:{_t(link_type)}。'  # 链接类型。
+                )
             return res
 
         return wrapper
@@ -72,8 +78,10 @@ class Task:
             all_num: int = Task.LINK_INFO.get(link).get('member_num')
             complete_num: int = Task.LINK_INFO.get(link).get('complete_num')
             if all_num == complete_num:
-                console.log(f'{_t(KeyWord.LINK)}:"{link}",'
-                            f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SUCCESS)}。')
+                console.log(
+                    f'{_t(KeyWord.LINK)}:"{link}",'
+                    f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SUCCESS)}。'
+                )
                 Task.LINK_INFO.get(link)['error_msg'] = {}
                 Task.COMPLETE_LINK.add(link)
             return res

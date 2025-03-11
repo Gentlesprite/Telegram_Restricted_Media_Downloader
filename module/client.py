@@ -142,15 +142,17 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
 
         return signed_up
 
-    async def get_chat_history(self: pyrogram.Client,
-                               chat_id: Union[int, str],
-                               limit: int = 0,
-                               min_id: int = 0,
-                               max_id: int = 0,
-                               offset: int = 0,
-                               offset_id: int = 0,
-                               offset_date: datetime = utils.zero_datetime(),
-                               reverse: bool = False, ) -> Optional[AsyncGenerator["types.Message", None]]:
+    async def get_chat_history(
+            self: pyrogram.Client,
+            chat_id: Union[int, str],
+            limit: int = 0,
+            min_id: int = 0,
+            max_id: int = 0,
+            offset: int = 0,
+            offset_id: int = 0,
+            offset_date: datetime = utils.zero_datetime(),
+            reverse: bool = False,
+    ) -> Optional[AsyncGenerator["types.Message", None]]:
         # https://github.com/tangyoha/telegram_media_downloader/blob/master/module/get_chat_history_v2.py
         current = 0
         total = limit or (1 << 31) - 1

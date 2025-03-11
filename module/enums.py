@@ -74,14 +74,16 @@ class Extension:
              'image/x-rgb': 'rgb',
              'image/x-xbitmap': 'xbm',
              'image/x-xpixmap': 'xpm',
-             'image/x-xwindowdump': 'xwd'}
+             'image/x-xwindowdump': 'xwd'
+             }
     VIDEO = {'video/mp4': 'mp4',
              'video/mpeg': 'mpg',
              'video/quicktime': 'qt',
              'video/webm': 'webm',
              'video/x-msvideo': 'avi',
              'video/x-sgi-movie': 'movie',
-             'video/x-matroska': 'mkv'}
+             'video/x-matroska': 'mkv'
+             }
 
 
 class GradientColor:
@@ -321,21 +323,22 @@ class ProcessConfig:
         """控制用户交互时打印出不同的颜色(渐变)。"""
         if color is None:
             color = GradientColor.ORANGE2YELLOW_15
-        _stdio_queue: dict = {'api_id': 0,
-                              'api_hash': 1,
-                              'bot_token': 2,
-                              'links': 3,
-                              'save_directory': 4,
-                              'max_download_task': 5,
-                              'download_type': 6,
-                              'is_shutdown': 7,
-                              'enable_proxy': 8,
-                              'config_proxy': 9,
-                              'scheme': 10,
-                              'hostname': 11,
-                              'port': 12,
-                              'proxy_authentication': 13
-                              }
+        _stdio_queue: dict = {
+            'api_id': 0,
+            'api_hash': 1,
+            'bot_token': 2,
+            'links': 3,
+            'save_directory': 4,
+            'max_download_task': 5,
+            'download_type': 6,
+            'is_shutdown': 7,
+            'enable_proxy': 8,
+            'config_proxy': 9,
+            'scheme': 10,
+            'hostname': 11,
+            'port': 12,
+            'proxy_authentication': 13
+        }
         return color[_stdio_queue.get(key)]
 
     @staticmethod
@@ -361,9 +364,11 @@ class ProcessConfig:
 
     @staticmethod
     def get_proxy_info(proxy_config: dict) -> dict:
-        return {'scheme': proxy_config.get('scheme', '未知'),
-                'hostname': proxy_config.get('hostname', '未知'),
-                'port': proxy_config.get('port', '未知')}
+        return {
+            'scheme': proxy_config.get('scheme', '未知'),
+            'hostname': proxy_config.get('hostname', '未知'),
+            'port': proxy_config.get('port', '未知')
+        }
 
 
 class GetStdioParams:
@@ -416,7 +421,10 @@ class GetStdioParams:
                 api_id = last_record
             if Validator.is_valid_api_id(api_id):
                 console.print(f'已设置「api_id」为:「{api_id}」', style=ProcessConfig.stdio_style('api_id'))
-                return {'api_id': api_id, 'record_flag': True}
+                return {
+                    'api_id': api_id,
+                    'record_flag': True
+                }
 
     @staticmethod
     def get_api_hash(last_record: str, valid_length: int = 32) -> dict:
@@ -427,7 +435,10 @@ class GetStdioParams:
                 api_hash = last_record
             if Validator.is_valid_api_hash(api_hash, valid_length):
                 console.print(f'已设置「api_hash」为:「{api_hash}」', style=ProcessConfig.stdio_style('api_hash'))
-                return {'api_hash': api_hash, 'record_flag': True}
+                return {
+                    'api_hash': api_hash,
+                    'record_flag': True
+                }
             else:
                 log.warning(f'意外的参数:"{api_hash}",不是一个「{valid_length}位」的「值」!请重新输入!')
 
@@ -453,7 +464,10 @@ class GetStdioParams:
                 bot_token = last_record
             if Validator.is_valid_bot_token(bot_token, valid_format):
                 console.print(f'已设置「bot_token」为:「{bot_token}」', style=ProcessConfig.stdio_style('bot_token'))
-                return {'bot_token': bot_token, 'record_flag': True}
+                return {
+                    'bot_token': bot_token,
+                    'record_flag': True
+                }
             else:
                 log.warning(f'意外的参数:"{bot_token}",「bot_token」中需要包含":",请重新输入!')
 
@@ -470,7 +484,10 @@ class GetStdioParams:
                     links_file_path = last_record
                 if Validator.is_valid_links_file(links_file_path, valid_format):
                     console.print(f'已设置「links」为:「{links_file_path}」', style=ProcessConfig.stdio_style('links'))
-                    return {'links': links_file_path, 'record_flag': True}
+                    return {
+                        'links': links_file_path,
+                        'record_flag': True
+                    }
                 elif not os.path.normpath(links_file_path).endswith('.txt'):
                     log.warning(f'意外的参数:"{links_file_path}",文件路径必须以「{valid_format}」结尾,请重新输入!')
                 else:
@@ -491,7 +508,10 @@ class GetStdioParams:
             if Validator.is_valid_save_path(save_directory):
                 console.print(f'已设置「save_directory」为:「{save_directory}」',
                               style=ProcessConfig.stdio_style('save_directory'))
-                return {'save_directory': save_directory, 'record_flag': True}
+                return {
+                    'save_directory': save_directory,
+                    'record_flag': True
+                }
             elif os.path.isfile(save_directory):
                 log.warning(f'意外的参数:"{save_directory}",指定的路径是一个文件并非目录,请重新输入!')
             else:
@@ -512,7 +532,10 @@ class GetStdioParams:
                 if Validator.is_valid_max_download_task(max_download_task):
                     console.print(f'已设置「max_download_task」为:「{max_download_task}」',
                                   style=ProcessConfig.stdio_style('max_download_task'))
-                    return {'max_download_task': int(max_download_task), 'record_flag': True}
+                    return {
+                        'max_download_task': int(max_download_task),
+                        'record_flag': True
+                    }
                 else:
                     log.warning(f'意外的参数:"{max_download_task}",任务数必须是「正整数」,请重新输入!')
             except Exception as _e:
@@ -541,9 +564,14 @@ class GetStdioParams:
             if download_type == '':
                 download_type = 3
             if Validator.is_valid_download_type(download_type):
-                console.print(f'已设置「download_type」为:「{download_type}」',
-                              style=ProcessConfig.stdio_style('download_type'))
-                return {'download_type': ProcessConfig.set_dtype(_dtype=download_type), 'record_flag': True}
+                console.print(
+                    f'已设置「download_type」为:「{download_type}」',
+                    style=ProcessConfig.stdio_style('download_type')
+                )
+                return {
+                    'download_type': ProcessConfig.set_dtype(_dtype=download_type),
+                    'record_flag': True
+                }
             else:
                 log.warning(f'意外的参数:"{download_type}",支持的参数 - 「1或2或3」')
 
@@ -625,7 +653,10 @@ class GetStdioParams:
                 scheme = last_record
             if Validator.is_valid_scheme(scheme, valid_format):
                 console.print(f'已设置「scheme」为:「{scheme}」', style=ProcessConfig.stdio_style('scheme'))
-                return {'scheme': scheme, 'record_flag': True}
+                return {
+                    'scheme': scheme,
+                    'record_flag': True
+                }
             else:
                 log.warning(
                     f'意外的参数:"{scheme}",请输入有效的代理类型!支持的参数 - 「{fmt_valid_format}」!')
@@ -644,7 +675,10 @@ class GetStdioParams:
                     hostname = last_record
                 if Validator.is_valid_hostname(hostname):
                     console.print(f'已设置「hostname」为:「{hostname}」', style=ProcessConfig.stdio_style('hostname'))
-                    return {'hostname': hostname, 'record_flag': True}
+                    return {
+                        'hostname': hostname,
+                        'record_flag': True
+                    }
             except ValueError:
                 log.warning(
                     f'"{hostname}"不是一个「ip地址」,请输入有效的ipv4地址!支持的参数 - 「{valid_format}」!')
@@ -664,7 +698,10 @@ class GetStdioParams:
                     port = last_record
                 if Validator.is_valid_port(port):
                     console.print(f'已设置「port」为:「{port}」', style=ProcessConfig.stdio_style('port'))
-                    return {'port': int(port), 'record_flag': True}
+                    return {
+                        'port': int(port),
+                        'record_flag': True
+                    }
                 else:
                     log.warning(f'意外的参数:"{port}",端口号必须在「{valid_format}」之间!')
             except ValueError:

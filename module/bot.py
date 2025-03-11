@@ -37,16 +37,20 @@ class Bot:
 
     async def process_error_message(self, client: pyrogram.Client, message: pyrogram.types.Message) -> None:
         await self.help(client, message)
-        await client.send_message(chat_id=message.from_user.id,
-                                  reply_to_message_id=message.id,
-                                  text='❓❓❓未知命令❓❓❓\n请查看帮助后重试。',
-                                  disable_web_page_preview=True)
+        await client.send_message(
+            chat_id=message.from_user.id,
+            reply_to_message_id=message.id,
+            text='❓❓❓未知命令❓❓❓\n请查看帮助后重试。',
+            disable_web_page_preview=True
+        )
 
     @staticmethod
-    async def check_download_range(start_id: int,
-                                   end_id: int,
-                                   client: pyrogram.Client,
-                                   message: pyrogram.types.Message) -> bool:
+    async def check_download_range(
+            start_id: int,
+            end_id: int,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ) -> bool:
         if end_id != -1:
             if start_id > end_id:
                 await client.send_message(
@@ -71,15 +75,19 @@ class Bot:
             return False
         return True
 
-    async def get_link_from_bot(self,
-                                client: pyrogram.Client,
-                                message: pyrogram.types.Message) -> Dict[str, set | pyrogram.types.Message] | None:
+    async def get_link_from_bot(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ) -> Dict[str, set | pyrogram.types.Message] | None:
         text: str = message.text
         if text == '/download':
-            await client.send_message(chat_id=message.from_user.id,
-                                      reply_to_message_id=message.id,
-                                      text='❓❓❓请提供下载链接❓❓❓格式:\n`/download https://t.me/x/x`',
-                                      disable_web_page_preview=True)
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text='❓❓❓请提供下载链接❓❓❓格式:\n`/download https://t.me/x/x`',
+                disable_web_page_preview=True
+            )
         elif text.startswith('https://t.me/'):
             if text[len('https://t.me/'):].count('/') >= 1:
                 try:
@@ -105,7 +113,8 @@ class Bot:
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
                 text='⁉️⁉️⁉️链接错误⁉️⁉️⁉️\n请查看帮助后重试。',
-                disable_web_page_preview=True)
+                disable_web_page_preview=True
+            )
         else:
             link: list = text.split()
             link.remove('/download') if '/download' in link else None
@@ -140,7 +149,8 @@ class Bot:
                         text=self.update_text(
                             right_link=right_link,
                             invalid_link=invalid_link if invalid_link else None
-                        ))
+                        )
+                    )
                 }
             else:
                 return None
@@ -174,9 +184,11 @@ class Bot:
                 last_bot_messages.append(last_bot_message)
         return last_bot_messages[-1]
 
-    async def help(self,
-                   client: pyrogram.Client,
-                   message: pyrogram.types.Message) -> None:
+    async def help(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ) -> None:
         func_keyboard = InlineKeyboardMarkup(
             [
                 [
@@ -218,10 +230,12 @@ class Bot:
             f'❌ {BotCommandText.with_description(BotCommandText.EXIT)}\n'
         )
 
-        await client.send_message(chat_id=message.from_user.id,
-                                  text=msg,
-                                  disable_web_page_preview=True,
-                                  reply_markup=func_keyboard)
+        await client.send_message(
+            chat_id=message.from_user.id,
+            text=msg,
+            disable_web_page_preview=True,
+            reply_markup=func_keyboard
+        )
 
     @staticmethod
     async def callback_data(client: pyrogram.Client, callback_query: CallbackQuery) -> str | None:
@@ -300,15 +314,19 @@ class Bot:
 
     async def exit(self, client: pyrogram.Client,
                    message: pyrogram.types.Message) -> None:
-        last_message = await client.send_message(chat_id=message.from_user.id,
-                                                 text='🫡🫡🫡已收到退出命令。',
-                                                 reply_to_message_id=message.id,
-                                                 disable_web_page_preview=True)
+        last_message = await client.send_message(
+            chat_id=message.from_user.id,
+            text='🫡🫡🫡已收到退出命令。',
+            reply_to_message_id=message.id,
+            disable_web_page_preview=True
+        )
         self.is_bot_running = False
-        await self.safe_edit_message(client=client,
-                                     message=message,
-                                     last_message_id=last_message.id,
-                                     text='👌👌👌退出成功。')
+        await self.safe_edit_message(
+            client=client,
+            message=message,
+            last_message_id=last_message.id,
+            text='👌👌👌退出成功。'
+        )
         raise SystemExit(0)
 
     async def start_bot(
@@ -412,12 +430,14 @@ class Bot:
             v_text: list = safe_message(text)
             return v_text
 
-    async def safe_edit_message(self, client: pyrogram.Client,
-                                message: pyrogram.types.Message,
-                                last_message_id: int,
-                                text: str | List[str],
-                                disable_web_page_preview: bool = True,
-                                reply_markup: pyrogram.types.InlineKeyboardMarkup | None = None):
+    async def safe_edit_message(
+            self, client: pyrogram.Client,
+            message: pyrogram.types.Message,
+            last_message_id: int,
+            text: str | List[str],
+            disable_web_page_preview: bool = True,
+            reply_markup: pyrogram.types.InlineKeyboardMarkup | None = None
+    ):
         try:
             if isinstance(text, list):
                 last_message: pyrogram.types.Message = await self.safe_process_message(
@@ -430,10 +450,12 @@ class Bot:
                 )
                 return last_message
             elif isinstance(text, str):
-                await client.edit_message_text(chat_id=message.from_user.id,
-                                               message_id=last_message_id,
-                                               text=text,
-                                               disable_web_page_preview=disable_web_page_preview,
-                                               reply_markup=reply_markup)
+                await client.edit_message_text(
+                    chat_id=message.from_user.id,
+                    message_id=last_message_id,
+                    text=text,
+                    disable_web_page_preview=disable_web_page_preview,
+                    reply_markup=reply_markup
+                )
         except MessageNotModified:
             pass

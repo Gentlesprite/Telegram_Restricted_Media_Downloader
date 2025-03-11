@@ -39,57 +39,68 @@ class StatisticalTable:
         if rdt_length == 1:
             _compare_dtype: list = list(record_dtype)[0]
             if _compare_dtype == DownloadType.VIDEO:  # 只有视频的情况。
-                video_table = PanelTable(title='视频下载统计',
-                                         header=header,
-                                         data=[
-                                             [_t(DownloadType.VIDEO),
-                                              success_video,
-                                              failure_video,
-                                              skip_video,
-                                              total_video],
-                                             ['合计', success_video,
-                                              failure_video,
-                                              skip_video,
-                                              total_video]
-                                         ]
-                                         )
+                video_table = PanelTable(
+                    title='视频下载统计',
+                    header=header,
+                    data=[
+                        [
+                            _t(DownloadType.VIDEO),
+                            success_video,
+                            failure_video,
+                            skip_video,
+                            total_video
+                        ],
+                        [
+                            '合计', success_video,
+                            failure_video,
+                            skip_video,
+                            total_video
+                        ]
+                    ]
+                )
                 video_table.print_meta()
             if _compare_dtype == DownloadType.PHOTO:  # 只有图片的情况。
-                photo_table = PanelTable(title='图片下载统计',
-                                         header=header,
-                                         data=[
-                                             [_t(DownloadType.PHOTO),
-                                              success_photo,
-                                              failure_photo,
-                                              skip_photo,
-                                              total_photo],
-                                             ['合计', success_photo,
-                                              failure_photo,
-                                              skip_photo,
-                                              total_photo]
-                                         ]
-                                         )
+                photo_table = PanelTable(
+                    title='图片下载统计',
+                    header=header,
+                    data=[
+                        [
+                            _t(DownloadType.PHOTO),
+                            success_photo,
+                            failure_photo,
+                            skip_photo,
+                            total_photo
+                        ],
+                        [
+                            '合计', success_photo,
+                            failure_photo,
+                            skip_photo,
+                            total_photo
+                        ]
+                    ]
+                )
                 photo_table.print_meta()
         elif rdt_length == 2:
-            media_table = PanelTable(title='媒体下载统计',
-                                     header=header,
-                                     data=[
-                                         [_t(DownloadType.VIDEO),
-                                          success_video,
-                                          failure_video,
-                                          skip_video,
-                                          total_video],
-                                         [_t(DownloadType.PHOTO),
-                                          success_photo,
-                                          failure_photo,
-                                          skip_photo,
-                                          total_photo],
-                                         ['合计', sum([success_video, success_photo]),
-                                          sum([failure_video, failure_photo]),
-                                          sum([skip_video, skip_photo]),
-                                          sum([total_video, total_photo])]
-                                     ]
-                                     )
+            media_table = PanelTable(
+                title='媒体下载统计',
+                header=header,
+                data=[
+                    [_t(DownloadType.VIDEO),
+                     success_video,
+                     failure_video,
+                     skip_video,
+                     total_video],
+                    [_t(DownloadType.PHOTO),
+                     success_photo,
+                     failure_photo,
+                     skip_photo,
+                     total_photo],
+                    ['合计', sum([success_video, success_photo]),
+                     sum([failure_video, failure_photo]),
+                     sum([skip_video, skip_photo]),
+                     sum([total_video, total_photo])]
+                ]
+            )
             media_table.print_meta()
 
     @staticmethod
@@ -115,26 +126,31 @@ class StatisticalTable:
                     error_info = '\n'.join([f'{fn}: {err}' for fn, err in error_msg.items()])
                 data.append([index, link, file_names, complete_rate, error_info])
             if data:
-                panel_table = PanelTable(title='下载链接统计',
-                                         header=('编号', '链接', '文件名', '完成率', '错误信息'),
-                                         data=data,
-                                         show_lines=True)
+                panel_table = PanelTable(
+                    title='下载链接统计',
+                    header=('编号', '链接', '文件名', '完成率', '错误信息'),
+                    data=data,
+                    show_lines=True
+                )
                 panel_table.print_meta()
                 return True
             else:
                 return False
         except Exception as e:
             log.error(f'打印下载链接统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
-            return e
+            return str(e)
 
     @staticmethod
     def print_config_table(enable_proxy: dict | None, links: str, download_type: list, proxy: dict) -> None:
         """打印用户所填写配置文件的表格。"""
         try:
             if enable_proxy:
-                console.log(GradientColor.gen_gradient_text(
-                    text='当前正在使用代理!',
-                    gradient_color=GradientColor.GREEN2BLUE_10))
+                console.log(
+                    GradientColor.gen_gradient_text(
+                        text='当前正在使用代理!',
+                        gradient_color=GradientColor.GREEN2BLUE_10
+                    )
+                )
                 proxy_key: list = []
                 proxy_value: list = []
                 for i in proxy.items():
@@ -145,8 +161,10 @@ class StatisticalTable:
                 proxy_table = PanelTable(title='代理配置', header=tuple(proxy_key), data=[proxy_value])
                 proxy_table.print_meta()
             else:
-                console.log(GradientColor.gen_gradient_text(text='当前没有使用代理!',
-                                                            gradient_color=GradientColor.NEW_LIFE))
+                console.log(GradientColor.gen_gradient_text(
+                    text='当前没有使用代理!',
+                    gradient_color=GradientColor.NEW_LIFE)
+                )
         except Exception as e:
             log.error(f'打印代理配置表时出错,{_t(KeyWord.REASON)}:"{e}"')
         try:
@@ -166,10 +184,14 @@ class StatisticalTable:
             log.error(f'打印链接内容统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
         try:
             _dtype: list = download_type.copy()  # 浅拷贝赋值给_dtype,避免传入函数后改变原数据。
-            data: list = [[_t(DownloadType.VIDEO),
-                           ProcessConfig.get_dtype(_dtype).get('video')],
-                          [_t(DownloadType.PHOTO),
-                           ProcessConfig.get_dtype(_dtype).get('photo')]]
+            data: list = [
+                [_t(DownloadType.VIDEO),
+                 ProcessConfig.get_dtype(_dtype).get('video')
+                 ],
+                [_t(DownloadType.PHOTO),
+                 ProcessConfig.get_dtype(_dtype).get('photo')
+                 ]
+            ]
             download_type_table = PanelTable(title='下载类型', header=('类型', '是否下载'), data=data)
             download_type_table.print_meta()
         except Exception as e:
@@ -269,29 +291,36 @@ class MetaData:
                 console.print(
                     MetaData.__qr_terminal_str(
                         'wxp://f2f0g8lKGhzEsr0rwtKWTTB2gQzs9Xg9g31aBvlpbILowMTa5SAMMEwn0JH1VEf2TGbS'),
-                    justify='center')
+                    justify='center'
+                )
                 console.print(
-                    GradientColor.gen_gradient_text(text='微信扫码支持作者,您的支持是我持续更新的动力。',
-                                                    gradient_color=GradientColor.YELLOW2GREEN_10),
-                    justify='center')
+                    GradientColor.gen_gradient_text(
+                        text='微信扫码支持作者,您的支持是我持续更新的动力。',
+                        gradient_color=GradientColor.YELLOW2GREEN_10
+                    ),
+                    justify='center'
+                )
             except Exception as _:
                 return _
 
     @staticmethod
     def print_meta():
-        console.print(GradientColor.gen_gradient_text(
-            text=Banner.C,
-            gradient_color=GradientColor.generate_gradient(
-                start_color='#fa709a',
-                end_color='#fee140',
-                steps=10)),
+        console.print(
+            GradientColor.gen_gradient_text(
+                text=Banner.C,
+                gradient_color=GradientColor.generate_gradient(
+                    start_color='#fa709a',
+                    end_color='#fee140',
+                    steps=10)),
             style='blink',
-            highlight=False)
-        console.print(f'[bold]{SOFTWARE_FULL_NAME} v{__version__}[/bold],\n[i]{__copyright__}[/i]'
-                      )
+            highlight=False
+        )
+        console.print(f'[bold]{SOFTWARE_FULL_NAME} v{__version__}[/bold],\n[i]{__copyright__}[/i]')
         console.print(f'Licensed under the terms of the {__license__}.', end='\n')
-        console.print(GradientColor.gen_gradient_text('\t软件免费使用!并且在GitHub开源,如果你付费那就是被骗了。',
-                                                      gradient_color=GradientColor.BLUE2PURPLE_14))
+        console.print(GradientColor.gen_gradient_text(
+            '\t软件免费使用!并且在GitHub开源,如果你付费那就是被骗了。',
+            gradient_color=GradientColor.BLUE2PURPLE_14)
+        )
 
     @staticmethod
     def suitable_units_display(number: int) -> str:
@@ -345,22 +374,25 @@ class Base64Image:
 
 class ProgressBar:
     def __init__(self):
-        self.progress = Progress(SpinnerColumn(),
-                                 TextColumn('[bold blue]{task.fields[filename]}', justify='right'),
-                                 BarColumn(bar_width=max(int(get_terminal_width() * 0.2), 1)),
-                                 '[progress.percentage]{task.percentage:>3.1f}%',
-                                 '•',
-                                 '[bold green]{task.fields[info]}',
-                                 '•',
-                                 TransferSpeedColumn(),
-                                 '•',
-                                 TimeRemainingColumn(),
-                                 console=console
-                                 )
+        self.progress = Progress(
+            SpinnerColumn(),
+            TextColumn('[bold blue]{task.fields[filename]}', justify='right'),
+            BarColumn(bar_width=max(int(get_terminal_width() * 0.2), 1)),
+            '[progress.percentage]{task.percentage:>3.1f}%',
+            '•',
+            '[bold green]{task.fields[info]}',
+            '•',
+            TransferSpeedColumn(),
+            '•',
+            TimeRemainingColumn(),
+            console=console
+        )
 
     @staticmethod
     def download_bar(current, total, progress, task_id) -> None:
-        progress.update(task_id,
-                        completed=current,
-                        info=f'{MetaData.suitable_units_display(current)}/{MetaData.suitable_units_display(total)}',
-                        total=total)
+        progress.update(
+            task_id,
+            completed=current,
+            info=f'{MetaData.suitable_units_display(current)}/{MetaData.suitable_units_display(total)}',
+            total=total
+        )

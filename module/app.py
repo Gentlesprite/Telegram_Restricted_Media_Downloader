@@ -38,12 +38,14 @@ class Application(Config, StatisticalTable):
         """用填写的配置文件,构造pyrogram客户端。"""
         os.makedirs(self.work_directory, exist_ok=True)
         Session.WAIT_TIMEOUT = min(Session.WAIT_TIMEOUT + self.max_download_task ** 2, MAX_FILE_REFERENCE_TIME)
-        return TelegramRestrictedMediaDownloaderClient(name=SOFTWARE_FULL_NAME.replace(' ', ''),
-                                                       api_id=self.api_id,
-                                                       api_hash=self.api_hash,
-                                                       proxy=self.enable_proxy,
-                                                       workdir=self.work_directory,
-                                                       max_concurrent_transmissions=self.max_download_task)
+        return TelegramRestrictedMediaDownloaderClient(
+            name=SOFTWARE_FULL_NAME.replace(' ', ''),
+            api_id=self.api_id,
+            api_hash=self.api_hash,
+            proxy=self.enable_proxy,
+            workdir=self.work_directory,
+            max_concurrent_transmissions=self.max_download_task
+        )
         # v1.3.7 新增多任务下载功能,无论是否Telegram会员。
         # https://stackoverflow.com/questions/76714896/pyrogram-download-multiple-files-at-the-same-time
 
@@ -60,17 +62,18 @@ class Application(Config, StatisticalTable):
         file_name: str = split_path(temp_file_path).get('file_name')
         save_directory: str = os.path.join(self.save_directory, file_name)
         format_file_size: str = MetaData.suitable_units_display(sever_file_size)
-        return {'file_id': file_id,
-                'temp_file_path': temp_file_path,
-                'sever_file_size': sever_file_size,
-                'file_name': file_name,
-                'save_directory': save_directory,
-                'format_file_size': format_file_size}
+        return {
+            'file_id': file_id,
+            'temp_file_path': temp_file_path,
+            'sever_file_size': sever_file_size,
+            'file_name': file_name,
+            'save_directory': save_directory,
+            'format_file_size': format_file_size
+        }
 
     def get_valid_dtype(self, message) -> Dict[str, str | bool]:
         """获取媒体类型是否与所需下载的类型相匹配。"""
-        valid_dtype = next((_ for _ in DownloadType() if getattr(message, _, None)),
-                           None)  # 判断该链接是否为视频或图片,文档。
+        valid_dtype = next((_ for _ in DownloadType() if getattr(message, _, None)), None)  # 判断该链接是否为视频或图片,文档。
         is_document_type_valid = None
         # 当媒体文件是文档形式的,需要根据配置需求将视频和图片过滤出来。
         if getattr(message, 'document'):
@@ -91,11 +94,15 @@ class Application(Config, StatisticalTable):
                 is_document_type_valid = True
         else:
             is_document_type_valid = True
-        return {'valid_dtype': valid_dtype,
-                'is_document_type_valid': is_document_type_valid}
+        return {
+            'valid_dtype': valid_dtype,
+            'is_document_type_valid': is_document_type_valid
+        }
 
-    def __get_temp_file_path(self, message: pyrogram.types.Message,
-                             dtype: str) -> str:
+    def __get_temp_file_path(
+            self, message: pyrogram.types.Message,
+            dtype: str
+    ) -> str:
         """获取下载文件时的临时保存路径。"""
         file: str = ''
         os.makedirs(self.temp_directory, exist_ok=True)
@@ -116,8 +123,11 @@ class Application(Config, StatisticalTable):
             _file_name: str = '{} - {}.{}'.format(
                 getattr(msg_obj, 'id', 'None'),
                 _title,
-                get_extension(file_id=_meta_obj.file_id, mime_type=getattr(_meta_obj, 'mime_type', _default_mtype),
-                              dot=False)
+                get_extension(
+                    file_id=_meta_obj.file_id,
+                    mime_type=getattr(_meta_obj, 'mime_type', _default_mtype),
+                    dot=False
+                )
             )
             _file: str = os.path.join(self.temp_directory, validate_title(_file_name))
             return _file
@@ -128,12 +138,17 @@ class Application(Config, StatisticalTable):
             _meta_obj = getattr(msg_obj, _dtype)
             _extension: str = 'unknown'
             if _dtype == DownloadType.PHOTO:
-                _extension: str = get_extension(file_id=_meta_obj.file_id, mime_type=_default_mtype,
-                                                dot=False)
+                _extension: str = get_extension(
+                    file_id=_meta_obj.file_id,
+                    mime_type=_default_mtype,
+                    dot=False
+                )
             elif _dtype == DownloadType.DOCUMENT:
-                _extension: str = get_extension(file_id=_meta_obj.file_id,
-                                                mime_type=getattr(_meta_obj, 'mime_type', _default_mtype),
-                                                dot=False)
+                _extension: str = get_extension(
+                    file_id=_meta_obj.file_id,
+                    mime_type=getattr(_meta_obj, 'mime_type', _default_mtype),
+                    dot=False
+                )
             _file_name: str = '{} - {}.{}'.format(
                 getattr(msg_obj, 'id'),
                 getattr(_meta_obj, 'file_unique_id', 'None'),
@@ -153,8 +168,10 @@ class Application(Config, StatisticalTable):
             elif 'image' in _mime_type:
                 file: str = _process_photo(msg_obj=message, _dtype=dtype)
         else:
-            file: str = os.path.join(self.temp_directory,
-                                     f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} - undefined.unknown')
+            file: str = os.path.join(
+                self.temp_directory,
+                f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} - undefined.unknown'
+            )
         return truncate_filename(file)
 
     def __on_media_record(func):
