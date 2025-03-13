@@ -801,14 +801,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                 proxy=self.app.proxy
             )
             self.loop.run_until_complete(self.__download_media_from_links())
-        except (SessionRevoked, AuthKeyUnregistered, SessionExpired, ConnectionError) as e:
-            log.error(f'登录时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
-            res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
-            record_error: bool = True
-            if res:
-                log.warning('账号已失效,已删除旧会话文件,请重启软件。')
-            else:
-                log.error('账号已失效,请手动删除软件目录下的sessions文件夹后重启软件。')
+        except KeyError as e:
+            if str(e) == '0':
+                log.error(
+                    msg=f'「网络」或「代理问题」,在确保当前网络连接正常情况下检查:\n「VPN」是否可用,「软件代理」是否配置正确。')
+                raise SystemExit(0)
+            log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
         except BadMsgNotification as e:
             if str(e) not in (str(BadMsgNotification(16)), str(BadMsgNotification(17))):
                 log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
@@ -823,6 +821,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                 '[#79FCD4]文件夹下的[/#79FCD4][#FFB579]"常见问题及解决方案汇总.pdf"[/#FFB579]'
                 '[#79FCB5]中的[/#79FCB5][#D479FC]【问题4】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6],[/#FC79A6]'
                 '[#79FCD4]并[/#79FCD4][#79FCB5]重启软件[/#79FCB5]。')
+        except (SessionRevoked, AuthKeyUnregistered, SessionExpired, ConnectionError) as e:
+            log.error(f'登录时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
+            res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
+            record_error: bool = True
+            if res:
+                log.warning('账号已失效,已删除旧会话文件,请重启软件。')
+            else:
+                log.error('账号已失效,请手动删除软件目录下的sessions文件夹后重启软件。')
         except AttributeError as e:
             record_error: bool = True
             log.error(f'登录超时,请重新打开软件尝试登录,{_t(KeyWord.REASON)}:"{e}"')
