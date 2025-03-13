@@ -6,6 +6,7 @@
 import qrcode
 import base64
 from io import BytesIO
+from typing import Union
 
 from rich.style import Style
 from rich.table import Table
@@ -104,7 +105,7 @@ class StatisticalTable:
             media_table.print_meta()
 
     @staticmethod
-    def print_link_table(link_info: dict) -> bool | str:
+    def print_link_table(link_info: dict) -> Union[bool, str]:
         """打印统计的下载链接信息的表格。"""
         try:
             data: list = []
@@ -141,7 +142,7 @@ class StatisticalTable:
             return str(e)
 
     @staticmethod
-    def print_config_table(enable_proxy: dict | None, links: str, download_type: list, proxy: dict) -> None:
+    def print_config_table(enable_proxy: Union[dict, None], links: str, download_type: list, proxy: dict) -> None:
         """打印用户所填写配置文件的表格。"""
         try:
             if enable_proxy:
@@ -312,7 +313,7 @@ class MetaData:
                     start_color='#fa709a',
                     end_color='#fee140',
                     steps=10)),
-            style='blink',
+            style='bold',
             highlight=False
         )
         console.print(f'[bold]{SOFTWARE_FULL_NAME} v{__version__}[/bold],\n[i]{__copyright__}[/i]')

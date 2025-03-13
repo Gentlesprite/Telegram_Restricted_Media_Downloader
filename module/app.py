@@ -8,8 +8,8 @@ import time
 import datetime
 import mimetypes
 import subprocess
-from typing import Dict
 from functools import wraps
+from typing import Dict, Union
 
 import pyrogram
 
@@ -53,7 +53,7 @@ class Application(Config, StatisticalTable):
         """处理关机逻辑。"""
         self.shutdown_task(second=second) if self.is_shutdown else None
 
-    def get_media_meta(self, message: pyrogram.types.Message, dtype) -> Dict[str, int | str]:
+    def get_media_meta(self, message: pyrogram.types.Message, dtype) -> Dict[str, Union[int, str]]:
         """获取媒体元数据。"""
         file_id: int = getattr(message, 'id')
         temp_file_path: str = self.__get_temp_file_path(message, dtype)
@@ -71,7 +71,7 @@ class Application(Config, StatisticalTable):
             'format_file_size': format_file_size
         }
 
-    def get_valid_dtype(self, message) -> Dict[str, str | bool]:
+    def get_valid_dtype(self, message) -> Dict[str, Union[str, bool]]:
         """获取媒体类型是否与所需下载的类型相匹配。"""
         valid_dtype = next((_ for _ in DownloadType() if getattr(message, _, None)), None)  # 判断该链接是否为视频或图片,文档。
         is_document_type_valid = None
@@ -111,7 +111,7 @@ class Application(Config, StatisticalTable):
             """处理视频文件的逻辑。"""
             _default_mtype: str = 'video/mp4'  # v1.2.8 健全获取文件名逻辑。
             _meta_obj = getattr(msg_obj, _dtype)
-            _title: str | None = getattr(_meta_obj, 'file_name', None)  # v1.2.8 修复当文件名不存在时,下载报错问题。
+            _title: Union[str, None] = getattr(_meta_obj, 'file_name', None)  # v1.2.8 修复当文件名不存在时,下载报错问题。
             try:
                 if _title is None:
                     _title: str = 'None'

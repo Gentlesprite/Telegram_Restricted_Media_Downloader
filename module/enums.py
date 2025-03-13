@@ -4,7 +4,9 @@
 # Time:2024/7/2 0:59
 # File:enums.py
 import os
+import sys
 import ipaddress
+from typing import Union
 
 from module import console, log
 from module.language import _t
@@ -253,7 +255,7 @@ class Validator:
             log.error(f'意外的错误,原因:"{e}"')
 
     @staticmethod
-    def is_valid_enable_proxy(enable_proxy: str | bool) -> bool:
+    def is_valid_enable_proxy(enable_proxy: Union[str, bool]) -> bool:
         if enable_proxy in ('y', 'n'):
             return True
 
@@ -278,7 +280,7 @@ class Validator:
             return False
 
     @staticmethod
-    def is_valid_download_type(dtype: int | str) -> bool:
+    def is_valid_download_type(dtype: Union[int, str]) -> bool:
         try:
             _dtype = int(dtype) if isinstance(dtype, str) else dtype
             return 0 < _dtype < 4
@@ -375,6 +377,52 @@ class GetStdioParams:
     UNDEFINED: str = '无'
 
     @staticmethod
+    def __timeout_input(
+            prompt: str = '',
+            error_prompt: Union[str, None] = None,
+            default: str = '',
+            timeout: int = 5
+    ) -> str:
+        """跨平台的输入超时后自动设置为默认值,报错时返回默认input。"""
+
+        def timeout_notice():
+            console.print('\n输入超时,已自动设置为默认值。', style='#FF4689')
+
+        try:
+            if sys.platform == 'win32':
+                import time
+                import msvcrt
+                console.print(prompt, end='')
+                start_time: float = time.time()
+                input_buffer: list = []
+
+                while True:
+                    if msvcrt.kbhit():  # 检测是否有键盘输入。
+                        char = msvcrt.getwch()
+                        if char == '\r':  # 回车键结束输入。
+                            user_input = ''.join(input_buffer)
+                            return user_input.strip() or default
+                        else:
+                            input_buffer.append(char)
+                            console.print(char, end='')
+                    elif time.time() - start_time > timeout:
+                        timeout_notice()
+                        return default
+                    time.sleep(0.1)
+            else:
+                import select
+                sys.stdout.write(prompt)
+                sys.stdout.flush()
+                ready, _, _ = select.select([sys.stdin], [], [], timeout)
+                if ready:
+                    return sys.stdin.readline().strip() or default
+                timeout_notice()
+                return default
+        except Exception as e:
+            log.exception(f'无法自动设置!请手动进行设置,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+            return console.input(error_prompt if error_prompt else prompt)
+
+    @staticmethod
     def get_is_ki_save_config(valid_format: str = 'y|n') -> dict:
         while True:
             is_save_config: str = console.input(
@@ -388,14 +436,21 @@ class GetStdioParams:
 
     @staticmethod
     def get_is_re_config(valid_format: str = 'y|n') -> dict:
+        prompt: str = f'[#B1DB74]检测到已配置完成的配置文件,是否需要重新配置?[/#B1DB74](之前的配置文件将为你备份到当前目录下) - 「{valid_format}」'
+        timeout: int = 5
         while True:
-            is_re_config: str = console.input(
-                f'检测到已配置完成的配置文件,是否需要重新配置?(之前的配置文件将为你备份到当前目录下) - 「{valid_format}」(默认n):').strip().lower()
+            is_re_config: str = GetStdioParams.__timeout_input(
+                prompt=f'{prompt}[#FF4689]({timeout}秒后自动设置为默认n)[/#FF4689]:',
+                error_prompt=f'{prompt}[#FF4689](默认n)[/#FF4689]:',
+                default='n',
+                timeout=timeout
+            ).strip().lower()
             if is_re_config == 'y':
                 return {'is_re_config': True}
             elif is_re_config in ('n', ''):
                 return {'is_re_config': False}
             else:
+                console.print('\n') if sys.platform == 'win32' else None
                 log.warning(f'意外的参数:"{is_re_config}",支持的参数 - 「{valid_format}」(默认n)')
 
     @staticmethod
@@ -493,9 +548,9 @@ class GetStdioParams:
                 else:
                     log.warning(
                         f'意外的参数:"{links_file_path}",文件「必须存在」,请重新输入!')
-            except Exception as _e:
+            except Exception as e:
                 log.warning(
-                    f'意外的参数:"{links_file_path}",文件路径必须以「{valid_format}」结尾,并且「必须存在」,请重新输入!{_t(KeyWord.REASON)}:"{_e}"')
+                    f'意外的参数:"{links_file_path}",文件路径必须以「{valid_format}」结尾,并且「必须存在」,请重新输入!{_t(KeyWord.REASON)}:"{e}"')
 
     @staticmethod
     def get_save_directory(last_record) -> dict:
@@ -520,15 +575,16 @@ class GetStdioParams:
     @staticmethod
     def get_max_download_task(last_record) -> dict:
         # 输入最大下载任务数,确保是一个整数且不超过特定限制。
+        default_prompt: str = '(默认5)' if last_record is None else ''
         while True:
             try:
                 max_download_task = console.input(
                     f'请输入「最大下载任务数」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」'
-                    f',值过高可能会导致网络相关问题,建议默认{"(默认3)" if last_record is None else ""}:').strip()
+                    f',值过高可能会导致网络相关问题,建议默认{default_prompt}:').strip()
                 if max_download_task == '' and last_record is not None:
                     max_download_task = last_record
                 if max_download_task == '':
-                    max_download_task = 3
+                    max_download_task = 5
                 if Validator.is_valid_max_download_task(max_download_task):
                     console.print(f'已设置「max_download_task」为:「{max_download_task}」',
                                   style=ProcessConfig.stdio_style('max_download_task'))
@@ -538,11 +594,11 @@ class GetStdioParams:
                     }
                 else:
                     log.warning(f'意外的参数:"{max_download_task}",任务数必须是「正整数」,请重新输入!')
-            except Exception as _e:
-                log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{_e}"')
+            except Exception as e:
+                log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{e}"')
 
     @staticmethod
-    def get_download_type(last_record: list | None) -> dict:
+    def get_download_type(last_record: Union[list, None]) -> dict:
 
         if isinstance(last_record, list):
             res: dict = ProcessConfig.get_dtype(download_dtype=last_record)
@@ -554,11 +610,11 @@ class GetStdioParams:
                 last_record = 2
             elif res.get('video') and res.get('photo'):
                 last_record = 3
-
+        default_prompt: str = '(默认3)' if last_record is None else ''
         while True:
             download_type = console.input(
                 f'输入需要下载的「媒体类型」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」'
-                f'格式 - 「1.视频 2.图片 3.视频和图片」{"(默认3)" if last_record is None else ""}:').strip()
+                f'格式 - 「1.视频 2.图片 3.视频和图片」{default_prompt}:').strip()
             if download_type == '' and last_record is not None:
                 download_type = last_record
             if download_type == '':
@@ -586,11 +642,12 @@ class GetStdioParams:
             last_record = GetStdioParams.UNDEFINED
         t = f'已设置「is_shutdown」为:「y」,下载完成后将自动关机!'  # v1.3.0 修复配置is_shutdown参数时显示错误。
         f = f'已设置「is_shutdown」为:「n」'
+        default_prompt: str = '(默认n)' if last_record == GetStdioParams.UNDEFINED else ''
         while True:
             try:
                 is_shutdown = console.input(
                     f'下载完成后是否「自动关机」。上一次的记录是:「{last_record}」 - 「{valid_format}」'
-                    f'{"(默认n)" if last_record == GetStdioParams.UNDEFINED else ""}:').strip().lower()
+                    f'{default_prompt}:').strip().lower()
                 if is_shutdown == '' and last_record != GetStdioParams.UNDEFINED:
                     if last_record == 'y':
                         console.print(t, style=_style)
@@ -608,19 +665,20 @@ class GetStdioParams:
                 else:
                     log.warning(f'意外的参数:"{is_shutdown}",支持的参数 - 「{valid_format}」')
 
-            except Exception as _e:
-                log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{_e}"')
+            except Exception as e:
+                log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{e}"')
 
     @staticmethod
-    def get_enable_proxy(last_record: str | bool, valid_format: str = 'y|n') -> dict:
+    def get_enable_proxy(last_record: Union[str, bool], valid_format: str = 'y|n') -> dict:
         if last_record:
             ep_notice: str = 'y' if last_record else 'n'
         else:
             ep_notice: str = GetStdioParams.UNDEFINED
+        default_prompt: str = '(默认n)' if ep_notice == GetStdioParams.UNDEFINED else ''
         while True:  # 询问是否开启代理。
             enable_proxy = console.input(
                 f'是否需要使用「代理」。上一次的记录是:「{ep_notice}」'
-                f'格式 - 「{valid_format}」{"(默认n)" if ep_notice == GetStdioParams.UNDEFINED else ""}:').strip().lower()
+                f'格式 - 「{valid_format}」{default_prompt}:').strip().lower()
             if enable_proxy == '' and last_record is not None:
                 if last_record is True:
                     enable_proxy = 'y'
@@ -643,7 +701,7 @@ class GetStdioParams:
     @staticmethod
     def get_scheme(last_record: str, valid_format: list) -> dict:
         if valid_format is None:
-            valid_format = ['http', 'socks4', 'socks5']
+            valid_format: list = ['http', 'socks4', 'socks5']
         fmt_valid_format = '|'.join(valid_format)
         while True:  # v1.3.0 修复代理配置scheme参数配置抛出AttributeError。
             scheme = console.input(

@@ -200,7 +200,7 @@ def __get_file_type(file_id: str) -> FileType:
     return file_type
 
 
-def get_file_size(file_path: str, temp_ext: str = '.temp'):
+def get_file_size(file_path: str, temp_ext: str = '.temp') -> int:
     """获取文件大小，支持临时扩展名。"""
     if os.path.exists(file_path):
         return os.path.getsize(file_path)

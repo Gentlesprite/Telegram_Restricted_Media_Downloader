@@ -3,6 +3,7 @@
 # Software:PyCharm
 # Time:2025/2/27 17:38
 # File:task.py
+from typing import Union
 from functools import wraps
 
 from module import console, log
@@ -17,7 +18,7 @@ class Task:
     def __init__(
             self,
             link: str,
-            link_type: str | None,
+            link_type: Union[str, None],
             member_num: int,
             complete_num: int,
             file_name: set,

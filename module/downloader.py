@@ -51,13 +51,13 @@ class TelegramRestrictedMediaDownloader(Bot):
             client: pyrogram.Client,
             message: pyrogram.types.Message
     ):
-        link_meta: dict | None = await super().get_link_from_bot(client, message)
+        link_meta: Union[dict, None] = await super().get_link_from_bot(client, message)
         if link_meta is None:
             return None
         else:
             right_link: set = link_meta.get('right_link')
             invalid_link: set = link_meta.get('invalid_link')
-            last_bot_message: pyrogram.types.Message | None = link_meta.get('last_bot_message')
+            last_bot_message: Union[pyrogram.types.Message, None] = link_meta.get('last_bot_message')
         exist_link: set = set([_ for _ in right_link if _ in self.bot_task_link])
         exist_link.update(right_link & Task.COMPLETE_LINK)
         right_link -= exist_link
@@ -71,7 +71,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 invalid_link=invalid_link
             )
         )
-        links: set | None = self.__process_links(link=list(right_link))
+        links: Union[set, None] = self.__process_links(link=list(right_link))
         if links is None:
             return
         else:
@@ -169,7 +169,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 msg = '🥰🥰🥰\n收款「二维码」已发送至您的「终端」与「对话框」十分感谢您的支持!'
             await callback_query.message.reply_text(msg)
         elif callback_data == BotCallbackText.LINK_TABLE:
-            res: bool | str = self.app.print_link_table(Task.LINK_INFO)
+            res: Union[bool, str] = self.app.print_link_table(Task.LINK_INFO)
             if isinstance(res, str):
                 await callback_query.message.edit_text(
                     '😵‍💫😵‍💫😵‍💫`链接统计表`打印失败。\n(具体原因请前往终端查看报错信息)')
@@ -206,7 +206,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             bot_message: pyrogram.types.Message,
             chat_id: Union[int, str],
             error_msg: str
-    ) -> pyrogram.types.Chat | None:
+    ) -> Union[pyrogram.types.Chat, None]:
         try:
             chat = await self.app.client.get_chat(chat_id)
             return chat
@@ -221,8 +221,8 @@ class TelegramRestrictedMediaDownloader(Bot):
     async def get_forward_link_from_bot(
             self, client: pyrogram.Client,
             message: pyrogram.types.Message
-    ) -> dict | None:
-        meta: dict | None = await super().get_forward_link_from_bot(client, message)
+    ) -> Union[dict, None]:
+        meta: Union[dict, None] = await super().get_forward_link_from_bot(client, message)
         if meta is None:
             return None
         origin_link: str = meta.get('origin_link')
@@ -230,16 +230,16 @@ class TelegramRestrictedMediaDownloader(Bot):
         start_id: int = meta.get('message_range')[0]
         end_id: int = meta.get('message_range')[1]
         try:
-            origin_meta: dict | None = await self.__extract_link_content(origin_link, only_chat_id=True)
-            target_meta: dict | None = await self.__extract_link_content(target_link, only_chat_id=True)
+            origin_meta: Union[dict, None] = await self.__extract_link_content(origin_link, only_chat_id=True)
+            target_meta: Union[dict, None] = await self.__extract_link_content(target_link, only_chat_id=True)
             if not all([origin_meta, target_meta]):
                 raise Exception('Invalid origin_link or target_link.')
-            origin_chat: pyrogram.types.Chat | None = await self.__get_chat(
+            origin_chat: Union[pyrogram.types.Chat, None] = await self.__get_chat(
                 bot_client=client, bot_message=message,
                 chat_id=origin_meta.get('chat_id'),
                 error_msg=f'⬇️⬇️⬇️原始频道不存在⬇️⬇️⬇️\n{origin_link}'
             )
-            target_chat: pyrogram.types.Chat | None = await self.__get_chat(
+            target_chat: Union[pyrogram.types.Chat, None] = await self.__get_chat(
                 bot_client=client, bot_message=message,
                 chat_id=target_meta.get('chat_id'),
                 error_msg=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
@@ -254,7 +254,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     reply_to_message_id=message.id,
                 )
                 return None
-            last_message: pyrogram.types.Message | None = None
+            last_message: Union[pyrogram.types.Message, None] = None
             async for i in self.app.client.get_chat_history(
                     chat_id=origin_chat.id,
                     offset_id=start_id,
@@ -347,7 +347,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             log.exception(e)
             log.error(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
 
-    async def __extract_link_content(self, link: str, only_chat_id=False) -> dict | None:
+    async def __extract_link_content(self, link: str, only_chat_id=False) -> Union[dict, None]:
         record_type: set = set()
         link: str = link[:-1] if link.endswith('/') else link
         record_type.add(LinkType.COMMENT) if '?single&comment' in link else None  # v1.1.0修复讨论组中附带?single时不下载的问题。
@@ -362,7 +362,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             elif link.startswith('https://t.me'):
                 record_type.add(LinkType.TOPIC)
         # https://github.com/KurimuzonAkuma/pyrogram/blob/dev/pyrogram/methods/messages/get_messages.py#L101
-        if only_chat_id:
+        if only_chat_id:  # todo 话题频道的转发的关键在于解析链接时获取到正确的topic_id。
             match = re.match(
                 r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/(\d+))?$',
                 link.lower())
@@ -428,7 +428,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 raise ValueError('Invalid message link.')
 
     @staticmethod
-    async def __is_group(message) -> Tuple[bool | None, bool | None]:
+    async def __is_group(message) -> Tuple[Union[bool, None], Union[bool, None]]:
         try:
             return True, await message.get_media_group()
         except ValueError:
@@ -436,7 +436,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         except AttributeError:
             return None, None
 
-    async def __add_task(self, link, message: pyrogram.types.Message | list, retry: dict) -> None:
+    async def __add_task(self, link, message: Union[pyrogram.types.Message, list], retry: dict) -> None:
         retry_count = retry.get('count')
         retry_id = retry.get('id')
         if isinstance(message, list):
@@ -603,7 +603,7 @@ class TelegramRestrictedMediaDownloader(Bot):
     async def __create_download_task(
             self,
             link: str,
-            retry: dict | None = None
+            retry: Union[dict, None] = None
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
         try:
@@ -675,6 +675,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             }
         except BotMethodInvalid as e:
             res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
+            error_msg: str = '已删除旧会话文件' if res else '请手动删除软件目录下的sessions文件夹'
             return {
                 'chat_id': None, 'member_num': 0,
                 'link_type': None,
@@ -683,9 +684,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     'all_member': str(e),
                     'error_msg':
                         '检测到使用了「bot_token」方式登录了主账号的行为,'
-                        f'{
-                        "已删除旧会话文件" if res else "请手动删除软件目录下的sessions文件夹"
-                        },重启软件以「手机号码」方式重新登录'
+                        f'{error_msg},重启软件以「手机号码」方式重新登录'
                 }
             }
         except ValueError as e:
@@ -719,7 +718,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 }
             }
 
-    def __process_links(self, link: str | list) -> set | None:
+    def __process_links(self, link: Union[str, list]) -> Union[set, None]:
         """将链接(文本格式或链接)处理成集合。"""
         start_content: str = 'https://t.me/'
         links: set = set()
@@ -739,7 +738,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 links.add(link)
         elif isinstance(link, list):
             for i in link:
-                _link: set | None = self.__process_links(link=i)
+                _link: Union[set, None] = self.__process_links(link=i)
                 if _link is not None:
                     links.update(_link)
         if links:
@@ -773,7 +772,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             console.log(result, style='#B1DB74' if self.is_bot_running else '#FF4689')
         self.is_running = True
         self.running_log.add(self.is_running)
-        links: set | None = self.__process_links(link=self.app.links)
+        links: Union[set, None] = self.__process_links(link=self.app.links)
         # 将初始任务添加到队列中。
         [await self.loop.create_task(self.__create_download_task(link=link, retry=None)) for link in
          links] if links else None
@@ -784,7 +783,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await result
             except PermissionError as e:
                 log.error(
-                    f'临时文件无法移动至下载路径,检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,'
+                    '临时文件无法移动至下载路径,检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,'
                     f'{_t(KeyWord.REASON)}:"{e}"')
         # 等待所有任务完成。
         await self.queue.join()

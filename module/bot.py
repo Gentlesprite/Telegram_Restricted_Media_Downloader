@@ -3,7 +3,7 @@
 # Software:PyCharm
 # Time:2025/1/24 21:27
 # File:bot.py
-from typing import List, Dict
+from typing import List, Dict, Union
 
 import pyrogram
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
@@ -79,7 +79,7 @@ class Bot:
             self,
             client: pyrogram.Client,
             message: pyrogram.types.Message
-    ) -> Dict[str, set | pyrogram.types.Message] | None:
+    ) -> Union[Dict[str, Union[set, pyrogram.types.Message]], None]:
         text: str = message.text
         if text == '/download':
             await client.send_message(
@@ -161,7 +161,7 @@ class Bot:
             message: pyrogram.types.Message,
             text: list, last_message_id: int = -1,
             disable_web_page_preview: bool = True,
-            reply_markup: pyrogram.types.InlineKeyboardMarkup | None = None
+            reply_markup: Union[pyrogram.types.InlineKeyboardMarkup, None] = None
     ) -> pyrogram.types.Message:
         if len(text) == 1 and last_message_id != -1:
             last_bot_message = await client.edit_message_text(
@@ -238,7 +238,7 @@ class Bot:
         )
 
     @staticmethod
-    async def callback_data(client: pyrogram.Client, callback_query: CallbackQuery) -> str | None:
+    async def callback_data(client: pyrogram.Client, callback_query: CallbackQuery) -> Union[str, None]:
         await callback_query.answer()
         data = callback_query.data
         if not data:
@@ -279,7 +279,7 @@ class Bot:
                                   reply_markup=choice_keyboard)
 
     async def get_forward_link_from_bot(self, client: pyrogram.Client,
-                                        message: pyrogram.types.Message) -> Dict[str, list | str] | None:
+                                        message: pyrogram.types.Message) -> Union[Dict[str, Union[list, str]], None]:
 
         text: str = message.text
         args = text.split(maxsplit=5)
@@ -416,7 +416,7 @@ class Bot:
                 return e
 
     @staticmethod
-    def update_text(right_link: set, invalid_link: set, exist_link: set | None = None) -> list:
+    def update_text(right_link: set, invalid_link: set, exist_link: Union[set, None] = None) -> list:
         n = '\n'
         right_msg = f'{BotMessage.RIGHT}{n.join(right_link)}' if right_link else ''
         invalid_msg = f'{BotMessage.INVALID}{n.join(invalid_link)}{n}(具体原因请前往终端查看报错信息)' if invalid_link else ''
@@ -434,9 +434,9 @@ class Bot:
             self, client: pyrogram.Client,
             message: pyrogram.types.Message,
             last_message_id: int,
-            text: str | List[str],
+            text: Union[str, List[str]],
             disable_web_page_preview: bool = True,
-            reply_markup: pyrogram.types.InlineKeyboardMarkup | None = None
+            reply_markup: Union[pyrogram.types.InlineKeyboardMarkup, None] = None
     ):
         try:
             if isinstance(text, list):
