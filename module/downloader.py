@@ -803,24 +803,23 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.loop.run_until_complete(self.__download_media_from_links())
         except KeyError as e:
             if str(e) == '0':
-                log.error(
-                    msg=f'「网络」或「代理问题」,在确保当前网络连接正常情况下检查:\n「VPN」是否可用,「软件代理」是否配置正确。')
+                log.error('「网络」或「代理问题」,在确保当前网络连接正常情况下检查:\n「VPN」是否可用,「软件代理」是否配置正确。')
                 raise SystemExit(0)
             log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
         except BadMsgNotification as e:
-            if str(e) not in (str(BadMsgNotification(16)), str(BadMsgNotification(17))):
-                log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+            if str(e) in (str(BadMsgNotification(16)), str(BadMsgNotification(17))):
+                console.print(
+                    '[#FCFF79]检测到[/#FCFF79][#FF7979]系统时间[/#FF7979][#FC79A5]未同步[/#FC79A5][#79E2FC],[/#79E2FC]'
+                    '[#79FCD4]解决方法[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\n'
+                    'https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/issues/5#issuecomment-2580677184'
+                    '\n[#FCFF79]若[/#FCFF79][#FF4689]无法[/#FF4689][#FF7979]访问[/#FF7979][#79FCD4],[/#79FCD4]'
+                    '[#FCFF79]可[/#FCFF79][#d4fc79]查阅[/#d4fc79]'
+                    '[#FC79A5]软件压缩包所提供的[/#FC79A5][#79E2FC]"使用手册"[/#79E2FC]'
+                    '[#79FCD4]文件夹下的[/#79FCD4][#FFB579]"常见问题及解决方案汇总.pdf"[/#FFB579]'
+                    '[#79FCB5]中的[/#79FCB5][#D479FC]【问题4】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6],[/#FC79A6]'
+                    '[#79FCD4]并[/#79FCD4][#79FCB5]重启软件[/#79FCB5]。')
                 raise SystemExit(0)
-            console.print(
-                '[#FCFF79]检测到[/#FCFF79][#FF7979]系统时间[/#FF7979][#FC79A5]未同步[/#FC79A5][#79E2FC],[/#79E2FC]'
-                '[#79FCD4]解决方法[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\n'
-                'https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/issues/5#issuecomment-2580677184'
-                '\n[#FCFF79]若[/#FCFF79][#FF4689]无法[/#FF4689][#FF7979]访问[/#FF7979][#79FCD4],[/#79FCD4]'
-                '[#FCFF79]可[/#FCFF79][#d4fc79]查阅[/#d4fc79]'
-                '[#FC79A5]软件压缩包所提供的[/#FC79A5][#79E2FC]"使用手册"[/#79E2FC]'
-                '[#79FCD4]文件夹下的[/#79FCD4][#FFB579]"常见问题及解决方案汇总.pdf"[/#FFB579]'
-                '[#79FCB5]中的[/#79FCB5][#D479FC]【问题4】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6],[/#FC79A6]'
-                '[#79FCD4]并[/#79FCD4][#79FCB5]重启软件[/#79FCB5]。')
+            log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
         except (SessionRevoked, AuthKeyUnregistered, SessionExpired, ConnectionError) as e:
             log.error(f'登录时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
