@@ -278,8 +278,11 @@ class Bot:
                                   disable_web_page_preview=True,
                                   reply_markup=choice_keyboard)
 
-    async def get_forward_link_from_bot(self, client: pyrogram.Client,
-                                        message: pyrogram.types.Message) -> Union[Dict[str, Union[list, str]], None]:
+    async def get_forward_link_from_bot(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ) -> Union[Dict[str, Union[list, str]], None]:
 
         text: str = message.text
         args = text.split(maxsplit=5)
@@ -381,7 +384,7 @@ class Bot:
             self.bot.add_handler(
                 CallbackQueryHandler(
                     self.callback_data,
-                    filters=pyrogram.filters.user(self.root) & pyrogram.filters.user(self.root)
+                    filters=pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(
