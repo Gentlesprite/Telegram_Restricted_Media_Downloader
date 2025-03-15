@@ -3,6 +3,7 @@
 # Software:PyCharm
 # Time:2025/2/27 17:38
 # File:task.py
+import asyncio
 from typing import Union
 from functools import wraps
 
@@ -85,6 +86,7 @@ class Task:
                 )
                 Task.LINK_INFO.get(link)['error_msg'] = {}
                 Task.COMPLETE_LINK.add(link)
+                asyncio.create_task(self.done_notice(link))
             return res
 
         return wrapper

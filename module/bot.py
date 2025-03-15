@@ -34,6 +34,8 @@ class Bot:
         self.bot_task_link: set = set()
         self.gc = GlobalConfig()
         self.root: list = []
+        self.last_client: Union[pyrogram.Client, None] = None
+        self.last_message: Union[pyrogram.types.Message, None] = None
 
     async def process_error_message(self, client: pyrogram.Client, message: pyrogram.types.Message) -> None:
         await self.help(client, message)
@@ -237,6 +239,13 @@ class Bot:
             reply_markup=func_keyboard
         )
 
+    async def start(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ):
+        await self.help(client, message)
+
     @staticmethod
     async def callback_data(client: pyrogram.Client, callback_query: CallbackQuery) -> Union[str, None]:
         await callback_query.answer()
@@ -332,6 +341,17 @@ class Bot:
         )
         raise SystemExit(0)
 
+    async def done_notice(
+            self,
+            link: str
+    ):
+        if all([self.last_client, self.last_message]):
+            if self.gc.get_config(BotCallbackText.NOTICE):
+                await self.last_client.send_message(
+                    chat_id=self.last_message.from_user.id,
+                    text=f'"{link}"已下载完成。'
+                )
+
     async def start_bot(
             self,
             user_client_obj: pyrogram.Client,
@@ -347,8 +367,14 @@ class Bot:
             await self.bot.set_bot_commands(self.COMMANDS)
             self.bot.add_handler(
                 MessageHandler(
+                    self.start,
+                    filters=pyrogram.filters.command(['start']) & pyrogram.filters.user(self.root)
+                )
+            )
+            self.bot.add_handler(
+                MessageHandler(
                     self.help,
-                    filters=pyrogram.filters.command(['help', 'start']) & pyrogram.filters.user(self.root)
+                    filters=pyrogram.filters.command(['help']) & pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(
@@ -394,12 +420,8 @@ class Bot:
                 )
             )
             self.is_bot_running: bool = True
-            if self.gc.config.get('notice'):
-                await self.send_message_to_bot(text='/start')
-                notice_status = BotButton.OPEN_NOTICE
-            else:
-                notice_status = BotButton.CLOSE_NOTICE
-            return f'🤖「机器人」启动成功。({notice_status})'
+            await self.send_message_to_bot(text='/start')
+            return f'🤖「机器人」启动成功。({BotButton.OPEN_NOTICE if self.gc.config.get(BotCallbackText.NOTICE) else BotButton.CLOSE_NOTICE})'
         except AccessTokenInvalid as e:
             self.is_bot_running: bool = False
             return f'🤖「机器人」启动失败,「bot_token」错误,{_t(KeyWord.REASON)}:"{e}"'

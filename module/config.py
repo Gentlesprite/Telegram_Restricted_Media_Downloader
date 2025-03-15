@@ -6,6 +6,7 @@
 import os
 import sys
 import datetime
+from typing import Union
 
 from module import yaml
 from module import log, console, PLATFORM, APPDATA_PATH, CustomDumper
@@ -411,9 +412,9 @@ class GlobalConfig:
     def __init__(self):
         self.config_path: str = GlobalConfig.PATH
         self.config: dict = GlobalConfig.TEMPLATE
-        self.load_config()
+        self.__load_config()
 
-    def load_config(self) -> None:
+    def __load_config(self) -> None:
         """加载全局配置文件。"""
         try:
             if not os.path.exists(GlobalConfig.PATH):
@@ -435,3 +436,8 @@ class GlobalConfig:
             log.error(f'保存全局配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
         finally:
             self.config = config
+
+    def get_config(self, param, error_param: Union[str, None] = None) -> Union[str, None]:
+        """获取实时的配置文件。"""
+        self.__load_config()
+        return self.config.get(param, error_param)

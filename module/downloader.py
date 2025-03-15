@@ -114,18 +114,19 @@ class TelegramRestrictedMediaDownloader(Bot):
         finally:
             return e_code
 
-    async def help(self,
-                   client: pyrogram.Client,
-                   message: pyrogram.types.Message) -> None:
-        chat_id = message.from_user.id
-        if message.text == '/start':
+    async def start(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ):
+        self.last_client: pyrogram.Client = client
+        self.last_message: pyrogram.types.Message = message
+        if self.gc.config.get(BotCallbackText.NOTICE):
+            chat_id = message.from_user.id
             res: dict = await self.__send_pay_qr(client=client, chat_id=chat_id, load_name='机器人')
-            if res.get('e_code'):
-                msg = '😊😊😊欢迎使用😊😊😊'
-            else:
-                msg = '😊😊😊欢迎使用😊😊😊您的支持是我持续更新的动力。'
+            msg = '😊😊😊欢迎使用😊😊😊' if res.get('e_code') else '😊😊😊欢迎使用😊😊😊您的支持是我持续更新的动力。'
             await client.send_message(chat_id=chat_id, text=msg, disable_web_page_preview=True)
-        await super().help(client, message)
+            await super().start(client, message)
 
     async def callback_data(self, client: pyrogram.Client, callback_query: pyrogram.types.CallbackQuery):
         callback_data = await super().callback_data(client, callback_query)
@@ -159,9 +160,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await callback_query.message.reply_text('关闭提醒失败\n(具体原因请前往终端查看报错信息)')
                 log.error(f'关闭提醒失败,{_t(KeyWord.REASON)}:"{e}"')
         elif callback_data == BotCallbackText.PAY:
-            res: dict = await self.__send_pay_qr(client=client,
-                                                 chat_id=callback_query.message.from_user.id,
-                                                 load_name='收款码')
+            res: dict = await self.__send_pay_qr(
+                client=client,
+                chat_id=callback_query.message.from_user.id,
+                load_name='收款码'
+            )
             MetaData.pay()
             if res.get('e_code'):
                 msg = '🥰🥰🥰\n收款「二维码」已发送至您的「终端」十分感谢您的支持!'
@@ -568,10 +571,12 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.app.current_task_num -= 1
             self.event.set()  # v1.3.4 修复重试下载被阻塞的问题。
             self.queue.task_done()
-            if self.__check_download_finish(sever_file_size=sever_file_size,
-                                            temp_file_path=temp_file_path,
-                                            save_directory=self.app.save_directory,
-                                            with_move=True):
+            if self.__check_download_finish(
+                    sever_file_size=sever_file_size,
+                    temp_file_path=temp_file_path,
+                    save_directory=self.app.save_directory,
+                    with_move=True
+            ):
                 MetaData.print_current_task_num(self.app.current_task_num)
             else:
                 if retry_count < self.app.max_retry_count:
