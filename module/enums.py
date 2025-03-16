@@ -449,12 +449,12 @@ class GetStdioParams:
 
     @staticmethod
     def get_is_re_config(valid_format: str = 'y|n') -> dict:
-        prompt: str = f'[#B1DB74]检测到已配置完成的配置文件,是否需要重新配置?[/#B1DB74](之前的配置文件将为你备份到当前目录下) - 「{valid_format}」'
+        prompt: str = f'检测到已配置完成的配置文件,是否需要重新配置?(之前的配置文件将为你备份到当前目录下) - 「{valid_format}」'
         timeout: int = 5
         while True:
             is_re_config: str = GetStdioParams.__timeout_input(
-                prompt=f'{prompt}[#FF4689]({timeout}秒后自动设置为默认n)[/#FF4689]:',
-                error_prompt=f'{prompt}[#FF4689](默认n)[/#FF4689]:',
+                prompt=f'{prompt}({timeout}秒后自动设置为默认n):',
+                error_prompt=f'{prompt}(默认n):',
                 default='n',
                 timeout=timeout
             ).strip().lower()
