@@ -195,6 +195,14 @@ class Banner:
 
 class Validator:
     @staticmethod
+    def is_contain_chinese(text: str) -> bool:
+        for ch in text:
+            if u'\u4e00' <= ch <= u'\u9fff':
+                log.warning('如果无法正常下载,请尝试不使用中文路径后重试。', style='#FF4689')
+                return True
+        return False
+
+    @staticmethod
     def is_valid_api_id(api_id: str, valid_length: int = 32) -> bool:
         try:
             if len(api_id) < valid_length:
@@ -227,14 +235,14 @@ class Validator:
         return os.path.isfile(file_path) and file_path.endswith(valid_format)
 
     @staticmethod
-    def is_valid_save_path(save_path: str) -> bool:
-        if not os.path.exists(save_path):
+    def is_valid_save_path(save_directory: str) -> bool:
+        if not os.path.exists(save_directory):
             while True:
                 try:
-                    question = console.input(f'目录:"{save_path}"不存在,是否创建? - 「y|n」(默认y):').strip().lower()
+                    question = console.input(f'目录:"{save_directory}"不存在,是否创建? - 「y|n」(默认y):').strip().lower()
                     if question in ('y', ''):
-                        os.makedirs(save_path, exist_ok=True)
-                        console.log(f'成功创建目录:"{save_path}"')
+                        os.makedirs(save_directory, exist_ok=True)
+                        console.log(f'成功创建目录:"{save_directory}"')
                         break
                     elif question == 'n':
                         break
@@ -243,7 +251,7 @@ class Validator:
                 except Exception as e:
                     log.error(f'意外的错误,原因:"{e}"')
                     break
-        return os.path.isdir(save_path)
+        return os.path.isdir(save_directory)
 
     @staticmethod
     def is_valid_max_download_task(max_tasks: int) -> bool:
@@ -539,6 +547,7 @@ class GetStdioParams:
                     links_file_path = last_record
                 if Validator.is_valid_links_file(links_file_path, valid_format):
                     console.print(f'已设置「links」为:「{links_file_path}」', style=ProcessConfig.stdio_style('links'))
+                    Validator.is_contain_chinese(links_file_path)
                     return {
                         'links': links_file_path,
                         'record_flag': True
@@ -563,6 +572,7 @@ class GetStdioParams:
             if Validator.is_valid_save_path(save_directory):
                 console.print(f'已设置「save_directory」为:「{save_directory}」',
                               style=ProcessConfig.stdio_style('save_directory'))
+                Validator.is_contain_chinese(save_directory)
                 return {
                     'save_directory': save_directory,
                     'record_flag': True
