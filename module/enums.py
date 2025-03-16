@@ -409,8 +409,12 @@ class GetStdioParams:
                         char = msvcrt.getwch()
                         if char == '\r':  # 回车键结束输入。
                             user_input = ''.join(input_buffer)
-                            print('\n')
+                            print('\n') if user_input in ('y', 'n', '') else None
                             return user_input.strip() or default
+                        elif char in ('\x08', '\b'):  # Backspace 键处理。
+                            if input_buffer:
+                                input_buffer.pop()
+                                print('\b \b', end='', flush=True)  # 删除控制台上的最后一个字符。
                         else:
                             input_buffer.append(char)
                             console.print(char, end='')
