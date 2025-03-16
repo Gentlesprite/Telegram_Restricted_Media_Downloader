@@ -198,7 +198,7 @@ class Validator:
     def is_contain_chinese(text: str) -> bool:
         for ch in text:
             if u'\u4e00' <= ch <= u'\u9fff':
-                log.warning('如果无法正常下载,请尝试不使用中文路径后重试。', style='#FF4689')
+                log.warning('如果无法正常下载,请尝试不使用中文路径后重试。')
                 return True
         return False
 
@@ -235,7 +235,7 @@ class Validator:
         return os.path.isfile(file_path) and file_path.endswith(valid_format)
 
     @staticmethod
-    def is_valid_save_path(save_directory: str) -> bool:
+    def is_valid_save_directory(save_directory: str) -> bool:
         if not os.path.exists(save_directory):
             while True:
                 try:
@@ -552,11 +552,11 @@ class GetStdioParams:
                         'links': links_file_path,
                         'record_flag': True
                     }
-                elif not os.path.normpath(links_file_path).endswith('.txt'):
+                elif not os.path.normpath(links_file_path).lower().endswith('.txt'):
                     log.warning(f'意外的参数:"{links_file_path}",文件路径必须以「{valid_format}」结尾,请重新输入!')
                 else:
                     log.warning(
-                        f'意外的参数:"{links_file_path}",文件「必须存在」,请重新输入!')
+                        f'意外的参数:"{links_file_path}",文件「必须存在」(区分大小写),请重新输入!')
             except Exception as e:
                 log.warning(
                     f'意外的参数:"{links_file_path}",文件路径必须以「{valid_format}」结尾,并且「必须存在」,请重新输入!{_t(KeyWord.REASON)}:"{e}"')
@@ -569,7 +569,7 @@ class GetStdioParams:
                 f'请输入媒体「保存路径」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」:').strip()
             if save_directory == '' and last_record is not None:
                 save_directory = last_record
-            if Validator.is_valid_save_path(save_directory):
+            if Validator.is_valid_save_directory(save_directory):
                 console.print(f'已设置「save_directory」为:「{save_directory}」',
                               style=ProcessConfig.stdio_style('save_directory'))
                 Validator.is_contain_chinese(save_directory)
