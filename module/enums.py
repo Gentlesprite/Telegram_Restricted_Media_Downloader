@@ -394,7 +394,7 @@ class GetStdioParams:
         """跨平台的输入超时后自动设置为默认值,报错时返回默认input。"""
 
         def timeout_notice():
-            console.print('\n输入超时,已自动设置为默认值。', style='#FF4689')
+            console.print('\n输入超时,已自动设置为默认值。\n', style='#FF4689')
 
         try:
             if sys.platform == 'win32':
@@ -409,6 +409,7 @@ class GetStdioParams:
                         char = msvcrt.getwch()
                         if char == '\r':  # 回车键结束输入。
                             user_input = ''.join(input_buffer)
+                            print('\n')
                             return user_input.strip() or default
                         else:
                             input_buffer.append(char)

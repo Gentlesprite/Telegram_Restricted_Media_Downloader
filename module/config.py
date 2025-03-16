@@ -212,10 +212,12 @@ class Config:
                 config: dict = Config.TEMPLATE.copy()
             return config
 
-    def backup_config(self,
-                      backup_config: dict,
-                      error_config: bool = False,
-                      force: bool = False) -> None:  # v1.2.9 更正backup_config参数类型。
+    def backup_config(
+            self,
+            backup_config: dict,
+            error_config: bool = False,
+            force: bool = False
+    ) -> None:  # v1.2.9 更正backup_config参数类型。
         """备份当前的配置文件。"""
         if backup_config != Config.TEMPLATE or force:  # v1.2.9 修复比较变量错误的问题。
             backup_path: str = gen_backup_config(
