@@ -271,7 +271,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         message_ids=i.id,
                         disable_notification=True,
                         hide_sender_name=True,
-                        hide_captions=True
+                        hide_captions=True,
+                        protect_content=False
                     )
                 except ChatForwardsRestricted:
                     raise ChatForwardsRestricted
