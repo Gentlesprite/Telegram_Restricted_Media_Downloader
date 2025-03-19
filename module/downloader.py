@@ -348,7 +348,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                 text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
             )
 
-    async def __extract_link_content(self, link: str, only_chat_id=False) -> Union[dict, None]:
+    async def __extract_link_content(
+            self, link: str,
+            only_chat_id: bool = False  # 为True时,只解析传入link的chat_id。
+    ) -> Union[dict, None]:
         record_type: set = set()
         link: str = link[:-1] if link.endswith('/') else link
         record_type.add(LinkType.COMMENT) if '?single&comment' in link else None  # v1.1.0修复讨论组中附带?single时不下载的问题。
@@ -549,12 +552,16 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     @Task.on_complete
     def __complete_call(
-            self, sever_file_size,
+            self,
+            sever_file_size,
             temp_file_path,
-            link, file_name,
-            retry_count, file_id,
+            link,
+            file_name,
+            retry_count,
+            file_id,
             format_file_size,
-            task_id, _future
+            task_id,
+            _future
     ):
         if task_id is None:
             if retry_count == 0:
@@ -807,7 +814,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             if str(e) == '0':
                 log.error('「网络」或「代理问题」,在确保当前网络连接正常情况下检查:\n「VPN」是否可用,「软件代理」是否配置正确。')
                 raise SystemExit(0)
-            log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
+            log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
         except BadMsgNotification as e:
             if str(e) in (str(BadMsgNotification(16)), str(BadMsgNotification(17))):
                 console.print(
@@ -821,7 +828,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     '[#79FCB5]中的[/#79FCB5][#D479FC]【问题4】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6],[/#FC79A6]'
                     '[#79FCD4]并[/#79FCD4][#79FCB5]重启软件[/#79FCB5]。')
                 raise SystemExit(0)
-            log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
+            log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
         except (SessionRevoked, AuthKeyUnregistered, SessionExpired, ConnectionError) as e:
             log.error(f'登录时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
