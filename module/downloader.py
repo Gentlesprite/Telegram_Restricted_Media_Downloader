@@ -400,7 +400,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         if comment_message and group_message is None:
                             group_message: list = []
                             group_message.extend(comment_message)
-                    if comment_message:
+                    if comment_message:  # todo 话题、评论区无法正确获取总数(member_num),导致链接统计表显示总数为0,机器人下载完成通知失效,机器人检测重复性下载链接命令失效。
                         return {
                             'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.COMMENT,
                             'chat_id': chat_id,
