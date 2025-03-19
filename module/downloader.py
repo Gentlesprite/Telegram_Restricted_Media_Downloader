@@ -54,10 +54,9 @@ class TelegramRestrictedMediaDownloader(Bot):
         link_meta: Union[dict, None] = await super().get_link_from_bot(client, message)
         if link_meta is None:
             return None
-        else:
-            right_link: set = link_meta.get('right_link')
-            invalid_link: set = link_meta.get('invalid_link')
-            last_bot_message: Union[pyrogram.types.Message, None] = link_meta.get('last_bot_message')
+        right_link: set = link_meta.get('right_link')
+        invalid_link: set = link_meta.get('invalid_link')
+        last_bot_message: Union[pyrogram.types.Message, None] = link_meta.get('last_bot_message')
         exist_link: set = set([_ for _ in right_link if _ in self.bot_task_link])
         exist_link.update(right_link & Task.COMPLETE_LINK)
         right_link -= exist_link
@@ -73,22 +72,21 @@ class TelegramRestrictedMediaDownloader(Bot):
         )
         links: Union[set, None] = self.__process_links(link=list(right_link))
         if links is None:
-            return
-        else:
-            for link in links:
-                task: dict = await self.__create_download_task(link=link, retry=None)
-                invalid_link.add(link) if task.get('status') == DownloadStatus.FAILURE else self.bot_task_link.add(link)
-            right_link -= invalid_link
-            await self.safe_edit_message(
-                client=client,
-                message=message,
-                last_message_id=last_bot_message.id,
-                text=self.update_text(
-                    right_link=right_link,
-                    exist_link=exist_link,
-                    invalid_link=invalid_link
-                )
+            return None
+        for link in links:
+            task: dict = await self.__create_download_task(link=link, retry=None)
+            invalid_link.add(link) if task.get('status') == DownloadStatus.FAILURE else self.bot_task_link.add(link)
+        right_link -= invalid_link
+        await self.safe_edit_message(
+            client=client,
+            message=message,
+            last_message_id=last_bot_message.id,
+            text=self.update_text(
+                right_link=right_link,
+                exist_link=exist_link,
+                invalid_link=invalid_link
             )
+        )
 
     @staticmethod
     async def __send_pay_qr(client: pyrogram.Client, chat_id, load_name: str) -> dict:
@@ -327,7 +325,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                 ]]))
         except AttributeError as e:  # todo 支持话题频道的转发。
-            log.exception(e)
+            log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
@@ -343,13 +341,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                 text='❌❌❌没有找到有效链接❌❌❌\n' + msg
             )
         except Exception as e:
+            log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
                 text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
             )
-            log.exception(e)
-            log.error(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
 
     async def __extract_link_content(self, link: str, only_chat_id=False) -> Union[dict, None]:
         record_type: set = set()
@@ -810,7 +807,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             if str(e) == '0':
                 log.error('「网络」或「代理问题」,在确保当前网络连接正常情况下检查:\n「VPN」是否可用,「软件代理」是否配置正确。')
                 raise SystemExit(0)
-            log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+            log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
         except BadMsgNotification as e:
             if str(e) in (str(BadMsgNotification(16)), str(BadMsgNotification(17))):
                 console.print(
@@ -824,7 +821,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     '[#79FCB5]中的[/#79FCB5][#D479FC]【问题4】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6],[/#FC79A6]'
                     '[#79FCD4]并[/#79FCD4][#79FCB5]重启软件[/#79FCB5]。')
                 raise SystemExit(0)
-            log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+            log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
         except (SessionRevoked, AuthKeyUnregistered, SessionExpired, ConnectionError) as e:
             log.error(f'登录时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
@@ -844,7 +841,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 f'检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,{_t(KeyWord.REASON)}:"{e}"')
         except Exception as e:
             record_error: bool = True
-            log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+            log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
         finally:
             self.is_running = False
             self.pb.progress.stop()

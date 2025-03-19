@@ -432,7 +432,7 @@ class GetStdioParams:
                 timeout_notice()
                 return default
         except Exception as e:
-            log.exception(f'无法自动设置!请手动进行设置,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+            log.exception(f'无法自动设置!请手动进行设置,{_t(KeyWord.REASON)}:"{e}"')
             return console.input(error_prompt if error_prompt else prompt)
 
     @staticmethod
