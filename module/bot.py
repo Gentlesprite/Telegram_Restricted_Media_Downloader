@@ -448,12 +448,9 @@ class Bot:
         if exist_link:
             exist_msg = f'{BotMessage.EXIST}{n.join(sorted(exist_link))}' if exist_link else ''
             text: str = right_msg + n + exist_msg + n + invalid_msg
-            v_text: list = safe_message(text)
-            return v_text
         else:
             text = right_msg + n + invalid_msg
-            v_text: list = safe_message(text)
-            return v_text
+        return safe_message(text)
 
     async def safe_edit_message(
             self, client: pyrogram.Client,
