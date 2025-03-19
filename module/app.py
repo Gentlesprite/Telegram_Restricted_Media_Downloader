@@ -113,8 +113,9 @@ class Application(Config, StatisticalTable):
             _meta_obj = getattr(msg_obj, _dtype)
             _title: Union[str, None] = getattr(_meta_obj, 'file_name', None)  # v1.2.8 修复当文件名不存在时,下载报错问题。
             try:
-                if _title.lower().startswith('video_'):  # v1.5.6 尝试修复以日期命名的标题重复下载的问题。
-                    _title = None
+                if isinstance(_title, str):
+                    if _title.lower().startswith('video_'):  # v1.5.6 尝试修复以日期命名的标题重复下载的问题。
+                        _title = None
                 if _title is None:
                     _title: str = 'None'
                 else:
