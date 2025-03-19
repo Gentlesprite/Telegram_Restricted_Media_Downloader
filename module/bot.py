@@ -443,10 +443,10 @@ class Bot:
     @staticmethod
     def update_text(right_link: set, invalid_link: set, exist_link: Union[set, None] = None) -> list:
         n = '\n'
-        right_msg = f'{BotMessage.RIGHT}{n.join(right_link)}' if right_link else ''
-        invalid_msg = f'{BotMessage.INVALID}{n.join(invalid_link)}{n}(具体原因请前往终端查看报错信息)' if invalid_link else ''
+        right_msg = f'{BotMessage.RIGHT}{n.join(sorted(right_link))}' if right_link else ''
+        invalid_msg = f'{BotMessage.INVALID}{n.join(sorted(invalid_link))}{n}(具体原因请前往终端查看报错信息)' if invalid_link else ''
         if exist_link:
-            exist_msg = f'{BotMessage.EXIST}{n.join(exist_link)}' if exist_link else ''
+            exist_msg = f'{BotMessage.EXIST}{n.join(sorted(exist_link))}' if exist_link else ''
             text: str = right_msg + n + exist_msg + n + invalid_msg
             v_text: list = safe_message(text)
             return v_text
