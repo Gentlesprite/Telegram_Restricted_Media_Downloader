@@ -42,7 +42,7 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 ## 1.1.(选看)推荐终端:
 
-1. _对于Windows11用户_，`Windows Terminal`默认**已经安装好**，可直接**跳过**此步骤。
+1. _对于Windows11用户_，`Windows Terminal`默认**已经安装好**，可**跳过**下载的步骤，直接前往第3步。(将`Windows Terminal`设为**默认终端**)
 
 2. _对于Windows10用户_，推荐使用`Windows Terminal`作为**默认终端**，仅作为推荐安装，无论安装与否**不会影响本软件的使用**，`Windows Terminal`能提供更出色的显示、交互、体验效果，以及避免出现**文字显示**乱码。
 
