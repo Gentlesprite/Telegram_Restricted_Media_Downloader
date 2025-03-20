@@ -206,6 +206,13 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
    ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_18.png)
 
+   **注意**：由于早期代码设计缺陷，**链接统计表**为后续支持的功能：
+
+   - **链接统计表**仅会统计**所有支持的类型**，**并不会只统计**用户**当前所选择**的类型。
+
+   - 当用户**未选择**下载**所有支持的类型**时，在**用户所选择的类型**下载完成后(或使用机器人发送**链接统计表**)，尽管所有用户指定类型的文件已经下载完成，当**链接统计表**显示`完成率`不为`100%`时，代表该链接还存在其他用户未指定的文件类型，但实际用户所指定的类型已经下载完成了，是正常情况。
+   - 可能会在**后续版本**完善这个问题。
+
    **计数统计表**的使用，如下图所示:
 
    ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_19.png)
