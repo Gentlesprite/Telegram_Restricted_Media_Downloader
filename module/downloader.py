@@ -27,7 +27,7 @@ from module.util import safe_message
 from module.app import Application, MetaData
 from module.util import truncate_display_filename
 from module.stdio import ProgressBar, Base64Image
-from module.enums import LinkType, DownloadStatus, KeyWord, BotCallbackText, BotButton, BotMessage
+from module.enums import LinkType, DownloadStatus, KeyWord, BotCallbackText, BotButton, BotMessage, DownloadType
 from module.path_tool import is_file_duplicate, safe_delete, get_file_size, split_path, compare_file_size, \
     move_to_save_directory
 
@@ -390,7 +390,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if LinkType.COMMENT in record_type:
                     # 如果用户需要同时下载媒体下面的评论,把评论中的所有信息放入列表一起返回。
                     async for comment in self.app.client.get_discussion_replies(chat_id, message_id):
-                        comment_message.append(comment)
+                        for dtype in DownloadType():
+                            if getattr(comment, dtype):
+                                comment_message.append(comment)
                 message = await self.app.client.get_messages(chat_id=chat_id, message_ids=message_id)
                 is_group, group_message = await self.__is_group(message)
                 if is_group or comment_message:  # 组或评论区。
@@ -400,12 +402,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                         if comment_message and group_message is None:
                             group_message: list = []
                             group_message.extend(comment_message)
-                    if comment_message:  # todo 话题、评论区无法正确获取总数(member_num),导致链接统计表显示总数为0,机器人下载完成通知失效,机器人检测重复性下载链接命令失效。
+                    if comment_message:
                         return {
                             'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.COMMENT,
                             'chat_id': chat_id,
                             'message_id': group_message,
-                            'member_num': len(group_message)
+                            'member_num': len(comment_message)
                         }
                     else:
                         return {
@@ -619,6 +621,13 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             meta: dict = await self.__extract_link_content(link)
             link_type, chat_id, message_id, member_num = meta.values()
+            Task.LINK_INFO.get(link)['link_type'] = link_type
+            Task.LINK_INFO.get(link)['member_num'] = member_num
+            console.log(
+                f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
+                f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
+                f'{_t(KeyWord.LINK_TYPE)}:{_t(link_type)}。'  # 链接类型。
+            )
             await self.__add_task(link, message_id, retry)
             return {
                 'chat_id': chat_id,

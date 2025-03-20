@@ -55,13 +55,7 @@ class Task:
                         f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
                     )
             elif status == DownloadStatus.DOWNLOADING:
-                Task.LINK_INFO.get(link)['link_type'] = link_type
-                Task.LINK_INFO.get(link)['member_num'] = member_num
-                console.log(
-                    f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
-                    f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
-                    f'{_t(KeyWord.LINK_TYPE)}:{_t(link_type)}。'  # 链接类型。
-                )
+                pass
             return res
 
         return wrapper
