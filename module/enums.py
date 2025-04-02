@@ -807,6 +807,7 @@ class BotCommandText:
         'download', '分配新的下载任务(多种使用方式见使用说明)。\n`/download https://t.me/x/x 起始ID 结束ID`')
     TABLE: tuple = ('table', '在终端输出当前下载情况的统计信息。')
     FORWARD: tuple = ('forward', '从频道A转发至频道B 起始ID 结束ID。\n`/forward https://t.me/A https://t.me/B 1 100`')
+    LISTEN_FORWARD: tuple = ('listen_forward', '监听频道A最新的消息转发至频道B。\n`/listen_forward https://t.me/A https://t.me/B')
     EXIT: tuple = ('exit', '退出软件。')
 
     @staticmethod

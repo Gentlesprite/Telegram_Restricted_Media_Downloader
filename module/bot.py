@@ -24,6 +24,7 @@ class Bot:
         BotCommand(BotCommandText.DOWNLOAD[0], BotCommandText.DOWNLOAD[1].replace('`', '')),
         BotCommand(BotCommandText.TABLE[0], BotCommandText.TABLE[1]),
         BotCommand(BotCommandText.FORWARD[0], BotCommandText.FORWARD[1].replace('`', '')),
+        BotCommand(BotCommandText.LISTEN_FORWARD[0], BotCommandText.LISTEN_FORWARD[1].replace('`', '')),
         BotCommand(BotCommandText.EXIT[0], BotCommandText.EXIT[1])
     ]
 
@@ -36,6 +37,7 @@ class Bot:
         self.root: list = []
         self.last_client: Union[pyrogram.Client, None] = None
         self.last_message: Union[pyrogram.types.Message, None] = None
+        self.listen_forward_chat: dict = {}
 
     async def process_error_message(self, client: pyrogram.Client, message: pyrogram.types.Message) -> None:
         await self.help(client, message)
@@ -292,9 +294,8 @@ class Bot:
             client: pyrogram.Client,
             message: pyrogram.types.Message
     ) -> Union[Dict[str, Union[list, str]], None]:
-
         text: str = message.text
-        args = text.split(maxsplit=5)
+        args = text.split()
         if text == '/forward' or len(args) <= 1:
             await client.send_message(
                 chat_id=message.from_user.id,
@@ -323,6 +324,26 @@ class Bot:
             )
             return None
         return {'origin_link': args[1], 'target_link': args[2], 'message_range': [start_id, end_id]}
+
+    async def get_listen_forward_link_from_bot(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ) -> Union[Dict[str, str], None]:
+        text: str = message.text
+        args = text.split()
+        if text == '/listen_forward' or len(args) <= 1:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text='❌❌❌命令格式无效❌❌❌\n'
+                     '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
+                     '`/listen_forward 原始频道 目标频道`\n'
+                     '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
+                     '`/listen_forward https://t.me/A https://t.me/B`\n'
+            )
+            return None
+        return {'origin_link': args[1], 'target_link': args[2]}
 
     async def exit(self, client: pyrogram.Client,
                    message: pyrogram.types.Message) -> None:
@@ -393,6 +414,12 @@ class Bot:
                 MessageHandler(
                     self.get_forward_link_from_bot,
                     filters=pyrogram.filters.command(['forward']) & pyrogram.filters.user(self.root)
+                )
+            )
+            self.bot.add_handler(
+                MessageHandler(
+                    self.get_listen_forward_link_from_bot,
+                    filters=pyrogram.filters.command(['listen_forward']) & pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(

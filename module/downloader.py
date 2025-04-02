@@ -9,7 +9,7 @@ import sys
 import asyncio
 from functools import partial
 from sqlite3 import OperationalError
-from typing import Tuple, Union
+from typing import Tuple, Union, Dict
 
 import pyrogram
 from pyrogram.errors import BadMsgNotification
@@ -219,11 +219,52 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
             return None
 
+    async def __valid_chat(
+            self,
+            origin_link: str,
+            target_link: str,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ) -> Tuple[Union[pyrogram.types.Chat, None], Union[pyrogram.types.Chat, None]]:
+        origin_meta: Union[Dict[str, Union[list, str]], None] = await self.__extract_link_content(origin_link,
+                                                                                                  only_chat_id=True)
+        target_meta: Union[Dict[str, Union[list, str]], None] = await self.__extract_link_content(target_link,
+                                                                                                  only_chat_id=True)
+        if not all([origin_meta, target_meta]):
+            raise Exception('Invalid origin_link or target_link.')
+        origin_chat: Union[pyrogram.types.Chat, None] = await self.__get_chat(
+            bot_client=client, bot_message=message,
+            chat_id=origin_meta.get('chat_id'),
+            error_msg=f'⬇️⬇️⬇️原始频道不存在⬇️⬇️⬇️\n{origin_link}'
+        )
+        target_chat: Union[pyrogram.types.Chat, None] = await self.__get_chat(
+            bot_client=client, bot_message=message,
+            chat_id=target_meta.get('chat_id'),
+            error_msg=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
+        )
+        return origin_chat, target_chat
+
+    @staticmethod
+    async def __valid_forward(
+            client: pyrogram.Client,
+            message: pyrogram.types.Message,
+            target_chat: Union[pyrogram.types.Chat, None]
+    ) -> bool:
+        me = await client.get_me()
+        if target_chat.id == me.id:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                text='⚠️⚠️⚠️无法转发到此机器人⚠️⚠️⚠️',
+                reply_to_message_id=message.id,
+            )
+            return False
+        return True
+
     async def get_forward_link_from_bot(
             self, client: pyrogram.Client,
             message: pyrogram.types.Message
-    ) -> Union[dict, None]:
-        meta: Union[dict, None] = await super().get_forward_link_from_bot(client, message)
+    ):
+        meta: Union[Dict[str, Union[list, str]], None] = await super().get_forward_link_from_bot(client, message)
         if meta is None:
             return None
         origin_link: str = meta.get('origin_link')
@@ -231,29 +272,10 @@ class TelegramRestrictedMediaDownloader(Bot):
         start_id: int = meta.get('message_range')[0]
         end_id: int = meta.get('message_range')[1]
         try:
-            origin_meta: Union[dict, None] = await self.__extract_link_content(origin_link, only_chat_id=True)
-            target_meta: Union[dict, None] = await self.__extract_link_content(target_link, only_chat_id=True)
-            if not all([origin_meta, target_meta]):
-                raise Exception('Invalid origin_link or target_link.')
-            origin_chat: Union[pyrogram.types.Chat, None] = await self.__get_chat(
-                bot_client=client, bot_message=message,
-                chat_id=origin_meta.get('chat_id'),
-                error_msg=f'⬇️⬇️⬇️原始频道不存在⬇️⬇️⬇️\n{origin_link}'
-            )
-            target_chat: Union[pyrogram.types.Chat, None] = await self.__get_chat(
-                bot_client=client, bot_message=message,
-                chat_id=target_meta.get('chat_id'),
-                error_msg=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
-            )
+            origin_chat, target_chat = await self.__valid_chat(origin_link, target_link, client, message)
             if not all([origin_chat, target_chat]):
                 return None
-            me = await client.get_me()
-            if target_chat.id == me.id:
-                await client.send_message(
-                    chat_id=message.from_user.id,
-                    text='⚠️⚠️⚠️无法转发到此机器人⚠️⚠️⚠️',
-                    reply_to_message_id=message.id,
-                )
+            if not await self.__valid_forward(client, message, target_chat):
                 return None
             last_message: Union[pyrogram.types.Message, None] = None
             async for i in self.app.client.get_chat_history(
@@ -325,6 +347,50 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                 ]]))
         except AttributeError as e:  # todo 支持话题频道的转发。
+            log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)\n❌❌❌注意:目前暂不支持转发话题频道❌❌❌'
+            )
+        except (ValueError, KeyError, UsernameInvalid):
+            msg: str = ''
+            if any('/c' in link for link in (origin_link, target_link)):
+                msg = '(私密频道或话题频道必须让当前账号加入该频道)'
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text='❌❌❌没有找到有效链接❌❌❌\n' + msg
+            )
+        except Exception as e:
+            log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
+            )
+
+    async def get_listen_forward_link_from_bot(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ):
+        meta: Union[Dict[str, str], None] = await super().get_listen_forward_link_from_bot(client, message)
+        if meta is None:
+            return None
+        origin_link: str = meta.get('origin_link')
+        target_link: str = meta.get('target_link')
+        try:
+            origin_chat, target_chat = await self.__valid_chat(origin_link, target_link, client, message)
+            if not all([origin_chat, target_chat]):
+                return None
+            if not await self.__valid_forward(client, message, target_chat):
+                return None
+            ...
+            self.listen_forward_chat[origin_chat] = ...
+        except ChatForwardsRestricted:
+            ...
+        except AttributeError as e:
             log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             await client.send_message(
                 chat_id=message.from_user.id,
