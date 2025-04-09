@@ -60,16 +60,19 @@ class TelegramRestrictedMediaDownloader(Bot):
         exist_link: set = set([_ for _ in right_link if _ in self.bot_task_link])
         exist_link.update(right_link & Task.COMPLETE_LINK)
         right_link -= exist_link
-        await self.safe_edit_message(
-            client=client,
-            message=message,
-            last_message_id=last_bot_message.id,
-            text=self.update_text(
-                right_link=right_link,
-                exist_link=exist_link,
-                invalid_link=invalid_link
+        if last_bot_message:
+            await self.safe_edit_message(
+                client=client,
+                message=message,
+                last_message_id=last_bot_message.id,
+                text=self.update_text(
+                    right_link=right_link,
+                    exist_link=exist_link,
+                    invalid_link=invalid_link
+                )
             )
-        )
+        else:
+            log.warning('消息过长编辑频繁,暂时无法通过机器人显示通知。')
         links: Union[set, None] = self.__process_links(link=list(right_link))
         if links is None:
             return None
@@ -281,13 +284,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                             reply_to_message_id=message.id,
                             text=BotMessage.INVALID
                         )
-                    last_message = await self.safe_edit_message(
+                    last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
                         client=client,
                         message=message,
                         last_message_id=last_message.id,
                         text=safe_message(f'{last_message.text}\n{origin_link}/{i.id}')
                     )
                     log.warning(f'{_t(KeyWord.LINK)}:"{origin_link}/{i.id}"无效,{_t(KeyWord.REASON)}:{e}')
+            if isinstance(last_message, str):
+                log.warning('消息过长编辑频繁,暂时无法通过机器人显示通知。')
             if not last_message:
                 await client.send_message(
                     chat_id=message.from_user.id,

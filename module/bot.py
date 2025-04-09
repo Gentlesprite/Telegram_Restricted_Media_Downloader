@@ -7,6 +7,7 @@ from typing import List, Dict, Union
 
 import pyrogram
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
+from pyrogram.errors.exceptions.flood_420 import FloodWait
 from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified, AccessTokenInvalid
 from pyrogram.types import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 
@@ -459,7 +460,7 @@ class Bot:
             text: Union[str, List[str]],
             disable_web_page_preview: bool = True,
             reply_markup: Union[pyrogram.types.InlineKeyboardMarkup, None] = None
-    ):
+    ) -> Union[pyrogram.types.Message, str, None]:
         try:
             if isinstance(text, list):
                 last_message: pyrogram.types.Message = await self.safe_process_message(
@@ -481,3 +482,5 @@ class Bot:
                 )
         except MessageNotModified:
             pass
+        except (FloodWait, Exception) as e:
+            return str(e)
