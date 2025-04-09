@@ -4,3 +4,4 @@ rich==13.9.4
 qrcode
 pyreadline3
 kurigram==2.1.39
+pygments
