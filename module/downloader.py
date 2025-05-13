@@ -12,6 +12,7 @@ from sqlite3 import OperationalError
 from typing import Tuple, Union
 
 import pyrogram
+from pyrogram.handlers import MessageHandler
 from pyrogram.errors import BadMsgNotification
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate, ChatForwardsRestricted
@@ -204,6 +205,20 @@ class TelegramRestrictedMediaDownloader(Bot):
                     ]
                 ])
             )
+        elif callback_data.startswith((BotCallbackText.REMOVE_LISTEN_DOWNLOAD, BotCallbackText.REMOVE_LISTEN_FORWARD)):
+            msg: str = ''
+            await callback_query.message.edit_reply_markup()
+            args: list = callback_data.split()
+            if len(args) == 2:
+                msg: str = '已移除'
+                channel: str = args[1]
+                if callback_data.startswith(BotCallbackText.REMOVE_LISTEN_DOWNLOAD):
+                    self.app.client.remove_handler(self.listen_download_chat.get(channel))
+                    self.listen_download_chat.pop(channel)
+                else:
+                    self.app.client.remove_handler(self.listen_forward_chat.get(channel))
+                    self.listen_forward_chat.pop(channel)
+            await callback_query.message.edit_text(callback_query.message.text.replace('请选择是否移除', msg))
 
     async def __get_chat(
             self, bot_client: pyrogram.Client,
@@ -352,6 +367,77 @@ class TelegramRestrictedMediaDownloader(Bot):
                 reply_to_message_id=message.id,
                 text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
             )
+
+    async def on_listen(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types):
+        meta: Union[dict, None] = await super().on_listen(client, message)
+        if meta is None:
+            return None
+        channels: list = meta.get('channels')
+        command: str = meta.get('command')
+        callback = self.on_download if command == '/listen_download' else self.on_forward
+        listen_channels: dict = self.listen_download_chat if command == '/listen_download' else self.listen_forward_chat
+        for channel in channels:
+            if channel not in listen_channels:
+                try:
+                    chat = await self.user.get_chat(channel)
+                    handler = MessageHandler(callback, filters=pyrogram.filters.chat(chat.id))
+                    listen_channels[channel] = handler
+                    self.user.add_handler(handler)
+                except Exception as e:
+                    await client.send_message(
+                        chat_id=message.from_user.id,
+                        reply_to_message_id=message.id,
+                        text=f'⚠️⚠️⚠️无法读取⚠️⚠️⚠️\n`{channel}`\n(具体原因请前往终端查看报错信息)'
+                    )
+                    log.error(f'读取频道"{channel}"时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
+            else:
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_to_message_id=message.id,
+                    text=f'`{channel}`\n⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n请选择是否移除',
+                    reply_markup=InlineKeyboardMarkup([[
+                        InlineKeyboardButton(
+                            BotButton.OK,
+                            callback_data=f'{BotCallbackText.REMOVE_LISTEN_DOWNLOAD} {channel}' if command == '/listen_download' else f'{BotCallbackText.REMOVE_LISTEN_FORWARD} {channel}'
+                        ),
+                        InlineKeyboardButton(
+                            BotButton.CANCEL,
+                            callback_data=BotCallbackText.REMOVE_LISTEN_DOWNLOAD if command == '/listen_download' else BotCallbackText.REMOVE_LISTEN_FORWARD
+                        )
+                    ]]))
+
+    async def on_download(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types
+    ):
+        try:
+            await self.send_message_to_bot(
+                text=f'/download {message.link}',
+                catch=True
+            )
+        except Exception as e:
+            log.warning(e)
+
+    async def on_forward(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types
+    ):
+        try:
+            await self.app.client.forward_messages(
+                chat_id=...,
+                from_chat_id=message.link,
+                disable_notification=True,
+                hide_sender_name=True,
+                hide_captions=True,
+                protect_content=False
+            )
+        except Exception as e:
+            log.warning(e)
 
     async def __extract_link_content(
             self, link: str,

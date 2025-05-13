@@ -25,7 +25,9 @@ class Bot:
         BotCommand(BotCommandText.DOWNLOAD[0], BotCommandText.DOWNLOAD[1].replace('`', '')),
         BotCommand(BotCommandText.TABLE[0], BotCommandText.TABLE[1]),
         BotCommand(BotCommandText.FORWARD[0], BotCommandText.FORWARD[1].replace('`', '')),
-        BotCommand(BotCommandText.EXIT[0], BotCommandText.EXIT[1])
+        BotCommand(BotCommandText.EXIT[0], BotCommandText.EXIT[1]),
+        BotCommand(BotCommandText.LISTEN_DOWNLOAD[0], BotCommandText.LISTEN_DOWNLOAD[1].replace('`', '')),
+        BotCommand(BotCommandText.LISTEN_FORWARD[0], BotCommandText.LISTEN_FORWARD[1].replace('`', ''))
     ]
 
     def __init__(self):
@@ -37,6 +39,8 @@ class Bot:
         self.root: list = []
         self.last_client: Union[pyrogram.Client, None] = None
         self.last_message: Union[pyrogram.types.Message, None] = None
+        self.listen_download_chat: dict = {}
+        self.listen_forward_chat: dict = {}
 
     async def process_error_message(self, client: pyrogram.Client, message: pyrogram.types.Message) -> None:
         await self.help(client, message)
@@ -254,10 +258,7 @@ class Bot:
         if not data:
             return None
         if isinstance(data, str):
-            support_data: list = [_ for _ in BotCallbackText()]
-            for i in support_data:
-                if data == i:
-                    return i
+            return data
 
     @staticmethod
     async def table(client: pyrogram.Client,
@@ -295,8 +296,8 @@ class Bot:
     ) -> Union[Dict[str, Union[list, str]], None]:
 
         text: str = message.text
-        args = text.split(maxsplit=5)
-        if text == '/forward' or len(args) <= 1:
+        args: list = text.split(maxsplit=5)
+        if text == '/forward':
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
@@ -325,8 +326,11 @@ class Bot:
             return None
         return {'origin_link': args[1], 'target_link': args[2], 'message_range': [start_id, end_id]}
 
-    async def exit(self, client: pyrogram.Client,
-                   message: pyrogram.types.Message) -> None:
+    async def exit(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ) -> None:
         last_message = await client.send_message(
             chat_id=message.from_user.id,
             text='🫡🫡🫡已收到退出命令。',
@@ -341,6 +345,105 @@ class Bot:
             text='👌👌👌退出成功。'
         )
         raise SystemExit(0)
+
+    async def on_listen(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types
+    ) -> Union[Dict[str, list], None]:
+        text: str = message.text
+        args: list = text.split()
+        command: str = args[0]
+        channels: list = args[1:]
+        if text.startswith('/listen_download'):
+            if len(args) == 1:
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_to_message_id=message.id,
+                    text='❌❌❌命令格式无效❌❌❌\n'
+                         '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
+                         f'`{text} 监听频道1 监听频道2 监听频道n`\n'
+                         '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
+                         f'`{text} https://t.me/A https://t.me/B https://t.me/n`\n'
+                )
+                return None
+            last_message: Union[pyrogram.types.Message, str, None] = None
+            valid_channels: list = []
+            for channel in channels:
+                if not channel.startswith('https://t.me/'):
+                    valid_channels.append(channel)
+                    if not last_message:
+                        last_message = await client.send_message(
+                            chat_id=message.from_user.id,
+                            reply_to_message_id=message.id,
+                            text=BotMessage.INVALID
+                        )
+                    last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
+                        client=client,
+                        message=message,
+                        last_message_id=last_message.id,
+                        text=safe_message(f'{last_message.text}\n{channel}')
+                    )
+            if valid_channels:
+                for vc in valid_channels:
+                    if vc in channels:
+                        channels.remove(vc)
+                if not channels:
+                    await self.safe_edit_message(
+                        client=client,
+                        message=message,
+                        last_message_id=last_message.id,
+                        text='❌❌❌没有找到有效的链接❌❌❌'
+                    )
+                    return None
+
+        elif text.startswith('/listen_forward'):
+            e: str = ''
+            if len(args) != 3:
+                if len(args) == 1:
+                    e: str = '命令缺少监听频道与转发频道'
+                elif len(args) == 2:
+                    e: str = '命令缺少转发频道'
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_to_message_id=message.id,
+                    text=f'❌❌❌{e}❌❌❌\n'
+                         '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
+                         f'`{text} 监听频道 转发频道`\n'
+                         '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
+                         f'`{text} https://t.me/A https://t.me/B`\n'
+                )
+                return None
+            if not args[1].startswith('https://t.me/'):
+                e = '监听频道链接错误'
+            if not args[2].startswith('https://t.me/'):
+                e = '转发频道链接错误'
+            if e != '':
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_to_message_id=message.id,
+                    text=f'❌❌❌{e}❌❌❌\n'
+                         '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
+                         f'`{text} 监听频道 转发频道`\n'
+                         '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
+                         f'`{text} https://t.me/A https://t.me/B`\n'
+                )
+                return None
+        return {'command': command, 'channels': channels}
+
+    @staticmethod
+    async def on_download(
+            client: pyrogram.Client,
+            message: pyrogram.types
+    ):
+        pass
+
+    @staticmethod
+    async def on_forward(
+            client: pyrogram.Client,
+            message: pyrogram.types
+    ):
+        pass
 
     async def done_notice(
             self,
@@ -400,6 +503,18 @@ class Bot:
                 MessageHandler(
                     self.exit,
                     filters=pyrogram.filters.command(['exit']) & pyrogram.filters.user(self.root)
+                )
+            )
+            self.bot.add_handler(
+                MessageHandler(
+                    self.on_listen,
+                    filters=pyrogram.filters.command(['listen_download']) & pyrogram.filters.user(self.root)
+                )
+            )
+            self.bot.add_handler(
+                MessageHandler(
+                    self.on_listen,
+                    filters=pyrogram.filters.command(['listen_forward']) & pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(
