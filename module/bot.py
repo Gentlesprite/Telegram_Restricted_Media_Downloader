@@ -354,7 +354,7 @@ class Bot:
         text: str = message.text
         args: list = text.split()
         command: str = args[0]
-        channels: list = args[1:]
+        links: list = args[1:]
         if text.startswith('/listen_download'):
             if len(args) == 1:
                 await client.send_message(
@@ -368,10 +368,10 @@ class Bot:
                 )
                 return None
             last_message: Union[pyrogram.types.Message, str, None] = None
-            valid_channels: list = []
-            for channel in channels:
-                if not channel.startswith('https://t.me/'):
-                    valid_channels.append(channel)
+            invalid_links: list = []
+            for link in links:
+                if not link.startswith('https://t.me/'):
+                    invalid_links.append(link)
                     if not last_message:
                         last_message = await client.send_message(
                             chat_id=message.from_user.id,
@@ -382,13 +382,13 @@ class Bot:
                         client=client,
                         message=message,
                         last_message_id=last_message.id,
-                        text=safe_message(f'{last_message.text}\n{channel}')
+                        text=safe_message(f'{last_message.text}\n{link}')
                     )
-            if valid_channels:
-                for vc in valid_channels:
-                    if vc in channels:
-                        channels.remove(vc)
-                if not channels:
+            if invalid_links:
+                for ivl in invalid_links:
+                    if ivl in links:
+                        links.remove(ivl)
+                if not links:
                     await self.safe_edit_message(
                         client=client,
                         message=message,
@@ -396,8 +396,25 @@ class Bot:
                         text='❌❌❌没有找到有效的链接❌❌❌'
                     )
                     return None
+            links: list = list(set(links))
+            last_message: Union[pyrogram.types.Message, None] = None
+            for link in links:
+                if not last_message:
+                    last_message: Union[pyrogram.types.Message, str, None] = await client.send_message(
+                        chat_id=message.from_user.id,
+                        reply_to_message_id=message.id,
+                        text=f'✅新增`监听下载频道`频道:\n'
+                    )
+                last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
+                    client=client,
+                    message=message,
+                    last_message_id=last_message.id,
+                    text=safe_message(f'{last_message.text}\n{link}')
+                )
 
         elif text.startswith('/listen_forward'):
+            listen_link: str = args[1]
+            target_link: str = args[2]
             e: str = ''
             if len(args) != 3:
                 if len(args) == 1:
@@ -414,9 +431,9 @@ class Bot:
                          f'`{text} https://t.me/A https://t.me/B`\n'
                 )
                 return None
-            if not args[1].startswith('https://t.me/'):
+            if not listen_link.startswith('https://t.me/'):
                 e = '监听频道链接错误'
-            if not args[2].startswith('https://t.me/'):
+            if not target_link.startswith('https://t.me/'):
                 e = '转发频道链接错误'
             if e != '':
                 await client.send_message(
@@ -429,7 +446,12 @@ class Bot:
                          f'`{text} https://t.me/A https://t.me/B`\n'
                 )
                 return None
-        return {'command': command, 'channels': channels}
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text=f'✅新增`监听转发`频道:\n{listen_link} ➡️ {target_link}'
+            )
+        return {'command': command, 'links': links}
 
     @staticmethod
     async def on_download(
@@ -444,6 +466,28 @@ class Bot:
             message: pyrogram.types
     ):
         pass
+
+    @staticmethod
+    async def cancel_listen(
+            client: pyrogram.Client,
+            message: pyrogram.types,
+            link: str,
+            command: str
+    ):
+        await client.send_message(
+            chat_id=message.from_user.id,
+            reply_to_message_id=message.id,
+            text=f'`{link}`\n⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n请选择是否移除',
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton(
+                    BotButton.OK,
+                    callback_data=f'{BotCallbackText.REMOVE_LISTEN_DOWNLOAD} {link}' if command == '/listen_download' else f'{BotCallbackText.REMOVE_LISTEN_FORWARD} {link}'
+                ),
+                InlineKeyboardButton(
+                    BotButton.CANCEL,
+                    callback_data=BotCallbackText.REMOVE_LISTEN_DOWNLOAD if command == '/listen_download' else BotCallbackText.REMOVE_LISTEN_FORWARD
+                )
+            ]]))
 
     async def done_notice(
             self,

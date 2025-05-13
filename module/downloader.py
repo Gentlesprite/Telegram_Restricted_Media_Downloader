@@ -371,43 +371,44 @@ class TelegramRestrictedMediaDownloader(Bot):
     async def on_listen(
             self,
             client: pyrogram.Client,
-            message: pyrogram.types):
+            message: pyrogram.types
+    ):
         meta: Union[dict, None] = await super().on_listen(client, message)
         if meta is None:
             return None
-        channels: list = meta.get('channels')
+
+        async def error(_link, _error):
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text=f'⚠️⚠️⚠️无法读取⚠️⚠️⚠️\n`{_link}`\n(具体原因请前往终端查看报错信息)'
+            )
+            log.error(f'读取频道"{_link}"时遇到错误,{_t(KeyWord.REASON)}:"{error}"')
+
+        links: list = meta.get('links')
         command: str = meta.get('command')
-        callback = self.on_download if command == '/listen_download' else self.on_forward
-        listen_channels: dict = self.listen_download_chat if command == '/listen_download' else self.listen_forward_chat
-        for channel in channels:
-            if channel not in listen_channels:
+        if command == '/listen_download':
+            for link in links:
+                if link not in self.listen_download_chat:
+                    try:
+                        chat = await self.user.get_chat(link)
+                        handler = MessageHandler(self.on_download, filters=pyrogram.filters.chat(chat.id))
+                        self.listen_download_chat[link] = handler
+                        self.user.add_handler(handler)
+                    except Exception as e:
+                        await error(link, e)
+                else:
+                    await self.cancel_listen(client, message, link, command)
+        elif command == '/listen_forward':
+            listen_link, target_link = links
+            if listen_link not in self.listen_forward_chat:
                 try:
-                    chat = await self.user.get_chat(channel)
-                    handler = MessageHandler(callback, filters=pyrogram.filters.chat(chat.id))
-                    listen_channels[channel] = handler
+                    chat = await self.user.get_chat(listen_link)
+                    handler = MessageHandler(self.on_forward, filters=pyrogram.filters.chat(chat.id))
+                    self.listen_forward_chat[f'{listen_link} {target_link}'] = handler
                     self.user.add_handler(handler)
                 except Exception as e:
-                    await client.send_message(
-                        chat_id=message.from_user.id,
-                        reply_to_message_id=message.id,
-                        text=f'⚠️⚠️⚠️无法读取⚠️⚠️⚠️\n`{channel}`\n(具体原因请前往终端查看报错信息)'
-                    )
-                    log.error(f'读取频道"{channel}"时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
-            else:
-                await client.send_message(
-                    chat_id=message.from_user.id,
-                    reply_to_message_id=message.id,
-                    text=f'`{channel}`\n⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n请选择是否移除',
-                    reply_markup=InlineKeyboardMarkup([[
-                        InlineKeyboardButton(
-                            BotButton.OK,
-                            callback_data=f'{BotCallbackText.REMOVE_LISTEN_DOWNLOAD} {channel}' if command == '/listen_download' else f'{BotCallbackText.REMOVE_LISTEN_FORWARD} {channel}'
-                        ),
-                        InlineKeyboardButton(
-                            BotButton.CANCEL,
-                            callback_data=BotCallbackText.REMOVE_LISTEN_DOWNLOAD if command == '/listen_download' else BotCallbackText.REMOVE_LISTEN_FORWARD
-                        )
-                    ]]))
+                    await error(listen_link, e)
 
     async def on_download(
             self,
@@ -420,7 +421,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 catch=True
             )
         except Exception as e:
-            log.warning(e)
+            log.exception(f'监听下载出现错误,{_t(KeyWord.REASON)}:{e}')
 
     async def on_forward(
             self,
@@ -428,16 +429,43 @@ class TelegramRestrictedMediaDownloader(Bot):
             message: pyrogram.types
     ):
         try:
-            await self.app.client.forward_messages(
-                chat_id=...,
-                from_chat_id=message.link,
-                disable_notification=True,
-                hide_sender_name=True,
-                hide_captions=True,
-                protect_content=False
-            )
+            link: str = message.link
+            meta = await self.__extract_link_content(link=link)
+            listen_chat_id = meta.get('chat_id')
+            for m in self.listen_forward_chat:
+                listen_link, target_link = m.split()
+                _listen_link_meta = await self.__extract_link_content(link=listen_link, only_chat_id=True)
+                _target_link_meta = await self.__extract_link_content(link=target_link, only_chat_id=True)
+                _listen_chat_id = _listen_link_meta.get('chat_id')
+                _target_link_id = _target_link_meta.get('chat_id')
+                if listen_chat_id == _listen_chat_id:
+                    try:
+                        await self.app.client.forward_messages(
+                            chat_id=_target_link_id,
+                            from_chat_id=_listen_chat_id,
+                            message_ids=message.id,
+                            disable_notification=True,
+                            hide_sender_name=True,
+                            hide_captions=True,
+                            protect_content=False
+                        )
+                        console.log(
+                            f'{_t(KeyWord.LINK)}:"{link}" -> "{target_link}",'
+                            f'{_t(KeyWord.STATUS)}:转发成功。'
+                        )
+                    except ChatForwardsRestricted:
+                        await client.send_message(
+                            chat_id=message.from_user.id,
+                            text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{listen_chat_id}`存在内容保护限制。',
+                            reply_to_message_id=message.id,
+                            reply_markup=InlineKeyboardMarkup([[
+                                InlineKeyboardButton(
+                                    BotButton.CLICK_DOWNLOAD,
+                                    callback_data=BotCallbackText.DOWNLOAD
+                                )
+                            ]]))
         except Exception as e:
-            log.warning(e)
+            log.exception(f'监听转发出现错误,{_t(KeyWord.REASON)}:{e}')
 
     async def __extract_link_content(
             self, link: str,
