@@ -23,7 +23,9 @@
 
 > [!NOTE]
 > 由于本项目**没有提供**Linux环境下的二进制文件，但**支持**Linux环境运行。  
-> 故Linux用户请**阅读**:[_"3.0.在生产环境中运行(对于Linux用户)"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7)。
+> 故Linux用户请**阅读**:[_"3.0.在生产环境中运行(对于Linux用户)"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7)。  
+> 如果你**遇到任何问题**，请先**阅读**:[_"常见问题及解决方案汇总"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
+> **没有找到解决方案**再进群或私聊提问。
 
 
 作者:[Gentlesprite](https://github.com/Gentlesprite)
