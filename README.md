@@ -248,6 +248,57 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
    ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_21.png)
 
+12. `/listen_download`命令使用教程：
+
+    `/listen_download`监听下载用于，实时监听该链接的最新消息进行下载。
+
+    在用户发送了正确的监听命令后，会收到机器人的成功提示，当被监听的频道有可下载的内容时，就会自动发送命令下载。
+
+    ```bash
+    # 语法格式如下：
+    /listen_download https://t.me/A https://t.me/B https://t.me/n
+    # /listen_download命令后面跟多个以空格分割的频道链接。
+    # 取消监听方法：
+    # 再次发送与之前创建监听的命令一样的,即可得到机器人发送给用户的一个内联键盘,点击确认即可。
+    # 如果之前已经创建过监听,已创建的监听就会提示重复并询问是否关闭。
+    # 注意:由于电报对内联键盘回调数据位数的限制为64位,若回调数据超过64位,则无法通过内联键盘进行取消,只能重启软件。
+    # 举例：
+    # 例如取消https://t.me/A https://t.me/B 
+    # 则再次发送:
+    # /listen_download https://t.me/A https://t.me/B
+    # 此时在机器人发送的两个内联键盘,分别选择确定即可取消。
+    # 例如取消https://t.me/n
+    # 则再次发送:
+    # /listen_download https://t.me/n
+    # 此时所有监听任务都被取消了。
+    ```
+
+12. `/listen_forward`命令使用教程：
+
+    `/listen_download`监听转发用于，实时监听该链接的最新消息进行下载。
+
+    与`/forward`命令一样，消息能否转发，在于频道是否开启了`限制保存内容`功能。
+
+    在用户发送了正确的监听命令后，会收到机器人的成功提示，当被监听的频道有**任何**新内容时，就会自动转发至用户所指定的频道。
+
+    ```bash
+    # 语法格式如下：
+    /listen_forward https://t.me/A https://t.me/B
+    # https://t.me/A代表要监听的频道。
+    # https://t.me/B代表要转发到的频道。
+    /listen_forward 监听频道 转发频道
+    # /listen_forward命令必须填写监听频道与转发频道。
+    # 取消监听方法：
+    # 再次发送与之前创建监听的命令一样的,即可得到机器人发送给用户的一个内联键盘,点击确认即可。
+    # 如果之前已经创建过监听,已创建的监听就会提示重复并询问是否关闭。
+    # 注意:由于电报对内联键盘回调数据位数的限制为64位,若回调数据超过64位,则无法通过内联键盘进行取消,只能重启软件。
+    # 举例：
+    # 例如取消监听频道https://t.me/A转发到https://t.me/B频道的监听转发。
+    # 则再次发送:
+    # /listen_forward https://t.me/A https://t.me/B
+    # 此时在机器人发送的内联键盘,选择确定即可取消。
+    ```
+
 ## 2.3.配置文件说明:
 
 ```yaml
