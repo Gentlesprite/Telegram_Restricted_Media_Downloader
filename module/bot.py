@@ -458,8 +458,7 @@ class Bot:
             link: str,
             command: str
     ):
-        b = f'{BotCallbackText.REMOVE_LISTEN_FORWARD} {link}'
-        print(f'{b} len:{len(b)}')
+
         try:
             args: list = link.split()
             await client.send_message(
@@ -477,10 +476,12 @@ class Bot:
                     )
                 ]]))
         except ButtonDataInvalid:
+            len_data: int = len(f'{BotCallbackText.REMOVE_LISTEN_FORWARD} {link}')
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
-                text='⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n由于数据超过64位,当前监听无法移除。'
+                text='⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n'
+                     f'由于数据位[{len_data}]超过[64]位,当前监听无法移除。'
             )
 
     async def done_notice(
