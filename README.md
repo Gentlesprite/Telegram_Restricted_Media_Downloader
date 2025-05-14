@@ -230,7 +230,6 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 > 消息能否转发，在于频道是否开启了`限制保存内容`功能。  
 > 如果**无法转发**，**机器人**会在**聊天框**提供一个**下载按钮**。
 
-
 ```bash
 # 语法格式如下：
 /forward 频道A 频道B 起始ID 结束ID
@@ -273,7 +272,7 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
     # 此时所有监听任务都被取消了。
     ```
 
-12. `/listen_forward`命令使用教程：
+13. `/listen_forward`命令使用教程：
 
     `/listen_download`监听转发用于，实时监听该链接的最新消息进行下载。
 
@@ -297,6 +296,14 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
     # 则再次发送:
     # /listen_forward https://t.me/A https://t.me/B
     # 此时在机器人发送的内联键盘,选择确定即可取消。
+    ```
+
+14. `/listen_info`命令使用教程：
+
+    `/listen_info`用于查看**当前**已经创建的**监听信息**，**直接发送**即可。
+
+    ```bash
+    /listen_info
     ```
 
 ## 2.3.配置文件说明:

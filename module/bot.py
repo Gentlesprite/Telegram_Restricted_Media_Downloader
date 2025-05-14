@@ -27,7 +27,8 @@ class Bot:
         BotCommand(BotCommandText.FORWARD[0], BotCommandText.FORWARD[1].replace('`', '')),
         BotCommand(BotCommandText.EXIT[0], BotCommandText.EXIT[1]),
         BotCommand(BotCommandText.LISTEN_DOWNLOAD[0], BotCommandText.LISTEN_DOWNLOAD[1].replace('`', '')),
-        BotCommand(BotCommandText.LISTEN_FORWARD[0], BotCommandText.LISTEN_FORWARD[1].replace('`', ''))
+        BotCommand(BotCommandText.LISTEN_FORWARD[0], BotCommandText.LISTEN_FORWARD[1].replace('`', '')),
+        BotCommand(BotCommandText.LISTEN_INFO[0], BotCommandText.LISTEN_INFO[1])
     ]
 
     def __init__(self):
@@ -237,6 +238,7 @@ class Bot:
             f'❌ {BotCommandText.with_description(BotCommandText.EXIT)}\n'
             f'🕵️ {BotCommandText.with_description(BotCommandText.LISTEN_DOWNLOAD)}\n'
             f'📲 {BotCommandText.with_description(BotCommandText.LISTEN_FORWARD)}\n'
+            f'🔍 {BotCommandText.with_description(BotCommandText.LISTEN_INFO)}\n'
         )
 
         await client.send_message(
@@ -486,10 +488,11 @@ class Bot:
 
         try:
             args: list = link.split()
+            forward_emoji = ' ➡️ '
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
-                text=f'`{link if len(args) == 1 else " ➡️ ".join(args)}`\n⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n请选择是否移除',
+                text=f'`{link if len(args) == 1 else forward_emoji.join(args)}`\n⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n请选择是否移除',
                 disable_web_page_preview=True,
                 reply_markup=InlineKeyboardMarkup([
                     [
@@ -514,6 +517,50 @@ class Bot:
                 text='⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n'
                      f'由于数据位[{len_data}]超过[64]位,当前监听无法移除。'
             )
+
+    async def listen_info(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types
+    ):
+        async def __listen_info(_listen_chat: dict, _text: str):
+            last_message = await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                disable_web_page_preview=True,
+                text=_text
+            )
+            for link in _listen_chat:
+                args: list = link.split()
+                len_args: int = len(args)
+                if len_args == 1:
+                    last_message = await self.safe_edit_message(
+                        client=client,
+                        message=message,
+                        last_message_id=last_message.id,
+                        text=safe_message(f'{last_message.text}\n{link}')
+                    )
+                elif len_args == 2:
+                    forward_emoji = ' ➡️ '
+                    last_message = await self.safe_edit_message(
+                        client=client,
+                        message=message,
+                        last_message_id=last_message.id,
+                        text=safe_message(f'{last_message.text}\n{args[0]}{forward_emoji}{args[1]}')
+                    )
+
+        if not self.listen_forward_chat and not self.listen_download_chat:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                disable_web_page_preview=True,
+                text='😲目前没有正在监听的频道。'
+            )
+        else:
+            if self.listen_download_chat:
+                await __listen_info(self.listen_download_chat, '🕵️以下链接为已创建的`监听下载`频道:\n')
+            if self.listen_forward_chat:
+                await __listen_info(self.listen_forward_chat, '📲以下链接为已创建的`监听转发`频道:\n')
 
     async def done_notice(
             self,
@@ -579,13 +626,14 @@ class Bot:
             self.bot.add_handler(
                 MessageHandler(
                     self.on_listen,
-                    filters=pyrogram.filters.command(['listen_download']) & pyrogram.filters.user(self.root)
+                    filters=pyrogram.filters.command(['listen_download', 'listen_forward']) & pyrogram.filters.user(
+                        self.root)
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
-                    self.on_listen,
-                    filters=pyrogram.filters.command(['listen_forward']) & pyrogram.filters.user(self.root)
+                    self.listen_info,
+                    filters=pyrogram.filters.command(['listen_info']) & pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(

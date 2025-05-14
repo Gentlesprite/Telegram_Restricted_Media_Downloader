@@ -205,22 +205,26 @@ class TelegramRestrictedMediaDownloader(Bot):
                     ]
                 ])
             )
+        elif callback_data == BotCallbackText.LOOKUP_LISTEN_INFO:
+            await self.app.client.send_message(
+                chat_id=callback_query.message.from_user.id,
+                text='/listen_info',
+                disable_web_page_preview=True
+            )
         elif callback_data.startswith((BotCallbackText.REMOVE_LISTEN_DOWNLOAD, BotCallbackText.REMOVE_LISTEN_FORWARD)):
             msg: str = ''
             await callback_query.message.edit_reply_markup()
             args: list = callback_data.split()
             if len(args) == 2:
-                msg: str = '已移除'
+                msg: str = '✅已移除'
                 channel: str = args[1]
                 self.app.client.remove_handler(self.listen_download_chat.get(channel))
                 self.listen_download_chat.pop(channel)
             elif len(args) == 3:
+                msg: str = '✅已移除'
                 channel: str = f'{args[1]} {args[2]}'
-                console.print(channel)
-                console.print(self.listen_forward_chat)
                 self.app.client.remove_handler(self.listen_forward_chat.get(channel))
                 self.listen_forward_chat.pop(channel)
-                console.print(self.listen_forward_chat)
             await callback_query.message.edit_text(callback_query.message.text.replace('请选择是否移除', msg))
 
     async def __get_chat(
@@ -413,13 +417,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                             chat_id=message.from_user.id,
                             reply_to_message_id=message.id,
                             disable_web_page_preview=True,
-                            text=f'✅新增`监听下载频道`频道:\n'
-                        )
+                            text=f'✅新增`监听下载频道`频道:\n')
                     last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
                         client=client,
                         message=message,
                         last_message_id=last_message.id,
-                        text=safe_message(f'{last_message.text}\n{link}')
+                        text=safe_message(f'{last_message.text}\n{link}'),
+                        reply_markup=InlineKeyboardMarkup([[
+                            InlineKeyboardButton(
+                                BotButton.LOOKUP_LISTEN_INFO,
+                                callback_data=BotCallbackText.LOOKUP_LISTEN_INFO
+                            )
+                        ]])
                     )
         elif command == '/listen_forward':
             listen_link, target_link = links
@@ -428,8 +437,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                     chat_id=message.from_user.id,
                     reply_to_message_id=message.id,
                     disable_web_page_preview=True,
-                    text=f'✅新增`监听转发`频道:\n{listen_link} ➡️ {target_link}'
-                )
+                    text=f'✅新增`监听转发`频道:\n{listen_link} ➡️ {target_link}',
+                    reply_markup=InlineKeyboardMarkup([[
+                        InlineKeyboardButton(
+                            BotButton.LOOKUP_LISTEN_INFO,
+                            callback_data=BotCallbackText.LOOKUP_LISTEN_INFO
+                        )
+                    ]]))
 
     async def listen_download(
             self,
