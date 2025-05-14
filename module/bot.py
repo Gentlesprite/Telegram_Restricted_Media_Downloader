@@ -235,6 +235,8 @@ class Bot:
             f'📝 {BotCommandText.with_description(BotCommandText.TABLE)}\n'
             f'↗️ {BotCommandText.with_description(BotCommandText.FORWARD)}\n'
             f'❌ {BotCommandText.with_description(BotCommandText.EXIT)}\n'
+            f'🕵️ {BotCommandText.with_description(BotCommandText.LISTEN_DOWNLOAD)}\n'
+            f'📲 {BotCommandText.with_description(BotCommandText.LISTEN_FORWARD)}\n'
         )
 
         await client.send_message(
