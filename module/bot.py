@@ -415,13 +415,12 @@ class Bot:
                 )
 
         elif text.startswith('/listen_forward'):
-            listen_link: str = args[1]
-            target_link: str = args[2]
             e: str = ''
-            if len(args) != 3:
-                if len(args) == 1:
+            len_args: int = len(args)
+            if len_args != 3:
+                if len_args == 1:
                     e: str = '命令缺少监听频道与转发频道'
-                elif len(args) == 2:
+                elif len_args == 2:
                     e: str = '命令缺少转发频道'
                 await client.send_message(
                     chat_id=message.from_user.id,
@@ -433,6 +432,8 @@ class Bot:
                          f'`{text} https://t.me/A https://t.me/B`\n'
                 )
                 return None
+            listen_link: str = args[1]
+            target_link: str = args[2]
             if not listen_link.startswith('https://t.me/'):
                 e = '监听频道链接错误'
             if not target_link.startswith('https://t.me/'):
