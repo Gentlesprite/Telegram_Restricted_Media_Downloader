@@ -465,21 +465,27 @@ class Bot:
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
                 text=f'`{link if len(args) == 1 else " ➡️ ".join(args)}`\n⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n请选择是否移除',
-                reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton(
-                        BotButton.OK,
-                        callback_data=f'{BotCallbackText.REMOVE_LISTEN_DOWNLOAD} {link}' if command == '/listen_download' else f'{BotCallbackText.REMOVE_LISTEN_FORWARD} {link}'
-                    ),
-                    InlineKeyboardButton(
-                        BotButton.CANCEL,
-                        callback_data=BotCallbackText.REMOVE_LISTEN_DOWNLOAD if command == '/listen_download' else BotCallbackText.REMOVE_LISTEN_FORWARD
-                    )
-                ]]))
+                disable_web_page_preview=True,
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton(
+                            BotButton.OK,
+                            callback_data=f'{BotCallbackText.REMOVE_LISTEN_DOWNLOAD} {link}' if command == '/listen_download' else f'{BotCallbackText.REMOVE_LISTEN_FORWARD} {link}'
+                        ),
+                        InlineKeyboardButton(
+                            BotButton.CANCEL,
+                            callback_data=BotCallbackText.REMOVE_LISTEN_DOWNLOAD if command == '/listen_download' else BotCallbackText.REMOVE_LISTEN_FORWARD
+                        )
+                    ]
+                ]
+                )
+            )
         except ButtonDataInvalid:
             len_data: int = len(f'{BotCallbackText.REMOVE_LISTEN_FORWARD} {link}')
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
+                disable_web_page_preview=True,
                 text='⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n'
                      f'由于数据位[{len_data}]超过[64]位,当前监听无法移除。'
             )
@@ -492,7 +498,8 @@ class Bot:
             if self.gc.get_config(BotCallbackText.NOTICE):
                 await self.last_client.send_message(
                     chat_id=self.last_message.from_user.id,
-                    text=f'"{link}"已下载完成。'
+                    text=f'"{link}"已下载完成。',
+                    disable_web_page_preview=True
                 )
 
     async def start_bot(
