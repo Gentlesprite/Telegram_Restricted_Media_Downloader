@@ -386,6 +386,23 @@ class Bot:
                         last_message_id=last_message.id,
                         text=safe_message(f'{last_message.text}\n{link}')
                     )
+                for meta in self.listen_forward_chat:
+                    listen_link, target_link = meta.split()
+                    if listen_link == link:
+                        invalid_links.append(listen_link)
+                        if not last_message:
+                            last_message = await client.send_message(
+                                chat_id=message.from_user.id,
+                                reply_to_message_id=message.id,
+                                text='❌同一频道不能同时存在两个监听\n(您已使用`/listen_forward`创建了以下链接的监听转发)'
+                            )
+                        last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
+                            client=client,
+                            message=message,
+                            last_message_id=last_message.id,
+                            text=safe_message(f'{last_message.text}\n{listen_link}')
+                        )
+
             if invalid_links:
                 for ivl in invalid_links:
                     if ivl in links:
@@ -420,6 +437,14 @@ class Bot:
                 return None
             listen_link: str = args[1]
             target_link: str = args[2]
+            if listen_link in self.listen_download_chat:
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_to_message_id=message.id,
+                    text='❌同一频道不能同时存在两个监听\n(您已使用`/listen_download`创建了以下链接的监听下载)\n'
+                         f'{listen_link}'
+                )
+                return None
             if not listen_link.startswith('https://t.me/'):
                 e = '监听频道链接错误'
             if not target_link.startswith('https://t.me/'):
