@@ -8,7 +8,7 @@ from typing import List, Dict, Union
 import pyrogram
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.errors.exceptions.flood_420 import FloodWait
-from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified, AccessTokenInvalid
+from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified, AccessTokenInvalid, ButtonDataInvalid
 from pyrogram.types import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 
 from module import __version__, __copyright__, SOFTWARE_FULL_NAME, __license__
@@ -399,20 +399,6 @@ class Bot:
                     )
                     return None
             links: list = list(set(links))
-            last_message: Union[pyrogram.types.Message, None] = None
-            for link in links:
-                if not last_message:
-                    last_message: Union[pyrogram.types.Message, str, None] = await client.send_message(
-                        chat_id=message.from_user.id,
-                        reply_to_message_id=message.id,
-                        text=f'✅新增`监听下载频道`频道:\n'
-                    )
-                last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
-                    client=client,
-                    message=message,
-                    last_message_id=last_message.id,
-                    text=safe_message(f'{last_message.text}\n{link}')
-                )
 
         elif text.startswith('/listen_forward'):
             e: str = ''
@@ -449,22 +435,17 @@ class Bot:
                          f'`{text} https://t.me/A https://t.me/B`\n'
                 )
                 return None
-            await client.send_message(
-                chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
-                text=f'✅新增`监听转发`频道:\n{listen_link} ➡️ {target_link}'
-            )
         return {'command': command, 'links': links}
 
     @staticmethod
-    async def on_download(
+    async def listen_download(
             client: pyrogram.Client,
             message: pyrogram.types
     ):
         pass
 
     @staticmethod
-    async def on_forward(
+    async def listen_forward(
             client: pyrogram.Client,
             message: pyrogram.types
     ):
@@ -477,20 +458,30 @@ class Bot:
             link: str,
             command: str
     ):
-        await client.send_message(
-            chat_id=message.from_user.id,
-            reply_to_message_id=message.id,
-            text=f'`{link}`\n⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n请选择是否移除',
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton(
-                    BotButton.OK,
-                    callback_data=f'{BotCallbackText.REMOVE_LISTEN_DOWNLOAD} {link}' if command == '/listen_download' else f'{BotCallbackText.REMOVE_LISTEN_FORWARD} {link}'
-                ),
-                InlineKeyboardButton(
-                    BotButton.CANCEL,
-                    callback_data=BotCallbackText.REMOVE_LISTEN_DOWNLOAD if command == '/listen_download' else BotCallbackText.REMOVE_LISTEN_FORWARD
-                )
-            ]]))
+        b = f'{BotCallbackText.REMOVE_LISTEN_FORWARD} {link}'
+        print(f'{b} len:{len(b)}')
+        try:
+            args: list = link.split()
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text=f'`{link if len(args) == 1 else " ➡️ ".join(args)}`\n⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n请选择是否移除',
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton(
+                        BotButton.OK,
+                        callback_data=f'{BotCallbackText.REMOVE_LISTEN_DOWNLOAD} {link}' if command == '/listen_download' else f'{BotCallbackText.REMOVE_LISTEN_FORWARD} {link}'
+                    ),
+                    InlineKeyboardButton(
+                        BotButton.CANCEL,
+                        callback_data=BotCallbackText.REMOVE_LISTEN_DOWNLOAD if command == '/listen_download' else BotCallbackText.REMOVE_LISTEN_FORWARD
+                    )
+                ]]))
+        except ButtonDataInvalid:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_to_message_id=message.id,
+                text='⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n由于数据超过64位,当前监听无法移除。'
+            )
 
     async def done_notice(
             self,

@@ -377,40 +377,54 @@ class TelegramRestrictedMediaDownloader(Bot):
         if meta is None:
             return None
 
-        async def error(_link, _error):
-            await client.send_message(
-                chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
-                text=f'⚠️⚠️⚠️无法读取⚠️⚠️⚠️\n`{_link}`\n(具体原因请前往终端查看报错信息)'
-            )
-            log.error(f'读取频道"{_link}"时遇到错误,{_t(KeyWord.REASON)}:"{error}"')
+        async def add_listen_chat(_link: str, _listen_chat: dict, _callback: callable) -> bool:
+            if _link not in _listen_chat:
+                try:
+                    chat = await self.user.get_chat(_link)
+                    handler = MessageHandler(_callback, filters=pyrogram.filters.chat(chat.id))
+                    _listen_chat[_link] = handler
+                    self.user.add_handler(handler)
+                    return True
+                except Exception as e:
+                    await client.send_message(
+                        chat_id=message.from_user.id,
+                        reply_to_message_id=message.id,
+                        text=f'⚠️⚠️⚠️无法读取⚠️⚠️⚠️\n`{_link}`\n(具体原因请前往终端查看报错信息)'
+                    )
+                    log.error(f'读取频道"{_link}"时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
+                    return False
+            else:
+                await self.cancel_listen(client, message, _link, command)
+                return False
 
         links: list = meta.get('links')
         command: str = meta.get('command')
         if command == '/listen_download':
+            last_message: Union[pyrogram.types.Message, None] = None
             for link in links:
-                if link not in self.listen_download_chat:
-                    try:
-                        chat = await self.user.get_chat(link)
-                        handler = MessageHandler(self.on_download, filters=pyrogram.filters.chat(chat.id))
-                        self.listen_download_chat[link] = handler
-                        self.user.add_handler(handler)
-                    except Exception as e:
-                        await error(link, e)
-                else:
-                    await self.cancel_listen(client, message, link, command)
+                if await add_listen_chat(link, self.listen_download_chat, self.listen_download):
+                    if not last_message:
+                        last_message: Union[pyrogram.types.Message, str, None] = await client.send_message(
+                            chat_id=message.from_user.id,
+                            reply_to_message_id=message.id,
+                            text=f'✅新增`监听下载频道`频道:\n'
+                        )
+                    last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
+                        client=client,
+                        message=message,
+                        last_message_id=last_message.id,
+                        text=safe_message(f'{last_message.text}\n{link}')
+                    )
         elif command == '/listen_forward':
             listen_link, target_link = links
-            if listen_link not in self.listen_forward_chat:
-                try:
-                    chat = await self.user.get_chat(listen_link)
-                    handler = MessageHandler(self.on_forward, filters=pyrogram.filters.chat(chat.id))
-                    self.listen_forward_chat[f'{listen_link} {target_link}'] = handler
-                    self.user.add_handler(handler)
-                except Exception as e:
-                    await error(listen_link, e)
+            if await add_listen_chat(f'{listen_link} {target_link}', self.listen_forward_chat, self.listen_forward):
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_to_message_id=message.id,
+                    text=f'✅新增`监听转发`频道:\n{listen_link} ➡️ {target_link}'
+                )
 
-    async def on_download(
+    async def listen_download(
             self,
             client: pyrogram.Client,
             message: pyrogram.types
@@ -423,7 +437,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         except Exception as e:
             log.exception(f'监听下载出现错误,{_t(KeyWord.REASON)}:{e}')
 
-    async def on_forward(
+    async def listen_forward(
             self,
             client: pyrogram.Client,
             message: pyrogram.types

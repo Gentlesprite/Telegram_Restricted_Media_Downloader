@@ -824,8 +824,8 @@ class BotCallbackText:
     BACK_HELP: str = 'back_help'
     NOTICE: str = 'notice'
     DOWNLOAD: str = 'download'
-    REMOVE_LISTEN_DOWNLOAD: str = 'remove_listen_download'
-    REMOVE_LISTEN_FORWARD: str = 'remove_listen_forward'
+    REMOVE_LISTEN_DOWNLOAD: str = 'rld'
+    REMOVE_LISTEN_FORWARD: str = 'rlf'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
