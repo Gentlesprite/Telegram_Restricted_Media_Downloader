@@ -569,21 +569,21 @@ class TelegramRestrictedMediaDownloader(Bot):
                         return {
                             'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.COMMENT,
                             'chat_id': chat_id,
-                            'message_id': group_message,
+                            'message': group_message,
                             'member_num': len(comment_message)
                         }
                     else:
                         return {
                             'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.GROUP,
                             'chat_id': chat_id,
-                            'message_id': group_message,
+                            'message': group_message,
                             'member_num': len(group_message)
                         }
                 elif is_group is False and group_message is None:  # 单文件。
                     return {
                         'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.SINGLE,
                         'chat_id': chat_id,
-                        'message_id': message,
+                        'message': message,
                         'member_num': 1
                     }
                 elif is_group is None and group_message is None:
@@ -605,22 +605,34 @@ class TelegramRestrictedMediaDownloader(Bot):
         except AttributeError:
             return None, None
 
-    async def __add_task(self, link, message: Union[pyrogram.types.Message, list], retry: dict) -> None:
+    async def __add_task(
+            self,
+            chat_id: Union[str, int],
+            link_type: str,
+            link: str,
+            message: Union[pyrogram.types.Message, list],
+            retry: dict
+    ) -> None:
         retry_count = retry.get('count')
         retry_id = retry.get('id')
         if isinstance(message, list):
             for _message in message:
                 if retry_count != 0:
                     if _message.id == retry_id:
-                        await self.__add_task(link, _message, retry)
+                        await self.__add_task(chat_id, link_type, link, _message, retry)
                         break
                 else:
-                    await self.__add_task(link, _message, retry)
+                    await self.__add_task(chat_id, link_type, link, _message, retry)
         else:
             _task = None
             valid_dtype, is_document_type_valid = self.app.get_valid_dtype(message).values()
             if valid_dtype in self.app.download_type and is_document_type_valid:
                 # 如果是匹配到的消息类型就创建任务。
+                console.log(
+                    f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
+                    f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
+                    f'{_t(KeyWord.LINK_TYPE)}:{_t(link_type)}。'  # 链接类型。
+                )
                 while self.app.current_task_num >= self.app.max_download_task:  # v1.0.7 增加下载任务数限制。
                     await self.event.wait()
                     self.event.clear()
@@ -676,6 +688,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                             format_file_size,
                             task_id)
                     )
+            else:
+                _error = '不支持或被忽略的类型(已取消)。'
+                Task.LINK_INFO.get(link).get('error_msg')['all_member'] = _error.replace('。', '')
+                console.log(
+                    f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
+                    f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
+                    f'{_t(KeyWord.LINK_TYPE)}:{_error}'  # 链接类型。
+                )
             self.queue.put_nowait(_task) if _task else None
 
     def __check_download_finish(
@@ -784,15 +804,10 @@ class TelegramRestrictedMediaDownloader(Bot):
         retry = retry if retry else {'id': -1, 'count': 0}
         try:
             meta: dict = await self.__extract_link_content(link=link, single_link=single_link)
-            link_type, chat_id, message_id, member_num = meta.values()
+            link_type, chat_id, message, member_num = meta.values()
             Task.LINK_INFO.get(link)['link_type'] = link_type
             Task.LINK_INFO.get(link)['member_num'] = member_num
-            console.log(
-                f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
-                f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
-                f'{_t(KeyWord.LINK_TYPE)}:{_t(link_type)}。'  # 链接类型。
-            )
-            await self.__add_task(link, message_id, retry)
+            await self.__add_task(chat_id, link_type, link, message, retry)
             return {
                 'chat_id': chat_id,
                 'link_type': link_type,
