@@ -570,7 +570,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.COMMENT,
                             'chat_id': chat_id,
                             'message': group_message,
-                            'member_num': len(comment_message)
+                            'member_num': len(group_message)
                         }
                     else:
                         return {
