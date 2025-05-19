@@ -14,13 +14,12 @@ from typing import Tuple, Union
 import pyrogram
 from pyrogram.handlers import MessageHandler
 from pyrogram.types.bots_and_keyboards import InlineKeyboardButton, InlineKeyboardMarkup
-
 from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate, ChatForwardsRestricted
 from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired
 from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, \
     BotMethodInvalid, MessageNotModified, UsernameNotOccupied
 
-from module import console, log, utils
+from module import console, log, utils, LINK_PREVIEW_OPTIONS
 from module.bot import Bot
 from module.task import Task
 from module.language import _t
@@ -99,7 +98,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             last_msg = await client.send_message(
                 chat_id=chat_id,
                 text=f'🙈🙈🙈请稍后🙈🙈🙈{load_name}加载中. . .',
-                disable_web_page_preview=True
+                link_preview_options=LINK_PREVIEW_OPTIONS
             )
             await client.send_photo(
                 chat_id=chat_id,
@@ -127,7 +126,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             chat_id = message.from_user.id
             res: dict = await self.__send_pay_qr(client=client, chat_id=chat_id, load_name='机器人')
             msg = '😊😊😊欢迎使用😊😊😊' if res.get('e_code') else '😊😊😊欢迎使用😊😊😊您的支持是我持续更新的动力。'
-            await client.send_message(chat_id=chat_id, text=msg, disable_web_page_preview=True)
+            await client.send_message(chat_id=chat_id, text=msg, link_preview_options=LINK_PREVIEW_OPTIONS)
             await super().start(client, message)
 
     async def callback_data(self, client: pyrogram.Client, callback_query: pyrogram.types.CallbackQuery):
@@ -193,7 +192,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             await self.app.client.send_message(
                 chat_id=callback_query.message.from_user.id,
                 text=f'/download {origin_link} {start_id} {end_id}',
-                disable_web_page_preview=True
+                link_preview_options=LINK_PREVIEW_OPTIONS
             )
             await callback_query.message.edit_reply_markup(
                 InlineKeyboardMarkup([
@@ -209,7 +208,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             await self.app.client.send_message(
                 chat_id=callback_query.message.from_user.id,
                 text='/listen_info',
-                disable_web_page_preview=True
+                link_preview_options=LINK_PREVIEW_OPTIONS
             )
         elif callback_data.startswith((BotCallbackText.REMOVE_LISTEN_DOWNLOAD, BotCallbackText.REMOVE_LISTEN_FORWARD)):
             msg: str = ''
@@ -304,7 +303,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         last_message = await client.send_message(
                             chat_id=message.from_user.id,
                             reply_to_message_id=message.id,
-                            disable_web_page_preview=True,
+                            link_preview_options=LINK_PREVIEW_OPTIONS,
                             text=BotMessage.INVALID
                         )
                     last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
@@ -397,7 +396,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     await client.send_message(
                         chat_id=message.from_user.id,
                         reply_to_message_id=message.id,
-                        disable_web_page_preview=True,
+                        link_preview_options=LINK_PREVIEW_OPTIONS,
                         text=f'⚠️⚠️⚠️无法读取⚠️⚠️⚠️\n`{_link}`\n(具体原因请前往终端查看报错信息)'
                     )
                     log.error(f'读取频道"{_link}"时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
@@ -416,7 +415,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         last_message: Union[pyrogram.types.Message, str, None] = await client.send_message(
                             chat_id=message.from_user.id,
                             reply_to_message_id=message.id,
-                            disable_web_page_preview=True,
+                            link_preview_options=LINK_PREVIEW_OPTIONS,
                             text=f'✅新增`监听下载频道`频道:\n')
                     last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
                         client=client,
@@ -436,7 +435,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_to_message_id=message.id,
-                    disable_web_page_preview=True,
+                    link_preview_options=LINK_PREVIEW_OPTIONS,
                     text=f'✅新增`监听转发`频道:\n{listen_link} ➡️ {target_link}',
                     reply_markup=InlineKeyboardMarkup([[
                         InlineKeyboardButton(

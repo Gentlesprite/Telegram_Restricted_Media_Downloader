@@ -12,6 +12,7 @@ from logging.handlers import RotatingFileHandler
 import yaml
 from pyrogram import utils
 from pyrogram.session import Session
+from pyrogram.types.messages_and_media import LinkPreviewOptions
 from rich.console import Console
 from rich.logging import RichHandler
 
@@ -74,7 +75,7 @@ read_input_history(history_path=INPUT_HISTORY_PATH, max_record_len=MAX_RECORD_LE
 LOG_PATH = os.path.join(APPDATA_PATH, f'{SOFTWARE_SHORT_NAME}_LOG.log')
 MAX_LOG_SIZE = 10 * 1024 * 1024  # 10 MB
 BACKUP_COUNT = 0  # 不保留日志文件
-
+LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
 # 配置日志文件处理器（支持日志轮换）
 file_handler = RotatingFileHandler(
     filename=LOG_PATH,

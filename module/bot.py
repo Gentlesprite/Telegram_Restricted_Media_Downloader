@@ -11,7 +11,7 @@ from pyrogram.errors.exceptions.flood_420 import FloodWait
 from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified, AccessTokenInvalid, ButtonDataInvalid
 from pyrogram.types.bots_and_keyboards import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 
-from module import __version__, __copyright__, SOFTWARE_FULL_NAME, __license__
+from module import __version__, __copyright__, __license__, SOFTWARE_FULL_NAME, LINK_PREVIEW_OPTIONS
 from module.language import _t
 from module.config import GlobalConfig
 from module.util import safe_index, safe_message
@@ -49,7 +49,7 @@ class Bot:
             chat_id=message.from_user.id,
             reply_to_message_id=message.id,
             text='❓❓❓未知命令❓❓❓\n请查看帮助后重试。',
-            disable_web_page_preview=True
+            link_preview_options=LINK_PREVIEW_OPTIONS
         )
 
     @staticmethod
@@ -94,7 +94,7 @@ class Bot:
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
                 text='❓❓❓请提供下载链接❓❓❓格式:\n`/download https://t.me/x/x`',
-                disable_web_page_preview=True
+                link_preview_options=LINK_PREVIEW_OPTIONS
             )
         elif text.startswith('https://t.me/'):
             if text[len('https://t.me/'):].count('/') >= 1:
@@ -106,14 +106,14 @@ class Bot:
                         chat_id=message.from_user.id,
                         reply_to_message_id=message.id,
                         text=f'{e}\n⬇️⬇️⬇️请使用以下命令分配下载任务⬇️⬇️⬇️\n`/download {text}`',
-                        disable_web_page_preview=True
+                        link_preview_options=LINK_PREVIEW_OPTIONS
                     )
             else:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_to_message_id=message.id,
                     text=f'⬇️⬇️⬇️请使用以下命令分配下载任务⬇️⬇️⬇️\n`/download https://t.me/x/x`',
-                    disable_web_page_preview=True
+                    link_preview_options=LINK_PREVIEW_OPTIONS
                 )
         elif len(text) <= 25 or text == '/download https://t.me/x/x' or text.endswith('.txt'):
             await self.help(client, message)
@@ -121,7 +121,7 @@ class Bot:
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
                 text='⁉️⁉️⁉️链接错误⁉️⁉️⁉️\n请查看帮助后重试。',
-                disable_web_page_preview=True
+                link_preview_options=LINK_PREVIEW_OPTIONS
             )
         else:
             link: list = text.split()
@@ -168,7 +168,6 @@ class Bot:
             client: pyrogram.Client,
             message: pyrogram.types.Message,
             text: list, last_message_id: int = -1,
-            disable_web_page_preview: bool = True,
             reply_markup: Union[pyrogram.types.InlineKeyboardMarkup, None] = None
     ) -> pyrogram.types.Message:
         if len(text) == 1 and last_message_id != -1:
@@ -176,7 +175,7 @@ class Bot:
                 chat_id=message.from_user.id,
                 message_id=last_message_id,
                 text=text[0],
-                disable_web_page_preview=disable_web_page_preview,
+                link_preview_options=LINK_PREVIEW_OPTIONS,
                 reply_markup=reply_markup
             )
             return last_bot_message
@@ -186,7 +185,7 @@ class Bot:
             last_bot_message: pyrogram.types.Message = await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
-                text=t, disable_web_page_preview=True
+                text=t, link_preview_options=LINK_PREVIEW_OPTIONS
             )
             if last_bot_message not in last_bot_messages:
                 last_bot_messages.append(last_bot_message)
@@ -244,7 +243,7 @@ class Bot:
         await client.send_message(
             chat_id=message.from_user.id,
             text=msg,
-            disable_web_page_preview=True,
+            link_preview_options=LINK_PREVIEW_OPTIONS,
             reply_markup=func_keyboard
         )
 
@@ -288,10 +287,12 @@ class Bot:
                 ]
             ]
         )
-        await client.send_message(chat_id=message.from_user.id,
-                                  text='🧐🧐🧐请选择输出「统计表」的类型:',
-                                  disable_web_page_preview=True,
-                                  reply_markup=choice_keyboard)
+        await client.send_message(
+            chat_id=message.from_user.id,
+            text='🧐🧐🧐请选择输出「统计表」的类型:',
+            link_preview_options=LINK_PREVIEW_OPTIONS,
+            reply_markup=choice_keyboard
+        )
 
     async def get_forward_link_from_bot(
             self,
@@ -339,7 +340,7 @@ class Bot:
             chat_id=message.from_user.id,
             text='🫡🫡🫡已收到退出命令。',
             reply_to_message_id=message.id,
-            disable_web_page_preview=True
+            link_preview_options=LINK_PREVIEW_OPTIONS
         )
         self.is_bot_running = False
         await self.safe_edit_message(
@@ -493,7 +494,7 @@ class Bot:
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
                 text=f'`{link if len(args) == 1 else forward_emoji.join(args)}`\n⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n请选择是否移除',
-                disable_web_page_preview=True,
+                link_preview_options=LINK_PREVIEW_OPTIONS,
                 reply_markup=InlineKeyboardMarkup([
                     [
                         InlineKeyboardButton(
@@ -513,7 +514,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
-                disable_web_page_preview=True,
+                link_preview_options=LINK_PREVIEW_OPTIONS,
                 text='⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n'
                      f'由于数据位[{len_data}]超过[64]位,当前监听无法移除。'
             )
@@ -527,7 +528,7 @@ class Bot:
             last_message = await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
-                disable_web_page_preview=True,
+                link_preview_options=LINK_PREVIEW_OPTIONS,
                 text=_text
             )
             for link in _listen_chat:
@@ -553,7 +554,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_to_message_id=message.id,
-                disable_web_page_preview=True,
+                link_preview_options=LINK_PREVIEW_OPTIONS,
                 text='😲目前没有正在监听的频道。'
             )
         else:
@@ -571,7 +572,7 @@ class Bot:
                 await self.last_client.send_message(
                     chat_id=self.last_message.from_user.id,
                     text=f'"{link}"已下载完成。',
-                    disable_web_page_preview=True
+                    link_preview_options=LINK_PREVIEW_OPTIONS
                 )
 
     async def start_bot(
@@ -668,7 +669,11 @@ class Bot:
         try:
             bot_username = getattr(await self.bot.get_me(), 'username', None)
             if bot_username:
-                return await self.user.send_message(chat_id=bot_username, text=text, disable_web_page_preview=True)
+                return await self.user.send_message(
+                    chat_id=bot_username,
+                    text=text,
+                    link_preview_options=LINK_PREVIEW_OPTIONS
+                )
         except Exception as e:
             if catch:
                 raise Exception(str(e))
@@ -692,7 +697,6 @@ class Bot:
             message: pyrogram.types.Message,
             last_message_id: int,
             text: Union[str, List[str]],
-            disable_web_page_preview: bool = True,
             reply_markup: Union[pyrogram.types.InlineKeyboardMarkup, None] = None
     ) -> Union[pyrogram.types.Message, str, None]:
         try:
@@ -702,7 +706,6 @@ class Bot:
                     message=message,
                     last_message_id=last_message_id,
                     text=text,
-                    disable_web_page_preview=disable_web_page_preview,
                     reply_markup=reply_markup
                 )
                 return last_message
@@ -711,7 +714,7 @@ class Bot:
                     chat_id=message.from_user.id,
                     message_id=last_message_id,
                     text=text,
-                    disable_web_page_preview=disable_web_page_preview,
+                    link_preview_options=LINK_PREVIEW_OPTIONS,
                     reply_markup=reply_markup
                 )
         except MessageNotModified:
