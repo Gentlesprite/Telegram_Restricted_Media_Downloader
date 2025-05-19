@@ -408,7 +408,7 @@ class Config:
             try:
                 console.input('请按「Enter」键继续. . .')
             except KeyboardInterrupt:
-                pass
+                console.input('\n')
 
 
 class GlobalConfig:
