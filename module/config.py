@@ -402,7 +402,13 @@ class Config:
             log.error(f'保存配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
 
     def ctrl_c(self):
-        os.system('pause') if self.platform == 'Windows' else console.input('请按「Enter」键继续. . .')
+        if self.platform == 'Windows':
+            os.system('pause')
+        else:
+            try:
+                console.input('请按「Enter」键继续. . .')
+            except KeyboardInterrupt:
+                pass
 
 
 class GlobalConfig:

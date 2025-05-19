@@ -13,6 +13,7 @@ from typing import Tuple, Union
 
 import pyrogram
 from pyrogram.handlers import MessageHandler
+from pyrogram.types.messages_and_media import ReplyParameters
 from pyrogram.types.bots_and_keyboards import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate, ChatForwardsRestricted
 from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired
@@ -238,7 +239,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         except UsernameNotOccupied:
             await bot_client.send_message(
                 chat_id=bot_message.from_user.id,
-                reply_to_message_id=bot_message.id,
+                reply_parameters=ReplyParameters(message_id=bot_message.id),
                 text=error_msg
             )
             return None
@@ -276,7 +277,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await client.send_message(
                     chat_id=message.from_user.id,
                     text='⚠️⚠️⚠️无法转发到此机器人⚠️⚠️⚠️',
-                    reply_to_message_id=message.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
                 )
                 return None
             last_message: Union[pyrogram.types.Message, None] = None
@@ -302,7 +303,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     if not last_message:
                         last_message = await client.send_message(
                             chat_id=message.from_user.id,
-                            reply_to_message_id=message.id,
+                            reply_parameters=ReplyParameters(message_id=message.id),
                             link_preview_options=LINK_PREVIEW_OPTIONS,
                             text=BotMessage.INVALID
                         )
@@ -318,7 +319,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             if not last_message:
                 await client.send_message(
                     chat_id=message.from_user.id,
-                    reply_to_message_id=message.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
                     text='🌟🌟🌟转发任务已完成🌟🌟🌟',
                     reply_markup=InlineKeyboardMarkup([[
                         InlineKeyboardButton(
@@ -344,7 +345,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             await client.send_message(
                 chat_id=message.from_user.id,
                 text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{origin_link}`存在内容保护限制。',
-                reply_to_message_id=message.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
                 reply_markup=InlineKeyboardMarkup([[
                     InlineKeyboardButton(
                         BotButton.CLICK_DOWNLOAD,
@@ -355,7 +356,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             await client.send_message(
                 chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
                 text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)\n❌❌❌注意:目前暂不支持转发话题频道❌❌❌'
             )
         except (ValueError, KeyError, UsernameInvalid):
@@ -364,14 +365,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                 msg = '(私密频道或话题频道必须让当前账号加入该频道)'
             await client.send_message(
                 chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
                 text='❌❌❌没有找到有效链接❌❌❌\n' + msg
             )
         except Exception as e:
             log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             await client.send_message(
                 chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
                 text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
             )
 
@@ -395,7 +396,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 except Exception as e:
                     await client.send_message(
                         chat_id=message.from_user.id,
-                        reply_to_message_id=message.id,
+                        reply_parameters=ReplyParameters(message_id=message.id),
                         link_preview_options=LINK_PREVIEW_OPTIONS,
                         text=f'⚠️⚠️⚠️无法读取⚠️⚠️⚠️\n`{_link}`\n(具体原因请前往终端查看报错信息)'
                     )
@@ -414,7 +415,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     if not last_message:
                         last_message: Union[pyrogram.types.Message, str, None] = await client.send_message(
                             chat_id=message.from_user.id,
-                            reply_to_message_id=message.id,
+                            reply_parameters=ReplyParameters(message_id=message.id),
                             link_preview_options=LINK_PREVIEW_OPTIONS,
                             text=f'✅新增`监听下载频道`频道:\n')
                     last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
@@ -434,7 +435,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             if await add_listen_chat(f'{listen_link} {target_link}', self.listen_forward_chat, self.listen_forward):
                 await client.send_message(
                     chat_id=message.from_user.id,
-                    reply_to_message_id=message.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
                     link_preview_options=LINK_PREVIEW_OPTIONS,
                     text=f'✅新增`监听转发`频道:\n{listen_link} ➡️ {target_link}',
                     reply_markup=InlineKeyboardMarkup([[
@@ -488,7 +489,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         await client.send_message(
                             chat_id=message.from_user.id,
                             text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{listen_chat_id}`存在内容保护限制。',
-                            reply_to_message_id=message.id,
+                            reply_parameters=ReplyParameters(message_id=message.id),
                             reply_markup=InlineKeyboardMarkup([[
                                 InlineKeyboardButton(
                                     BotButton.CLICK_DOWNLOAD,

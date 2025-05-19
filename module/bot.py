@@ -6,6 +6,7 @@
 from typing import List, Dict, Union
 
 import pyrogram
+from pyrogram.types.messages_and_media import ReplyParameters
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.errors.exceptions.flood_420 import FloodWait
 from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified, AccessTokenInvalid, ButtonDataInvalid
@@ -47,7 +48,7 @@ class Bot:
         await self.help(client, message)
         await client.send_message(
             chat_id=message.from_user.id,
-            reply_to_message_id=message.id,
+            reply_parameters=ReplyParameters(message_id=message.id),
             text='❓❓❓未知命令❓❓❓\n请查看帮助后重试。',
             link_preview_options=LINK_PREVIEW_OPTIONS
         )
@@ -63,7 +64,7 @@ class Bot:
             if start_id > end_id:
                 await client.send_message(
                     chat_id=message.from_user.id,
-                    reply_to_message_id=message.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
                     text='❌❌❌起始ID>结束ID❌❌❌'
                 )
                 return False
@@ -77,7 +78,7 @@ class Bot:
                 text: str = '没有指定起始ID和结束ID'
             await client.send_message(
                 chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
                 text=f'❌❌❌{text}❌❌❌'
             )
             return False
@@ -92,7 +93,7 @@ class Bot:
         if text == '/download':
             await client.send_message(
                 chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
                 text='❓❓❓请提供下载链接❓❓❓格式:\n`/download https://t.me/x/x`',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
@@ -104,14 +105,14 @@ class Bot:
                 except Exception as e:
                     await client.send_message(
                         chat_id=message.from_user.id,
-                        reply_to_message_id=message.id,
+                        reply_parameters=ReplyParameters(message_id=message.id),
                         text=f'{e}\n⬇️⬇️⬇️请使用以下命令分配下载任务⬇️⬇️⬇️\n`/download {text}`',
                         link_preview_options=LINK_PREVIEW_OPTIONS
                     )
             else:
                 await client.send_message(
                     chat_id=message.from_user.id,
-                    reply_to_message_id=message.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
                     text=f'⬇️⬇️⬇️请使用以下命令分配下载任务⬇️⬇️⬇️\n`/download https://t.me/x/x`',
                     link_preview_options=LINK_PREVIEW_OPTIONS
                 )
@@ -119,7 +120,7 @@ class Bot:
             await self.help(client, message)
             await client.send_message(
                 chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
                 text='⁉️⁉️⁉️链接错误⁉️⁉️⁉️\n请查看帮助后重试。',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
@@ -184,7 +185,7 @@ class Bot:
         for t in text:
             last_bot_message: pyrogram.types.Message = await client.send_message(
                 chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
                 text=t, link_preview_options=LINK_PREVIEW_OPTIONS
             )
             if last_bot_message not in last_bot_messages:
@@ -305,7 +306,7 @@ class Bot:
         if text == '/forward':
             await client.send_message(
                 chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
                 text='❌❌❌命令格式无效❌❌❌\n'
                      '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
                      '`/forward 原始频道 目标频道 起始ID 结束ID`\n'
@@ -325,7 +326,7 @@ class Bot:
         except Exception as e:
             await client.send_message(
                 chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
                 text=f'❌❌❌命令错误❌❌❌\n{e}\n请使用`/forward https://t.me/A https://t.me/B 1 100`'
             )
             return None
@@ -339,7 +340,7 @@ class Bot:
         last_message = await client.send_message(
             chat_id=message.from_user.id,
             text='🫡🫡🫡已收到退出命令。',
-            reply_to_message_id=message.id,
+            reply_parameters=ReplyParameters(message_id=message.id),
             link_preview_options=LINK_PREVIEW_OPTIONS
         )
         self.is_bot_running = False
@@ -364,7 +365,7 @@ class Bot:
             if len(args) == 1:
                 await client.send_message(
                     chat_id=message.from_user.id,
-                    reply_to_message_id=message.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
                     text='❌❌❌命令格式无效❌❌❌\n'
                          '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
                          f'`{text} 监听频道1 监听频道2 监听频道n`\n'
@@ -380,7 +381,7 @@ class Bot:
                     if not last_message:
                         last_message = await client.send_message(
                             chat_id=message.from_user.id,
-                            reply_to_message_id=message.id,
+                            reply_parameters=ReplyParameters(message_id=message.id),
                             text=BotMessage.INVALID
                         )
                     last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
@@ -396,7 +397,7 @@ class Bot:
                         if not last_message:
                             last_message = await client.send_message(
                                 chat_id=message.from_user.id,
-                                reply_to_message_id=message.id,
+                                reply_parameters=ReplyParameters(message_id=message.id),
                                 text='❌同一频道不能同时存在两个监听\n(您已使用`/listen_forward`创建了以下链接的监听转发)'
                             )
                         last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
@@ -430,7 +431,7 @@ class Bot:
                     e: str = '命令缺少转发频道'
                 await client.send_message(
                     chat_id=message.from_user.id,
-                    reply_to_message_id=message.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
                     text=f'❌❌❌{e}❌❌❌\n'
                          '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
                          f'`{text} 监听频道 转发频道`\n'
@@ -443,7 +444,7 @@ class Bot:
             if listen_link in self.listen_download_chat:
                 await client.send_message(
                     chat_id=message.from_user.id,
-                    reply_to_message_id=message.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
                     text='❌同一频道不能同时存在两个监听\n(您已使用`/listen_download`创建了以下链接的监听下载)\n'
                          f'{listen_link}'
                 )
@@ -455,7 +456,7 @@ class Bot:
             if e != '':
                 await client.send_message(
                     chat_id=message.from_user.id,
-                    reply_to_message_id=message.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
                     text=f'❌❌❌{e}❌❌❌\n'
                          '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
                          f'`{text} 监听频道 转发频道`\n'
@@ -492,7 +493,7 @@ class Bot:
             forward_emoji = ' ➡️ '
             await client.send_message(
                 chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
                 text=f'`{link if len(args) == 1 else forward_emoji.join(args)}`\n⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n请选择是否移除',
                 link_preview_options=LINK_PREVIEW_OPTIONS,
                 reply_markup=InlineKeyboardMarkup([
@@ -513,7 +514,7 @@ class Bot:
             len_data: int = len(f'{BotCallbackText.REMOVE_LISTEN_FORWARD} {link}')
             await client.send_message(
                 chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
                 link_preview_options=LINK_PREVIEW_OPTIONS,
                 text='⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n'
                      f'由于数据位[{len_data}]超过[64]位,当前监听无法移除。'
@@ -527,7 +528,7 @@ class Bot:
         async def __listen_info(_listen_chat: dict, _text: str):
             last_message = await client.send_message(
                 chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
                 link_preview_options=LINK_PREVIEW_OPTIONS,
                 text=_text
             )
@@ -553,7 +554,7 @@ class Bot:
         if not self.listen_forward_chat and not self.listen_download_chat:
             await client.send_message(
                 chat_id=message.from_user.id,
-                reply_to_message_id=message.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
                 link_preview_options=LINK_PREVIEW_OPTIONS,
                 text='😲目前没有正在监听的频道。'
             )
