@@ -408,8 +408,8 @@ class Config:
             try:
                 console.input('请按「Enter」键继续. . .')
             except KeyboardInterrupt:
-                console.input('\n')
-                exit(0)
+                pass
+
 
 class GlobalConfig:
     FILE_NAME: str = '.CONFIG.yaml'
