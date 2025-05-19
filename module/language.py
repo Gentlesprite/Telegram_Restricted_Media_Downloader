@@ -21,7 +21,7 @@ translations: dict = {
     'size': ['[大小]'],
     'status': ['[状态]'],
     'file': ['[文件]'],
-    'error_size': ['[错误大小]'],
+    'error size': ['[错误大小]'],
     'actual size': ['[实际大小]'],
     'already exist': ['[已存在]'],
     'channel': ['[频道]'],
