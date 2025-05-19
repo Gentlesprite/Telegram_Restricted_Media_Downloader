@@ -508,8 +508,20 @@ python main.py
 git clone https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader.git
 cd Telegram_Restricted_Media_Downloader
 python3 -m pip install --upgrade pip
+#####################################
+###使用虚拟环境(根据不同系统要求可选)###
+python3 -m venv venv
+source venv/bin/activate
+#####################################
 pip3 install -r requirements.txt
 python3 main.py
+# 到这一步就可以正常运行程序了。
+-------------------------------------
+# 注意:如过选择创建虚拟环境运行,在下次运行时也需要先激活虚拟环境。
+source venv/bin/activate
+# 然后再运行。
+python3 main.py
+-------------------------------------
 ```
 _如果提示**没有安装pip**使用如下命令进行安装:_
 

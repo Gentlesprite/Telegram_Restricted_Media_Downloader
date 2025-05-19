@@ -8,7 +8,7 @@ from typing import AsyncGenerator, Optional, Union
 
 import pyrogram
 from pyrogram import raw, types, utils
-from pyrogram.errors import PhoneNumberInvalid
+from pyrogram.errors.exceptions import PhoneNumberInvalid
 
 from module import console, SOFTWARE_FULL_NAME, log, __version__
 from module.enums import KeyWord
@@ -49,7 +49,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             except pyrogram.errors.BadRequest as e:
                 console.print(e.MESSAGE)
                 self.phone_number = None
-            except (PhoneNumberInvalid, AttributeError) as e:
+            except (pyrogram.errors.PhoneNumberInvalid, AttributeError) as e:
                 self.phone_number = None
                 log.error(f'「电话号码」错误,请重新输入!{_t(KeyWord.REASON)}:"{e.MESSAGE}"')
             else:

@@ -13,8 +13,8 @@ from typing import Tuple, Union
 
 import pyrogram
 from pyrogram.handlers import MessageHandler
-from pyrogram.errors import BadMsgNotification
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types.bots_and_keyboards import InlineKeyboardButton, InlineKeyboardMarkup
+
 from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate, ChatForwardsRestricted
 from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired
 from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, \
@@ -1003,8 +1003,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 log.error('「网络」或「代理问题」,在确保当前网络连接正常情况下检查:\n「VPN」是否可用,「软件代理」是否配置正确。')
                 raise SystemExit(0)
             log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
-        except BadMsgNotification as e:
-            if str(e) in (str(BadMsgNotification(16)), str(BadMsgNotification(17))):
+        except pyrogram.errors.BadMsgNotification as e:
+            if str(e) in (str(pyrogram.errors.BadMsgNotification(16)), str(pyrogram.errors.BadMsgNotification(17))):
                 console.print(
                     '[#FCFF79]检测到[/#FCFF79][#FF7979]系统时间[/#FF7979][#FC79A5]未同步[/#FC79A5][#79E2FC],[/#79E2FC]'
                     '[#79FCD4]解决方法[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\n'
