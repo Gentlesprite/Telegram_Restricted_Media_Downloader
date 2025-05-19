@@ -59,7 +59,7 @@ Session.START_TIMEOUT = 60
 AUTHOR = 'Gentlesprite'
 __version__ = '1.5.9'
 __license__ = 'MIT License'
-__update_date__ = '2025/05/18 11:47:51'
+__update_date__ = '2025/05/20 01:35:29'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/Gentlesprite>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
@@ -76,6 +76,7 @@ LOG_PATH = os.path.join(APPDATA_PATH, f'{SOFTWARE_SHORT_NAME}_LOG.log')
 MAX_LOG_SIZE = 10 * 1024 * 1024  # 10 MB
 BACKUP_COUNT = 0  # 不保留日志文件
 LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
+LOG_FORMAT = '%(name)s:%(funcName)s:%(lineno)d - %(message)s'
 # 配置日志文件处理器（支持日志轮换）
 file_handler = RotatingFileHandler(
     filename=LOG_PATH,
@@ -83,19 +84,21 @@ file_handler = RotatingFileHandler(
     backupCount=BACKUP_COUNT,
     encoding='UTF-8'
 )
-file_handler.setFormatter(logging.Formatter("%(message)s"))
+file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
 # 配置日志记录器
 logging.basicConfig(
     level=logging.WARNING,
-    format='%(message)s',
+    format=LOG_FORMAT,
     datefmt=LOG_TIME_FORMAT,
     handlers=[
-        RichHandler(rich_tracebacks=True,
-                    console=console,  # v1.2.5传入控制台对象,修复报错时进度条打印错位
-                    show_path=False,
-                    omit_repeated_times=False,
-                    log_time_format=LOG_TIME_FORMAT),
-        file_handler  # 文件输出
+        RichHandler(
+            console=console,
+            rich_tracebacks=True,
+            show_path=False,
+            omit_repeated_times=False,
+            log_time_format=LOG_TIME_FORMAT
+        ),
+        file_handler
     ]
 )
 log = logging.getLogger('rich')
