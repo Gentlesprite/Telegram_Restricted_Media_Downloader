@@ -42,6 +42,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                         f'所输入的「{value}」是否[#B1DB74]正确[/#B1DB74]? - 「y|n」(默认y): ').strip().lower()
                     if confirm in ('y', ''):
                         break
+                    elif confirm == 'n':
+                        continue
                     else:
                         log.warning(f'意外的参数:"{confirm}",支持的参数 - 「y|n」')
                 self.phone_number = value
