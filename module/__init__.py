@@ -56,6 +56,7 @@ utils.get_peer_type = get_peer_type_new
 MAX_FILE_REFERENCE_TIME = 600
 Session.WAIT_TIMEOUT = 100
 Session.START_TIMEOUT = 60
+SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
 __version__ = '1.5.9'
 __license__ = 'MIT License'

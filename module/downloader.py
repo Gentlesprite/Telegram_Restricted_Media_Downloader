@@ -20,7 +20,7 @@ from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyU
 from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, \
     BotMethodInvalid, MessageNotModified, UsernameNotOccupied
 
-from module import console, log, utils, LINK_PREVIEW_OPTIONS
+from module import console, log, utils, LINK_PREVIEW_OPTIONS, SLEEP_THRESHOLD
 from module.bot import Bot
 from module.task import Task
 from module.language import _t
@@ -964,7 +964,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     api_id=self.app.api_id,
                     bot_token=self.app.bot_token,
                     workdir=self.app.work_directory,
-                    proxy=self.app.enable_proxy
+                    proxy=self.app.enable_proxy,
+                    sleep_threshold=SLEEP_THRESHOLD
                 )
             )
             console.log(result, style='#B1DB74' if self.is_bot_running else '#FF4689')

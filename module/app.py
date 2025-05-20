@@ -13,7 +13,7 @@ from typing import Dict, Union
 
 import pyrogram
 
-from module import Session
+from module import Session, SLEEP_THRESHOLD
 from module import console, log
 from module import MAX_FILE_REFERENCE_TIME, SOFTWARE_FULL_NAME
 from module.language import _t
@@ -44,7 +44,8 @@ class Application(Config, StatisticalTable):
             api_hash=self.api_hash,
             proxy=self.enable_proxy,
             workdir=self.work_directory,
-            max_concurrent_transmissions=self.max_download_task
+            max_concurrent_transmissions=self.max_download_task,
+            sleep_threshold=SLEEP_THRESHOLD,
         )
         # v1.3.7 新增多任务下载功能,无论是否Telegram会员。
         # https://stackoverflow.com/questions/76714896/pyrogram-download-multiple-files-at-the-same-time
