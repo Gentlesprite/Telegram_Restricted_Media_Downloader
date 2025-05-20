@@ -368,9 +368,9 @@ class Bot:
                     reply_parameters=ReplyParameters(message_id=message.id),
                     text='❌❌❌命令格式无效❌❌❌\n'
                          '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
-                         f'`{text} 监听频道1 监听频道2 监听频道n`\n'
+                         f'`/listen_download 监听频道1 监听频道2 监听频道n`\n'
                          '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
-                         f'`{text} https://t.me/A https://t.me/B https://t.me/n`\n'
+                         f'`/listen_download https://t.me/A https://t.me/B https://t.me/n`\n'
                 )
                 return None
             last_message: Union[pyrogram.types.Message, str, None] = None
@@ -434,9 +434,9 @@ class Bot:
                     reply_parameters=ReplyParameters(message_id=message.id),
                     text=f'❌❌❌{e}❌❌❌\n'
                          '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
-                         f'`{text} 监听频道 转发频道`\n'
+                         f'`/listen_forward 监听频道 转发频道`\n'
                          '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
-                         f'`{text} https://t.me/A https://t.me/B`\n'
+                         f'`/listen_forward https://t.me/A https://t.me/B`\n'
                 )
                 return None
             listen_link: str = args[1]
@@ -459,9 +459,9 @@ class Bot:
                     reply_parameters=ReplyParameters(message_id=message.id),
                     text=f'❌❌❌{e}❌❌❌\n'
                          '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
-                         f'`{text} 监听频道 转发频道`\n'
+                         f'`/listen_forward 监听频道 转发频道`\n'
                          '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
-                         f'`{text} https://t.me/A https://t.me/B`\n'
+                         f'`/listen_forward https://t.me/A https://t.me/B`\n'
                 )
                 return None
         return {'command': command, 'links': links}
