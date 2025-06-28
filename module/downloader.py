@@ -791,6 +791,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     Task.LINK_INFO.get(link).get('error_msg')[file_name] = _error.replace('。', '')
                     self.bot_task_link.discard(link)
+                link, file_name = None, None
             self.pb.progress.remove_task(task_id=task_id)
         return link, file_name
 

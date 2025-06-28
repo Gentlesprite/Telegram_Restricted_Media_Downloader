@@ -64,6 +64,8 @@ class Task:
         @wraps(func)
         def wrapper(self, *args, **kwargs):
             res = func(self, *args, **kwargs)
+            if all(i is None for i in res):
+                return None
             link, file_name = res
             Task.LINK_INFO.get(link).get('file_name').add(file_name)
             for i in Task.LINK_INFO.items():
