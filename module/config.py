@@ -267,6 +267,7 @@ class Config:
             _proxy_username: Union[str, bool] = _proxy_config.get('username', False)
             _proxy_password: Union[str, bool] = _proxy_config.get('password', False)
             proxy_record: dict = self.last_record.get('proxy', {})  # proxy的历史记录。
+            enable_bot: bool = False  # 是否打开机器人。
             if any([not _api_id, not _api_hash, not _save_directory, not _max_download_task, not _download_type]):
                 console.print('「注意」直接回车代表使用上次的记录。',
                               style='#B1DB74')
@@ -296,7 +297,8 @@ class Config:
             if not _links or not _bot_token and self.re_config:
                 links, record_flag = gsp.get_links(
                     last_record=self.last_record.get('links'),
-                    valid_format='.txt').values()
+                    valid_format='.txt',
+                    enable_bot=True if enable_bot else False).values()
                 if record_flag:
                     self.record_flag = record_flag
                     pre_load_config['links'] = links

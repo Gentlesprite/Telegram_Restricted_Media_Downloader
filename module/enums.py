@@ -366,6 +366,16 @@ class ProcessConfig:
                 advance_account_truth_table.append(_[1])
         if all(basic_truth_table) is False:
             console.print('请配置代理!', style=ProcessConfig.stdio_style('config_proxy'))
+            console.print(
+                '[#79FCD4]如果对代理配置有疑问[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\n'
+                '[link=https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#配置代理时在代理在本机的情况下]'
+                'https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#配置代理时在代理在本机的情况下[/link]'
+                '\n[#FCFF79]若[/#FCFF79][#FF4689]无法[/#FF4689][#FF7979]访问[/#FF7979][#79FCD4],[/#79FCD4]'
+                '[#FCFF79]可[/#FCFF79][#d4fc79]查阅[/#d4fc79]'
+                '[#FC79A5]软件压缩包所提供的[/#FC79A5][#79E2FC]"使用手册"[/#79E2FC]'
+                '[#79FCD4]文件夹下的[/#79FCD4][#FFB579]"常见问题及解决方案汇总.pdf"[/#FFB579]'
+                '[#79FCB5]中的[/#79FCB5][#D479FC]【问题14】里的【解决方案】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6]。[/#FC79A6]'
+            )
             result: bool = True
         if any(advance_account_truth_table) and all(advance_account_truth_table) is False:
             log.warning('代理账号或密码未输入!')
@@ -540,16 +550,26 @@ class GetStdioParams:
                 log.warning(f'意外的参数:"{bot_token}",「bot_token」中需要包含":",请重新输入!')
 
     @staticmethod
-    def get_links(last_record: str, valid_format: str = '.txt') -> dict:
+    def get_links(last_record: str, valid_format: str = '.txt', enable_bot: bool = False) -> dict:
         # 输入需要下载的媒体链接文件路径,确保文件存在。
         links_file_path = None
         while True:
             try:
+                bot_notice = '(检测到已配置机器人,此步骤可忽略)' if enable_bot else ''
                 links_file_path = console.input(
                     f'请输入需要下载的媒体链接的「完整路径」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」'
-                    f'格式 - 「{valid_format}」:').strip()
-                if links_file_path == '' and last_record is not None:
-                    links_file_path = last_record
+                    f'格式 - 「{valid_format}」{bot_notice}:').strip()
+                if links_file_path == '':
+                    if last_record is not None:
+                        links_file_path = last_record
+                    elif bot_notice:
+                        links_file_path = os.path.join(os.getcwd(), 'links.txt')
+                        if not os.path.exists(links_file_path):
+                            try:
+                                with open(file=links_file_path, mode='w', encoding='UTF-8'):
+                                    pass
+                            except Exception as e:
+                                log.warning(f'无法创建文件:"{links_file_path}"请排查权限问题,{_t(KeyWord.REASON)}:"{e}"')
                 if Validator.is_valid_links_file(links_file_path, valid_format):
                     console.print(f'已设置「links」为:「{links_file_path}」', style=ProcessConfig.stdio_style('links'))
                     Validator.is_contain_chinese(links_file_path)
@@ -572,8 +592,12 @@ class GetStdioParams:
         while True:
             save_directory = console.input(
                 f'请输入媒体「保存路径」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」:').strip()
-            if save_directory == '' and last_record is not None:
-                save_directory = last_record
+            if save_directory == '':
+                if last_record is not None:
+                    save_directory = last_record
+                else:
+                    save_directory = os.path.join(os.getcwd(), 'downloads')
+                    log.warning('没有上一次的记录,已设置为默认目录。')
             if Validator.is_valid_save_directory(save_directory):
                 console.print(f'已设置「save_directory」为:「{save_directory}」',
                               style=ProcessConfig.stdio_style('save_directory'))
