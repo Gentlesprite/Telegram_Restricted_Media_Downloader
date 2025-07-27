@@ -564,12 +564,12 @@ class GetStdioParams:
                         links_file_path = last_record
                     elif bot_notice:
                         links_file_path = os.path.join(os.getcwd(), 'links.txt')
-                        if not os.path.exists(links_file_path):
-                            try:
-                                with open(file=links_file_path, mode='w', encoding='UTF-8'):
-                                    pass
-                            except Exception as e:
-                                log.warning(f'无法创建文件:"{links_file_path}"请排查权限问题,{_t(KeyWord.REASON)}:"{e}"')
+                if not os.path.exists(links_file_path):
+                    try:
+                        with open(file=links_file_path, mode='w', encoding='UTF-8'):
+                            pass
+                    except Exception as e:
+                        log.warning(f'无法创建文件:"{links_file_path}"请排查权限问题,{_t(KeyWord.REASON)}:"{e}"')
                 if Validator.is_valid_links_file(links_file_path, valid_format):
                     console.print(f'已设置「links」为:「{links_file_path}」', style=ProcessConfig.stdio_style('links'))
                     Validator.is_contain_chinese(links_file_path)
