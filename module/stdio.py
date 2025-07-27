@@ -179,7 +179,9 @@ class StatisticalTable:
                 link_table = PanelTable(title='链接内容', header=('编号', '链接'),
                                         data=format_res)
                 link_table.print_meta()
-        except (FileNotFoundError, PermissionError, AttributeError) as e:  # v1.1.3 用户错误填写路径提示。
+        except FileNotFoundError:
+            log.warning('无法读取媒体链接文件,可能已被删除。')
+        except (PermissionError, AttributeError) as e:  # v1.1.3 用户错误填写路径提示。
             log.error(f'读取"{links}"时出错,{_t(KeyWord.REASON)}:"{e}"')
         except Exception as e:
             log.error(f'打印链接内容统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
