@@ -9,6 +9,7 @@ venv/
 ConfigBackup/
 tests/
 test*
+downloads/
 # ignore files
 *.exe
 *.yaml
