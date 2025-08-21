@@ -3,10 +3,12 @@
 # Software:PyCharm
 # Time:2025/2/25 1:26
 # File:client.py
+import asyncio
 from datetime import datetime
-from typing import AsyncGenerator, Optional, Union
+from typing import AsyncGenerator, Optional, Union, List
 
 import pyrogram
+from pyrogram.qrlogin import QRLogin
 from pyrogram import raw, types, utils
 from pyrogram.errors.exceptions import PhoneNumberInvalid
 
@@ -39,7 +41,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                         continue
 
                     confirm = console.input(
-                        f'所输入的「{value}」是否[#B1DB74]正确[/#B1DB74]? - 「y|n」(默认y): ').strip().lower()
+                        f'所输入的「{value}」是否[#B1DB74]正确[/#B1DB74]? - 「y|n」(默认y):').strip().lower()
                     if confirm in ('y', ''):
                         break
                     elif confirm == 'n':
@@ -56,18 +58,67 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 log.error(f'「电话号码」错误,请重新输入!{_t(KeyWord.REASON)}:"{e.MESSAGE}"')
             else:
                 break
+        if sent_code.type == pyrogram.enums.SentCodeType.SETUP_EMAIL_REQUIRED:
+            console.print('需要「设置邮箱」以完成授权。')
 
-        sent_code_descriptions = {
-            pyrogram.enums.SentCodeType.APP: 'Telegram app',
-            pyrogram.enums.SentCodeType.SMS: 'SMS',
-            pyrogram.enums.SentCodeType.CALL: 'phone call',
-            pyrogram.enums.SentCodeType.FLASH_CALL: 'phone flash call',
-            pyrogram.enums.SentCodeType.FRAGMENT_SMS: 'Fragment SMS',
-            pyrogram.enums.SentCodeType.EMAIL_CODE: 'email code'
-        }
+            while True:
+                try:
+                    while True:
+                        email = console.input('请输入「邮箱」:')
+                        if not email:
+                            continue
+                        confirm = console.input(f'所输入的「{email}」是否正确? - 「y|n」(默认y):').strip().lower()
+                        if confirm in ('y', ''):
+                            break
+                        elif confirm == 'n':
+                            continue
+                        else:
+                            log.warning(f'意外的参数:"{confirm}",支持的参数 - 「y|n」')
+                    await self.invoke(
+                        raw.functions.account.SendVerifyEmailCode(
+                            purpose=raw.types.EmailVerifyPurposeLoginSetup(
+                                phone_number=self.phone_number,
+                                phone_code_hash=sent_code.phone_code_hash,
+                            ),
+                            email=email,
+                        )
+                    )
 
-        console.print(
-            f'[#f08a5d]「验证码」[/#f08a5d]已通过[#f9ed69]「{sent_code_descriptions[sent_code.type]}」[/#f9ed69]发送。')
+                    email_code = console.input('请输入「验证码」:')
+
+                    email_sent_code = await self.invoke(
+                        raw.functions.account.VerifyEmail(
+                            purpose=raw.types.EmailVerifyPurposeLoginSetup(
+                                phone_number=self.phone_number,
+                                phone_code_hash=sent_code.phone_code_hash,
+                            ),
+                            verification=raw.types.EmailVerificationCode(code=email_code),
+                        )
+                    )
+
+                    if isinstance(email_sent_code, raw.types.account.EmailVerifiedLogin):
+                        if isinstance(email_sent_code.sent_code, raw.types.auth.SentCodePaymentRequired):
+                            raise pyrogram.errors.Unauthorized(
+                                'You need to pay for or purchase premium to continue authorization '
+                                'process, which is currently not supported by Pyrogram.'
+                            )
+                except pyrogram.errors.BadRequest as e:
+                    console.print(e.MESSAGE)
+                else:
+                    break
+
+        else:
+            sent_code_descriptions = {
+                pyrogram.enums.SentCodeType.APP: 'Telegram app',
+                pyrogram.enums.SentCodeType.SMS: 'SMS',
+                pyrogram.enums.SentCodeType.CALL: 'phone call',
+                pyrogram.enums.SentCodeType.FLASH_CALL: 'phone flash call',
+                pyrogram.enums.SentCodeType.FRAGMENT_SMS: 'Fragment SMS',
+                pyrogram.enums.SentCodeType.EMAIL_CODE: 'email code'
+            }
+
+            console.print(
+                f'[#f08a5d]「验证码」[/#f08a5d]已通过[#f9ed69]「{sent_code_descriptions[sent_code.type]}」[/#f9ed69]发送。')
 
         while True:
             if not self.phone_code:
@@ -93,7 +144,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                     try:
                         if not self.password:
                             confirm = console.input(
-                                '确认[#f08a5d]「恢复密码」[/#f08a5d]? - 「y|n」(默认y):').strip().lower()
+                                '所输入的[#f08a5d]「恢复密码」[/#f08a5d]是否正确? - 「y|n」(默认y):').strip().lower()
                             if confirm in ('y', ''):
                                 email_pattern = await self.send_recovery_code()
                                 console.print(
@@ -143,6 +194,78 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             await self.accept_terms_of_service(signed_in.id)
 
         return signed_up
+
+    async def authorize_qr(self, except_ids: List[int] = []) -> "User":
+        import qrcode
+        qr_login = QRLogin(self, except_ids)
+        await qr_login.recreate()
+
+        qr = qrcode.QRCode(version=1)
+
+        while True:
+            try:
+                console.print(
+                    'Pyrogram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n'
+                    f'under the terms of the {pyrogram.__license__}.\n'
+                    f'欢迎使用[#b4009e]{SOFTWARE_FULL_NAME}[/#b4009e](版本 {__version__})'
+                    f'基于Pyrogram(版本 {pyrogram.__version__})。\n'
+                    '请扫描[#6a2c70]「二维码」[/#6a2c70]登录\n'
+                    '[#b83b5e]Settings(设置)[/#b83b5e] -> [#f08a5d]Devices(设备)[/#f08a5d] -> [#f9ed69]Link Desktop Device(关联桌面设备)[/#f9ed69]'
+                )
+
+                qr.clear()
+                qr.add_data(qr_login.url)
+                qr.print_ascii(tty=True)
+                log.info('Waiting for QR code being scanned.')
+
+                signed_in = await qr_login.wait()
+
+                if signed_in:
+                    log.info(f'Logged in successfully as {signed_in.full_name}')
+                    return signed_in
+            except asyncio.TimeoutError:
+                log.info('Recreating QR code.')
+                await qr_login.recreate()
+            except pyrogram.errors.SessionPasswordNeeded as e:
+                console.print(e.MESSAGE)
+
+                while True:
+                    console.print('密码提示:{}'.format(await self.get_password_hint()))
+
+                    if not self.password:
+                        self.password = console.input(
+                            '输入[#f08a5d]「两步验证」[/#f08a5d]的[#f9ed69]「密码」[/#f9ed69](为空代表[#FF4689]忘记密码[/#FF4689]):',
+                            password=self.hide_password).strip()
+
+                    try:
+                        if not self.password:
+                            confirm = console.input(
+                                '所输入的[#f08a5d]「恢复密码」[/#f08a5d]是否正确? - 「y|n」(默认y):').strip().lower()
+
+                            if confirm in ('y', ''):
+                                email_pattern = await self.send_recovery_code()
+                                console.print(
+                                    f'[#f08a5d]「恢复代码」[/#f08a5d]已发送到邮箱[#f9ed69]「{email_pattern}」[/#f9ed69]。')
+
+                                while True:
+                                    recovery_code = console.input('请输入[#f08a5d]「恢复代码」[/#f08a5d]:').strip()
+
+                                    try:
+                                        return await self.recover_password(recovery_code)
+                                    except pyrogram.errors.BadRequest as e:
+                                        console.print(e.MESSAGE)
+                                    except Exception as e:
+                                        log.exception(e)
+                                        raise
+                            else:
+                                self.password = None
+                        else:
+                            return await self.check_password(self.password)
+                    except pyrogram.errors.BadRequest as e:
+                        console.print(e.MESSAGE)
+                        self.password = None
+            else:
+                break
 
     async def get_chat_history(
             self: pyrogram.Client,

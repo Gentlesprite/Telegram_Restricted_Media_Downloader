@@ -16,7 +16,8 @@ from pyrogram.handlers import MessageHandler
 from pyrogram.types.messages_and_media import ReplyParameters
 from pyrogram.types.bots_and_keyboards import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate, ChatForwardsRestricted
-from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired
+from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired, \
+    Unauthorized
 from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, \
     BotMethodInvalid, MessageNotModified, UsernameNotOccupied
 
@@ -954,7 +955,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         console.log(notice, style='#FF4689')
 
     async def __download_media_from_links(self) -> None:
-        await self.app.client.start()
+        await self.app.client.start(use_qr=False)
         self.pb.progress.start()  # v1.1.8修复登录输入手机号不显示文本问题。
         if self.app.bot_token is not None:
             result = await self.start_bot(
@@ -1032,7 +1033,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     '[#79FCD4]并[/#79FCD4][#79FCB5]重启软件[/#79FCB5]。')
                 raise SystemExit(0)
             log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
-        except (SessionRevoked, AuthKeyUnregistered, SessionExpired, ConnectionError) as e:
+        except (SessionRevoked, AuthKeyUnregistered, SessionExpired, Unauthorized, ConnectionError) as e:
             log.error(f'登录时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
             record_error: bool = True
