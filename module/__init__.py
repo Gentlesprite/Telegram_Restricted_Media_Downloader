@@ -58,9 +58,9 @@ Session.WAIT_TIMEOUT = 100
 Session.START_TIMEOUT = 60
 SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
-__version__ = '1.6.1'
+__version__ = '1.6.2'
 __license__ = 'MIT License'
-__update_date__ = '2025/08/19 12:53:40'
+__update_date__ = '2025/08/21 18:36:06'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/Gentlesprite>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
@@ -74,32 +74,38 @@ MAX_RECORD_LENGTH = 1000
 read_input_history(history_path=INPUT_HISTORY_PATH, max_record_len=MAX_RECORD_LENGTH, platform=PLATFORM)
 # 配置日志输出到文件
 LOG_PATH = os.path.join(APPDATA_PATH, f'{SOFTWARE_SHORT_NAME}_LOG.log')
-MAX_LOG_SIZE = 10 * 1024 * 1024  # 10 MB
-BACKUP_COUNT = 0  # 不保留日志文件
+MAX_LOG_SIZE = 200 * 1024 * 1024  # 200MB
+BACKUP_COUNT = 0  # 不保留日志文件。
 LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
 LOG_FORMAT = '%(name)s:%(funcName)s:%(lineno)d - %(message)s'
-# 配置日志文件处理器（支持日志轮换）
+
+# 配置日志文件处理器(文件记录)
 file_handler = RotatingFileHandler(
     filename=LOG_PATH,
     maxBytes=MAX_LOG_SIZE,
     backupCount=BACKUP_COUNT,
     encoding='UTF-8'
 )
-file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
-# 配置日志记录器
+file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s' + ' ' + LOG_FORMAT, datefmt=LOG_TIME_FORMAT))
+file_handler.setLevel(logging.INFO)
+
+# 配置日志终端记录器(控制台输出)
+console_handler = RichHandler(
+    level=logging.WARNING,  # 控制台只显示WARNING及以上级别。
+    console=console,
+    rich_tracebacks=True,
+    show_path=False,
+    omit_repeated_times=False,
+    log_time_format=LOG_TIME_FORMAT
+)
+# 配置日志记录器(根记录器设置为最低级别 DEBUG)
 logging.basicConfig(
-    level=logging.WARNING,
+    level=logging.DEBUG,  # 根记录器设置为DEBUG,允许所有日志通过。
     format=LOG_FORMAT,
     datefmt=LOG_TIME_FORMAT,
     handlers=[
-        RichHandler(
-            console=console,
-            rich_tracebacks=True,
-            show_path=False,
-            omit_repeated_times=False,
-            log_time_format=LOG_TIME_FORMAT
-        ),
-        file_handler
+        console_handler,  # 控制台:WARNING+
+        file_handler  # 文件:INFO+
     ]
 )
 log = logging.getLogger('rich')

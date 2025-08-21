@@ -833,8 +833,8 @@ class BotCommandText:
     FORWARD: tuple = ('forward', '从频道A转发至频道B 起始ID 结束ID。\n`/forward https://t.me/A https://t.me/B 1 100`')
     EXIT: tuple = ('exit', '退出软件。')
     LISTEN_DOWNLOAD: tuple = ('listen_download',
-                              '实时监听该链接的最新消息进行下载。\n`/listen_download https://t.me/A https://t.me/B https://t.me/n`')
-    LISTEN_FORWARD: tuple = ('listen_forward', '实时监听该链接的最新消息进行转发。\n`/listen_forward 监听频道 转发频道`')
+                              '实时监听该链接的最新消息(视频和图片)进行下载。\n`/listen_download https://t.me/A https://t.me/B https://t.me/n`')
+    LISTEN_FORWARD: tuple = ('listen_forward', '实时监听该链接的最新消息(任意消息)进行转发。\n`/listen_forward 监听频道 转发频道`')
     LISTEN_INFO: tuple = ('listen_info', '查看当前已经创建的监听信息。')
 
     @staticmethod
