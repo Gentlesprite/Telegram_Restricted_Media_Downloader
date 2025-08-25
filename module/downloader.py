@@ -865,7 +865,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         '频道可能为私密频道或话题频道,请让当前账号加入该频道后再重试'
                 }
             }
-        except (ChannelPrivate_400, ChannelPrivate_406) as e:
+        except ChannelPrivate_400 as e:
             return {
                 'chat_id': None, 'member_num': 0,
                 'link_type': None,
@@ -874,6 +874,17 @@ class TelegramRestrictedMediaDownloader(Bot):
                     'all_member': str(e),
                     'error_msg':
                         '频道可能为私密频道或话题频道,当前账号可能已不在该频道,请让当前账号加入该频道后再重试'
+                }
+            }
+        except ChannelPrivate_406 as e:
+            return {
+                'chat_id': None, 'member_num': 0,
+                'link_type': None,
+                'status': DownloadStatus.FAILURE,
+                'e_code': {
+                    'all_member': str(e),
+                    'error_msg':
+                        '频道为私密频道,无法访问'
                 }
             }
         except BotMethodInvalid as e:
