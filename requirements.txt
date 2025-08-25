@@ -3,5 +3,5 @@ PyYAML
 rich==13.9.4
 qrcode
 pyreadline3
-kurigram==2.2.7
+kurigram==2.2.9
 pygments

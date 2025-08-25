@@ -15,7 +15,10 @@ import pyrogram
 from pyrogram.handlers import MessageHandler
 from pyrogram.types.messages_and_media import ReplyParameters
 from pyrogram.types.bots_and_keyboards import InlineKeyboardButton, InlineKeyboardMarkup
-from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate, ChatForwardsRestricted
+from pyrogram.errors.exceptions.bad_request_400 import ChannelPrivate as ChannelPrivate_400
+from pyrogram.errors.exceptions.bad_request_400 import ChatForwardsRestricted as ChatForwardsRestricted_400
+from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate as ChannelPrivate_406
+from pyrogram.errors.exceptions.not_acceptable_406 import ChatForwardsRestricted as ChatForwardsRestricted_406
 from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired, \
     Unauthorized
 from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, \
@@ -298,8 +301,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         hide_captions=True,
                         protect_content=False
                     )
-                except ChatForwardsRestricted:
-                    raise ChatForwardsRestricted
+                except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
+                    raise
                 except Exception as e:
                     if not last_message:
                         last_message = await client.send_message(
@@ -341,7 +344,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             url=target_link
                         )
                     ]]))
-        except ChatForwardsRestricted:
+        except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
             BotCallbackText.DOWNLOAD = f'{origin_link} {start_id} {end_id}'
             await client.send_message(
                 chat_id=message.from_user.id,
@@ -486,8 +489,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'{_t(KeyWord.LINK)}:"{link}" -> "{target_link}",'
                             f'{_t(KeyWord.STATUS)}:转发成功。'
                         )
-                    except ChatForwardsRestricted:
-                        await client.send_message(
+                    except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
+                        await self.bot.send_message(
                             chat_id=message.from_user.id,
                             text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{listen_chat_id}`存在内容保护限制。',
                             reply_parameters=ReplyParameters(message_id=message.id),
@@ -862,7 +865,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         '频道可能为私密频道或话题频道,请让当前账号加入该频道后再重试'
                 }
             }
-        except ChannelPrivate as e:
+        except (ChannelPrivate_400, ChannelPrivate_406) as e:
             return {
                 'chat_id': None, 'member_num': 0,
                 'link_type': None,
