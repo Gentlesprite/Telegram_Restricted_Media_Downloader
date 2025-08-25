@@ -5,11 +5,12 @@
 # File:config.py
 import os
 import sys
+import logging
 import datetime
 from typing import Union
 
-from module import yaml
-from module import log, console, PLATFORM, APPDATA_PATH, CustomDumper
+from module import yaml, GLOBAL_CONFIG_NAME, GLOBAL_CONFIG_PATH, FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL
+from module import log, console, PLATFORM, CustomDumper
 from module.language import _t
 from module.path_tool import gen_backup_config, safe_delete
 from module.enums import KeyWord, GetStdioParams, ProcessConfig
@@ -414,16 +415,48 @@ class Config:
 
 
 class GlobalConfig:
-    FILE_NAME: str = '.CONFIG.yaml'
-    PATH: str = os.path.join(APPDATA_PATH, FILE_NAME)
+    FILE_NAME: str = GLOBAL_CONFIG_NAME
+    PATH: str = GLOBAL_CONFIG_PATH
     TEMPLATE: dict = {
-        'notice': True
+        'notice': True,
+        'file_log_level': logging.getLevelName(FILE_LOG_LEVEL),
+        'console_log_level': logging.getLevelName(CONSOLE_LOG_LEVEL)
     }
 
     def __init__(self):
         self.config_path: str = GlobalConfig.PATH
-        self.config: dict = GlobalConfig.TEMPLATE
+        self.config: dict = GlobalConfig.TEMPLATE.copy()
         self.__load_config()
+        self.__check_params(self.config.copy())
+
+    def __check_params(self, config: dict) -> None:
+        """检查配置文件的参数是否完整。"""
+        # 如果 config 为 None，初始化为一个空字典。
+        if config is None:
+            config = {}
+
+        def add_missing_keys(target, template, log_message) -> None:
+            """添加缺失的配置文件参数。"""
+            for key, value in template.items():
+                if key not in target:
+                    target[key] = value
+                    console.log(log_message.format(key))
+
+        def remove_extra_keys(target, template, log_message) -> None:
+            """删除多余的配置文件参数。"""
+            keys_to_remove: list = [key for key in target.keys() if key not in template]
+            for key in keys_to_remove:
+                target.pop(key)
+                console.log(log_message.format(key))
+
+        # 处理父级参数。
+        add_missing_keys(target=config, template=GlobalConfig.TEMPLATE, log_message='"{}"不在全局配置文件中,已添加。')
+        # 删除父级模板中没有的字段。
+        remove_extra_keys(config, GlobalConfig.TEMPLATE, '"{}"不在模板中,已删除。')
+
+        if config != self.config:
+            self.config = config
+            self.save_config(self.config)
 
     def __load_config(self) -> None:
         """加载全局配置文件。"""
@@ -431,12 +464,17 @@ class GlobalConfig:
             if not os.path.exists(GlobalConfig.PATH):
                 with open(file=GlobalConfig.PATH, mode='w', encoding='UTF-8') as f:
                     yaml.dump(GlobalConfig.TEMPLATE, f, Dumper=CustomDumper)
-            else:
-                with open(file=GlobalConfig.PATH, mode='r', encoding='UTF-8') as f:
-                    self.config = yaml.safe_load(f)
+                return
+            with open(file=GlobalConfig.PATH, mode='r', encoding='UTF-8') as f:
+                config = yaml.safe_load(f)
+                if config:
+                    self.config = config
+                else:
+                    raise ValueError('The file is empty or has invalid format.')
         except Exception as e:
-            log.error(f'读取全局配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
-            self.config: dict = GlobalConfig.TEMPLATE
+            log.error(f'检测到无效或损坏的全局配置文件。已生成新的模板文件. . .{_t(KeyWord.REASON)}:"{e}"')
+            self.config: dict = GlobalConfig.TEMPLATE.copy()
+            self.save_config(self.config)
 
     def save_config(self, config: dict) -> None:
         """保存配置文件。"""

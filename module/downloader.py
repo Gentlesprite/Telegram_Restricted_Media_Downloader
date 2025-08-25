@@ -41,7 +41,6 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     def __init__(self):
         super().__init__()
-        MetaData.print_helper()
         self.loop = asyncio.get_event_loop()
         self.event = asyncio.Event()
         self.queue = asyncio.Queue()
@@ -193,10 +192,18 @@ class TelegramRestrictedMediaDownloader(Bot):
             await callback_query.message.delete()
             await self.help(client, callback_query.message)
         elif callback_data == BotCallbackText.DOWNLOAD:
-            origin_link, start_id, end_id = callback_data.split()
+            command: str = ''
+            data: list = callback_data.split()
+            callback_data_len: int = len(data)
+            if callback_data_len == 1:
+                link = data[0]
+                command = f'/download {link}'
+            elif callback_data_len == 3:
+                origin_link, start_id, end_id = data
+                command = f'/download {origin_link} {start_id} {end_id}'
             await self.app.client.send_message(
                 chat_id=callback_query.message.from_user.id,
-                text=f'/download {origin_link} {start_id} {end_id}',
+                text=command,
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
             await callback_query.message.edit_reply_markup(
@@ -490,6 +497,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'{_t(KeyWord.STATUS)}:转发成功。'
                         )
                     except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
+                        BotCallbackText.DOWNLOAD = f'https://t.me/{meta.get('chat_id')}/{meta.get('message').id}'
                         await self.bot.send_message(
                             chat_id=message.from_user.id,
                             text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{listen_chat_id}`存在内容保护限制。',
