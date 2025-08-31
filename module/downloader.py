@@ -403,7 +403,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     _listen_chat[_link] = handler
                     self.user.add_handler(handler)
                     return True
-                except PeerIdInvalid:
+                except PeerIdInvalid as e:
                     chat_id, topic_id = None, None
                     l_link, _ = _link.split()
 
@@ -412,22 +412,25 @@ class TelegramRestrictedMediaDownloader(Bot):
                             r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/(\d+))?$',
                             s.lower())
 
-                    def _get_c_t(m):
+                    def _get_c_t(m, catch=True):
                         c, t = None, None
                         try:
                             c = utils.get_channel_id(int(m.group(1)))
                             t = int(m.group(2))
                         except ValueError:
                             t = m.group(1)
+                        if catch and not all([c, t]):
+                            raise ValueError('Can not parse chat id or topic id.')
                         return c, t
 
-                    match = _get_m(l_link)
-                    if match:
-                        chat_id, topic_id = _get_c_t(match)
-                    else:
-                        match = _get_m(format_chat_link(l_link))
+                    try:
+                        match = _get_m(l_link)
                         if match:
                             chat_id, topic_id = _get_c_t(match)
+                    except ValueError:
+                        match = _get_m(format_chat_link(l_link))
+                        if match:
+                            chat_id, topic_id = _get_c_t(match, False)
                     if all([chat_id, topic_id]):
                         handler = MessageHandler(
                             _callback,
@@ -436,7 +439,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                         _listen_chat[_link] = handler
                         self.user.add_handler(handler)
                         return True
-                    raise
+                    await client.send_message(
+                        chat_id=message.from_user.id,
+                        reply_parameters=ReplyParameters(message_id=message.id),
+                        link_preview_options=LINK_PREVIEW_OPTIONS,
+                        text=f'⚠️⚠️⚠️无法读取⚠️⚠️⚠️\n`{_link}`\n(具体原因请前往终端查看报错信息)'
+                    )
+                    log.error(f'频道"{_link}"解析失败,{_t(KeyWord.REASON)}:"{e}"')
+                    return False
                 except Exception as e:
                     await client.send_message(
                         chat_id=message.from_user.id,
