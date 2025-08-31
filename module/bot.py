@@ -323,12 +323,6 @@ class Bot:
                     client=client,
                     message=message):
                 return None
-            o_link: str = format_chat_link(args[1])
-            t_link: str = format_chat_link(args[2])
-            if args[1] != o_link:
-                await client.delete_messages(chat_id=message.from_user.id, message_ids=message.id)
-                await self.send_message_to_bot(text=f'/forward {o_link} {t_link} {start_id} {end_id}', catch=False)
-                return None
         except Exception as e:
             await client.send_message(
                 chat_id=message.from_user.id,
@@ -336,7 +330,11 @@ class Bot:
                 text=f'❌❌❌命令错误❌❌❌\n{e}\n请使用`/forward https://t.me/A https://t.me/B 1 100`'
             )
             return None
-        return {'origin_link': o_link, 'target_link': t_link, 'message_range': [start_id, end_id]}
+        return {
+            'origin_link': format_chat_link(args[1]),
+            'target_link': format_chat_link(args[2]),
+            'message_range': [start_id, end_id]
+        }
 
     async def exit(
             self,
