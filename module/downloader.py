@@ -363,12 +363,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                         callback_data=BotCallbackText.DOWNLOAD
                     )
                 ]]))
-        except AttributeError as e:  # todo 支持话题频道的转发。
+        except AttributeError as e:
             log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)\n❌❌❌注意:目前暂不支持转发话题频道❌❌❌'
+                text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
             )
         except (ValueError, KeyError, UsernameInvalid):
             msg: str = ''

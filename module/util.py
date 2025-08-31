@@ -44,3 +44,20 @@ def safe_message(text: str, max_length: int = 3969) -> List[str]:
         part1 = text[:max_length]
         part2 = text[max_length:]
         return [part1] + safe_message(part2, max_length)
+
+
+def format_chat_link(url: str):
+    parts: list = url.strip('/').split('/')
+    len_parts: int = len(parts)
+    if len_parts > 3:
+        if len_parts >= 5:
+            if parts[3] == 'c' and len(parts) >= 6:
+                return '/'.join(parts[:6])  # 对于包含/c/的URL,取到第6个部分。
+            else:
+                return '/'.join(parts[:5])  # 对于普通URL,取到第5个部分。
+        else:
+            if parts[3] == 'c' and len_parts >= 5:
+                return '/'.join(parts[:5])  # 对于/c/类型但只有5个部分的URL,取前5个部分。
+            elif parts[3] != 'c' and len_parts >= 4:
+                return '/'.join(parts[:4])  # 对于普通类型但只有4个部分的URL,取前4个部分。
+    return url
