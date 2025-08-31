@@ -420,7 +420,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         except ValueError:
                             t = m.group(1)
                         if catch and not all([c, t]):
-                            raise ValueError('Can not parse chat id or topic id.')
+                            raise ValueError('Invalid chat id or topic id.')
                         return c, t
 
                     try:
