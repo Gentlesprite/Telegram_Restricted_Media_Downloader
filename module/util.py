@@ -49,15 +49,21 @@ def safe_message(text: str, max_length: int = 3969) -> List[str]:
 def format_chat_link(url: str):
     parts: list = url.strip('/').split('/')
     len_parts: int = len(parts)
+
     if len_parts > 3:
-        if len_parts >= 5:
-            if parts[3] == 'c' and len(parts) >= 6:
-                return '/'.join(parts[:6])  # 对于包含/c/的URL,取到第6个部分。
-            else:
-                return '/'.join(parts[:5])  # 对于普通URL,取到第5个部分。
-        else:
-            if parts[3] == 'c' and len_parts >= 5:
-                return '/'.join(parts[:5])  # 对于/c/类型但只有5个部分的URL,取前5个部分。
-            elif parts[3] != 'c' and len_parts >= 4:
-                return '/'.join(parts[:4])  # 对于普通类型但只有4个部分的URL,取前4个部分。
+        # 判断是否是/c/类型的频道链接(确保是独立的'c'部分)。
+        if parts[3] == 'c' and len_parts >= 5:  # 对于/c/类型。
+            if len_parts >= 7:
+                # 7个部分时,保留前6个部分(去掉最后一个)。
+                return '/'.join(parts[:6])  # https://t.me/c/2495197831/100/200 -> https://t.me/c/2495197831/100
+            elif len_parts >= 6:
+                # 6个部分时,保留前5个部分 (去掉最后一个)。
+                return '/'.join(parts[:5])  # https://t.me/c/2530641322/1 -> https://t.me/c/2530641322
+        else:  # 对于普通类型。
+            if len_parts >= 6:
+                # 6个部分时,保留前5个部分(去掉最后一个)。
+                return '/'.join(parts[:5])  # https://t.me/coustomer/5/1 -> https://t.me/coustomer/5
+            elif len_parts >= 5:
+                # 5个部分时,保留前4个部分(去掉最后一个)。
+                return '/'.join(parts[:4])  # https://t.me/coustomer/144 -> https://t.me/coustomer
     return url
