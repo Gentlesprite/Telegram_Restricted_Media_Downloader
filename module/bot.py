@@ -364,7 +364,7 @@ class Bot:
         text: str = message.text
         args: list = text.split()
         command: str = args[0]
-        links: list = args[1:]
+        links: list = [format_chat_link(i) for i in args[1:]]
         if text.startswith('/listen_download'):
             if len(args) == 1:
                 await client.send_message(

@@ -22,16 +22,15 @@ from pyrogram.errors.exceptions.not_acceptable_406 import ChatForwardsRestricted
 from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired, \
     Unauthorized
 from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, \
-    BotMethodInvalid, MessageNotModified, UsernameNotOccupied
+    BotMethodInvalid, MessageNotModified, UsernameNotOccupied, PeerIdInvalid
 
 from module import console, log, utils, LINK_PREVIEW_OPTIONS, SLEEP_THRESHOLD
 from module.bot import Bot
 from module.task import Task
 from module.language import _t
-from module.util import safe_message
 from module.app import Application, MetaData
-from module.util import truncate_display_filename
 from module.stdio import ProgressBar, Base64Image
+from module.util import safe_message, truncate_display_filename, format_chat_link
 from module.enums import LinkType, DownloadStatus, KeyWord, BotCallbackText, BotButton, BotMessage, DownloadType
 from module.path_tool import is_file_duplicate, safe_delete, get_file_size, split_path, compare_file_size, \
     move_to_save_directory
@@ -404,6 +403,40 @@ class TelegramRestrictedMediaDownloader(Bot):
                     _listen_chat[_link] = handler
                     self.user.add_handler(handler)
                     return True
+                except PeerIdInvalid:
+                    chat_id, topic_id = None, None
+                    l_link, _ = _link.split()
+
+                    def _get_m(s: str):
+                        return re.match(
+                            r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/(\d+))?$',
+                            s.lower())
+
+                    def _get_c_t(m):
+                        c, t = None, None
+                        try:
+                            c = utils.get_channel_id(int(m.group(1)))
+                            t = int(m.group(2))
+                        except ValueError:
+                            t = m.group(1)
+                        return c, t
+
+                    match = _get_m(l_link)
+                    if match:
+                        chat_id, topic_id = _get_c_t(match)
+                    else:
+                        match = _get_m(format_chat_link(l_link))
+                        if match:
+                            chat_id, topic_id = _get_c_t(match)
+                    if all([chat_id, topic_id]):
+                        handler = MessageHandler(
+                            _callback,
+                            filters=pyrogram.filters.chat(chat_id) & pyrogram.filters.topic(topic_id)
+                        )
+                        _listen_chat[_link] = handler
+                        self.user.add_handler(handler)
+                        return True
+                    raise
                 except Exception as e:
                     await client.send_message(
                         chat_id=message.from_user.id,
