@@ -116,6 +116,9 @@ def move_to_save_directory(temp_file_path: str, save_directory: str) -> dict:
     try:
         os.makedirs(save_directory, exist_ok=True)
         if os.path.isdir(save_directory):
+            file_name: str = split_path(temp_file_path).get('file_name')
+            if os.path.exists(os.path.join(save_directory, file_name)):
+                return {'e_code': f'"{file_name}"已存在于保存路径无法移动,请手动解决冲突。'}
             shutil.move(temp_file_path, save_directory)
             return {'e_code': None}
         else:
