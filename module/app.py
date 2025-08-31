@@ -132,7 +132,17 @@ class Application(Config, StatisticalTable):
                     dot=False
                 )
             )
-            _file: str = os.path.join(self.temp_directory, validate_title(_file_name))
+            try:
+                chat_id = str(message.chat.id)
+                if chat_id:
+                    temp_directory_with_chat_id: str = os.path.join(self.temp_directory, chat_id)
+                    os.makedirs(temp_directory_with_chat_id, exist_ok=True)
+                    _file: str = os.path.join(temp_directory_with_chat_id, validate_title(_file_name))
+                else:
+                    raise ValueError('chat id is empty.')
+            except Exception as e:
+                _file: str = os.path.join(self.temp_directory, validate_title(_file_name))
+                log.warning(f'拼接临时路径时,无法获取频道id,原因:{e}')
             return _file
 
         def _process_photo(msg_obj: pyrogram.types, _dtype: str) -> str:
