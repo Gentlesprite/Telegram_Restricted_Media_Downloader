@@ -32,7 +32,6 @@ class Application(Config, StatisticalTable):
         self.client = self.build_client()
         self.__get_download_type()
         self.current_task_num: int = 0
-        self.max_retry_count: int = 3
 
     def build_client(self) -> pyrogram.Client:
         """用填写的配置文件,构造pyrogram客户端。"""

@@ -53,6 +53,7 @@ class KeyWord:
     RELOAD_TIMES: str = 'reload times'
     CURRENT_TASK: str = 'current task'
     REASON: str = 'reason'
+    RESUME: str = 'resume'
 
 
 class Extension:
@@ -254,7 +255,7 @@ class Validator:
         return os.path.isdir(save_directory)
 
     @staticmethod
-    def is_valid_max_download_task(max_tasks: int) -> bool:
+    def is_valid_number(max_tasks: int) -> bool:
         try:
             return int(max_tasks) > 0
         except ValueError:
@@ -340,14 +341,15 @@ class ProcessConfig:
             'links': 3,
             'save_directory': 4,
             'max_download_task': 5,
-            'download_type': 6,
-            'is_shutdown': 7,
-            'enable_proxy': 8,
-            'config_proxy': 9,
-            'scheme': 10,
-            'hostname': 11,
-            'port': 12,
-            'proxy_authentication': 13
+            'max_retry_count': 6,
+            'download_type': 7,
+            'is_shutdown': 8,
+            'enable_proxy': 9,
+            'config_proxy': 10,
+            'scheme': 11,
+            'hostname': 12,
+            'port': 13,
+            'proxy_authentication': 14
         }
         return color[_stdio_queue.get(key)]
 
@@ -624,7 +626,7 @@ class GetStdioParams:
                     max_download_task = last_record
                 if max_download_task == '':
                     max_download_task = 5
-                if Validator.is_valid_max_download_task(max_download_task):
+                if Validator.is_valid_number(max_download_task):
                     console.print(f'已设置「max_download_task」为:「{max_download_task}」',
                                   style=ProcessConfig.stdio_style('max_download_task'))
                     return {
@@ -633,6 +635,29 @@ class GetStdioParams:
                     }
                 else:
                     log.warning(f'意外的参数:"{max_download_task}",任务数必须是「正整数」,请重新输入!')
+            except Exception as e:
+                log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{e}"')
+
+    @staticmethod
+    def get_max_retry_count(last_record) -> dict:
+        default_prompt: str = '(默认5)' if last_record is None else ''
+        while True:
+            try:
+                max_retry_count = console.input(
+                    f'请输入任务失败时「最大重试次数」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」{default_prompt}:').strip()
+                if max_retry_count == '' and last_record is not None:
+                    max_retry_count = last_record
+                if max_retry_count == '':
+                    max_retry_count = 5
+                if Validator.is_valid_number(max_retry_count):
+                    console.print(f'已设置「max_retry_count」为:「{max_retry_count}」',
+                                  style=ProcessConfig.stdio_style('max_retry_count'))
+                    return {
+                        'max_retry_count': int(max_retry_count),
+                        'record_flag': True
+                    }
+                else:
+                    log.warning(f'意外的参数:"{max_retry_count}",最大重试次数必须是「正整数」,请重新输入!')
             except Exception as e:
                 log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{e}"')
 
@@ -834,7 +859,8 @@ class BotCommandText:
     EXIT: tuple = ('exit', '退出软件。')
     LISTEN_DOWNLOAD: tuple = ('listen_download',
                               '实时监听该链接的最新消息(视频和图片)进行下载。\n`/listen_download https://t.me/A https://t.me/B https://t.me/n`')
-    LISTEN_FORWARD: tuple = ('listen_forward', '实时监听该链接的最新消息(任意消息)进行转发。\n`/listen_forward 监听频道 转发频道`')
+    LISTEN_FORWARD: tuple = (
+        'listen_forward', '实时监听该链接的最新消息(任意消息)进行转发。\n`/listen_forward 监听频道 转发频道`')
     LISTEN_INFO: tuple = ('listen_info', '查看当前已经创建的监听信息。')
 
     @staticmethod

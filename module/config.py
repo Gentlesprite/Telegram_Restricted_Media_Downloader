@@ -36,7 +36,8 @@ class Config:
         'save_directory': None,  # v1.3.0 将配置文件中save_path的参数名修改为save_directory。
         'max_download_task': None,
         'is_shutdown': None,
-        'download_type': None
+        'download_type': None,
+        'max_retry_count': None
     }
     TEMP_DIRECTORY: str = os.path.join(os.getcwd(), 'temp')
     BACKUP_DIRECTORY: str = 'ConfigBackup'
@@ -68,7 +69,9 @@ class Config:
         self.is_shutdown: bool = self.config.get('is_shutdown')
         self.links: str = self.config.get('links')
         self.max_download_task: int = self.config.get('max_download_task') if isinstance(
-            self.config.get('max_download_task'), int) else 3
+            self.config.get('max_download_task'), int) else 5
+        self.max_retry_count: int = self.config.get('max_retry_count') if isinstance(
+            self.config.get('max_retry_count'), int) else 5
         self.proxy: dict = self.config.get('proxy', {})
         self.enable_proxy: dict | None = self.proxy if self.proxy.get('enable_proxy') else None
         self.save_directory: str = self.config.get('save_directory')
@@ -258,6 +261,8 @@ class Config:
             _save_directory: Union[str, None] = pre_load_config.get('save_directory')
             _max_download_task: Union[int, None] = pre_load_config.get('max_download_task') if isinstance(
                 pre_load_config.get('max_download_task'), int) else None  # v1.4.0 修复同时下载任务数不询问是否配置问题。
+            _max_retry_count: Union[int, None] = pre_load_config.get('max_retry_count') if isinstance(
+                pre_load_config.get('max_retry_count'), int) else None
             _download_type: Union[list, None] = pre_load_config.get('download_type')
             _is_shutdown: Union[bool, None] = pre_load_config.get('is_shutdown')
             _proxy_config: dict = pre_load_config.get('proxy', {})
@@ -315,6 +320,12 @@ class Config:
                 if record_flag:
                     self.record_flag = record_flag
                     pre_load_config['max_download_task'] = max_download_task
+            if not _max_retry_count or self.re_config:
+                max_retry_count, record_flag = gsp.get_max_retry_count(
+                    last_record=self.last_record.get('max_retry_count')).values()
+                if record_flag:
+                    self.record_flag = record_flag
+                    pre_load_config['max_retry_count'] = max_retry_count
             if not _download_type or self.re_config:
                 download_type, record_flag = gsp.get_download_type(
                     last_record=self.last_record.get('download_type')).values()

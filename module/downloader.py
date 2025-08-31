@@ -9,7 +9,7 @@ import sys
 import asyncio
 from functools import partial
 from sqlite3 import OperationalError
-from typing import Tuple, Union
+from typing import Tuple, Union, Callable
 
 import pyrogram
 from pyrogram.handlers import MessageHandler
@@ -608,6 +608,37 @@ class TelegramRestrictedMediaDownloader(Bot):
             else:
                 raise ValueError('Invalid message link.')
 
+    async def resume_download(
+            self,
+            message,
+            file_name: str,
+            progress: Callable = None,
+            progress_args: tuple = (),
+            chunk_size: int = 1024 * 1024
+    ) -> str:
+        temp_path = f'{file_name}.temp'
+        if os.path.exists(file_name):  # 检查是否已完整下载。
+            console.log(
+                f'{_t(KeyWord.RESUME)}:"{file_name}",'
+                f'{_t(KeyWord.STATUS)}:{_t(KeyWord.ALREADY_EXIST)}')
+            return file_name
+        downloaded = os.path.getsize(temp_path) if os.path.exists(temp_path) else 0  # 获取已下载的字节数。
+        if downloaded == 0:
+            mode = 'wb'
+        else:
+            mode = 'ab'
+            console.log(
+                f'{_t(KeyWord.RESUME)}:"{file_name}",'
+                f'{_t(KeyWord.ERROR_SIZE)}:{MetaData.suitable_units_display(downloaded)}。')
+        with open(file=temp_path, mode=mode) as f:
+            skip_chunks: int = downloaded // chunk_size  # 计算要跳过的块数。
+            async for chunk in self.app.client.stream_media(message, offset=skip_chunks):
+                f.write(chunk)
+                downloaded += len(chunk)
+                progress(downloaded, *progress_args)
+        os.rename(temp_path, file_name)  # 下载完成后重命名文件。
+        return file_name
+
     @staticmethod
     async def __is_group(message) -> Tuple[Union[bool, None], Union[list, None]]:
         try:
@@ -682,11 +713,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                         total=sever_file_size
                     )
                     _task = self.loop.create_task(
-                        self.app.client.download_media(
+                        self.resume_download(
                             message=message,
-                            progress_args=(self.pb.progress, task_id),
+                            progress_args=(sever_file_size, self.pb.progress, task_id),
                             progress=self.pb.download_bar,
-                            file_name=temp_file_path)
+                            file_name=temp_file_path
+                        )
                     )
                     MetaData.print_current_task_num(self.app.current_task_num)
                     _task.add_done_callback(
@@ -744,7 +776,6 @@ class TelegramRestrictedMediaDownloader(Bot):
             f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(temp_file_path, DownloadStatus.FAILURE))},'
             f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
         )
-        safe_delete(file_p_d=temp_file_path)  # v1.2.9 修复临时文件删除失败的问题。
         return False
 
     @Task.on_complete

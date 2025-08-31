@@ -29,7 +29,8 @@ translations: dict = {
     'reload': ['[重新下载]'],
     'reload times': ['[重试次数]'],
     'current task': ['[当前任务数]'],
-    'reason': ['原因']
+    'reason': ['原因'],
+    'resume': ['[断点续传]']
 }
 
 
