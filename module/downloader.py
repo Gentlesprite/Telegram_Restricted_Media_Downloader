@@ -610,18 +610,21 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     async def resume_download(
             self,
-            message,
+            message: Union[pyrogram.types, str],
             file_name: str,
             progress: Callable = None,
             progress_args: tuple = (),
-            chunk_size: int = 1024 * 1024
+            chunk_size: int = 1024 * 1024,
+            compare_size: Union[int, None] = None  # 不为None时,将通过大小比对判断是否为完整文件。
     ) -> str:
         temp_path = f'{file_name}.temp'
-        if os.path.exists(file_name):  # 检查是否已完整下载。
-            console.log(
-                f'{_t(KeyWord.RESUME)}:"{file_name}",'
-                f'{_t(KeyWord.STATUS)}:{_t(KeyWord.ALREADY_EXIST)}')
-            return file_name
+        if os.path.exists(file_name) and compare_size:  # 检查是否已完整下载。
+            local_file_size: int = get_file_size(file_path=temp_path)
+            if compare_file_size(a_size=local_file_size, b_size=compare_size):
+                console.log(
+                    f'{_t(KeyWord.RESUME)}:"{file_name}",'
+                    f'{_t(KeyWord.STATUS)}:{_t(KeyWord.ALREADY_EXIST)}')
+                return file_name
         downloaded = os.path.getsize(temp_path) if os.path.exists(temp_path) else 0  # 获取已下载的字节数。
         if downloaded == 0:
             mode = 'wb'
@@ -632,7 +635,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 f'{_t(KeyWord.ERROR_SIZE)}:{MetaData.suitable_units_display(downloaded)}。')
         with open(file=temp_path, mode=mode) as f:
             skip_chunks: int = downloaded // chunk_size  # 计算要跳过的块数。
-            async for chunk in self.app.client.stream_media(message, offset=skip_chunks):
+            async for chunk in self.app.client.stream_media(message=message, offset=skip_chunks):
                 f.write(chunk)
                 downloaded += len(chunk)
                 progress(downloaded, *progress_args)
@@ -715,9 +718,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     _task = self.loop.create_task(
                         self.resume_download(
                             message=message,
-                            progress_args=(sever_file_size, self.pb.progress, task_id),
+                            file_name=temp_file_path,
                             progress=self.pb.download_bar,
-                            file_name=temp_file_path
+                            progress_args=(sever_file_size, self.pb.progress, task_id),
+                            compare_size=sever_file_size
                         )
                     )
                     MetaData.print_current_task_num(self.app.current_task_num)

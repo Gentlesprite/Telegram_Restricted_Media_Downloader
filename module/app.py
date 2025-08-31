@@ -107,6 +107,20 @@ class Application(Config, StatisticalTable):
         file: str = ''
         os.makedirs(self.temp_directory, exist_ok=True)
 
+        def splice_chat_id(_file_name) -> str:
+            try:
+                chat_id = str(message.chat.id)
+                if chat_id:
+                    temp_directory_with_chat_id: str = os.path.join(self.temp_directory, chat_id)
+                    os.makedirs(temp_directory_with_chat_id, exist_ok=True)
+                    _file: str = os.path.join(temp_directory_with_chat_id, validate_title(_file_name))
+                else:
+                    raise ValueError('chat id is empty.')
+            except Exception as e:
+                _file: str = os.path.join(self.temp_directory, validate_title(_file_name))
+                log.warning(f'拼接临时路径时,无法获取频道id,原因:{e}')
+            return _file
+
         def _process_video(msg_obj: pyrogram.types, _dtype: str) -> str:
             """处理视频文件的逻辑。"""
             _default_mtype: str = 'video/mp4'  # v1.2.8 健全获取文件名逻辑。
@@ -132,18 +146,7 @@ class Application(Config, StatisticalTable):
                     dot=False
                 )
             )
-            try:
-                chat_id = str(message.chat.id)
-                if chat_id:
-                    temp_directory_with_chat_id: str = os.path.join(self.temp_directory, chat_id)
-                    os.makedirs(temp_directory_with_chat_id, exist_ok=True)
-                    _file: str = os.path.join(temp_directory_with_chat_id, validate_title(_file_name))
-                else:
-                    raise ValueError('chat id is empty.')
-            except Exception as e:
-                _file: str = os.path.join(self.temp_directory, validate_title(_file_name))
-                log.warning(f'拼接临时路径时,无法获取频道id,原因:{e}')
-            return _file
+            return splice_chat_id(_file_name)
 
         def _process_photo(msg_obj: pyrogram.types, _dtype: str) -> str:
             """处理视频图片的逻辑。"""
@@ -167,8 +170,7 @@ class Application(Config, StatisticalTable):
                 getattr(_meta_obj, 'file_unique_id', 'None'),
                 _extension
             )
-            _file: str = os.path.join(self.temp_directory, validate_title(_file_name))
-            return _file
+            return splice_chat_id(_file_name)
 
         if dtype == DownloadType.VIDEO:
             file: str = _process_video(msg_obj=message, _dtype=dtype)
