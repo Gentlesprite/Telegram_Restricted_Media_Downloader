@@ -15,7 +15,7 @@ from pyrogram.types.bots_and_keyboards import BotCommand, InlineKeyboardButton, 
 from module import __version__, __copyright__, __license__, SOFTWARE_FULL_NAME, LINK_PREVIEW_OPTIONS
 from module.language import _t
 from module.config import GlobalConfig
-from module.util import safe_index, safe_message, format_chat_link
+from module.util import safe_index, safe_message
 from module.enums import BotCommandText, BotMessage, BotCallbackText, BotButton, KeyWord
 
 
@@ -331,8 +331,8 @@ class Bot:
             )
             return None
         return {
-            'origin_link': format_chat_link(args[1]),
-            'target_link': format_chat_link(args[2]),
+            'origin_link': args[1],
+            'target_link': args[2],
             'message_range': [start_id, end_id]
         }
 
@@ -364,7 +364,7 @@ class Bot:
         text: str = message.text
         args: list = text.split()
         command: str = args[0]
-        links: list = [format_chat_link(i) for i in args[1:]]
+        links: list = args[1:]
         if text.startswith('/listen_download'):
             if len(args) == 1:
                 await client.send_message(
