@@ -33,7 +33,7 @@ from module.stdio import ProgressBar, Base64Image
 from module.util import safe_message, truncate_display_filename, format_chat_link
 from module.enums import LinkType, DownloadStatus, KeyWord, BotCallbackText, BotButton, BotMessage, DownloadType
 from module.path_tool import is_file_duplicate, safe_delete, get_file_size, split_path, compare_file_size, \
-    move_to_save_directory
+    move_to_save_directory, safe_replace
 
 
 class TelegramRestrictedMediaDownloader(Bot):
@@ -661,13 +661,33 @@ class TelegramRestrictedMediaDownloader(Bot):
             compare_size: Union[int, None] = None  # 不为None时,将通过大小比对判断是否为完整文件。
     ) -> str:
         temp_path = f'{file_name}.temp'
-        if os.path.exists(file_name) and compare_size:  # 检查是否已完整下载。
-            local_file_size: int = get_file_size(file_path=temp_path)
+        if os.path.exists(file_name) and compare_size:
+            local_file_size: int = get_file_size(file_path=file_name)
             if compare_file_size(a_size=local_file_size, b_size=compare_size):
                 console.log(
                     f'{_t(KeyWord.RESUME)}:"{file_name}",'
                     f'{_t(KeyWord.STATUS)}:{_t(KeyWord.ALREADY_EXIST)}')
                 return file_name
+            else:
+                result: str = safe_replace(origin_file=file_name, overwrite_file=temp_path).get('e_code')
+                log.warning(result) if result is not None else None
+                log.warning(
+                    f'不完整的文件"{file_name}",'
+                    f'更改文件名作为缓存:[{file_name}]({get_file_size(file_name)}) -> [{temp_path}]({compare_size})。')
+        if os.path.exists(temp_path) and compare_size:
+            local_file_size: int = get_file_size(file_path=temp_path)
+            if compare_file_size(a_size=local_file_size, b_size=compare_size):
+                console.log(
+                    f'{_t(KeyWord.RESUME)}:"{temp_path}",'
+                    f'{_t(KeyWord.STATUS)}:{_t(KeyWord.ALREADY_EXIST)}')
+                result: str = safe_replace(origin_file=temp_path, overwrite_file=file_name).get('e_code')
+                log.warning(result) if result is not None else None
+                return file_name
+            elif local_file_size > compare_size:
+                safe_delete(temp_path)
+                log.warning(
+                    f'错误的缓存文件"{temp_path}",'
+                    f'已清除({_t(KeyWord.ERROR_SIZE)}:{local_file_size} > {_t(KeyWord.ACTUAL_SIZE)}:{compare_size})。')
         downloaded = os.path.getsize(temp_path) if os.path.exists(temp_path) else 0  # 获取已下载的字节数。
         if downloaded == 0:
             mode = 'wb'
@@ -682,7 +702,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                 f.write(chunk)
                 downloaded += len(chunk)
                 progress(downloaded, *progress_args)
-        os.rename(temp_path, file_name)  # 下载完成后重命名文件。
+        if compare_size is None or compare_file_size(a_size=downloaded, b_size=compare_size):
+            result: str = safe_replace(origin_file=temp_path, overwrite_file=file_name).get('e_code')
+            log.warning(result) if result is not None else None
+            log.info(
+                f'"{temp_path}"下载完成,更改文件名:[{temp_path}]({get_file_size(temp_path)}) -> [{file_name}]({compare_size})')
         return file_name
 
     @staticmethod

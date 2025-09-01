@@ -111,6 +111,26 @@ def safe_delete(file_p_d: str) -> bool:
         return False
 
 
+def safe_replace(origin_file: str, overwrite_file: str) -> dict:
+    e_code = None
+    if not os.path.isfile(origin_file):
+        e_code = f'"{origin_file}"不存在或不是一个文件。'
+        return {'e_code': e_code}
+
+    try:
+        os.replace(origin_file, overwrite_file)
+    except OSError as e:
+        if 'Invalid cross-device link' in str(e):
+            try:
+                shutil.move(origin_file, overwrite_file)
+            except Exception as e2:
+                e_code = f'移动文件失败,原因:"{e2}"'
+        else:
+            e_code = f'覆盖文件失败,原因:"{e}"'
+
+    return {'e_code': e_code}
+
+
 def move_to_save_directory(temp_file_path: str, save_directory: str) -> dict:
     """移动文件到指定路径。"""
     try:
