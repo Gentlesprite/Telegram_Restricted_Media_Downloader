@@ -540,7 +540,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'{_t(KeyWord.STATUS)}:转发成功。'
                         )
                     except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
-                        BotCallbackText.DOWNLOAD = f'https://t.me/{meta.get('chat_id')}/{meta.get('message').id}'
+                        BotCallbackText.DOWNLOAD = f'https://t.me/{meta.get("chat_id")}/{meta.get("message").id}'
                         await self.bot.send_message(
                             chat_id=message.from_user.id,
                             text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{listen_chat_id}`存在内容保护限制。',
