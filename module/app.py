@@ -246,7 +246,8 @@ class Application(Config, StatisticalTable):
         if self.download_type is not None and (
                 DownloadType.VIDEO in self.download_type or DownloadType.PHOTO in self.download_type):
             self.record_dtype.update(self.download_type)  # v1.2.4 修复特定情况结束后不显示表格问题。
-            self.download_type.append(DownloadType.DOCUMENT)
+            if DownloadType.DOCUMENT not in self.download_type:
+                self.download_type.append(DownloadType.DOCUMENT)
         else:
             self.download_type: list = [_ for _ in DownloadType()]
             self.record_dtype: set = {
