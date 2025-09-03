@@ -254,7 +254,8 @@ class Application(Config, StatisticalTable):
                 DownloadType.PHOTO
             }  # v1.2.4 修复此处报错问题v1.2.3此处有致命错误。
             console.log('已使用[#f08a5d]「默认」[/#f08a5d]下载类型:「3.视频和图片」。')
-        self.save_config(self.config)
+        list(set(self.download_type))
+        self.save_config(config=self.config)
 
     def shutdown_task(self, second: int) -> None:
         """下载完成后自动关机的功能。"""

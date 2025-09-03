@@ -33,7 +33,6 @@ class StatisticalTable:
 
     def print_count_table(
             self,
-            record_dtype: set,
             export: bool = False,
             only_export: bool = False,
             export_directory: str = os.path.join(

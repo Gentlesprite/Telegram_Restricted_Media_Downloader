@@ -428,6 +428,7 @@ class Config:
         try:
             with open(file=self.config_path, mode='w', encoding='UTF-8') as f:
                 yaml.dump(config, f)
+            log.info('配置文件已保存。')
         except Exception as e:
             log.error(f'保存配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
 
@@ -506,6 +507,7 @@ class BaseConfig:
         try:
             with open(file=self.config_path, mode='w', encoding='UTF-8') as f:
                 yaml.dump(config, f)
+            log.info('全局配置文件已保存。')
         except Exception as e:
             log.error(f'保存全局配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
         finally:

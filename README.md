@@ -219,6 +219,8 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
    - 当用户**未选择**下载**所有支持的类型**时，在**用户所选择的类型**下载完成后(或使用机器人发送**链接统计表**)，尽管所有用户指定类型的文件已经下载完成，当**链接统计表**显示`完成率`不为`100%`时，代表该链接还存在其他用户未指定的文件类型，但实际用户所指定的类型已经下载完成了，是正常情况。
    
+   - 版本`≥v1.6.5`起已支持**导出表格**功能，通过该命令可在运行时控制**是否**在退出后**导出指定类型的表格**。
+   
    **计数统计表**的使用，如下图所示:
    
    ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_19.png)

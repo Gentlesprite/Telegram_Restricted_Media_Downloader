@@ -151,6 +151,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             try:
                 self.gc.config[BotCallbackText.NOTICE] = not self.gc.config.get(BotCallbackText.NOTICE)
                 self.gc.save_config(self.gc.config)
+                p: str = f'机器人消息通知已{"启用" if self.gc.config.get(BotCallbackText.NOTICE) else "禁用"}。'
+                log.info(p)
+                console.log(p, style='#FF4689')
                 await kb.toggle_setting_button(global_config=self.gc.config, user_config=self.app.config)
             except Exception as e:
                 await callback_query.message.reply_text(
@@ -208,7 +211,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 self.app.save_config(self.app.config)
                 p: str = f'退出后关机已经{"启用" if self.app.config.get("is_shutdown") else "禁用"}。'
                 log.info(p)
-                console.log(p)
+                console.log(p, style='#FF4689')
                 await kb.toggle_setting_button(global_config=self.gc.config, user_config=self.app.config)
             except Exception as e:
                 await callback_query.message.reply_text('启用或禁用自动关机失败\n(具体原因请前往终端查看报错信息)')
@@ -231,7 +234,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _prompt_string: str = '计数统计表'
                 _false_text: str = '😵😵😵当前没有任何下载。'
                 _choice: str = BotCallbackText.EXPORT_COUNT_TABLE
-                res: Union[bool, None] = self.app.print_count_table(record_dtype=self.app.record_dtype)
+                res: Union[bool, None] = self.app.print_count_table()
             if res:
                 await asyncio.gather(
                     callback_query.message.edit_text(f'👌👌👌`{_prompt_string}`已发送至您的「终端」请注意查收。'),
@@ -247,9 +250,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             async def _toggle_button(_table_type):
                 export_config: dict = self.gc.config.get('export_table')
                 export_config[_table_type] = not export_config.get(_table_type)
-                p: str = f'退出后导出{"链接统计表" if _table_type == "link" else "计数统计表"}已经{"启用" if export_config.get(_table_type) else "禁用"}。'
-                log.info(p)
-                console.log(p)
+                _p: str = f'退出后导出{"链接统计表" if _table_type == "link" else "计数统计表"}已经{"启用" if export_config.get(_table_type) else "禁用"}。'
+                log.info(_p)
+                console.log(_p, style='#FF4689')
                 self.gc.save_config(self.gc.config)
                 await kb.toggle_table_button(
                     config=self.gc.config,
@@ -273,7 +276,6 @@ class TelegramRestrictedMediaDownloader(Bot):
             elif callback_data == BotCallbackText.EXPORT_COUNT_TABLE:
                 _prompt_string: str = '计数统计表'
                 res: Union[bool, None] = self.app.print_count_table(
-                    record_dtype=self.app.record_dtype,
                     export=True,
                     only_export=True
                 )
@@ -1269,7 +1271,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     export=self.gc.get_config('export_table').get('link')
                 )
                 self.app.print_count_table(
-                    record_dtype=self.app.record_dtype,
                     export=self.gc.get_config('export_table').get('count')
                 )
                 MetaData.pay()
