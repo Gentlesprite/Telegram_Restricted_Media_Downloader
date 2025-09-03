@@ -10,6 +10,7 @@ ConfigBackup/
 tests/
 test*
 downloads/
+DownloadRecordForm/
 # ignore files
 *.exe
 *.yaml

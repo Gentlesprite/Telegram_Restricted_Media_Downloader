@@ -1181,8 +1181,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.is_running = False
             self.pb.progress.stop()
             if not record_error:
-                self.app.print_link_table(link_info=Task.LINK_INFO)
-                self.app.print_count_table(record_dtype=self.app.record_dtype)
+                self.app.print_link_table(link_info=Task.LINK_INFO, export=True)
+                self.app.print_count_table(record_dtype=self.app.record_dtype, export=True)
                 MetaData.pay()
                 self.app.process_shutdown(60) if len(self.running_log) == 2 else None  # v1.2.8如果并未打开客户端执行任何下载,则不执行关机。
             self.app.ctrl_c()

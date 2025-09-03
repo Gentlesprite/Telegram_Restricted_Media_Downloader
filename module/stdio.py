@@ -3,10 +3,16 @@
 # Software:PyCharm
 # Time:2025/2/25 1:11
 # File:stdio.py
-import qrcode
+import os
+import sys
+import csv
 import base64
+import datetime
+
 from io import BytesIO
 from typing import Union
+
+import qrcode
 
 from rich.style import Style
 from rich.table import Table
@@ -25,8 +31,18 @@ class StatisticalTable:
         self.success_video, self.success_photo = set(), set()
         self.failure_video, self.failure_photo = set(), set()
 
-    def print_count_table(self, record_dtype: set) -> None:
+    def print_count_table(
+            self,
+            record_dtype: set,
+            export: bool = False,
+            export_directory: str = os.path.join(
+                os.path.dirname(os.path.abspath(sys.argv[0])),
+                'DownloadRecordForm',
+                'CountForm'
+            )
+    ) -> None:
         """打印统计的下载信息的表格。"""
+        os.makedirs(export_directory, exist_ok=True) if export else 0
         header: tuple = ('种类&状态', '成功下载', '失败下载', '跳过下载', '合计')
         success_video: int = len(self.success_video)
         failure_video: int = len(self.failure_video)
@@ -37,75 +53,98 @@ class StatisticalTable:
         total_video: int = sum([success_video, failure_video, skip_video])
         total_photo: int = sum([success_photo, failure_photo, skip_photo])
         rdt_length: int = len(record_dtype)
+        log.error(record_dtype)
         if rdt_length == 1:
             _compare_dtype: list = list(record_dtype)[0]
             if _compare_dtype == DownloadType.VIDEO:  # 只有视频的情况。
-                video_table = PanelTable(
-                    title='视频下载统计',
-                    header=header,
-                    data=[
-                        [
-                            _t(DownloadType.VIDEO),
-                            success_video,
-                            failure_video,
-                            skip_video,
-                            total_video
-                        ],
-                        [
-                            '合计', success_video,
-                            failure_video,
-                            skip_video,
-                            total_video
-                        ]
-                    ]
-                )
-                video_table.print_meta()
+                table_data = [
+                    [_t(DownloadType.VIDEO), success_video, failure_video, skip_video, total_video],
+                    ['合计', success_video, failure_video, skip_video, total_video]
+                ]
+                if export:
+                    with open(
+                            file=os.path.join(
+                                export_directory,
+                                f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_视频下载统计.csv'
+                            ),
+                            mode='w',
+                            newline='',
+                            encoding='utf-8-sig'
+                    ) as f:
+                        writer = csv.writer(f)
+                        writer.writerow(header)
+                        writer.writerows(table_data)
+                else:
+                    video_table = PanelTable(
+                        title='视频下载统计',
+                        header=header,
+                        data=table_data
+                    )
+                    video_table.print_meta()
+
             if _compare_dtype == DownloadType.PHOTO:  # 只有图片的情况。
+                table_data = [
+                    [_t(DownloadType.PHOTO), success_photo, failure_photo, skip_photo, total_photo],
+                    ['合计', success_photo, failure_photo, skip_photo, total_photo]
+                ]
+                if export:
+                    with open(
+                            file=os.path.join(
+                                export_directory,
+                                f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_图片下载统计.csv'
+                            ),
+                            mode='w',
+                            newline='',
+                            encoding='utf-8-sig'
+                    ) as f:
+                        writer = csv.writer(f)
+                        writer.writerow(header)
+                        writer.writerows(table_data)
                 photo_table = PanelTable(
                     title='图片下载统计',
                     header=header,
-                    data=[
-                        [
-                            _t(DownloadType.PHOTO),
-                            success_photo,
-                            failure_photo,
-                            skip_photo,
-                            total_photo
-                        ],
-                        [
-                            '合计', success_photo,
-                            failure_photo,
-                            skip_photo,
-                            total_photo
-                        ]
-                    ]
+                    data=table_data
                 )
                 photo_table.print_meta()
+
         elif rdt_length == 2:
+            table_data = [
+                [_t(DownloadType.VIDEO), success_video, failure_video, skip_video, total_video],
+                [_t(DownloadType.PHOTO), success_photo, failure_photo, skip_photo, total_photo],
+                ['合计', sum([success_video, success_photo]),
+                 sum([failure_video, failure_photo]),
+                 sum([skip_video, skip_photo]),
+                 sum([total_video, total_photo])]
+            ]
+            if export:
+                os.makedirs(export_directory, exist_ok=True)
+                with open(file=os.path.join(
+                        export_directory,
+                        f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_媒体下载统计.csv'
+                ),
+                        mode='w',
+                        newline='',
+                        encoding='utf-8-sig') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(header)
+                    writer.writerows(table_data)
             media_table = PanelTable(
                 title='媒体下载统计',
                 header=header,
-                data=[
-                    [_t(DownloadType.VIDEO),
-                     success_video,
-                     failure_video,
-                     skip_video,
-                     total_video],
-                    [_t(DownloadType.PHOTO),
-                     success_photo,
-                     failure_photo,
-                     skip_photo,
-                     total_photo],
-                    ['合计', sum([success_video, success_photo]),
-                     sum([failure_video, failure_photo]),
-                     sum([skip_video, skip_photo]),
-                     sum([total_video, total_photo])]
-                ]
+                data=table_data
             )
             media_table.print_meta()
 
     @staticmethod
-    def print_link_table(link_info: dict) -> Union[bool, str]:
+    def print_link_table(
+            link_info: dict,
+            export: bool = False,
+            export_directory: str = os.path.join(
+                os.path.dirname(os.path.abspath(sys.argv[0])),
+                'DownloadRecordForm',
+                'LinkForm'
+            )
+    ) -> Union[bool, str]:
         """打印统计的下载链接信息的表格。"""
         try:
             data: list = []
@@ -126,7 +165,23 @@ class StatisticalTable:
                 else:
                     error_info = '\n'.join([f'{fn}: {err}' for fn, err in error_msg.items()])
                 data.append([index, link, file_names, complete_rate, error_info])
+
             if data:
+                if export:
+                    os.makedirs(export_directory, exist_ok=True)
+                    # 导出为CSV文件。
+                    with open(file=os.path.join(
+                            export_directory,
+                            f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_下载链接统计.csv'
+                    ),
+                            mode='w',
+                            newline='',
+                            encoding='utf-8-sig'
+                    ) as f:
+                        writer = csv.writer(f)
+                        writer.writerow(['编号', '链接', '文件名', '完成率', '错误信息'])
+                        writer.writerows(data)
+
                 panel_table = PanelTable(
                     title='下载链接统计',
                     header=('编号', '链接', '文件名', '完成率', '错误信息'),
