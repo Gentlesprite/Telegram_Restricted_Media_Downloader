@@ -427,6 +427,8 @@ class GetStdioParams:
                             if input_buffer:
                                 input_buffer.pop()
                                 print('\b \b', end='', flush=True)  # 删除控制台上的最后一个字符。
+                        elif char in ('\x00', '\xe0'):  # 上下左右键。
+                            _ = msvcrt.getwch()
                         else:
                             input_buffer.append(char)
                             console.print(char, end='')
