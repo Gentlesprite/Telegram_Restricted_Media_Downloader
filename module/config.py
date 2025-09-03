@@ -164,7 +164,11 @@ class Config:
                     self.record_flag = True
 
         # 处理父级参数。
-        add_missing_keys(target=config, template=Config.TEMPLATE, log_message='"{}"不在配置文件中,已添加。')
+        add_missing_keys(
+            target=config,
+            template=Config.TEMPLATE,
+            log_message='"{}"不在配置文件中,已添加。'
+        )
         # 特殊处理 proxy 参数。
         if 'proxy' in config:
             proxy_template = Config.TEMPLATE.get('proxy')
@@ -175,11 +179,23 @@ class Config:
                 proxy_config: dict = {}
                 config['proxy'] = proxy_config
 
-            add_missing_keys(proxy_config, proxy_template, '"{}"不在proxy配置中,已添加。')
-            remove_extra_keys(proxy_config, proxy_template, '"{}"不在proxy模板中,已删除。')
+            add_missing_keys(
+                target=proxy_config,
+                template=proxy_template,
+                log_message='"{}"不在proxy配置中,已添加。'
+            )
+            remove_extra_keys(
+                target=proxy_config,
+                template=proxy_template,
+                log_message='"{}"不在proxy模板中,已删除。'
+            )
 
         # 删除父级模板中没有的字段。
-        remove_extra_keys(config, Config.TEMPLATE, '"{}"不在模板中,已删除。')
+        remove_extra_keys(
+            target=config,
+            template=Config.TEMPLATE,
+            log_message='"{}"不在模板中,已删除。'
+        )
 
         return config
 
@@ -436,30 +452,32 @@ class BaseConfig:
         self.__load_config()
         self.__check_params(self.config.copy())
 
+    @staticmethod
+    def add_missing_keys(target, template, log_message) -> None:
+        """添加缺失的配置文件参数。"""
+        for key, value in template.items():
+            if key not in target:
+                target[key] = value
+                console.log(log_message.format(key))
+
+    @staticmethod
+    def remove_extra_keys(target, template, log_message) -> None:
+        """删除多余的配置文件参数。"""
+        keys_to_remove: list = [key for key in target.keys() if key not in template]
+        for key in keys_to_remove:
+            target.pop(key)
+            console.log(log_message.format(key))
+
     def __check_params(self, config: dict) -> None:
         """检查配置文件的参数是否完整。"""
         # 如果 config 为 None，初始化为一个空字典。
         if config is None:
             config = {}
 
-        def add_missing_keys(target, template, log_message) -> None:
-            """添加缺失的配置文件参数。"""
-            for key, value in template.items():
-                if key not in target:
-                    target[key] = value
-                    console.log(log_message.format(key))
-
-        def remove_extra_keys(target, template, log_message) -> None:
-            """删除多余的配置文件参数。"""
-            keys_to_remove: list = [key for key in target.keys() if key not in template]
-            for key in keys_to_remove:
-                target.pop(key)
-                console.log(log_message.format(key))
-
         # 处理父级参数。
-        add_missing_keys(target=config, template=self.TEMPLATE, log_message='"{}"不在全局配置文件中,已添加。')
+        self.add_missing_keys(target=config, template=self.TEMPLATE, log_message='"{}"不在全局配置文件中,已添加。')
         # 删除父级模板中没有的字段。
-        remove_extra_keys(config, self.TEMPLATE, '"{}"不在模板中,已删除。')
+        self.remove_extra_keys(config, self.TEMPLATE, '"{}"不在模板中,已删除。')
 
         if config != self.config:
             self.config = config
@@ -493,7 +511,7 @@ class BaseConfig:
         finally:
             self.config = config
 
-    def get_config(self, param, error_param: Union[str, None] = None) -> Union[str, None]:
+    def get_config(self, param, error_param=None) -> Union[str, None]:
         """获取实时的配置文件。"""
         self.__load_config()
         return self.config.get(param, error_param)
@@ -505,8 +523,50 @@ class GlobalConfig(BaseConfig):
     TEMPLATE: dict = {
         'notice': True,
         'file_log_level': logging.getLevelName(FILE_LOG_LEVEL),
-        'console_log_level': logging.getLevelName(CONSOLE_LOG_LEVEL)
+        'console_log_level': logging.getLevelName(CONSOLE_LOG_LEVEL),
+        'export_table': {
+            'link': False,
+            'count': False
+        }
     }
 
     def __init__(self):
         super().__init__()
+        self.__check_params(self.config.copy())
+
+    def __check_params(self, config: dict) -> None:
+        if config is None:
+            config = {}
+
+        # 处理父级参数。
+        self.add_missing_keys(
+            target=config,
+            template=self.TEMPLATE,
+            log_message='"{}"不在全局配置文件中,已添加。'
+        )
+        if 'export_table' in config:
+            export_template = self.TEMPLATE.get('export_table')
+            export_config = config.get('export_table')
+            if not isinstance(export_config, dict):
+                export_config: dict = {}
+                config['export_table'] = export_config
+            self.add_missing_keys(
+                target=export_config,
+                template=export_template,
+                log_message='"{}"不在export_table配置中,已添加。'
+            )
+            self.remove_extra_keys(
+                target=export_config,
+                template=export_template,
+                log_message='"{}"不在proxy模板中,已删除。'
+            )
+        # 删除父级模板中没有的字段。
+        self.remove_extra_keys(
+            target=config,
+            template=self.TEMPLATE,
+            log_message='"{}"不在模板中,已删除。'
+        )
+
+        if config != self.config:
+            self.config = config
+            self.save_config(self.config)
