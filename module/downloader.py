@@ -151,10 +151,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             try:
                 self.gc.config[BotCallbackText.NOTICE] = not self.gc.config.get(BotCallbackText.NOTICE)
                 self.gc.save_config(self.gc.config)
-                await kb.toggle_setting_button(config=self.gc.config)
+                await kb.toggle_setting_button(global_config=self.gc.config, user_config=self.app.config)
             except Exception as e:
-                await callback_query.message.reply_text('开启或关闭提醒失败\n(具体原因请前往终端查看报错信息)')
-                log.error(f'开启或关闭提醒失败,{_t(KeyWord.REASON)}:"{e}"')
+                await callback_query.message.reply_text('启用或禁用机器人消息通知失败\n(具体原因请前往终端查看报错信息)')
+                log.error(f'启用或禁用机器人消息通知失败,{_t(KeyWord.REASON)}:"{e}"')
         elif callback_data == BotCallbackText.PAY:
             res: Union[str, None] = await self.__send_pay_qr(
                 client=client,
@@ -201,8 +201,16 @@ class TelegramRestrictedMediaDownloader(Bot):
                 text='/listen_info',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
+        elif callback_data == BotCallbackText.SHUTDOWN:
+            try:
+                self.app.config['is_shutdown'] = not self.app.config.get('is_shutdown')
+                self.app.save_config(self.app.config)
+                await kb.toggle_setting_button(global_config=self.gc.config, user_config=self.app.config)
+            except Exception as e:
+                await callback_query.message.reply_text('启用或禁用自动关机失败\n(具体原因请前往终端查看报错信息)')
+                log.error(f'启用或禁用自动关机失败,{_t(KeyWord.REASON)}:"{e}"')
         elif callback_data == BotCallbackText.SETTING:
-            await kb.toggle_setting_button(config=self.gc.config)
+            await kb.toggle_setting_button(global_config=self.gc.config, user_config=self.app.config)
         elif callback_data == BotCallbackText.EXPORT_TABLE:
             await kb.toggle_table_button(config=self.gc.config)
         elif callback_data in (BotCallbackText.LINK_TABLE, BotCallbackText.COUNT_TABLE):
@@ -1249,10 +1257,14 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.is_running = False
             self.pb.progress.stop()
             if not record_error:
-                self.app.print_link_table(link_info=Task.LINK_INFO,
-                                          export=self.gc.get_config('export_table').get('link'))
-                self.app.print_count_table(record_dtype=self.app.record_dtype,
-                                           export=self.gc.get_config('export_table').get('count'))
+                self.app.print_link_table(
+                    link_info=Task.LINK_INFO,
+                    export=self.gc.get_config('export_table').get('link')
+                )
+                self.app.print_count_table(
+                    record_dtype=self.app.record_dtype,
+                    export=self.gc.get_config('export_table').get('count')
+                )
                 MetaData.pay()
                 self.app.process_shutdown(60) if len(self.running_log) == 2 else None  # v1.2.8如果并未打开客户端执行任何下载,则不执行关机。
             self.app.ctrl_c()

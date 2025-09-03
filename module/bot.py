@@ -772,14 +772,15 @@ class KeyboardButton:
 
     async def toggle_setting_button(
             self,
-            config: dict
+            global_config: dict,
+            user_config: dict
     ) -> None:
         try:
             await self.callback_query.message.edit_reply_markup(
                 InlineKeyboardMarkup([
                     [
                         InlineKeyboardButton(
-                            text=BotButton.CLOSE_NOTICE if config.get(
+                            text=BotButton.CLOSE_NOTICE if global_config.get(
                                 BotCallbackText.NOTICE) else BotButton.OPEN_NOTICE,
                             callback_data=BotCallbackText.NOTICE
 
@@ -787,6 +788,13 @@ class KeyboardButton:
                         InlineKeyboardButton(
                             text=BotButton.EXPORT_TABLE,
                             callback_data=BotCallbackText.EXPORT_TABLE
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.CLOSE_EXIT_SHUTDOWN if user_config.get(
+                                'is_shutdown') else BotButton.OPEN_EXIT_SHUTDOWN,
+                            callback_data=BotCallbackText.SHUTDOWN
                         )
                     ],
                     [
