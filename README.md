@@ -332,7 +332,8 @@ api_hash: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # 申请的api_hash。
 api_id: 'xxxxxxxx' # 申请的api_id。
 # bot_token(选填)如果不填,就不能使用机器人功能。可前往https://t.me/BotFather免费申请。
 bot_token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
-download_type: # 需要下载的类型。支持的参数:video,photo。
+download_type: # 需要下载的类型。支持的参数:video,photo,document。
+- document # 程序自动添加,用于下载文档类型文件里包含视频或图片的文件。
 - video 
 - photo
 is_shutdown: true # 下载完成后是否自动关机。支持的参数:true,false。
@@ -347,7 +348,7 @@ proxy: # 代理部分,如不使用请全部填null注意冒号后面有空格,�
   port: 10808 # 代理ip的端口。支持的参数:0~65535。
   username: null # 代理的账号,没有就填null。
   password: null # 代理的密码,没有就填null。
-save_directory: F:\directory\media\where\you\save # 下载的媒体保存的目录。(不支持网络路径)
+save_directory: F:\directory\media\where\you\save # 下载的媒体保存的目录(不支持网络路径)。
 ```
 
 ## 2.4.**使用注意事项:**
