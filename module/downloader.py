@@ -22,7 +22,7 @@ from pyrogram.errors.exceptions.not_acceptable_406 import ChatForwardsRestricted
 from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired, \
     Unauthorized
 from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, \
-    BotMethodInvalid, MessageNotModified, UsernameNotOccupied, PeerIdInvalid
+    BotMethodInvalid, UsernameNotOccupied, PeerIdInvalid
 
 from module import console, log, utils, LINK_PREVIEW_OPTIONS, SLEEP_THRESHOLD
 from module.bot import Bot, KeyboardButton
@@ -153,7 +153,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 self.gc.save_config(self.gc.config)
                 await kb.toggle_setting_button(global_config=self.gc.config, user_config=self.app.config)
             except Exception as e:
-                await callback_query.message.reply_text('启用或禁用机器人消息通知失败\n(具体原因请前往终端查看报错信息)')
+                await callback_query.message.reply_text(
+                    '启用或禁用机器人消息通知失败\n(具体原因请前往终端查看报错信息)')
                 log.error(f'启用或禁用机器人消息通知失败,{_t(KeyWord.REASON)}:"{e}"')
         elif callback_data == BotCallbackText.PAY:
             res: Union[str, None] = await self.__send_pay_qr(
@@ -205,6 +206,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             try:
                 self.app.config['is_shutdown'] = not self.app.config.get('is_shutdown')
                 self.app.save_config(self.app.config)
+                p: str = f'退出后关机已经{"启用" if self.app.config.get("is_shutdown") else "禁用"}。'
+                log.info(p)
+                console.log(p)
                 await kb.toggle_setting_button(global_config=self.gc.config, user_config=self.app.config)
             except Exception as e:
                 await callback_query.message.reply_text('启用或禁用自动关机失败\n(具体原因请前往终端查看报错信息)')
@@ -243,6 +247,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             async def _toggle_button(_table_type):
                 export_config: dict = self.gc.config.get('export_table')
                 export_config[_table_type] = not export_config.get(_table_type)
+                p: str = f'退出后导出{"链接统计表" if _table_type == "link" else "计数统计表"}已经{"启用" if export_config.get(_table_type) else "禁用"}。'
+                log.info(p)
+                console.log(p)
                 self.gc.save_config(self.gc.config)
                 await kb.toggle_table_button(
                     config=self.gc.config,

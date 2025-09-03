@@ -847,11 +847,11 @@ class KeyboardButton:
             if choice:
                 prompt: str = '链接' if choice == 'link' else '计数'
                 await self.callback_query.message.reply_text(
-                    f'设置开启或关闭导出{prompt}统计表失败\n(具体原因请前往终端查看报错信息)'
+                    f'设置启用或禁用导出{prompt}统计表失败\n(具体原因请前往终端查看报错信息)'
                 )
-                log.error(f'设置开启或关闭导出{prompt}统计表失败,{_t(KeyWord.REASON)}:"{_e}"')
+                log.error(f'设置启用或禁用导出{prompt}统计表失败,{_t(KeyWord.REASON)}:"{_e}"')
             else:
-                log.error(f'设置开启或关闭导出统计表失败,{_t(KeyWord.REASON)}:"{_e}"')
+                log.error(f'设置启用或禁用导出统计表失败,{_t(KeyWord.REASON)}:"{_e}"')
 
     async def back_table_button(self):
 

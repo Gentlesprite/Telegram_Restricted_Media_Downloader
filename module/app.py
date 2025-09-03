@@ -186,8 +186,7 @@ class Application(Config, StatisticalTable):
                 try:
                     extension = _mime_type.split('/')[-1]
                     file: str = f'{getattr(message, "id", "0")} - {datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.{extension if extension else "unknown"}'
-                except Exception as e:
-                    log.error(e)
+                except Exception as _:
                     file: str = f'{getattr(message, "id", "0")} - {datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.unknown'
         else:
             file: str = f'{getattr(message, "id", "0")} - {datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.unknown'
@@ -250,9 +249,12 @@ class Application(Config, StatisticalTable):
             self.download_type.append(DownloadType.DOCUMENT)
         else:
             self.download_type: list = [_ for _ in DownloadType()]
-            self.record_dtype: set = {DownloadType.VIDEO,
-                                      DownloadType.PHOTO}  # v1.2.4 修复此处报错问题v1.2.3此处有致命错误。
+            self.record_dtype: set = {
+                DownloadType.VIDEO,
+                DownloadType.PHOTO
+            }  # v1.2.4 修复此处报错问题v1.2.3此处有致命错误。
             console.log('已使用[#f08a5d]「默认」[/#f08a5d]下载类型:「3.视频和图片」。')
+        self.save_config(self.config)
 
     def shutdown_task(self, second: int) -> None:
         """下载完成后自动关机的功能。"""
