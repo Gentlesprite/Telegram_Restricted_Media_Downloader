@@ -42,7 +42,6 @@ class StatisticalTable:
             )
     ) -> Union[bool, None]:
         """打印统计的下载信息的表格。"""
-        os.makedirs(export_directory, exist_ok=True) if export else 0
         header: tuple = ('种类&状态', '成功下载', '失败下载', '跳过下载', '合计')
         success_video: int = len(self.success_video)
         failure_video: int = len(self.failure_video)
