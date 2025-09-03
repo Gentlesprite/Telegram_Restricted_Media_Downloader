@@ -161,8 +161,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             except MessageNotModified:
                 pass
             except Exception as e:
-                await callback_query.message.reply_text('关闭提醒失败\n(具体原因请前往终端查看报错信息)')
-                log.error(f'关闭提醒失败,{_t(KeyWord.REASON)}:"{e}"')
+                await callback_query.message.reply_text('开启或关闭提醒失败\n(具体原因请前往终端查看报错信息)')
+                log.error(f'开启或关闭提醒失败,{_t(KeyWord.REASON)}:"{e}"')
         elif callback_data == BotCallbackText.PAY:
             res: dict = await self.__send_pay_qr(
                 client=client,
@@ -312,6 +312,51 @@ class TelegramRestrictedMediaDownloader(Bot):
                 text='/listen_info',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
+        elif callback_data == BotCallbackText.SETTING:
+            await callback_query.message.edit_reply_markup(
+                InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.CLOSE_NOTICE if self.gc.config.get(
+                                BotCallbackText.NOTICE) else BotButton.OPEN_NOTICE,
+                            callback_data=BotCallbackText.NOTICE
+
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.EXPORT_TABLE,
+                            callback_data=BotCallbackText.EXPORT_TABLE
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.HELP_PAGE,
+                            callback_data=BotCallbackText.BACK_HELP
+                        )
+                    ]
+                ])
+            )
+        elif callback_data == BotCallbackText.EXPORT_TABLE:
+            await self.toggle_table_button(callback_query=callback_query, config=self.gc.config)
+        elif callback_data in (BotCallbackText.TOGGLE_LINK_TABLE, BotCallbackText.TOGGLE_COUNT_TABLE):
+            async def _toggle_button(_table_type):
+                try:
+                    export_config: dict = self.gc.config.get('export_table')
+                    export_config[_table_type] = not export_config.get(_table_type)
+                    self.gc.save_config(self.gc.config)
+                    await self.toggle_table_button(callback_query=callback_query, config=self.gc.config)
+                except MessageNotModified:
+                    pass
+                except Exception as _e:
+                    prompt: str = '链接' if _table_type == 'link' else '计数'
+                    await callback_query.message.reply_text(
+                        f'开启或关闭导出{prompt}统计表失败\n(具体原因请前往终端查看报错信息)'
+                    )
+                    log.error(f'开启或关闭导出{prompt}统计表失败,{_t(KeyWord.REASON)}:"{_e}"')
+
+            if callback_data == BotCallbackText.TOGGLE_LINK_TABLE:
+                await _toggle_button('link')
+            elif callback_data == BotCallbackText.TOGGLE_COUNT_TABLE:
+                await _toggle_button('count')
         elif callback_data in (BotCallbackText.EXPORT_LINK_TABLE, BotCallbackText.EXPORT_COUNT_TABLE):
             _prompt_string: str = ''
             res: Union[bool, None] = False
@@ -344,8 +389,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                             text=BotButton.RESELECT,
                             callback_data=BotCallbackText.BACK_TABLE
                         )
-                    ]
-                    , [
+                    ],
+                    [
                         InlineKeyboardButton(
                             text=BotButton.HELP_PAGE,
                             callback_data=BotCallbackText.BACK_HELP
@@ -1331,8 +1376,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.is_running = False
             self.pb.progress.stop()
             if not record_error:
-                self.app.print_link_table(link_info=Task.LINK_INFO, export=self.gc.get_config('export_table').get('link'))
-                self.app.print_count_table(record_dtype=self.app.record_dtype, export=self.gc.get_config('export_table').get('count'))
+                self.app.print_link_table(link_info=Task.LINK_INFO,
+                                          export=self.gc.get_config('export_table').get('link'))
+                self.app.print_count_table(record_dtype=self.app.record_dtype,
+                                           export=self.gc.get_config('export_table').get('count'))
                 MetaData.pay()
                 self.app.process_shutdown(60) if len(self.running_log) == 2 else None  # v1.2.8如果并未打开客户端执行任何下载,则不执行关机。
             self.app.ctrl_c()

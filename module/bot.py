@@ -219,8 +219,8 @@ class Bot:
                 ],
                 [
                     InlineKeyboardButton(
-                        BotButton.CLOSE_NOTICE if self.gc.config.get(BotCallbackText.NOTICE) else BotButton.OPEN_NOTICE,
-                        callback_data=BotCallbackText.NOTICE
+                        BotButton.SETTING,
+                        callback_data=BotCallbackText.SETTING
                     )
                 ]
             ]
@@ -725,3 +725,33 @@ class Bot:
             pass
         except (FloodWait, Exception) as e:
             return str(e)
+
+    @staticmethod
+    async def toggle_table_button(
+            callback_query: pyrogram.types.CallbackQuery,
+            config: dict
+    ):
+        await callback_query.message.edit_reply_markup(
+            InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.CLOSE_LINK_TABLE if config.get(
+                                'export_table').get('link') else BotButton.OPEN_LINK_TABLE,
+                            callback_data=BotCallbackText.TOGGLE_LINK_TABLE
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.CLOSE_COUNT_TABLE if config.get(
+                                'export_table').get('count') else BotButton.OPEN_COUNT_TABLE,
+                            callback_data=BotCallbackText.TOGGLE_COUNT_TABLE
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.RETURN,
+                            callback_data=BotCallbackText.SETTING
+                        )
+                    ]
+                ]
+            )
+        )

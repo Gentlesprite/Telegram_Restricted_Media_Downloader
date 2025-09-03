@@ -884,6 +884,10 @@ class BotCallbackText:
     LOOKUP_LISTEN_INFO: str = 'lookup_listen_info'
     EXPORT_LINK_TABLE: str = 'export_link_table'
     EXPORT_COUNT_TABLE: str = 'export_count_table'
+    TOGGLE_LINK_TABLE: str = 'toggle_link_table'
+    TOGGLE_COUNT_TABLE: str = 'toggle_count_table'
+    EXPORT_TABLE: str = 'export_table'
+    SETTING: str = 'setting'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
@@ -915,3 +919,9 @@ class BotButton:
     LOOKUP_LISTEN_INFO: str = '🔍查看监听信息'
     EXPORT_TABLE: str = '📊导出表格'
     RESELECT: str = '🔄重新选择'
+    SETTING: str = '⚙️设置'
+    OPEN_LINK_TABLE: str = '🔓开启导出链接表格'
+    CLOSE_LINK_TABLE: str = '🔒关闭导出链接表格'
+    OPEN_COUNT_TABLE: str = '🔓开启导出计数表格'
+    CLOSE_COUNT_TABLE: str = '🔒关闭导出计数表格'
+    RETURN: str = '🔙返回'
