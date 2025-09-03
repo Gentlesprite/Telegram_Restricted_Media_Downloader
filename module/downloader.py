@@ -25,7 +25,7 @@ from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInv
     BotMethodInvalid, MessageNotModified, UsernameNotOccupied, PeerIdInvalid
 
 from module import console, log, utils, LINK_PREVIEW_OPTIONS, SLEEP_THRESHOLD
-from module.bot import Bot
+from module.bot import Bot, KeyboardButton
 from module.task import Task
 from module.language import _t
 from module.app import Application, MetaData
@@ -95,28 +95,30 @@ class TelegramRestrictedMediaDownloader(Bot):
         )
 
     @staticmethod
-    async def __send_pay_qr(client: pyrogram.Client, chat_id, load_name: str) -> dict:
-        e_code: dict = {'e_code': None}
+    async def __send_pay_qr(
+            client: pyrogram.Client,
+            chat_id,
+            load_name: str
+    ) -> Union[list, str, None]:
         try:
             last_msg = await client.send_message(
                 chat_id=chat_id,
                 text=f'🙈🙈🙈请稍后🙈🙈🙈{load_name}加载中. . .',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
-            await client.send_photo(
+            tasks = [client.send_photo(
                 chat_id=chat_id,
                 photo=Base64Image.base64_to_binary_io(Base64Image.pay),
                 disable_notification=True
-            )
-            await client.edit_message_text(
-                chat_id=chat_id,
-                message_id=last_msg.id,
-                text=f'🐵🐵🐵{load_name}加载成功!🐵🐵🐵'
-            )
+            ),
+                client.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=last_msg.id,
+                    text=f'🐵🐵🐵{load_name}加载成功!🐵🐵🐵'
+                )]
+            await asyncio.gather(*tasks)
         except Exception as e:
-            e_code['e_code'] = e
-        finally:
-            return e_code
+            return str(e)
 
     async def start(
             self,
@@ -127,148 +129,44 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.last_message: pyrogram.types.Message = message
         if self.gc.config.get(BotCallbackText.NOTICE):
             chat_id = message.from_user.id
-            res: dict = await self.__send_pay_qr(client=client, chat_id=chat_id, load_name='机器人')
-            msg = '😊😊😊欢迎使用😊😊😊' if res.get('e_code') else '😊😊😊欢迎使用😊😊😊您的支持是我持续更新的动力。'
-            await client.send_message(chat_id=chat_id, text=msg, link_preview_options=LINK_PREVIEW_OPTIONS)
-            await super().start(client, message)
+            await asyncio.gather(
+                self.__send_pay_qr(
+                    client=client,
+                    chat_id=chat_id,
+                    load_name='机器人'
+                ),
+                super().start(client, message),
+                client.send_message(
+                    chat_id=chat_id,
+                    text='😊😊😊欢迎使用😊😊😊您的支持是我持续更新的动力。',
+                    link_preview_options=LINK_PREVIEW_OPTIONS)
+            )
 
     async def callback_data(self, client: pyrogram.Client, callback_query: pyrogram.types.CallbackQuery):
         callback_data = await super().callback_data(client, callback_query)
+        kb = KeyboardButton(callback_query)
         if callback_data is None:
             return None
         elif callback_data == BotCallbackText.NOTICE:
             try:
                 self.gc.config[BotCallbackText.NOTICE] = not self.gc.config.get(BotCallbackText.NOTICE)
                 self.gc.save_config(self.gc.config)
-                new_keyboard = []
-                for row in callback_query.message.reply_markup.inline_keyboard:
-                    new_row = []
-                    for button in row:
-                        if getattr(button, 'callback_data', None) == BotCallbackText.NOTICE:
-                            new_row.append(
-                                InlineKeyboardButton(
-                                    text=BotButton.CLOSE_NOTICE if self.gc.config.get(
-                                        BotCallbackText.NOTICE) else BotButton.OPEN_NOTICE,
-                                    callback_data=button.callback_data
-                                )
-                            )
-                            continue
-                        new_row.append(button)
-                    new_keyboard.append(new_row)
-                await callback_query.message.edit_reply_markup(
-                    InlineKeyboardMarkup(new_keyboard)
-                )
-            except MessageNotModified:
-                pass
+                await kb.toggle_setting_button(config=self.gc.config)
             except Exception as e:
                 await callback_query.message.reply_text('开启或关闭提醒失败\n(具体原因请前往终端查看报错信息)')
                 log.error(f'开启或关闭提醒失败,{_t(KeyWord.REASON)}:"{e}"')
         elif callback_data == BotCallbackText.PAY:
-            res: dict = await self.__send_pay_qr(
+            res: Union[str, None] = await self.__send_pay_qr(
                 client=client,
-                chat_id=callback_query.message.from_user.id,
+                chat_id=callback_query.from_user.id,  # v1.6.5 修复发送图片时chat_id错误问题。
                 load_name='收款码'
             )
             MetaData.pay()
-            if res.get('e_code'):
+            if res:
                 msg = '🥰🥰🥰\n收款「二维码」已发送至您的「终端」十分感谢您的支持!'
             else:
                 msg = '🥰🥰🥰\n收款「二维码」已发送至您的「终端」与「对话框」十分感谢您的支持!'
             await callback_query.message.reply_text(msg)
-        elif callback_data == BotCallbackText.LINK_TABLE:
-            res: Union[bool, None] = self.app.print_link_table(Task.LINK_INFO)
-            if res:
-                await callback_query.message.edit_text('🫡🫡🫡`链接统计表`已发送至您的「终端」请注意查收。')
-                await callback_query.message.edit_reply_markup(
-                    InlineKeyboardMarkup([
-                        [
-                            InlineKeyboardButton(
-                                text=BotButton.EXPORT_TABLE,
-                                callback_data=BotCallbackText.EXPORT_LINK_TABLE
-                            ),
-                            InlineKeyboardButton(
-                                text=BotButton.RESELECT,
-                                callback_data=BotCallbackText.BACK_TABLE
-                            )
-                        ],
-                        [
-                            InlineKeyboardButton(
-                                text=BotButton.HELP_PAGE,
-                                callback_data=BotCallbackText.BACK_HELP
-                            )
-                        ]
-                    ])
-                )
-                return None
-            elif res is False:
-                await callback_query.message.edit_text('😵😵😵没有链接需要统计。')
-            else:
-                await callback_query.message.edit_text(
-                    '😵‍💫😵‍💫😵‍💫`链接统计表`打印失败。\n(具体原因请前往终端查看报错信息)')
-            await callback_query.message.edit_reply_markup(
-                InlineKeyboardMarkup([
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.RESELECT,
-                            callback_data=BotCallbackText.BACK_TABLE
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.HELP_PAGE,
-                            callback_data=BotCallbackText.BACK_HELP
-                        )
-                    ]
-                ])
-            )
-        elif callback_data == BotCallbackText.COUNT_TABLE:
-            res: Union[bool, None] = self.app.print_count_table(record_dtype=self.app.record_dtype)
-            if res:
-                await callback_query.message.edit_text('👌👌👌`计数统计表`已发送至您的「终端」请注意查收。')
-                await callback_query.message.edit_reply_markup(
-                    InlineKeyboardMarkup([
-                        [
-                            InlineKeyboardButton(
-                                text=BotButton.EXPORT_TABLE,
-                                callback_data=BotCallbackText.EXPORT_COUNT_TABLE
-                            ),
-                            InlineKeyboardButton(
-                                text=BotButton.RESELECT,
-                                callback_data=BotCallbackText.BACK_TABLE
-                            )
-                        ],
-                        [
-                            InlineKeyboardButton(
-                                text=BotButton.HELP_PAGE,
-                                callback_data=BotCallbackText.BACK_HELP
-                            )
-                        ]
-                    ])
-                )
-                return None
-            elif res is False:
-                await callback_query.message.edit_text('😵😵😵当前没有任何下载。')
-            else:
-                await callback_query.message.edit_text(
-                    '😵‍💫😵‍💫😵‍💫`链接统计表`打印失败。\n(具体原因请前往终端查看报错信息)')
-            await callback_query.message.edit_reply_markup(
-                InlineKeyboardMarkup(
-                    [
-                        [
-                            InlineKeyboardButton(
-                                text=BotButton.RESELECT,
-                                callback_data=BotCallbackText.BACK_TABLE
-                            )
-                        ],
-                        [
-                            InlineKeyboardButton(
-                                text=BotButton.HELP_PAGE,
-                                callback_data=BotCallbackText.BACK_HELP
-                            )
-                        ]
-                    ]
-                )
-            )
         elif callback_data == BotCallbackText.BACK_HELP:
             meta: dict = await self.help()
             await asyncio.gather(
@@ -296,16 +194,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 text=command,
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
-            await callback_query.message.edit_reply_markup(
-                InlineKeyboardMarkup([
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.TASK_ASSIGN,
-                            callback_data=BotCallbackText.NULL
-                        )
-                    ]
-                ])
-            )
+            await kb.task_assign_button()
         elif callback_data == BotCallbackText.LOOKUP_LISTEN_INFO:
             await self.app.client.send_message(
                 chat_id=callback_query.message.from_user.id,
@@ -313,45 +202,44 @@ class TelegramRestrictedMediaDownloader(Bot):
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
         elif callback_data == BotCallbackText.SETTING:
-            await callback_query.message.edit_reply_markup(
-                InlineKeyboardMarkup([
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.CLOSE_NOTICE if self.gc.config.get(
-                                BotCallbackText.NOTICE) else BotButton.OPEN_NOTICE,
-                            callback_data=BotCallbackText.NOTICE
-
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.EXPORT_TABLE,
-                            callback_data=BotCallbackText.EXPORT_TABLE
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.HELP_PAGE,
-                            callback_data=BotCallbackText.BACK_HELP
-                        )
-                    ]
-                ])
-            )
+            await kb.toggle_setting_button(config=self.gc.config)
         elif callback_data == BotCallbackText.EXPORT_TABLE:
-            await self.toggle_table_button(callback_query=callback_query, config=self.gc.config)
+            await kb.toggle_table_button(config=self.gc.config)
+        elif callback_data in (BotCallbackText.LINK_TABLE, BotCallbackText.COUNT_TABLE):
+            _prompt_string: str = ''
+            _false_text: str = ''
+            _choice: str = ''
+            res: Union[bool, None] = None
+            if callback_data == BotCallbackText.LINK_TABLE:
+                _prompt_string: str = '链接统计表'
+                _false_text: str = '😵😵😵没有链接需要统计。'
+                _choice: str = BotCallbackText.EXPORT_LINK_TABLE
+                res: Union[bool, None] = self.app.print_link_table(Task.LINK_INFO)
+            elif callback_data == BotCallbackText.COUNT_TABLE:
+                _prompt_string: str = '计数统计表'
+                _false_text: str = '😵😵😵当前没有任何下载。'
+                _choice: str = BotCallbackText.EXPORT_COUNT_TABLE
+                res: Union[bool, None] = self.app.print_count_table(record_dtype=self.app.record_dtype)
+            if res:
+                await asyncio.gather(
+                    callback_query.message.edit_text(f'👌👌👌`{_prompt_string}`已发送至您的「终端」请注意查收。'),
+                    kb.choice_export_table_button(choice=_choice)
+                )
+            elif res is False:
+                await callback_query.message.edit_text(_false_text)
+            else:
+                await callback_query.message.edit_text(
+                    f'😵‍💫😵‍💫😵‍💫`{_prompt_string}`打印失败。\n(具体原因请前往终端查看报错信息)')
+            await kb.back_table_button()
         elif callback_data in (BotCallbackText.TOGGLE_LINK_TABLE, BotCallbackText.TOGGLE_COUNT_TABLE):
             async def _toggle_button(_table_type):
-                try:
-                    export_config: dict = self.gc.config.get('export_table')
-                    export_config[_table_type] = not export_config.get(_table_type)
-                    self.gc.save_config(self.gc.config)
-                    await self.toggle_table_button(callback_query=callback_query, config=self.gc.config)
-                except MessageNotModified:
-                    pass
-                except Exception as _e:
-                    prompt: str = '链接' if _table_type == 'link' else '计数'
-                    await callback_query.message.reply_text(
-                        f'开启或关闭导出{prompt}统计表失败\n(具体原因请前往终端查看报错信息)'
-                    )
-                    log.error(f'开启或关闭导出{prompt}统计表失败,{_t(KeyWord.REASON)}:"{_e}"')
+                export_config: dict = self.gc.config.get('export_table')
+                export_config[_table_type] = not export_config.get(_table_type)
+                self.gc.save_config(self.gc.config)
+                await kb.toggle_table_button(
+                    config=self.gc.config,
+                    choice=_table_type
+                )
 
             if callback_data == BotCallbackText.TOGGLE_LINK_TABLE:
                 await _toggle_button('link')
@@ -361,14 +249,14 @@ class TelegramRestrictedMediaDownloader(Bot):
             _prompt_string: str = ''
             res: Union[bool, None] = False
             if callback_data == BotCallbackText.EXPORT_LINK_TABLE:
-                _prompt_string = '链接统计表'
+                _prompt_string: str = '链接统计表'
                 res: Union[bool, None] = self.app.print_link_table(
                     link_info=Task.LINK_INFO,
                     export=True,
                     only_export=True
                 )
             elif callback_data == BotCallbackText.EXPORT_COUNT_TABLE:
-                _prompt_string = '计数统计表'
+                _prompt_string: str = '计数统计表'
                 res: Union[bool, None] = self.app.print_count_table(
                     record_dtype=self.app.record_dtype,
                     export=True,
@@ -382,22 +270,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             else:
                 await callback_query.message.edit_text(
                     f'😵‍💫😵‍💫😵‍💫`{_prompt_string}`导出失败。\n(具体原因请前往终端查看报错信息)')
-            await callback_query.message.edit_reply_markup(
-                InlineKeyboardMarkup([
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.RESELECT,
-                            callback_data=BotCallbackText.BACK_TABLE
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.HELP_PAGE,
-                            callback_data=BotCallbackText.BACK_HELP
-                        )
-                    ]
-                ])
-            )
+            await kb.back_table_button()
         elif callback_data.startswith((BotCallbackText.REMOVE_LISTEN_DOWNLOAD, BotCallbackText.REMOVE_LISTEN_FORWARD)):
             msg: str = ''
             await callback_query.message.edit_reply_markup()

@@ -12,7 +12,7 @@ from pyrogram.errors.exceptions.flood_420 import FloodWait
 from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified, AccessTokenInvalid, ButtonDataInvalid
 from pyrogram.types.bots_and_keyboards import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 
-from module import __version__, __copyright__, __license__, SOFTWARE_FULL_NAME, LINK_PREVIEW_OPTIONS
+from module import log, __version__, __copyright__, __license__, SOFTWARE_FULL_NAME, LINK_PREVIEW_OPTIONS
 from module.language import _t
 from module.config import GlobalConfig
 from module.util import safe_index, safe_message
@@ -739,30 +739,140 @@ class Bot:
         except (FloodWait, Exception) as e:
             return str(e)
 
-    @staticmethod
-    async def toggle_table_button(
-            callback_query: pyrogram.types.CallbackQuery,
-            config: dict
-    ):
-        await callback_query.message.edit_reply_markup(
-            InlineKeyboardMarkup(
+
+class KeyboardButton:
+    def __init__(self, callback_query: pyrogram.types.CallbackQuery):
+        self.callback_query = callback_query
+
+    async def choice_export_table_button(
+            self,
+            choice: Union[BotCallbackText, str]
+    ) -> None:
+        await self.callback_query.message.edit_reply_markup(InlineKeyboardMarkup(
+            [
                 [
+                    InlineKeyboardButton(
+                        text=BotButton.EXPORT_TABLE,
+                        callback_data=BotCallbackText.EXPORT_LINK_TABLE if choice == BotCallbackText.EXPORT_LINK_TABLE else BotCallbackText.EXPORT_COUNT_TABLE
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.RESELECT,
+                        callback_data=BotCallbackText.BACK_TABLE
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.HELP_PAGE,
+                        callback_data=BotCallbackText.BACK_HELP
+                    )
+                ]
+            ]
+        )
+        )
+
+    async def toggle_setting_button(
+            self,
+            config: dict
+    ) -> None:
+        try:
+            await self.callback_query.message.edit_reply_markup(
+                InlineKeyboardMarkup([
                     [
                         InlineKeyboardButton(
-                            text=BotButton.CLOSE_LINK_TABLE if config.get(
-                                'export_table').get('link') else BotButton.OPEN_LINK_TABLE,
-                            callback_data=BotCallbackText.TOGGLE_LINK_TABLE
+                            text=BotButton.CLOSE_NOTICE if config.get(
+                                BotCallbackText.NOTICE) else BotButton.OPEN_NOTICE,
+                            callback_data=BotCallbackText.NOTICE
+
                         ),
                         InlineKeyboardButton(
-                            text=BotButton.CLOSE_COUNT_TABLE if config.get(
-                                'export_table').get('count') else BotButton.OPEN_COUNT_TABLE,
-                            callback_data=BotCallbackText.TOGGLE_COUNT_TABLE
+                            text=BotButton.EXPORT_TABLE,
+                            callback_data=BotCallbackText.EXPORT_TABLE
                         )
                     ],
                     [
                         InlineKeyboardButton(
-                            text=BotButton.RETURN,
-                            callback_data=BotCallbackText.SETTING
+                            text=BotButton.HELP_PAGE,
+                            callback_data=BotCallbackText.BACK_HELP
+                        )
+                    ]
+                ])
+            )
+        except MessageNotModified:
+            pass
+        except Exception as e:
+            await self.callback_query.message.reply_text('切换按钮状态失败\n(具体原因请前往终端查看报错信息)')
+            log.error(f'切换按钮状态失败,{_t(KeyWord.REASON)}:"{e}"')
+
+    async def toggle_table_button(
+            self,
+            config: dict,
+            choice: Union[str, None] = None
+    ) -> None:
+        try:
+            await self.callback_query.message.edit_reply_markup(
+                InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.CLOSE_LINK_TABLE if config.get(
+                                    'export_table').get('link') else BotButton.OPEN_LINK_TABLE,
+                                callback_data=BotCallbackText.TOGGLE_LINK_TABLE
+                            ),
+                            InlineKeyboardButton(
+                                text=BotButton.CLOSE_COUNT_TABLE if config.get(
+                                    'export_table').get('count') else BotButton.OPEN_COUNT_TABLE,
+                                callback_data=BotCallbackText.TOGGLE_COUNT_TABLE
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.RETURN,
+                                callback_data=BotCallbackText.SETTING
+                            )
+                        ]
+                    ]
+                )
+            )
+        except MessageNotModified:
+            pass
+        except Exception as _e:
+            if choice:
+                prompt: str = '链接' if choice == 'link' else '计数'
+                await self.callback_query.message.reply_text(
+                    f'设置开启或关闭导出{prompt}统计表失败\n(具体原因请前往终端查看报错信息)'
+                )
+                log.error(f'设置开启或关闭导出{prompt}统计表失败,{_t(KeyWord.REASON)}:"{_e}"')
+            else:
+                log.error(f'设置开启或关闭导出统计表失败,{_t(KeyWord.REASON)}:"{_e}"')
+
+    async def back_table_button(self):
+
+        await self.callback_query.message.edit_reply_markup(
+            InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.RESELECT,
+                            callback_data=BotCallbackText.BACK_TABLE
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.HELP_PAGE,
+                            callback_data=BotCallbackText.BACK_HELP
+                        )
+                    ]
+                ]
+            ))
+
+    async def task_assign_button(self):
+        await self.callback_query.message.edit_reply_markup(
+            InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.TASK_ASSIGN,
+                            callback_data=BotCallbackText.NULL
                         )
                     ]
                 ]
