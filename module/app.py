@@ -51,7 +51,7 @@ class Application(Config, StatisticalTable):
 
     def process_shutdown(self, second: int) -> None:
         """处理关机逻辑。"""
-        self.shutdown_task(second=second) if self.is_shutdown else None
+        self.shutdown_task(second=second) if self.config.get('is_shutdown') else None
 
     def get_media_meta(self, message: pyrogram.types.Message, dtype) -> Dict[str, Union[int, str]]:
         """获取媒体元数据。"""

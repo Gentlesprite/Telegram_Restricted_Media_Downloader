@@ -174,8 +174,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         elif callback_data == BotCallbackText.BACK_HELP:
             meta: dict = await self.help()
             await asyncio.gather(
-                callback_query.message.edit_text(meta.get('text')),
-                callback_query.message.edit_reply_markup(meta.get('keyboard'))
+                callback_query.message.edit_reply_markup(meta.get('keyboard')),
+                callback_query.message.edit_text(meta.get('text'))
             )
         elif callback_data == BotCallbackText.BACK_TABLE:
             meta: dict = await self.table()
@@ -209,7 +209,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             try:
                 self.app.config['is_shutdown'] = not self.app.config.get('is_shutdown')
                 self.app.save_config(self.app.config)
-                p: str = f'退出后关机已经{"启用" if self.app.config.get("is_shutdown") else "禁用"}。'
+                p: str = f'退出后关机已{"启用" if self.app.config.get("is_shutdown") else "禁用"}。'
                 log.info(p)
                 console.log(p, style='#FF4689')
                 await kb.toggle_setting_button(global_config=self.gc.config, user_config=self.app.config)
@@ -250,7 +250,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             async def _toggle_button(_table_type):
                 export_config: dict = self.gc.config.get('export_table')
                 export_config[_table_type] = not export_config.get(_table_type)
-                _p: str = f'退出后导出{"链接统计表" if _table_type == "link" else "计数统计表"}已经{"启用" if export_config.get(_table_type) else "禁用"}。'
+                _p: str = f'退出后导出{"链接统计表" if _table_type == "link" else "计数统计表"}已{"启用" if export_config.get(_table_type) else "禁用"}。'
                 log.info(_p)
                 console.log(_p, style='#FF4689')
                 self.gc.save_config(self.gc.config)
@@ -885,7 +885,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。'
                         )
                         self.app.guess_file_type(file_name, DownloadStatus.SKIP)
-                        Task.LINK_INFO.get(link).get('file_name').add(file_name)
                         Task.LINK_INFO.get(link).get('error_msg')[file_name] = _error.replace('。', '')
                     else:
                         raise Exception('不支持或被忽略的类型。')
@@ -1010,8 +1009,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             await self.__add_task(chat_id, link_type, link, message, retry)
             return {
                 'chat_id': chat_id,
-                'link_type': link_type,
                 'member_num': member_num,
+                'link_type': link_type,
                 'status': DownloadStatus.DOWNLOADING,
                 'e_code': None
             }
@@ -1029,7 +1028,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             }
         except MsgIdInvalid as e:
             return {
-                'chat_id': None, 'member_num': 0,
+                'chat_id': None,
+                'member_num': 0,
                 'link_type': None,
                 'status': DownloadStatus.FAILURE,
                 'e_code': {
@@ -1040,7 +1040,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             }
         except UsernameInvalid as e:
             return {
-                'chat_id': None, 'member_num': 0,
+                'chat_id': None,
+                'member_num': 0,
                 'link_type': None,
                 'status': DownloadStatus.FAILURE,
                 'e_code': {
@@ -1051,7 +1052,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             }
         except ChannelInvalid as e:
             return {
-                'chat_id': None, 'member_num': 0,
+                'chat_id': None,
+                'member_num': 0,
                 'link_type': None,
                 'status': DownloadStatus.FAILURE,
                 'e_code': {
@@ -1062,7 +1064,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             }
         except ChannelPrivate_400 as e:
             return {
-                'chat_id': None, 'member_num': 0,
+                'chat_id': None,
+                'member_num': 0,
                 'link_type': None,
                 'status': DownloadStatus.FAILURE,
                 'e_code': {
@@ -1073,7 +1076,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             }
         except ChannelPrivate_406 as e:
             return {
-                'chat_id': None, 'member_num': 0,
+                'chat_id': None,
+                'member_num': 0,
                 'link_type': None,
                 'status': DownloadStatus.FAILURE,
                 'e_code': {
@@ -1086,7 +1090,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
             error_msg: str = '已删除旧会话文件' if res else '请手动删除软件目录下的sessions文件夹'
             return {
-                'chat_id': None, 'member_num': 0,
+                'chat_id': None,
+                'member_num': 0,
                 'link_type': None,
                 'status': DownloadStatus.FAILURE,
                 'e_code': {
@@ -1098,7 +1103,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             }
         except ValueError as e:
             return {
-                'chat_id': None, 'member_num': 0,
+                'chat_id': None,
+                'member_num': 0,
                 'link_type': None,
                 'status': DownloadStatus.FAILURE,
                 'e_code': {
@@ -1108,7 +1114,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             }
         except UsernameNotOccupied as e:
             return {
-                'chat_id': None, 'member_num': 0,
+                'chat_id': None,
+                'member_num': 0,
                 'link_type': None,
                 'status': DownloadStatus.FAILURE,
                 'e_code': {
@@ -1118,7 +1125,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         except Exception as e:
             log.exception(e)
             return {
-                'chat_id': None, 'member_num': 0,
+                'chat_id': None,
+                'member_num': 0,
                 'link_type': None,
                 'status': DownloadStatus.FAILURE,
                 'e_code': {
