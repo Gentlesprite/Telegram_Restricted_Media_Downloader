@@ -212,8 +212,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                             text=BotButton.RESELECT,
                             callback_data=BotCallbackText.BACK_TABLE
                         )
-                    ]
-                    , [
+                    ],
+                    [
                         InlineKeyboardButton(
                             text=BotButton.HELP_PAGE,
                             callback_data=BotCallbackText.BACK_HELP
@@ -252,34 +252,34 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await callback_query.message.edit_text(
                     '😵‍💫😵‍💫😵‍💫`链接统计表`打印失败。\n(具体原因请前往终端查看报错信息)')
             await callback_query.message.edit_reply_markup(
-                InlineKeyboardMarkup([
+                InlineKeyboardMarkup(
                     [
-                        InlineKeyboardButton(
-                            text=BotButton.RESELECT,
-                            callback_data=BotCallbackText.BACK_TABLE
-                        )
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.RESELECT,
+                                callback_data=BotCallbackText.BACK_TABLE
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.HELP_PAGE,
+                                callback_data=BotCallbackText.BACK_HELP
+                            )
+                        ]
                     ]
-                    , [
-                        InlineKeyboardButton(
-                            text=BotButton.HELP_PAGE,
-                            callback_data=BotCallbackText.BACK_HELP
-                        )
-                    ]
-                ])
+                )
             )
         elif callback_data == BotCallbackText.BACK_HELP:
-            await callback_query.message.delete()
-            await self.app.client.send_message(
-                chat_id=callback_query.message.from_user.id,
-                text='/help',
-                link_preview_options=LINK_PREVIEW_OPTIONS
+            meta: dict = await self.help()
+            await asyncio.gather(
+                callback_query.message.edit_text(meta.get('text')),
+                callback_query.message.edit_reply_markup(meta.get('keyboard'))
             )
         elif callback_data == BotCallbackText.BACK_TABLE:
-            await callback_query.message.delete()
-            await self.app.client.send_message(
-                chat_id=callback_query.message.from_user.id,
-                text='/table',
-                link_preview_options=LINK_PREVIEW_OPTIONS
+            meta: dict = await self.table()
+            await asyncio.gather(
+                callback_query.message.edit_text(meta.get('text')),
+                callback_query.message.edit_reply_markup(meta.get('keyboard'))
             )
         elif callback_data == BotCallbackText.DOWNLOAD:
             command: str = ''

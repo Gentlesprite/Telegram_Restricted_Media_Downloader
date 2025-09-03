@@ -192,12 +192,12 @@ class Bot:
                 last_bot_messages.append(last_bot_message)
         return last_bot_messages[-1]
 
+    @staticmethod
     async def help(
-            self,
-            client: pyrogram.Client,
-            message: pyrogram.types.Message
-    ) -> None:
-        func_keyboard = InlineKeyboardMarkup(
+            client: Union[pyrogram.Client, None] = None,
+            message: Union[pyrogram.types.Message, None] = None
+    ) -> Union[None, dict]:  # client与message都为None时,返回keyboard与text。
+        keyboard = InlineKeyboardMarkup(
             [
                 [
                     InlineKeyboardButton(
@@ -226,7 +226,7 @@ class Bot:
             ]
         )
 
-        msg = (
+        text = (
             f'`\n💎 {SOFTWARE_FULL_NAME} v{__version__} 💎\n'
             f'©️ {__copyright__.replace(" <https://github.com/Gentlesprite>", ".")}\n'
             f'📖 Licensed under the terms of the {__license__}.`\n'
@@ -240,11 +240,16 @@ class Bot:
             f'📲 {BotCommandText.with_description(BotCommandText.LISTEN_FORWARD)}\n'
             f'🔍 {BotCommandText.with_description(BotCommandText.LISTEN_INFO)}\n'
         )
+        if not all([client, message]):
+            return {
+                'keyboard': keyboard,
+                'text': text
+            }
         await client.send_message(
             chat_id=message.from_user.id,
-            text=msg,
+            text=text,
             link_preview_options=LINK_PREVIEW_OPTIONS,
-            reply_markup=func_keyboard
+            reply_markup=keyboard
         )
 
     async def start(
@@ -264,9 +269,11 @@ class Bot:
             return data
 
     @staticmethod
-    async def table(client: pyrogram.Client,
-                    message: pyrogram.types.Message) -> None:
-        choice_keyboard = InlineKeyboardMarkup(
+    async def table(
+            client: Union[pyrogram.Client, None] = None,
+            message: Union[pyrogram.types.Message, None] = None
+    ) -> Union[None, dict]:
+        keyboard = InlineKeyboardMarkup(
             [
                 [
                     InlineKeyboardButton(
@@ -287,11 +294,17 @@ class Bot:
                 ]
             ]
         )
+        text: str = '🧐🧐🧐请选择输出「统计表」的类型:'
+        if not all([client, message]):
+            return {
+                'keyboard': keyboard,
+                'text': text
+            }
         await client.send_message(
             chat_id=message.from_user.id,
-            text='🧐🧐🧐请选择输出「统计表」的类型:',
+            text=text,
             link_preview_options=LINK_PREVIEW_OPTIONS,
-            reply_markup=choice_keyboard
+            reply_markup=keyboard
         )
 
     async def get_forward_link_from_bot(
