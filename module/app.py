@@ -182,11 +182,15 @@ class Application(Config, StatisticalTable):
                 file: str = _process_video(msg_obj=message, _dtype=dtype)
             elif 'image' in _mime_type:
                 file: str = _process_photo(msg_obj=message, _dtype=dtype)
+            elif _mime_type:
+                try:
+                    extension = _mime_type.split('/')[-1]
+                    file: str = f'{getattr(message, "id", "0")} - {datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.{extension if extension else "unknown"}'
+                except Exception as e:
+                    log.error(e)
+                    file: str = f'{getattr(message, "id", "0")} - {datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.unknown'
         else:
-            file: str = os.path.join(
-                self.temp_directory,
-                f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")} - undefined.unknown'
-            )
+            file: str = f'{getattr(message, "id", "0")} - {datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.unknown'
         return truncate_filename(file)
 
     def __on_media_record(func):

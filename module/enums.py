@@ -876,11 +876,14 @@ class BotCallbackText:
     LINK_TABLE: str = 'link_table'
     COUNT_TABLE: str = 'count_table'
     BACK_HELP: str = 'back_help'
+    BACK_TABLE: str = 'back_table'
     NOTICE: str = 'notice'
     DOWNLOAD: str = 'download'
     REMOVE_LISTEN_DOWNLOAD: str = 'rld'
     REMOVE_LISTEN_FORWARD: str = 'rlf'
     LOOKUP_LISTEN_INFO: str = 'lookup_listen_info'
+    EXPORT_LINK_TABLE: str = 'export_link_table'
+    EXPORT_COUNT_TABLE: str = 'export_count_table'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
@@ -910,3 +913,5 @@ class BotButton:
     OK: str = '✅确定'
     CANCEL: str = '❌取消'
     LOOKUP_LISTEN_INFO: str = '🔍查看监听信息'
+    EXPORT_TABLE: str = '📊导出表格'
+    RESELECT: str = '🔄重新选择'

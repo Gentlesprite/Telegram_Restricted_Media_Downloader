@@ -176,20 +176,111 @@ class TelegramRestrictedMediaDownloader(Bot):
                 msg = '🥰🥰🥰\n收款「二维码」已发送至您的「终端」与「对话框」十分感谢您的支持!'
             await callback_query.message.reply_text(msg)
         elif callback_data == BotCallbackText.LINK_TABLE:
-            res: Union[bool, str] = self.app.print_link_table(Task.LINK_INFO)
-            if isinstance(res, str):
+            res: Union[bool, None] = self.app.print_link_table(Task.LINK_INFO)
+            if res:
+                await callback_query.message.edit_text('🫡🫡🫡`链接统计表`已发送至您的「终端」请注意查收。')
+                await callback_query.message.edit_reply_markup(
+                    InlineKeyboardMarkup([
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.EXPORT_TABLE,
+                                callback_data=BotCallbackText.EXPORT_LINK_TABLE
+                            ),
+                            InlineKeyboardButton(
+                                text=BotButton.RESELECT,
+                                callback_data=BotCallbackText.BACK_TABLE
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.HELP_PAGE,
+                                callback_data=BotCallbackText.BACK_HELP
+                            )
+                        ]
+                    ])
+                )
+                return None
+            elif res is False:
+                await callback_query.message.edit_text('😵😵😵没有链接需要统计。')
+            else:
                 await callback_query.message.edit_text(
                     '😵‍💫😵‍💫😵‍💫`链接统计表`打印失败。\n(具体原因请前往终端查看报错信息)')
-            elif isinstance(res, bool) and res is True:
-                await callback_query.message.edit_text('🫡🫡🫡`链接统计表`已发送至您的「终端」请注意查收。')
-            else:
-                await callback_query.message.edit_text('😵😵😵没有链接需要统计。')
+            await callback_query.message.edit_reply_markup(
+                InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.RESELECT,
+                            callback_data=BotCallbackText.BACK_TABLE
+                        )
+                    ]
+                    , [
+                        InlineKeyboardButton(
+                            text=BotButton.HELP_PAGE,
+                            callback_data=BotCallbackText.BACK_HELP
+                        )
+                    ]
+                ])
+            )
         elif callback_data == BotCallbackText.COUNT_TABLE:
-            self.app.print_count_table(record_dtype=self.app.record_dtype)
-            await callback_query.message.edit_text('👌👌👌`计数统计表`已发送至您的「终端」请注意查收。')
+            res: Union[bool, None] = self.app.print_count_table(record_dtype=self.app.record_dtype)
+            if res:
+                await callback_query.message.edit_text('👌👌👌`计数统计表`已发送至您的「终端」请注意查收。')
+                await callback_query.message.edit_reply_markup(
+                    InlineKeyboardMarkup([
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.EXPORT_TABLE,
+                                callback_data=BotCallbackText.EXPORT_COUNT_TABLE
+                            ),
+                            InlineKeyboardButton(
+                                text=BotButton.RESELECT,
+                                callback_data=BotCallbackText.BACK_TABLE
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.HELP_PAGE,
+                                callback_data=BotCallbackText.BACK_HELP
+                            )
+                        ]
+                    ])
+                )
+                return None
+            elif res is False:
+                await callback_query.message.edit_text('😵😵😵当前没有任何下载。')
+            else:
+                await callback_query.message.edit_text(
+                    '😵‍💫😵‍💫😵‍💫`链接统计表`打印失败。\n(具体原因请前往终端查看报错信息)')
+            await callback_query.message.edit_reply_markup(
+                InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.RESELECT,
+                            callback_data=BotCallbackText.BACK_TABLE
+                        )
+                    ]
+                    , [
+                        InlineKeyboardButton(
+                            text=BotButton.HELP_PAGE,
+                            callback_data=BotCallbackText.BACK_HELP
+                        )
+                    ]
+                ])
+            )
         elif callback_data == BotCallbackText.BACK_HELP:
             await callback_query.message.delete()
-            await self.help(client, callback_query.message)
+            await self.app.client.send_message(
+                chat_id=callback_query.message.from_user.id,
+                text='/help',
+                link_preview_options=LINK_PREVIEW_OPTIONS
+            )
+        elif callback_data == BotCallbackText.BACK_TABLE:
+            await callback_query.message.delete()
+            await self.app.client.send_message(
+                chat_id=callback_query.message.from_user.id,
+                text='/table',
+                link_preview_options=LINK_PREVIEW_OPTIONS
+            )
         elif callback_data == BotCallbackText.DOWNLOAD:
             command: str = ''
             data: list = callback_data.split()
@@ -220,6 +311,47 @@ class TelegramRestrictedMediaDownloader(Bot):
                 chat_id=callback_query.message.from_user.id,
                 text='/listen_info',
                 link_preview_options=LINK_PREVIEW_OPTIONS
+            )
+        elif callback_data in (BotCallbackText.EXPORT_LINK_TABLE, BotCallbackText.EXPORT_COUNT_TABLE):
+            _prompt_string: str = ''
+            res: Union[bool, None] = False
+            if callback_data == BotCallbackText.EXPORT_LINK_TABLE:
+                _prompt_string = '链接统计表'
+                res: Union[bool, None] = self.app.print_link_table(
+                    link_info=Task.LINK_INFO,
+                    export=True,
+                    only_export=True
+                )
+            elif callback_data == BotCallbackText.EXPORT_COUNT_TABLE:
+                _prompt_string = '计数统计表'
+                res: Union[bool, None] = self.app.print_count_table(
+                    record_dtype=self.app.record_dtype,
+                    export=True,
+                    only_export=True
+                )
+            if res:
+                await callback_query.message.edit_text(
+                    f'✅✅✅`{_prompt_string}`已发送至您的「终端」并已「导出」为表格请注意查收。\n(请查看软件目录下`DownloadRecordForm`文件夹)')
+            elif res is False:
+                await callback_query.message.edit_text('😵😵😵没有链接需要统计。')
+            else:
+                await callback_query.message.edit_text(
+                    f'😵‍💫😵‍💫😵‍💫`{_prompt_string}`导出失败。\n(具体原因请前往终端查看报错信息)')
+            await callback_query.message.edit_reply_markup(
+                InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.RESELECT,
+                            callback_data=BotCallbackText.BACK_TABLE
+                        )
+                    ]
+                    , [
+                        InlineKeyboardButton(
+                            text=BotButton.HELP_PAGE,
+                            callback_data=BotCallbackText.BACK_HELP
+                        )
+                    ]
+                ])
             )
         elif callback_data.startswith((BotCallbackText.REMOVE_LISTEN_DOWNLOAD, BotCallbackText.REMOVE_LISTEN_FORWARD)):
             msg: str = ''
@@ -805,12 +937,30 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
             else:
                 _error = '不支持或被忽略的类型(已取消)。'
-                Task.LINK_INFO.get(link).get('error_msg')['all_member'] = _error.replace('。', '')
-                console.log(
-                    f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
-                    f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
-                    f'{_t(KeyWord.LINK_TYPE)}:{_error}'  # 链接类型。
-                )
+                try:
+                    _, __, ___, file_name, ____, format_file_size = self.app.get_media_meta(
+                        message=message,
+                        dtype=valid_dtype
+                    ).values()
+                    if file_name:
+                        console.log(
+                            f'{_t(KeyWord.FILE)}:"{file_name}",'
+                            f'{_t(KeyWord.SIZE)}:{format_file_size},'
+                            f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.SKIP))},'
+                            f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。'
+                        )
+                        self.app.guess_file_type(file_name, DownloadStatus.SKIP)
+                        Task.LINK_INFO.get(link).get('file_name').add(file_name)
+                        Task.LINK_INFO.get(link).get('error_msg')[file_name] = _error.replace('。', '')
+                    else:
+                        raise Exception('不支持或被忽略的类型。')
+                except Exception as _:
+                    Task.LINK_INFO.get(link).get('error_msg')['all_member'] = _error.replace('。', '')
+                    console.log(
+                        f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
+                        f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
+                        f'{_t(KeyWord.LINK_TYPE)}:{_error}'  # 链接类型。
+                    )
             self.queue.put_nowait(_task) if _task else None
 
     def __check_download_finish(

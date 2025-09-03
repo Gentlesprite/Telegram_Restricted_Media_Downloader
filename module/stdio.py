@@ -35,12 +35,13 @@ class StatisticalTable:
             self,
             record_dtype: set,
             export: bool = False,
+            only_export: bool = False,
             export_directory: str = os.path.join(
                 os.path.dirname(os.path.abspath(sys.argv[0])),
                 'DownloadRecordForm',
                 'CountForm'
             )
-    ) -> None:
+    ) -> Union[bool, None]:
         """打印统计的下载信息的表格。"""
         os.makedirs(export_directory, exist_ok=True) if export else 0
         header: tuple = ('种类&状态', '成功下载', '失败下载', '跳过下载', '合计')
@@ -52,99 +53,68 @@ class StatisticalTable:
         skip_photo: int = len(self.skip_photo)
         total_video: int = sum([success_video, failure_video, skip_video])
         total_photo: int = sum([success_photo, failure_photo, skip_photo])
-        rdt_length: int = len(record_dtype)
-        log.error(record_dtype)
-        if rdt_length == 1:
-            _compare_dtype: list = list(record_dtype)[0]
-            if _compare_dtype == DownloadType.VIDEO:  # 只有视频的情况。
-                table_data = [
-                    [_t(DownloadType.VIDEO), success_video, failure_video, skip_video, total_video],
-                    ['合计', success_video, failure_video, skip_video, total_video]
-                ]
-                if export:
-                    with open(
-                            file=os.path.join(
-                                export_directory,
-                                f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_视频下载统计.csv'
-                            ),
-                            mode='w',
-                            newline='',
-                            encoding='utf-8-sig'
-                    ) as f:
-                        writer = csv.writer(f)
-                        writer.writerow(header)
-                        writer.writerows(table_data)
-                else:
-                    video_table = PanelTable(
-                        title='视频下载统计',
-                        header=header,
-                        data=table_data
-                    )
-                    video_table.print_meta()
 
-            if _compare_dtype == DownloadType.PHOTO:  # 只有图片的情况。
-                table_data = [
-                    [_t(DownloadType.PHOTO), success_photo, failure_photo, skip_photo, total_photo],
-                    ['合计', success_photo, failure_photo, skip_photo, total_photo]
-                ]
-                if export:
-                    with open(
-                            file=os.path.join(
-                                export_directory,
-                                f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_图片下载统计.csv'
-                            ),
-                            mode='w',
-                            newline='',
-                            encoding='utf-8-sig'
-                    ) as f:
-                        writer = csv.writer(f)
-                        writer.writerow(header)
-                        writer.writerows(table_data)
-                photo_table = PanelTable(
-                    title='图片下载统计',
-                    header=header,
-                    data=table_data
-                )
-                photo_table.print_meta()
+        table_data = [
+            [_t(DownloadType.VIDEO), success_video, failure_video, skip_video, total_video],
+            [_t(DownloadType.PHOTO), success_photo, failure_photo, skip_photo, total_photo],
+            ['合计', sum([success_video, success_photo]),
+             sum([failure_video, failure_photo]),
+             sum([skip_video, skip_photo]),
+             sum([total_video, total_photo])]
+        ]
+        if len(table_data) < 3:
+            log.error(f'无法输出计数表格,{_t(KeyWord.REASON)}:"表格数据非法"')
+            return False
+        check_count: int = 0
+        for row in table_data:
+            for count in row:
+                if isinstance(count, int):
+                    check_count += count
+        if check_count == 0:
+            return False
 
-        elif rdt_length == 2:
-            table_data = [
-                [_t(DownloadType.VIDEO), success_video, failure_video, skip_video, total_video],
-                [_t(DownloadType.PHOTO), success_photo, failure_photo, skip_photo, total_photo],
-                ['合计', sum([success_video, success_photo]),
-                 sum([failure_video, failure_photo]),
-                 sum([skip_video, skip_photo]),
-                 sum([total_video, total_photo])]
-            ]
-            if export:
+        if export:
+            try:
                 os.makedirs(export_directory, exist_ok=True)
-                with open(file=os.path.join(
-                        export_directory,
-                        f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_媒体下载统计.csv'
-                ),
+                with open(
+                        file=os.path.join(
+                            export_directory,
+                            f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_媒体下载统计表.csv'
+                        ),
                         mode='w',
                         newline='',
-                        encoding='utf-8-sig') as f:
+                        encoding='utf-8-sig'
+                ) as f:
                     writer = csv.writer(f)
                     writer.writerow(header)
                     writer.writerows(table_data)
-            media_table = PanelTable(
-                title='媒体下载统计',
-                header=header,
-                data=table_data
-            )
-            media_table.print_meta()
+            except Exception as e:
+                log.error(f'导出媒体计数统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
+                if only_export:
+                    return None
+        try:
+            if only_export is False:
+                PanelTable(
+                    title=f'媒体下载统计',
+                    header=header,
+                    data=table_data
+                ).print_meta()
+            return True
+        except Exception as e:
+            log.error(f'打印媒体计数统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
+            return None
 
     @staticmethod
     def print_link_table(
             link_info: dict,
             export: bool = False,
+            only_export: bool = False,
             export_directory: str = os.path.join(
                 os.path.dirname(os.path.abspath(sys.argv[0])),
                 'DownloadRecordForm',
                 'LinkForm'
             )
-    ) -> Union[bool, str]:
+    ) -> Union[bool, None]:
         """打印统计的下载链接信息的表格。"""
         try:
             data: list = []
@@ -166,13 +136,14 @@ class StatisticalTable:
                     error_info = '\n'.join([f'{fn}: {err}' for fn, err in error_msg.items()])
                 data.append([index, link, file_names, complete_rate, error_info])
 
-            if data:
-                if export:
+            if not data:
+                return False
+            if export:
+                try:
                     os.makedirs(export_directory, exist_ok=True)
-                    # 导出为CSV文件。
                     with open(file=os.path.join(
                             export_directory,
-                            f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_下载链接统计.csv'
+                            f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_下载链接统计表.csv'
                     ),
                             mode='w',
                             newline='',
@@ -181,20 +152,21 @@ class StatisticalTable:
                         writer = csv.writer(f)
                         writer.writerow(['编号', '链接', '文件名', '完成率', '错误信息'])
                         writer.writerows(data)
-
-                panel_table = PanelTable(
+                except Exception as e:
+                    log.error(f'导出下载链接统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
+                    if only_export:
+                        return None
+            if only_export is False:
+                PanelTable(
                     title='下载链接统计',
                     header=('编号', '链接', '文件名', '完成率', '错误信息'),
                     data=data,
                     show_lines=True
-                )
-                panel_table.print_meta()
-                return True
-            else:
-                return False
+                ).print_meta()
+            return True
         except Exception as e:
             log.error(f'打印下载链接统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
-            return str(e)
+            return None
 
     @staticmethod
     def print_config_table(enable_proxy: Union[dict, None], links: str, download_type: list, proxy: dict) -> None:

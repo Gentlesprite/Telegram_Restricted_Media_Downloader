@@ -240,7 +240,6 @@ class Bot:
             f'📲 {BotCommandText.with_description(BotCommandText.LISTEN_FORWARD)}\n'
             f'🔍 {BotCommandText.with_description(BotCommandText.LISTEN_INFO)}\n'
         )
-
         await client.send_message(
             chat_id=message.from_user.id,
             text=msg,

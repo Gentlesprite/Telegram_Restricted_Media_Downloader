@@ -11,6 +11,7 @@ translations: dict = {
     'video': ['视频'],
     'photo': ['图片'],
     'document': ['文档'],
+    'media': ['媒体'],
     'downloading': ['下载中'],
     'success': ['成功'],
     'failure': ['失败'],
