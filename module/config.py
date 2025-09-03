@@ -425,18 +425,14 @@ class Config:
                 pass
 
 
-class GlobalConfig:
-    FILE_NAME: str = GLOBAL_CONFIG_NAME
-    PATH: str = GLOBAL_CONFIG_PATH
-    TEMPLATE: dict = {
-        'notice': True,
-        'file_log_level': logging.getLevelName(FILE_LOG_LEVEL),
-        'console_log_level': logging.getLevelName(CONSOLE_LOG_LEVEL)
-    }
+class BaseConfig:
+    FILE_NAME: str = 'base_config.yaml'
+    PATH: str = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), FILE_NAME)
+    TEMPLATE: dict = {}
 
     def __init__(self):
-        self.config_path: str = GlobalConfig.PATH
-        self.config: dict = GlobalConfig.TEMPLATE.copy()
+        self.config_path: str = self.PATH
+        self.config: dict = self.TEMPLATE.copy()
         self.__load_config()
         self.__check_params(self.config.copy())
 
@@ -461,9 +457,9 @@ class GlobalConfig:
                 console.log(log_message.format(key))
 
         # 处理父级参数。
-        add_missing_keys(target=config, template=GlobalConfig.TEMPLATE, log_message='"{}"不在全局配置文件中,已添加。')
+        add_missing_keys(target=config, template=self.TEMPLATE, log_message='"{}"不在全局配置文件中,已添加。')
         # 删除父级模板中没有的字段。
-        remove_extra_keys(config, GlobalConfig.TEMPLATE, '"{}"不在模板中,已删除。')
+        remove_extra_keys(config, self.TEMPLATE, '"{}"不在模板中,已删除。')
 
         if config != self.config:
             self.config = config
@@ -472,11 +468,11 @@ class GlobalConfig:
     def __load_config(self) -> None:
         """加载全局配置文件。"""
         try:
-            if not os.path.exists(GlobalConfig.PATH):
-                with open(file=GlobalConfig.PATH, mode='w', encoding='UTF-8') as f:
-                    yaml.dump(GlobalConfig.TEMPLATE, f, Dumper=CustomDumper)
+            if not os.path.exists(self.PATH):
+                with open(file=self.PATH, mode='w', encoding='UTF-8') as f:
+                    yaml.dump(self.TEMPLATE, f, Dumper=CustomDumper)
                 return
-            with open(file=GlobalConfig.PATH, mode='r', encoding='UTF-8') as f:
+            with open(file=self.PATH, mode='r', encoding='UTF-8') as f:
                 config = yaml.safe_load(f)
                 if config:
                     self.config = config
@@ -484,7 +480,7 @@ class GlobalConfig:
                     raise ValueError('The file is empty or has invalid format.')
         except Exception as e:
             log.error(f'检测到无效或损坏的全局配置文件。已生成新的模板文件. . .{_t(KeyWord.REASON)}:"{e}"')
-            self.config: dict = GlobalConfig.TEMPLATE.copy()
+            self.config: dict = self.TEMPLATE.copy()
             self.save_config(self.config)
 
     def save_config(self, config: dict) -> None:
@@ -501,3 +497,16 @@ class GlobalConfig:
         """获取实时的配置文件。"""
         self.__load_config()
         return self.config.get(param, error_param)
+
+
+class GlobalConfig(BaseConfig):
+    FILE_NAME: str = GLOBAL_CONFIG_NAME
+    PATH: str = GLOBAL_CONFIG_PATH
+    TEMPLATE: dict = {
+        'notice': True,
+        'file_log_level': logging.getLevelName(FILE_LOG_LEVEL),
+        'console_log_level': logging.getLevelName(CONSOLE_LOG_LEVEL)
+    }
+
+    def __init__(self):
+        super().__init__()
