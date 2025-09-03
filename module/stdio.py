@@ -134,8 +134,7 @@ class StatisticalTable:
                     for fn in error_msg.keys():
                         file_names.add(fn)
                     error_info = '\n'.join([f'{fn}: {err}' for fn, err in error_msg.items()])
-                file_names = '\n'.join(sorted(file_names))  # 可选排序
-                print(type(file_names))
+                file_names = '\n'.join(sorted(file_names))
                 data.append([index, link, file_names, complete_rate, error_info])
 
             if not data:

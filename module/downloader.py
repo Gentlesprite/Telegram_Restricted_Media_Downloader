@@ -174,8 +174,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         elif callback_data == BotCallbackText.BACK_HELP:
             meta: dict = await self.help()
             await asyncio.gather(
-                callback_query.message.edit_reply_markup(meta.get('keyboard')),
-                callback_query.message.edit_text(meta.get('text'))
+                callback_query.message.edit_text(meta.get('text')),
+                callback_query.message.edit_reply_markup(meta.get('keyboard'))
             )
         elif callback_data == BotCallbackText.BACK_TABLE:
             meta: dict = await self.table()
