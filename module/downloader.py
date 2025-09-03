@@ -240,6 +240,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     callback_query.message.edit_text(f'👌👌👌`{_prompt_string}`已发送至您的「终端」请注意查收。'),
                     kb.choice_export_table_button(choice=_choice)
                 )
+                return None
             elif res is False:
                 await callback_query.message.edit_text(_false_text)
             else:

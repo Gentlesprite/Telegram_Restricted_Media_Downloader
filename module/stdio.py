@@ -124,14 +124,18 @@ class StatisticalTable:
                 except ZeroDivisionError:
                     rate = 0
                 complete_rate = f'{complete_num}/{member_num}[{rate}%]'
-                file_names = '\n'.join(info.get('file_name'))
+                file_names: Union[set, str] = info.get('file_name', set())
                 error_msg = info.get('error_msg')
                 if not error_msg:
                     error_info = ''
                 elif 'all_member' in error_msg:
                     error_info = str(error_msg.get('all_member'))
                 else:
+                    for fn in error_msg.keys():
+                        file_names.add(fn)
                     error_info = '\n'.join([f'{fn}: {err}' for fn, err in error_msg.items()])
+                file_names = '\n'.join(sorted(file_names))  # 可选排序
+                print(type(file_names))
                 data.append([index, link, file_names, complete_rate, error_info])
 
             if not data:
