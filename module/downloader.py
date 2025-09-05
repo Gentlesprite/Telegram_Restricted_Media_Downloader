@@ -173,16 +173,12 @@ class TelegramRestrictedMediaDownloader(Bot):
             await callback_query.message.reply_text(msg)
         elif callback_data == BotCallbackText.BACK_HELP:
             meta: dict = await self.help()
-            await asyncio.gather(
-                callback_query.message.edit_text(meta.get('text')),
-                callback_query.message.edit_reply_markup(meta.get('keyboard'))
-            )
+            await callback_query.message.edit_text(meta.get('text'))
+            await callback_query.message.edit_reply_markup(meta.get('keyboard'))
         elif callback_data == BotCallbackText.BACK_TABLE:
             meta: dict = await self.table()
-            await asyncio.gather(
-                callback_query.message.edit_text(meta.get('text')),
-                callback_query.message.edit_reply_markup(meta.get('keyboard'))
-            )
+            await callback_query.message.edit_text(meta.get('text'))
+            await callback_query.message.edit_reply_markup(meta.get('keyboard'))
         elif callback_data == BotCallbackText.DOWNLOAD:
             command: str = ''
             data: list = callback_data.split()
@@ -236,10 +232,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _choice: str = BotCallbackText.EXPORT_COUNT_TABLE
                 res: Union[bool, None] = self.app.print_count_table()
             if res:
-                await asyncio.gather(
-                    callback_query.message.edit_text(f'👌👌👌`{_prompt_string}`已发送至您的「终端」请注意查收。'),
-                    kb.choice_export_table_button(choice=_choice)
-                )
+                await callback_query.message.edit_text(f'👌👌👌`{_prompt_string}`已发送至您的「终端」请注意查收。')
+                await kb.choice_export_table_button(choice=_choice)
                 return None
             elif res is False:
                 await callback_query.message.edit_text(_false_text)

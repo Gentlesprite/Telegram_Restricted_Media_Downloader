@@ -29,6 +29,15 @@ class DownloadType:
             if not key.startswith('_') and not callable(value):  # 排除特殊方法和属性。
                 yield value
 
+    def get_video_filename(self):
+        ...
+
+    def get_photo_filename(self):
+        ...
+
+    def get_document_filename(self):
+        ...
+
 
 class DownloadStatus:
     DOWNLOADING = 'downloading'
