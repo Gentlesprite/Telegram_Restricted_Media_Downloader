@@ -800,8 +800,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     await self.__add_task(chat_id, link_type, link, _message, retry)
         else:
             _task = None
-            valid_dtype, is_document_type_valid = self.app.get_valid_dtype(message).values()
-            if valid_dtype in self.app.download_type and is_document_type_valid:
+            valid_dtype: str = next((_ for _ in DownloadType() if getattr(message, _, None)), None)  # 判断该链接是否为有支持的类型。
+            if valid_dtype in self.app.download_type:
                 # 如果是匹配到的消息类型就创建任务。
                 console.log(
                     f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。

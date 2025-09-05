@@ -12,6 +12,7 @@ test*
 downloads/
 DownloadRecordForm/
 # ignore files
+*.txt
 *.exe
 *.yaml
 *.template
@@ -23,3 +24,4 @@ test*.py
 Pipfile
 # include files
 !rar.exe
+!requirements.txt

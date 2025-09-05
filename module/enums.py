@@ -6,6 +6,7 @@
 import os
 import sys
 import ipaddress
+
 from typing import Union
 
 from module import console, log
@@ -28,15 +29,6 @@ class DownloadType:
         for key, value in vars(self.__class__).items():
             if not key.startswith('_') and not callable(value):  # 排除特殊方法和属性。
                 yield value
-
-    def get_video_filename(self):
-        ...
-
-    def get_photo_filename(self):
-        ...
-
-    def get_document_filename(self):
-        ...
 
 
 class DownloadStatus:
@@ -298,10 +290,17 @@ class Validator:
             return False
 
     @staticmethod
-    def is_valid_download_type(dtype: Union[int, str]) -> bool:
+    def is_valid_download_type(dtype: list) -> bool:
         try:
-            _dtype = int(dtype) if isinstance(dtype, str) else dtype
-            return 0 < _dtype < 4
+            if isinstance(dtype, list):
+                support_dtype: list = [_ for _ in DownloadType()]
+                for i in dtype:
+                    if i not in support_dtype:
+                        dtype.remove(i)
+                        log.warning(f'"{i}"不在支持的下载类型中,已移除。')
+                if dtype:
+                    return True
+                return False
         except ValueError:  # 处理非整数字符串的情况
             return False
         except TypeError:  # 处理传入非数字类型的情况
@@ -313,30 +312,22 @@ class Validator:
 
 class ProcessConfig:
     @staticmethod
-    def set_dtype(_dtype) -> list:
-        i_dtype = int(_dtype)  # 因为终端输入是字符串，这里需要转换为整数。
-        if i_dtype == 1:
-            return [DownloadType.VIDEO]
-        elif i_dtype == 2:
-            return [DownloadType.PHOTO]
-        elif i_dtype == 3:
-            return [DownloadType.VIDEO, DownloadType.PHOTO]
+    def set_dtype(_dtype: list) -> list:
+        record_dtype: list = []
+        support_dtype: list = [_ for _ in DownloadType()]
+        for i in _dtype:
+            if i in support_dtype:
+                record_dtype.append(i)
+        return record_dtype
 
     @staticmethod
     def get_dtype(download_dtype: list) -> dict:
         """获取所需下载文件的类型。"""
-        if DownloadType.DOCUMENT in download_dtype:
-            download_dtype.remove(DownloadType.DOCUMENT)
-        dt_length = len(download_dtype)
-        if dt_length == 1:
-            dtype: str = download_dtype[0]
-            if dtype == DownloadType.VIDEO:
-                return {'video': True, 'photo': False}
-            elif dtype == DownloadType.PHOTO:
-                return {'video': False, 'photo': True}
-        elif dt_length == 2:
-            return {'video': True, 'photo': True}
-        return {'error': True}
+        meta: dict = {}
+        support_dtype: list = [_ for _ in DownloadType()]
+        for dtype in download_dtype:
+            meta[dtype] = True if dtype in support_dtype else False
+        return meta
 
     @staticmethod
     def stdio_style(key: str, color=None) -> str:
@@ -674,29 +665,27 @@ class GetStdioParams:
 
     @staticmethod
     def get_download_type(last_record: Union[list, None]) -> dict:
-
         if isinstance(last_record, list):
-            res: dict = ProcessConfig.get_dtype(download_dtype=last_record)
-            if len(res) == 1:
-                last_record = None
-            elif res.get('video') and res.get('photo') is False:
-                last_record = 1
-            elif res.get('video') is False and res.get('photo'):
-                last_record = 2
-            elif res.get('video') and res.get('photo'):
-                last_record = 3
-        default_prompt: str = '(默认3)' if last_record is None else ''
+            meta: dict = ProcessConfig.get_dtype(download_dtype=last_record)
+            record: list = []
+            for i in meta.items():
+                dtype, _ = i
+                if meta.get(dtype) is True:
+                    record.append(dtype)
+            last_record: str = ' '.join(record)
+        default_prompt: str = '(默认为所有已支持的下载类型)' if last_record is None else ''
         while True:
-            download_type = console.input(
-                f'输入需要下载的「媒体类型」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」'
-                f'格式 - 「1.视频 2.图片 3.视频和图片」{default_prompt}:').strip()
+            download_type: Union[str, list] = console.input(
+                f'输入需要下载的「媒体类型」(以空格分隔可多选)。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」'
+                f'格式 - 「video photo document」{default_prompt}:').strip()
             if download_type == '' and last_record is not None:
                 download_type = last_record
             if download_type == '':
-                download_type = 3
+                download_type = [_ for _ in DownloadType()]
+            download_type: list = list(set(download_type.split()))
             if Validator.is_valid_download_type(download_type):
                 console.print(
-                    f'已设置「download_type」为:「{download_type}」',
+                    f'已设置「download_type」为:「{" ".join(download_type) if download_type else [_ for _ in DownloadType()]}」',
                     style=ProcessConfig.stdio_style('download_type')
                 )
                 return {
@@ -704,7 +693,8 @@ class GetStdioParams:
                     'record_flag': True
                 }
             else:
-                log.warning(f'意外的参数:"{download_type}",支持的参数 - 「1或2或3」')
+                prompt: str = f'意外的参数:"{download_type}"' if download_type else '请重新输入下载类型'
+                log.warning(f'{prompt},支持的参数 - 「video photo document」(以空格分隔可多选)')
 
     @staticmethod
     def get_is_shutdown(last_record: str, valid_format: str = 'y|n') -> dict:

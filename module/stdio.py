@@ -27,9 +27,9 @@ from module.enums import DownloadType, KeyWord, GradientColor, ProcessConfig, Ba
 
 class StatisticalTable:
     def __init__(self):
-        self.skip_video, self.skip_photo = set(), set()
-        self.success_video, self.success_photo = set(), set()
-        self.failure_video, self.failure_photo = set(), set()
+        self.skip_video, self.skip_photo, self.skip_document = set(), set(), set()
+        self.success_video, self.success_photo, self.success_document = set(), set(), set()
+        self.failure_video, self.failure_photo, self.failure_document = set(), set(), set()
 
     def print_count_table(
             self,
@@ -49,16 +49,20 @@ class StatisticalTable:
         success_photo: int = len(self.success_photo)
         failure_photo: int = len(self.failure_photo)
         skip_photo: int = len(self.skip_photo)
+        success_document: int = len(self.success_document)
+        failure_document: int = len(self.failure_document)
+        skip_document: int = len(self.skip_document)
         total_video: int = sum([success_video, failure_video, skip_video])
         total_photo: int = sum([success_photo, failure_photo, skip_photo])
-
+        total_document: int = sum([success_document, failure_document, skip_document])
         table_data = [
             [_t(DownloadType.VIDEO), success_video, failure_video, skip_video, total_video],
             [_t(DownloadType.PHOTO), success_photo, failure_photo, skip_photo, total_photo],
-            ['合计', sum([success_video, success_photo]),
-             sum([failure_video, failure_photo]),
-             sum([skip_video, skip_photo]),
-             sum([total_video, total_photo])]
+            [_t(DownloadType.DOCUMENT), success_document, failure_document, skip_document, total_document],
+            ['合计', sum([success_video, success_photo, success_document]),
+             sum([failure_video, failure_photo, failure_document]),
+             sum([skip_video, skip_photo, skip_document]),
+             sum([total_video, total_photo, total_document])]
         ]
         if len(table_data) < 3:
             log.error(f'无法输出计数表格,{_t(KeyWord.REASON)}:"表格数据非法"')
@@ -217,11 +221,14 @@ class StatisticalTable:
             _dtype: list = download_type.copy()  # 浅拷贝赋值给_dtype,避免传入函数后改变原数据。
             data: list = [
                 [_t(DownloadType.VIDEO),
-                 ProcessConfig.get_dtype(_dtype).get('video')
+                 ProcessConfig.get_dtype(_dtype).get('video', False)
                  ],
                 [_t(DownloadType.PHOTO),
-                 ProcessConfig.get_dtype(_dtype).get('photo')
-                 ]
+                 ProcessConfig.get_dtype(_dtype).get('photo', False)
+                 ],
+                [_t(DownloadType.DOCUMENT),
+                 ProcessConfig.get_dtype(_dtype).get('document', False)
+                 ],
             ]
             download_type_table = PanelTable(title='下载类型', header=('类型', '是否下载'), data=data)
             download_type_table.print_meta()
