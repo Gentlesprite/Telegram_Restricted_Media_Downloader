@@ -67,9 +67,9 @@ Session.WAIT_TIMEOUT = 100
 Session.START_TIMEOUT = 60
 SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
-__version__ = '1.6.6'
+__version__ = '1.6.7'
 __license__ = 'MIT License'
-__update_date__ = '2025/09/05 14:51:46'
+__update_date__ = '2025/09/06 12:34:20'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/Gentlesprite>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
@@ -148,7 +148,7 @@ api_id: 'xxxxxxxx' # 申请的api_id。
 # bot_token(选填)如果不填,就不能使用机器人功能。可前往https://t.me/BotFather免费申请。
 bot_token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 download_type: # 需要下载的类型。支持的参数:video,photo,document。
-- document # 程序自动添加,用于下载文档类型文件里包含视频或图片的文件。
+- document
 - video 
 - photo
 is_shutdown: true # 下载完成后是否自动关机。支持的参数:true,false。

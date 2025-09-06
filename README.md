@@ -14,7 +14,7 @@
     <img src="https://img.shields.io/badge/Python-3.13.2-blue.svg?color=00B16A" alt="Python 3.13.2"/>
   </a>
   <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.9-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.9"/>
+    <img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.10-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.10"/>
   </a>
   <a style="text-decoration:none">
     <img src="https://img.shields.io/badge/Platform-Windows & Linux%20-blue?color=00B16A" alt="Platform Windows & Linux"/>
@@ -333,7 +333,7 @@ api_id: 'xxxxxxxx' # 申请的api_id。
 # bot_token(选填)如果不填,就不能使用机器人功能。可前往https://t.me/BotFather免费申请。
 bot_token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 download_type: # 需要下载的类型。支持的参数:video,photo,document。
-- document # 程序自动添加,用于下载文档类型文件里包含视频或图片的文件。
+- document
 - video 
 - photo
 is_shutdown: true # 下载完成后是否自动关机。支持的参数:true,false。
@@ -498,7 +498,7 @@ _**推荐**使用`Python==3.13.2`作为该项目环境。(避免在其他`Python
 
 ## 对于Windows用户:
 
-_需安装`python`与`git`并配置**环境变量**。_
+_需自行安装`python`与`git`并配置**环境变量**。_
 
 ```shell
 git clone https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader.git
@@ -509,26 +509,49 @@ python main.py
 ```
 ## 对于Linux用户:
 
+_克隆本项目并**进入项目目录**。_
+
 ```bash
 git clone https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader.git
 cd Telegram_Restricted_Media_Downloader
+```
+_**更新**`pip`版本(推荐)。_
+
+```bash
 python3 -m pip install --upgrade pip
-#####################################
-###使用虚拟环境(根据不同系统要求可选)###
+```
+
+_创建并使用**虚拟环境**(可选)。_
+
+```bash
 python3 -m venv venv
 source venv/bin/activate
-#####################################
-pip3 install -r requirements.txt
-python3 main.py
-# 到这一步就可以正常运行程序了。
--------------------------------------
-# 注意:如过选择创建虚拟环境运行,在下次运行时也需要先激活虚拟环境。
-source venv/bin/activate
-# 然后再运行。
-python3 main.py
--------------------------------------
 ```
-_如果提示**没有安装pip**使用如下命令进行安装:_
+
+_安装程序运行**所需依赖**并等待全部安装完成。_
+
+```bash
+pip3 install -r requirements.txt
+```
+
+_运行程序(到这一步就安装完成并运行了，后面是注意事项)。_
+
+```bash
+python3 main.py
+```
+
+### 注意事项：
+
+**_如果选择创建虚拟环境运行,在下次运行时也需要先激活虚拟环境。_**
+
+在项目目录下，**激活虚拟环境**后再运行程序。
+
+```bash
+source venv/bin/activate
+python3 main.py
+```
+
+_如果提示**没有安装pip**使用如下命令进行安装：_
 
 ```bash
 sudo apt update
@@ -537,7 +560,7 @@ sudo apt-get install python3-pip
 
 ## 关于更新:
 
-_在**项目目录**下打开终端使用如下命令拉取仓库当前的**最新版本**:_
+_在**项目目录**下打开终端使用如下命令拉取仓库当前的**最新版本**_：
 
 ```shell
 git pull
