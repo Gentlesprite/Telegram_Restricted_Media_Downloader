@@ -8,20 +8,35 @@ import time
 import datetime
 import mimetypes
 import subprocess
+
 from functools import wraps
 from typing import Dict, Union
 
 import pyrogram
 
-from module import Session, SLEEP_THRESHOLD
-from module import console, log
-from module import MAX_FILE_REFERENCE_TIME, SOFTWARE_FULL_NAME
+from module import (
+    Session,
+    SLEEP_THRESHOLD,
+    console,
+    log,
+    MAX_FILE_REFERENCE_TIME,
+    SOFTWARE_FULL_NAME
+)
 from module.language import _t
 from module.config import Config
 from module.stdio import StatisticalTable, MetaData
-from module.enums import DownloadType, DownloadStatus, KeyWord
 from module.client import TelegramRestrictedMediaDownloaderClient
-from module.path_tool import split_path, validate_title, truncate_filename, get_extension
+from module.enums import (
+    DownloadType,
+    DownloadStatus,
+    KeyWord
+)
+from module.path_tool import (
+    split_path,
+    validate_title,
+    truncate_filename,
+    get_extension
+)
 
 
 class Application(Config, StatisticalTable):
