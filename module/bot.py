@@ -9,14 +9,36 @@ import pyrogram
 from pyrogram.types.messages_and_media import ReplyParameters
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.errors.exceptions.flood_420 import FloodWait
-from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified, AccessTokenInvalid, ButtonDataInvalid
-from pyrogram.types.bots_and_keyboards import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from pyrogram.errors.exceptions.bad_request_400 import (
+    MessageNotModified,
+    AccessTokenInvalid,
+    ButtonDataInvalid
+)
+from pyrogram.types.bots_and_keyboards import (
+    BotCommand,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    CallbackQuery
+)
 
-from module import log, __version__, __copyright__, __license__, SOFTWARE_FULL_NAME, LINK_PREVIEW_OPTIONS
+from module import (
+    __version__,
+    __copyright__,
+    __license__,
+    log,
+    SOFTWARE_FULL_NAME,
+    LINK_PREVIEW_OPTIONS
+)
 from module.language import _t
 from module.config import GlobalConfig
 from module.util import safe_index, safe_message
-from module.enums import BotCommandText, BotMessage, BotCallbackText, BotButton, KeyWord
+from module.enums import (
+    BotCommandText,
+    BotMessage,
+    BotCallbackText,
+    BotButton,
+    KeyWord
+)
 
 
 class Bot:
