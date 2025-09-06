@@ -12,7 +12,12 @@ from pyrogram.qrlogin import QRLogin
 from pyrogram import raw, types, utils
 from pyrogram.errors.exceptions import PhoneNumberInvalid
 
-from module import console, SOFTWARE_FULL_NAME, log, __version__
+from module import (
+    console,
+    SOFTWARE_FULL_NAME,
+    log,
+    __version__
+)
 from module.enums import KeyWord
 from module.language import _t
 

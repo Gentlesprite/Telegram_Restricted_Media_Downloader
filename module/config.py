@@ -9,11 +9,26 @@ import logging
 import datetime
 from typing import Union
 
-from module import yaml, GLOBAL_CONFIG_NAME, GLOBAL_CONFIG_PATH, FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL
-from module import log, console, PLATFORM, CustomDumper
+from module import (
+    yaml,
+    GLOBAL_CONFIG_NAME,
+    GLOBAL_CONFIG_PATH,
+    FILE_LOG_LEVEL,
+    CONSOLE_LOG_LEVEL
+)
+from module import (
+    CustomDumper,
+    log,
+    console,
+    PLATFORM
+)
 from module.language import _t
 from module.path_tool import gen_backup_config, safe_delete
-from module.enums import KeyWord, GetStdioParams, ProcessConfig
+from module.enums import (
+    KeyWord,
+    GetStdioParams,
+    ProcessConfig
+)
 
 
 class Config:

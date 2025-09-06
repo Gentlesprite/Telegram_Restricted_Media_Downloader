@@ -17,12 +17,33 @@ import qrcode
 from rich.style import Style
 from rich.table import Table
 from rich.markdown import Markdown
-from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, TransferSpeedColumn, SpinnerColumn
+from rich.progress import (
+    Progress,
+    TextColumn,
+    BarColumn,
+    TimeRemainingColumn,
+    TransferSpeedColumn,
+    SpinnerColumn
+)
 
-from module import log, console, README, SOFTWARE_FULL_NAME, __version__, __copyright__, __license__
+from module import (
+    log,
+    console,
+    README,
+    SOFTWARE_FULL_NAME,
+    __version__,
+    __copyright__,
+    __license__
+)
 from module.language import _t
 from module.util import get_terminal_width
-from module.enums import DownloadType, KeyWord, GradientColor, ProcessConfig, Banner
+from module.enums import (
+    DownloadType,
+    KeyWord,
+    GradientColor,
+    ProcessConfig,
+    Banner
+)
 
 
 class StatisticalTable:
