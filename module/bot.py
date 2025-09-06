@@ -371,7 +371,7 @@ class Bot:
     async def on_listen(
             self,
             client: pyrogram.Client,
-            message: pyrogram.types
+            message: pyrogram.types.Message
     ) -> Union[Dict[str, list], None]:
         text: str = message.text
         args: list = text.split()
@@ -485,14 +485,14 @@ class Bot:
     @staticmethod
     async def listen_download(
             client: pyrogram.Client,
-            message: pyrogram.types
+            message: pyrogram.types.Message
     ):
         pass
 
     @staticmethod
     async def listen_forward(
             client: pyrogram.Client,
-            message: pyrogram.types
+            message: pyrogram.types.Message
     ):
         pass
 

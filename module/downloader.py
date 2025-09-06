@@ -15,25 +15,61 @@ import pyrogram
 from pyrogram.handlers import MessageHandler
 from pyrogram.types.messages_and_media import ReplyParameters
 from pyrogram.types.bots_and_keyboards import InlineKeyboardButton, InlineKeyboardMarkup
-from pyrogram.errors.exceptions.bad_request_400 import ChannelPrivate as ChannelPrivate_400
-from pyrogram.errors.exceptions.bad_request_400 import ChatForwardsRestricted as ChatForwardsRestricted_400
-from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate as ChannelPrivate_406
-from pyrogram.errors.exceptions.not_acceptable_406 import ChatForwardsRestricted as ChatForwardsRestricted_406
-from pyrogram.errors.exceptions.unauthorized_401 import SessionRevoked, AuthKeyUnregistered, SessionExpired, \
+from pyrogram.errors.exceptions.unauthorized_401 import (
+    SessionRevoked,
+    AuthKeyUnregistered,
+    SessionExpired,
     Unauthorized
-from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid, UsernameInvalid, ChannelInvalid, \
-    BotMethodInvalid, UsernameNotOccupied, PeerIdInvalid
-
-from module import console, log, utils, LINK_PREVIEW_OPTIONS, SLEEP_THRESHOLD
+)
+from pyrogram.errors.exceptions.bad_request_400 import (
+    MsgIdInvalid,
+    UsernameInvalid,
+    ChannelInvalid,
+    BotMethodInvalid,
+    UsernameNotOccupied,
+    PeerIdInvalid,
+    ChannelPrivate as ChannelPrivate_400,
+    ChatForwardsRestricted as ChatForwardsRestricted_400
+)
+from pyrogram.errors.exceptions.not_acceptable_406 import (
+    ChannelPrivate as ChannelPrivate_406,
+    ChatForwardsRestricted as ChatForwardsRestricted_406
+)
+from module import (
+    utils,
+    console,
+    log,
+    LINK_PREVIEW_OPTIONS,
+    SLEEP_THRESHOLD
+)
 from module.bot import Bot, KeyboardButton
 from module.task import Task
 from module.language import _t
 from module.app import Application, MetaData
 from module.stdio import ProgressBar, Base64Image
-from module.util import safe_message, truncate_display_filename, format_chat_link
-from module.enums import LinkType, DownloadStatus, KeyWord, BotCallbackText, BotButton, BotMessage, DownloadType
-from module.path_tool import is_file_duplicate, safe_delete, get_file_size, split_path, compare_file_size, \
-    move_to_save_directory, safe_replace
+from module.util import (
+    safe_message,
+    truncate_display_filename,
+    format_chat_link
+)
+from module.enums import (
+    LinkType,
+    DownloadStatus,
+    KeyWord,
+    BotCallbackText,
+    BotButton,
+    BotMessage,
+    DownloadType
+)
+from module.path_tool import (
+    is_file_duplicate,
+    safe_delete,
+    get_file_size,
+    split_path,
+    compare_file_size,
+    move_to_save_directory,
+    safe_replace
+)
 
 
 class TelegramRestrictedMediaDownloader(Bot):
@@ -451,7 +487,7 @@ class TelegramRestrictedMediaDownloader(Bot):
     async def on_listen(
             self,
             client: pyrogram.Client,
-            message: pyrogram.types
+            message: pyrogram.types.Message
     ):
         meta: Union[dict, None] = await super().on_listen(client, message)
         if meta is None:
@@ -564,7 +600,7 @@ class TelegramRestrictedMediaDownloader(Bot):
     async def listen_download(
             self,
             client: pyrogram.Client,
-            message: pyrogram.types
+            message: pyrogram.types.Message
     ):
         try:
             await self.__create_download_task(link=message.link, single_link=True)
@@ -574,7 +610,7 @@ class TelegramRestrictedMediaDownloader(Bot):
     async def listen_forward(
             self,
             client: pyrogram.Client,
-            message: pyrogram.types
+            message: pyrogram.types.Message
     ):
         try:
             link: str = message.link
@@ -715,7 +751,7 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     async def resume_download(
             self,
-            message: Union[pyrogram.types, str],
+            message: Union[pyrogram.types.Message, str],
             file_name: str,
             progress: Callable = None,
             progress_args: tuple = (),
