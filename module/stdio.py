@@ -332,8 +332,8 @@ class QrcodeRender:
 
 class MetaData:
     @staticmethod
-    def print_current_task_num(num: int) -> None:
-        console.log(f'{_t(KeyWord.CURRENT_TASK)}:{num}。', justify='right', style='#B1DB74')
+    def print_current_task_num(prompt: str, num: int) -> None:
+        console.log(f'{prompt}:{num}。', justify='right', style='#B1DB74')
 
     @staticmethod
     def check_run_env() -> bool:  # 检测是windows平台下控制台运行还是IDE运行。

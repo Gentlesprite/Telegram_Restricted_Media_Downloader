@@ -52,58 +52,131 @@ class KeyWord:
     TYPE: str = 'type'
     RELOAD: str = 'reload'
     RELOAD_TIMES: str = 'reload times'
-    CURRENT_TASK: str = 'current task'
+    CURRENT_DOWNLOAD_TASK: str = 'current download task'
+    CURRENT_UPLOAD_TASK: str = 'current upload task'
     REASON: str = 'reason'
     RESUME: str = 'resume'
 
 
 class Extension:
-    PHOTO = {'image/avif': 'avif',
-             'image/bmp': 'bmp',
-             'image/gif': 'gif',
-             'image/ief': 'ief',
-             'image/jpg': 'jpg',
-             'image/jpeg': 'jpeg',
-             'image/heic': 'heic',
-             'image/heif': 'heif',
-             'image/png': 'png',
-             'image/svg+xml': 'svg',
-             'image/tiff': 'tif',
-             'image/vnd.microsoft.icon': 'ico',
-             'image/x-cmu-raster': 'ras',
-             'image/x-portable-anymap': 'pnm',
-             'image/x-portable-bitmap': 'pbm',
-             'image/x-portable-graymap': 'pgm',
-             'image/x-portable-pixmap': 'ppm',
-             'image/x-rgb': 'rgb',
-             'image/x-xbitmap': 'xbm',
-             'image/x-xpixmap': 'xpm',
-             'image/x-xwindowdump': 'xwd'
-             }
-    VIDEO = {'video/mp4': 'mp4',
-             'video/mpeg': 'mpg',
-             'video/quicktime': 'qt',
-             'video/webm': 'webm',
-             'video/x-msvideo': 'avi',
-             'video/x-sgi-movie': 'movie',
-             'video/x-matroska': 'mkv'
-             }
+    PHOTO = {
+        'image/avif': 'avif',
+        'image/bmp': 'bmp',
+        'image/gif': 'gif',
+        'image/ief': 'ief',
+        'image/jpg': 'jpg',
+        'image/jpeg': 'jpeg',
+        'image/heic': 'heic',
+        'image/heif': 'heif',
+        'image/png': 'png',
+        'image/svg+xml': 'svg',
+        'image/tiff': 'tif',
+        'image/vnd.microsoft.icon': 'ico',
+        'image/x-cmu-raster': 'ras',
+        'image/x-portable-anymap': 'pnm',
+        'image/x-portable-bitmap': 'pbm',
+        'image/x-portable-graymap': 'pgm',
+        'image/x-portable-pixmap': 'ppm',
+        'image/x-rgb': 'rgb',
+        'image/x-xbitmap': 'xbm',
+        'image/x-xpixmap': 'xpm',
+        'image/x-xwindowdump': 'xwd'
+    }
+    VIDEO = {
+        'video/mp4': 'mp4',
+        'video/mpeg': 'mpg',
+        'video/quicktime': 'qt',
+        'video/webm': 'webm',
+        'video/x-msvideo': 'avi',
+        'video/x-sgi-movie': 'movie',
+        'video/x-matroska': 'mkv'
+    }
 
 
 class GradientColor:
     # 生成渐变色:https://photokit.com/colors/color-gradient/?lang=zh
-    BLUE2PURPLE_14 = ['#0ebeff', '#21b4f9', '#33abf3', '#46a1ed', '#5898e8', '#6b8ee2', '#7d85dc', '#907bd6', '#a272d0',
-                      '#b568ca', '#c75fc5', '#da55bf', '#ec4cb9', '#ff42b3']
-    GREEN2PINK_11 = ['#00ff40', '#14f54c', '#29eb58', '#3de064', '#52d670', '#66cc7c', '#7ac288', '#8fb894', '#a3ada0',
-                     '#b8a3ac', '#cc99b8']
-    GREEN2BLUE_10 = ['#84fab0', '#85f6b8', '#86f1bf', '#88edc7', '#89e9ce', '#8ae4d6', '#8be0dd', '#8ddce5', '#8ed7ec',
-                     '#8fd3f4']
-    YELLOW2GREEN_10 = ['#d4fc79', '#cdfa7d', '#c6f782', '#bff586', '#b8f28b', '#b2f08f', '#abed94', '#a4eb98',
-                       '#9de89d', '#96e6a1']
-    ORANGE2YELLOW_15 = ['#f08a5d', '#f1915e', '#f1985f', '#f29f60', '#f3a660', '#f3ad61', '#f4b462', '#f5bc63',
-                        '#f5c364', '#f6ca65', '#f6d166', '#f7d866', '#f8df67', '#f8e668', '#f9ed69']
-    NEW_LIFE = ['#43e97b', '#42eb85', '#41ed8f', '#3fee9a', '#3ef0a4', '#3df2ae', '#3cf4b8', '#3af5c3', '#39f7cd',
-                '#38f9d7']
+    BLUE2PURPLE_14 = [
+        '#0ebeff',
+        '#21b4f9',
+        '#33abf3',
+        '#46a1ed',
+        '#5898e8',
+        '#6b8ee2',
+        '#7d85dc',
+        '#907bd6',
+        '#a272d0',
+        '#b568ca',
+        '#c75fc5',
+        '#da55bf',
+        '#ec4cb9',
+        '#ff42b3'
+    ]
+    GREEN2PINK_11 = [
+        '#00ff40',
+        '#14f54c',
+        '#29eb58',
+        '#3de064',
+        '#52d670',
+        '#66cc7c',
+        '#7ac288',
+        '#8fb894',
+        '#a3ada0',
+        '#b8a3ac',
+        '#cc99b8'
+    ]
+    GREEN2BLUE_10 = [
+        '#84fab0',
+        '#85f6b8',
+        '#86f1bf',
+        '#88edc7',
+        '#89e9ce',
+        '#8ae4d6',
+        '#8be0dd',
+        '#8ddce5',
+        '#8ed7ec',
+        '#8fd3f4'
+    ]
+    YELLOW2GREEN_10 = [
+        '#d4fc79',
+        '#cdfa7d',
+        '#c6f782',
+        '#bff586',
+        '#b8f28b',
+        '#b2f08f',
+        '#abed94',
+        '#a4eb98',
+        '#9de89d',
+        '#96e6a1'
+    ]
+    ORANGE2YELLOW_15 = [
+        '#f08a5d',
+        '#f1915e',
+        '#f1985f',
+        '#f29f60',
+        '#f3a660',
+        '#f3ad61',
+        '#f4b462',
+        '#f5bc63',
+        '#f5c364',
+        '#f6ca65',
+        '#f6d166',
+        '#f7d866',
+        '#f8df67',
+        '#f8e668',
+        '#f9ed69'
+    ]
+    NEW_LIFE = [
+        '#43e97b',
+        '#42eb85',
+        '#41ed8f',
+        '#3fee9a',
+        '#3ef0a4',
+        '#3df2ae',
+        '#3cf4b8',
+        '#3af5c3',
+        '#39f7cd',
+        '#38f9d7'
+    ]
 
     @staticmethod
     def __extend_gradient_colors(colors: list, target_length: int) -> list:

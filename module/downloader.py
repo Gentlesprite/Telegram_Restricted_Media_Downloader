@@ -854,7 +854,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                             compare_size=sever_file_size
                         )
                     )
-                    MetaData.print_current_task_num(self.app.current_task_num)
+                    MetaData.print_current_task_num(
+                        prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
+                        num=self.app.current_task_num
+                    )
                     _task.add_done_callback(
                         partial(
                             self.download_complete_call,
@@ -963,7 +966,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     save_directory=self.app.save_directory,
                     with_move=True
             ):
-                MetaData.print_current_task_num(self.app.current_task_num)
+                MetaData.print_current_task_num(
+                    prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
+                    num=self.app.current_task_num
+                )
             else:
                 if retry_count < self.app.max_retry_count:
                     retry_count += 1

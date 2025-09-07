@@ -4,16 +4,20 @@
 # Time:2025/9/6 23:00
 # File:uploader.py
 import os
+import asyncio
+
+from functools import partial
 from typing import (
     Callable,
     Union,
     BinaryIO
 )
-from functools import partial
 
 import pyrogram
 from pyrogram import raw, utils
 
+from module.language import _t
+from module.enums import KeyWord
 from module.stdio import MetaData
 from module.path_tool import split_path
 from module.util import (
@@ -33,8 +37,11 @@ class TelegramUploader:
     ):
         self.client: pyrogram.Client = client
         self.loop = loop
+        self.event = asyncio.Event()
         self.queue = queue
         self.pb = progress
+        self.current_task_num = 0
+        self.max_upload_task = 3
 
     async def send_media(
             self,
@@ -105,6 +112,9 @@ class TelegramUploader:
             link,
             file_name
     ):
+        while self.current_task_num >= self.max_upload_task:  # v1.0.7 增加下载任务数限制。
+            await self.event.wait()
+            self.event.clear()
         local_file_size: int = os.path.getsize(file_name)
         format_file_size: str = MetaData.suitable_units_display(local_file_size)
         task_id = self.pb.progress.add_task(
@@ -132,7 +142,14 @@ class TelegramUploader:
                 task_id
             )
         )
-        self.queue.put_nowait(_task) if _task else None
+
+        if _task:
+            self.current_task_num += 1
+            MetaData.print_current_task_num(
+                prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
+                num=self.current_task_num
+            )
+            self.queue.put_nowait(_task)
 
     def upload_complete_callback(
             self,
@@ -141,4 +158,10 @@ class TelegramUploader:
             task_id,
             _future
     ):
+        self.current_task_num -= 1
+        MetaData.print_current_task_num(
+            prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
+            num=self.current_task_num
+        )
         self.pb.progress.remove_task(task_id=task_id)
+        self.event.set()
