@@ -448,7 +448,7 @@ class ProgressBar:
         )
 
     @staticmethod
-    def download_bar(current, total, progress, task_id) -> None:
+    def bar(current, total, progress, task_id) -> None:
         progress.update(
             task_id,
             completed=current,

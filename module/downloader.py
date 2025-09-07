@@ -47,6 +47,7 @@ from module.task import Task
 from module.language import _t
 from module.app import Application, MetaData
 from module.stdio import ProgressBar, Base64Image
+from module.uploader import TelegramUploader
 from module.util import (
     safe_message,
     truncate_display_filename,
@@ -80,17 +81,18 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.event = asyncio.Event()
         self.queue = asyncio.Queue()
         self.app = Application()
+        self.uploader = TelegramUploader(client=self.app.client)
         self.is_running: bool = False
         self.running_log: set = set()
         self.running_log.add(self.is_running)
         self.pb = ProgressBar()
 
-    async def get_link_from_bot(
+    async def get_download_link_from_bot(
             self,
             client: pyrogram.Client,
             message: pyrogram.types.Message
     ):
-        link_meta: Union[dict, None] = await super().get_link_from_bot(client, message)
+        link_meta: Union[dict, None] = await super().get_download_link_from_bot(client, message)
         if link_meta is None:
             return None
         right_link: set = link_meta.get('right_link')
@@ -130,10 +132,57 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
         )
 
+    async def get_upload_link_from_bot(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message,
+            delete: bool = False,
+            save_directory: str = None
+    ):
+        link_meta: Union[dict, None] = await super().get_upload_link_from_bot(client, message)
+        if link_meta is None:
+            return None
+        file_name: str = link_meta.get('file_name')
+        target_link: str = link_meta.get('target_link')
+        target_meta: Union[dict, None] = await self.__extract_link_content(target_link, only_chat_id=True)
+        target_chat = await self.__get_chat(
+            bot_client=client,
+            bot_message=message,
+            chat_id=target_meta.get('chat_id'),
+            error_msg=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
+        )
+        if not target_chat:
+            return None
+        local_file_size: int = os.path.getsize(file_name)
+        format_file_size: str = MetaData.suitable_units_display(local_file_size)
+        task_id = self.pb.progress.add_task(
+            description='',
+            filename=truncate_display_filename(file_name),
+            info=f'0.00B/{format_file_size}',
+            total=local_file_size
+        )
+        _task = self.loop.create_task(
+            self.uploader.send_media(
+                chat_id=target_chat.id,
+                path=file_name,
+                progress=self.pb.bar,
+                progress_args=(self.pb.progress, task_id)
+            )
+        )
+        _task.add_done_callback(
+            partial(
+                self.__upload_complete_callback,
+                local_file_size,
+                file_name,
+                task_id
+            )
+        )
+        self.queue.put_nowait(_task) if _task else None
+
     @staticmethod
     async def __send_pay_qr(
             client: pyrogram.Client,
-            chat_id,
+            chat_id: Union[int, str],
             load_name: str
     ) -> Union[list, str, None]:
         try:
@@ -215,7 +264,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             meta: dict = await self.table()
             await callback_query.message.edit_text(meta.get('text'))
             await callback_query.message.edit_reply_markup(meta.get('keyboard'))
-        elif callback_data == BotCallbackText.DOWNLOAD:
+        elif callback_data in (BotCallbackText.DOWNLOAD, BotCallbackText.DOWNLOAD_UPLOAD):  # todo 处理下载后上传的逻辑。
             command: str = ''
             data: list = callback_data.split()
             callback_data_len: int = len(data)
@@ -454,12 +503,21 @@ class TelegramRestrictedMediaDownloader(Bot):
                 chat_id=message.from_user.id,
                 text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{origin_link}`存在内容保护限制。',
                 reply_parameters=ReplyParameters(message_id=message.id),
-                reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton(
-                        BotButton.CLICK_DOWNLOAD,
-                        callback_data=BotCallbackText.DOWNLOAD
-                    )
-                ]]))
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                BotButton.DOWNLOAD,
+                                callback_data=BotCallbackText.DOWNLOAD
+                            ),
+                            InlineKeyboardButton(
+                                BotButton.DOWNLOAD_UPLOAD,
+                                callback_data=BotCallbackText.DOWNLOAD_UPLOAD
+                            ),
+                        ]
+                    ]
+                )
+            )
         except AttributeError as e:
             log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             await client.send_message(
@@ -856,7 +914,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         save_directory=save_directory,
                         sever_file_size=sever_file_size
                 ):  # 检测是否存在。
-                    self.__complete_call(
+                    self.__download_complete_call(
                         sever_file_size=sever_file_size,
                         temp_file_path=temp_file_path,
                         link=link,
@@ -884,7 +942,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         self.resume_download(
                             message=message,
                             file_name=temp_file_path,
-                            progress=self.pb.download_bar,
+                            progress=self.pb.bar,
                             progress_args=(sever_file_size, self.pb.progress, task_id),
                             compare_size=sever_file_size
                         )
@@ -892,7 +950,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     MetaData.print_current_task_num(self.app.current_task_num)
                     _task.add_done_callback(
                         partial(
-                            self.__complete_call, sever_file_size,
+                            self.__download_complete_call, sever_file_size,
                             temp_file_path,
                             link,
                             file_name,
@@ -965,7 +1023,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         return False
 
     @Task.on_complete
-    def __complete_call(
+    def __download_complete_call(
             self,
             sever_file_size,
             temp_file_path,
@@ -1023,6 +1081,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                 link, file_name = None, None
             self.pb.progress.remove_task(task_id=task_id)
         return link, file_name
+
+    def __upload_complete_callback(
+            self,
+            local_file_size,
+            file_path,
+            task_id,
+            _future
+    ):
+        self.pb.progress.remove_task(task_id=task_id)
 
     @Task.on_create_task
     async def __create_download_task(

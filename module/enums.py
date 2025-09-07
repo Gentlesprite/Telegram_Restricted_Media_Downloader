@@ -863,6 +863,7 @@ class BotCommandText:
     LISTEN_FORWARD: tuple = (
         'listen_forward', '实时监听该链接的最新消息(任意消息)进行转发。\n`/listen_forward 监听频道 转发频道`')
     LISTEN_INFO: tuple = ('listen_info', '查看当前已经创建的监听信息。')
+    UPLOAD: tuple = ('upload', '上传本地的文件到指定频道。`/upload 本地文件 目标频道`')
 
     @staticmethod
     def with_description(text: tuple) -> str:
@@ -878,6 +879,7 @@ class BotCallbackText:
     BACK_TABLE: str = 'back_table'
     NOTICE: str = 'notice'
     DOWNLOAD: str = 'download'
+    DOWNLOAD_UPLOAD: str = 'download_upload'
     REMOVE_LISTEN_DOWNLOAD: str = 'rld'
     REMOVE_LISTEN_FORWARD: str = 'rlf'
     LOOKUP_LISTEN_INFO: str = 'lookup_listen_info'
@@ -913,6 +915,8 @@ class BotButton:
     HELP_PAGE: str = '🛎️帮助页面'
     CLICK_VIEW: str = '🖱点击查看'
     CLICK_DOWNLOAD: str = '🖱点击下载'
+    DOWNLOAD: str = '⬇️下载'
+    DOWNLOAD_UPLOAD: str = '↕️下载后上传'
     TASK_ASSIGN: str = '✅任务已分配'
     OK: str = '✅确定'
     CANCEL: str = '❌取消'

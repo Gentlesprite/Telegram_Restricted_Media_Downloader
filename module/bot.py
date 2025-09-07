@@ -3,6 +3,7 @@
 # Software:PyCharm
 # Time:2025/1/24 21:27
 # File:bot.py
+import shlex
 from typing import List, Dict, Union
 
 import pyrogram
@@ -51,7 +52,8 @@ class Bot:
         BotCommand(BotCommandText.EXIT[0], BotCommandText.EXIT[1]),
         BotCommand(BotCommandText.LISTEN_DOWNLOAD[0], BotCommandText.LISTEN_DOWNLOAD[1].replace('`', '')),
         BotCommand(BotCommandText.LISTEN_FORWARD[0], BotCommandText.LISTEN_FORWARD[1].replace('`', '')),
-        BotCommand(BotCommandText.LISTEN_INFO[0], BotCommandText.LISTEN_INFO[1])
+        BotCommand(BotCommandText.LISTEN_INFO[0], BotCommandText.LISTEN_INFO[1]),
+        BotCommand(BotCommandText.UPLOAD[0], BotCommandText.UPLOAD[1]),
     ]
 
     def __init__(self):
@@ -106,7 +108,7 @@ class Bot:
             return False
         return True
 
-    async def get_link_from_bot(
+    async def get_download_link_from_bot(
             self,
             client: pyrogram.Client,
             message: pyrogram.types.Message
@@ -261,6 +263,7 @@ class Bot:
             f'🕵️ {BotCommandText.with_description(BotCommandText.LISTEN_DOWNLOAD)}\n'
             f'📲 {BotCommandText.with_description(BotCommandText.LISTEN_FORWARD)}\n'
             f'🔍 {BotCommandText.with_description(BotCommandText.LISTEN_INFO)}\n'
+            f'📤 {BotCommandText.with_description(BotCommandText.UPLOAD)}\n'
         )
         if not all([client, message]):
             return {
@@ -369,6 +372,49 @@ class Bot:
             'target_link': args[2],
             'message_range': [start_id, end_id]
         }
+
+    async def get_upload_link_from_bot(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message,
+            delete: bool = False,
+            save_directory: str = None
+    ):
+        text: str = message.text
+        if text == '/upload':
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text='❓❓❓请提供下载链接❓❓❓格式:\n`/upload 本地文件 目标频道`',
+                link_preview_options=LINK_PREVIEW_OPTIONS
+            )
+            return None
+
+        if text.startswith('/upload '):
+            remaining_text = text[len('/upload '):].strip()
+        else:
+            return None
+
+        parts = remaining_text.rsplit(maxsplit=1)
+
+        if len(parts) == 2:
+            file_name = parts[0]  # 文件名部分（可能包含空格）
+            target_link = parts[1]  # URL 部分
+            log.info(f'上传文件:"{file_name}",上传频道:"{target_link}"。')
+            # 验证目标链接格式
+            if target_link.startswith('https://t.me/'):
+                return {
+                    'file_name': file_name,
+                    'target_link': target_link
+                }
+        await self.help(client, message)
+        await client.send_message(
+            chat_id=message.from_user.id,
+            reply_parameters=ReplyParameters(message_id=message.id),
+            text='❌❌❌命令错误❌❌❌\n请查看帮助后重试。',
+            link_preview_options=LINK_PREVIEW_OPTIONS
+        )
+        return None
 
     async def exit(
             self,
@@ -641,8 +687,14 @@ class Bot:
             )
             self.bot.add_handler(
                 MessageHandler(
-                    self.get_link_from_bot,
+                    self.get_download_link_from_bot,
                     filters=pyrogram.filters.command(['download']) & pyrogram.filters.user(self.root)
+                )
+            )
+            self.bot.add_handler(
+                MessageHandler(
+                    self.get_upload_link_from_bot,
+                    filters=pyrogram.filters.command(['upload']) & pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(
@@ -678,7 +730,7 @@ class Bot:
             )
             self.bot.add_handler(
                 MessageHandler(
-                    self.get_link_from_bot,
+                    self.get_download_link_from_bot,
                     filters=pyrogram.filters.regex(r'^https://t.me.*') & pyrogram.filters.user(self.root)
                 )
             )
