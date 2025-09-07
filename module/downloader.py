@@ -8,8 +8,8 @@ import re
 import sys
 import asyncio
 from functools import partial
+from typing import Union, Callable
 from sqlite3 import OperationalError
-from typing import Tuple, Union, Callable
 
 import pyrogram
 from pyrogram.handlers import MessageHandler
@@ -50,11 +50,12 @@ from module.stdio import ProgressBar, Base64Image
 from module.uploader import TelegramUploader
 from module.util import (
     safe_message,
-    truncate_display_filename,
-    format_chat_link
+    format_chat_link,
+    extract_link_content,
+    get_chat_with_notify,
+    truncate_display_filename
 )
 from module.enums import (
-    LinkType,
     DownloadStatus,
     KeyWord,
     BotCallbackText,
@@ -87,6 +88,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.pb = ProgressBar()
         self.uploader = TelegramUploader(
             client=self.app.client,
+            loop=self.loop,
+            queue=self.queue,
             progress=self.pb
         )
 
@@ -147,43 +150,17 @@ class TelegramRestrictedMediaDownloader(Bot):
             return None
         file_name: str = link_meta.get('file_name')
         target_link: str = link_meta.get('target_link')
-        target_meta: Union[dict, None] = await self.__extract_link_content(target_link, only_chat_id=True)
-        target_chat = await self.__get_chat(
-            bot_client=client,
-            bot_message=message,
-            chat_id=target_meta.get('chat_id'),
-            error_msg=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
-        )
-        if not target_chat:
-            return None
-        local_file_size: int = os.path.getsize(file_name)
-        format_file_size: str = MetaData.suitable_units_display(local_file_size)
-        task_id = self.pb.progress.add_task(
-            description='',
-            filename=truncate_display_filename(file_name),
-            info=f'0.00B/{format_file_size}',
-            total=local_file_size
-        )
-        _task = self.loop.create_task(
-            self.uploader.send_media(
-                chat_id=target_chat.id,
-                path=file_name,
-                progress=self.pb.bar,
-                progress_args=(
-                    self.pb.progress,
-                    task_id
-                )
+        try:
+            await self.uploader.create_upload_task(
+                link=target_link,
+                file_name=file_name
             )
-        )
-        _task.add_done_callback(
-            partial(
-                self.uploader.upload_complete_callback,
-                local_file_size,
-                file_name,
-                task_id
+        except ValueError:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
             )
-        )
-        self.queue.put_nowait(_task) if _task else None
 
     @staticmethod
     async def __send_pay_qr(
@@ -390,23 +367,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                 self.listen_forward_chat.pop(channel)
             await callback_query.message.edit_text(callback_query.message.text.replace('请选择是否移除', msg))
 
-    async def __get_chat(
-            self, bot_client: pyrogram.Client,
-            bot_message: pyrogram.types.Message,
-            chat_id: Union[int, str],
-            error_msg: str
-    ) -> Union[pyrogram.types.Chat, None]:
-        try:
-            chat = await self.app.client.get_chat(chat_id)
-            return chat
-        except UsernameNotOccupied:
-            await bot_client.send_message(
-                chat_id=bot_message.from_user.id,
-                reply_parameters=ReplyParameters(message_id=bot_message.id),
-                text=error_msg
-            )
-            return None
-
     async def get_forward_link_from_bot(
             self, client: pyrogram.Client,
             message: pyrogram.types.Message
@@ -419,17 +379,21 @@ class TelegramRestrictedMediaDownloader(Bot):
         start_id: int = meta.get('message_range')[0]
         end_id: int = meta.get('message_range')[1]
         try:
-            origin_meta: Union[dict, None] = await self.__extract_link_content(origin_link, only_chat_id=True)
-            target_meta: Union[dict, None] = await self.__extract_link_content(target_link, only_chat_id=True)
+            origin_meta: Union[dict, None] = await extract_link_content(client=self.app.client, link=origin_link,
+                                                                        only_chat_id=True)
+            target_meta: Union[dict, None] = await extract_link_content(client=self.app.client, link=target_link,
+                                                                        only_chat_id=True)
             if not all([origin_meta, target_meta]):
                 raise Exception('Invalid origin_link or target_link.')
-            origin_chat: Union[pyrogram.types.Chat, None] = await self.__get_chat(
+            origin_chat: Union[pyrogram.types.Chat, None] = await get_chat_with_notify(
+                user_client=self.app.client,
                 bot_client=client,
                 bot_message=message,
                 chat_id=origin_meta.get('chat_id'),
                 error_msg=f'⬇️⬇️⬇️原始频道不存在⬇️⬇️⬇️\n{origin_link}'
             )
-            target_chat: Union[pyrogram.types.Chat, None] = await self.__get_chat(
+            target_chat: Union[pyrogram.types.Chat, None] = await get_chat_with_notify(
+                user_client=self.app.client,
                 bot_client=client,
                 bot_message=message,
                 chat_id=target_meta.get('chat_id'),
@@ -694,12 +658,14 @@ class TelegramRestrictedMediaDownloader(Bot):
     ):
         try:
             link: str = message.link
-            meta = await self.__extract_link_content(link=link)
+            meta = await extract_link_content(client=self.app.client, link=link)
             listen_chat_id = meta.get('chat_id')
             for m in self.listen_forward_chat:
                 listen_link, target_link = m.split()
-                _listen_link_meta = await self.__extract_link_content(link=listen_link, only_chat_id=True)
-                _target_link_meta = await self.__extract_link_content(link=target_link, only_chat_id=True)
+                _listen_link_meta = await extract_link_content(client=self.app.client, link=listen_link,
+                                                               only_chat_id=True)
+                _target_link_meta = await extract_link_content(client=self.app.client, link=target_link,
+                                                               only_chat_id=True)
                 _listen_chat_id = _listen_link_meta.get('chat_id')
                 _target_link_id = _target_link_meta.get('chat_id')
                 if listen_chat_id == _listen_chat_id:
@@ -740,103 +706,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                         )
         except Exception as e:
             log.exception(f'监听转发出现错误,{_t(KeyWord.REASON)}:{e}')
-
-    async def __extract_link_content(
-            self, link: str,
-            only_chat_id: bool = False,  # 为True时,只解析传入link的chat_id。
-            single_link: bool = False  # 为True时,将每个链接都视作是单文件。
-    ) -> Union[dict, None]:
-        origin_link: str = link
-        record_type: set = set()
-        link: str = link[:-1] if link.endswith('/') else link
-        if '?single&comment' in link:  # v1.1.0修复讨论组中附带?single时不下载的问题。
-            record_type.add(LinkType.COMMENT)
-            single_link = True
-        if '?single' in link:
-            link: str = link.split('?single')[0]
-            single_link = True
-        if '?comment' in link:  # 链接中包含?comment表示用户需要同时下载评论中的媒体。
-            link = link.split('?comment')[0]
-            record_type.add(LinkType.COMMENT)
-        if link.count('/') >= 5:
-            if link.startswith('https://t.me/c/'):
-                count: int = link.split('https://t.me/c/')[1].count('/')
-                record_type.add(LinkType.TOPIC) if count == 2 else None
-            elif link.startswith('https://t.me'):
-                record_type.add(LinkType.TOPIC)
-        # https://github.com/KurimuzonAkuma/pyrogram/blob/dev/pyrogram/methods/messages/get_messages.py#L101
-        if only_chat_id:  # todo 话题频道的转发的关键在于解析链接时获取到正确的topic_id。
-            match = re.match(
-                r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/(\d+))?$',
-                link.lower())
-            if match:
-                try:
-                    chat_id = utils.get_channel_id(int(match.group(1)))
-                except ValueError:
-                    chat_id = match.group(1)
-                return {'chat_id': chat_id}
-        else:
-            match = re.match(
-                r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/\d+)*/(\d+)/?$',
-                link.lower())
-            if match:
-                try:
-                    chat_id = utils.get_channel_id(int(match.group(1)))
-                except ValueError:
-                    chat_id = match.group(1)
-                message_id: int = int(match.group(2))
-                comment_message: list = []
-                if LinkType.COMMENT in record_type:
-                    # 如果用户需要同时下载媒体下面的评论,把评论中的所有信息放入列表一起返回。
-                    async for comment in self.app.client.get_discussion_replies(chat_id, message_id):
-                        if not any(getattr(comment, dtype) for dtype in DownloadType()):
-                            continue
-                        if single_link:  # 处理单链接情况。
-                            if '=' in origin_link and int(origin_link.split('=')[-1]) != comment.id:
-                                continue
-                        comment_message.append(comment)
-                message = await self.app.client.get_messages(chat_id=chat_id, message_ids=message_id)
-                is_group, group_message = await self.__is_group(message)
-                if single_link:
-                    is_group = False
-                    group_message: Union[list, None] = None
-                if is_group or comment_message:  # 组或评论区。
-                    try:  # v1.1.2解决当group返回None时出现comment无法下载的问题。
-                        group_message.extend(comment_message) if comment_message else None
-                    except AttributeError:
-                        if comment_message and group_message is None:
-                            group_message: list = []
-                            group_message.extend(comment_message)
-                    if comment_message:
-                        return {
-                            'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.COMMENT,
-                            'chat_id': chat_id,
-                            'message': group_message,
-                            'member_num': len(group_message)
-                        }
-                    else:
-                        return {
-                            'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.GROUP,
-                            'chat_id': chat_id,
-                            'message': group_message,
-                            'member_num': len(group_message)
-                        }
-                elif is_group is False and group_message is None:  # 单文件。
-                    return {
-                        'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.SINGLE,
-                        'chat_id': chat_id,
-                        'message': message,
-                        'member_num': 1
-                    }
-                elif is_group is None and group_message is None:
-                    raise MsgIdInvalid(
-                        'The message does not exist, the channel has been disbanded or is not in the channel.')
-                elif is_group is None and group_message == 0:
-                    raise Exception('Link parsing error.')
-                else:
-                    raise Exception('Unknown error.')
-            else:
-                raise ValueError('Invalid message link.')
 
     async def resume_download(
             self,
@@ -895,15 +764,6 @@ class TelegramRestrictedMediaDownloader(Bot):
             log.info(
                 f'"{temp_path}"下载完成,更改文件名:[{temp_path}]({get_file_size(temp_path)}) -> [{file_name}]({compare_size})')
         return file_name
-
-    @staticmethod
-    async def __is_group(message) -> Tuple[Union[bool, None], Union[list, None]]:
-        try:
-            return True, await message.get_media_group()
-        except ValueError:
-            return False, None  # v1.0.4 修改单文件无法下载问题。
-        except AttributeError:
-            return None, None
 
     async def __add_task(
             self,
@@ -1128,7 +988,7 @@ class TelegramRestrictedMediaDownloader(Bot):
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
         try:
-            meta: dict = await self.__extract_link_content(link=link, single_link=single_link)
+            meta: dict = await extract_link_content(client=self.app.client, link=link, single_link=single_link)
             link_type, chat_id, message, member_num = meta.values()
             Task.LINK_INFO.get(link)['link_type'] = link_type
             Task.LINK_INFO.get(link)['member_num'] = member_num
