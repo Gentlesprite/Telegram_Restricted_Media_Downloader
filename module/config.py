@@ -50,10 +50,16 @@ class Config:
         },
         'links': None,
         'save_directory': None,  # v1.3.0 将配置文件中save_path的参数名修改为save_directory。
-        'max_download_task': None,
+        'max_tasks': {
+            'download': None,
+            'upload': None
+        },
         'is_shutdown': None,
         'download_type': None,
-        'max_retry_count': None
+        'max_retries': {
+            'download': None,
+            'upload': None
+        }
     }
     TEMP_DIRECTORY: str = os.path.join(os.getcwd(), 'temp')
     BACKUP_DIRECTORY: str = 'ConfigBackup'
@@ -84,12 +90,12 @@ class Config:
         self.download_type: list = self.config.get('download_type')
         self.is_shutdown: bool = self.config.get('is_shutdown')
         self.links: str = self.config.get('links')
-        self.max_download_task: int = self.config.get('max_download_task') if isinstance(
-            self.config.get('max_download_task'), int) else 5
-        self.max_retry_count: int = self.config.get('max_retry_count') if isinstance(
-            self.config.get('max_retry_count'), int) else 5
+        self.max_download_task: int = self.config.get('max_tasks', {'download': 5}).get('download')
+        self.max_download_retries: int = self.config.get('max_retries', {'download': 5}).get('download')
+        self.max_upload_task: int = (self.config.get('max_tasks') or {}).get('upload', 3) or 3
+        self.max_upload_retries: int = (self.config.get('max_retries') or {}).get('upload', 3) or 3
         self.proxy: dict = self.config.get('proxy', {})
-        self.enable_proxy: dict | None = self.proxy if self.proxy.get('enable_proxy') else None
+        self.enable_proxy: Union[dict, None] = self.proxy if self.proxy.get('enable_proxy') else None
         self.save_directory: str = self.config.get('save_directory')
 
     def get_last_history_record(self) -> None:
@@ -179,32 +185,36 @@ class Config:
                     console.log(log_message.format(key))
                     self.record_flag = True
 
+        def process_nesting(param_name: str):
+            if param_name in config:
+                param_template = Config.TEMPLATE.get(param_name)
+                param_config = config.get(param_name)
+                if not isinstance(param_config, dict):
+                    param_config: dict = {}
+                    config[param_name] = param_config
+                add_missing_keys(
+                    target=param_config,
+                    template=param_template,
+                    log_message='"{}"'
+                                f'不在{param_name}配置文件中,已添加。'
+                )
+                remove_extra_keys(
+                    target=param_config,
+                    template=param_template,
+                    log_message='"{}"'
+                                f'不在{param_name}配置文件中,已删除。'
+                )
+
         # 处理父级参数。
         add_missing_keys(
             target=config,
             template=Config.TEMPLATE,
             log_message='"{}"不在配置文件中,已添加。'
         )
-        # 特殊处理 proxy 参数。
-        if 'proxy' in config:
-            proxy_template = Config.TEMPLATE.get('proxy')
-            proxy_config = config.get('proxy')
 
-            # 确保 proxy_config 是字典。
-            if not isinstance(proxy_config, dict):
-                proxy_config: dict = {}
-                config['proxy'] = proxy_config
-
-            add_missing_keys(
-                target=proxy_config,
-                template=proxy_template,
-                log_message='"{}"不在proxy配置中,已添加。'
-            )
-            remove_extra_keys(
-                target=proxy_config,
-                template=proxy_template,
-                log_message='"{}"不在proxy模板中,已删除。'
-            )
+        process_nesting('proxy')
+        process_nesting('max_tasks')
+        process_nesting('max_retries')
 
         # 删除父级模板中没有的字段。
         remove_extra_keys(
@@ -291,10 +301,9 @@ class Config:
             _bot_token: Union[str, None] = pre_load_config.get('bot_token')
             _links: Union[str, None] = pre_load_config.get('links')
             _save_directory: Union[str, None] = pre_load_config.get('save_directory')
-            _max_download_task: Union[int, None] = pre_load_config.get('max_download_task') if isinstance(
-                pre_load_config.get('max_download_task'), int) else None  # v1.4.0 修复同时下载任务数不询问是否配置问题。
-            _max_retry_count: Union[int, None] = pre_load_config.get('max_retry_count') if isinstance(
-                pre_load_config.get('max_retry_count'), int) else None
+            _max_download_task: Union[int, None] = pre_load_config.get('max_tasks', {'download': 5}).get('download')
+            _max_download_retries: Union[int, None] = pre_load_config.get('max_retries', {'download': 5}).get(
+                'download')
             _download_type: Union[list, None] = pre_load_config.get('download_type')
             _is_shutdown: Union[bool, None] = pre_load_config.get('is_shutdown')
             _proxy_config: dict = pre_load_config.get('proxy', {})
@@ -348,16 +357,16 @@ class Config:
                     pre_load_config['save_directory'] = save_directory
             if not _max_download_task or self.re_config:
                 max_download_task, record_flag = gsp.get_max_download_task(
-                    last_record=self.last_record.get('max_download_task')).values()
+                    last_record=self.last_record.get('max_tasks', {'download': 5}).get('download')).values()
                 if record_flag:
                     self.record_flag = record_flag
-                    pre_load_config['max_download_task'] = max_download_task
-            if not _max_retry_count or self.re_config:
+                    pre_load_config.get('max_tasks')['download'] = max_download_task
+            if not _max_download_retries or self.re_config:
                 max_retry_count, record_flag = gsp.get_max_retry_count(
-                    last_record=self.last_record.get('max_retry_count')).values()
+                    last_record=self.last_record.get('max_retries', {'download': 5}).get('download')).values()
                 if record_flag:
                     self.record_flag = record_flag
-                    pre_load_config['max_retry_count'] = max_retry_count
+                    pre_load_config.get('max_retries')['download'] = max_retry_count
             if not _download_type or self.re_config:
                 download_type, record_flag = gsp.get_download_type(
                     last_record=self.last_record.get('download_type')).values()
@@ -437,6 +446,19 @@ class Config:
                     console.log('用户手动终止配置参数。')
                 self.ctrl_c()
                 raise SystemExit(0)
+        pre_load_config.get(
+            'max_tasks',
+            {
+                'download': _max_download_task,
+                'upload': 3
+            }
+        )['upload'] = (pre_load_config.get('max_tasks') or {}).get('upload', 3) or 3
+        pre_load_config.get(
+            'max_retries',
+            {
+                'download': _max_download_retries,
+                'upload': 3}
+        )['upload'] = (pre_load_config.get('max_retries') or {}).get('upload', 3) or 3
         self.save_config(pre_load_config)  # v1.3.0 修复不保存配置文件时,配置文件仍然保存的问题。
 
     def save_config(self, config: dict) -> None:
@@ -484,6 +506,29 @@ class BaseConfig:
         for key in keys_to_remove:
             target.pop(key)
             console.log(log_message.format(key))
+
+    def process_nesting(self, param_name: Union[str, dict], config):
+        param_template = self.TEMPLATE.get(param_name)
+        param_length = len(param_template)
+        if param_name in config:
+            param_template = self.TEMPLATE.get(param_name)
+            param_config = config.get(param_name)
+            if not isinstance(param_config, dict) or (
+                    isinstance(param_config, dict) and len(param_config) != param_length):
+                param_config: dict = {}
+                config[param_name] = param_config
+            self.add_missing_keys(
+                target=param_config,
+                template=param_template,
+                log_message='"{}"'
+                            f'不在{param_name}配置文件中,已添加。'
+            )
+            self.remove_extra_keys(
+                target=param_config,
+                template=param_template,
+                log_message='"{}"'
+                            f'不在{param_name}配置文件中,已删除。'
+            )
 
     def __check_params(self, config: dict) -> None:
         """检查配置文件的参数是否完整。"""
@@ -562,22 +607,7 @@ class GlobalConfig(BaseConfig):
             template=self.TEMPLATE,
             log_message='"{}"不在全局配置文件中,已添加。'
         )
-        if 'export_table' in config:
-            export_template = self.TEMPLATE.get('export_table')
-            export_config = config.get('export_table')
-            if not isinstance(export_config, dict):
-                export_config: dict = {}
-                config['export_table'] = export_config
-            self.add_missing_keys(
-                target=export_config,
-                template=export_template,
-                log_message='"{}"不在export_table配置中,已添加。'
-            )
-            self.remove_extra_keys(
-                target=export_config,
-                template=export_template,
-                log_message='"{}"不在proxy模板中,已删除。'
-            )
+        self.process_nesting(param_name='export_table', config=config)
         # 删除父级模板中没有的字段。
         self.remove_extra_keys(
             target=config,

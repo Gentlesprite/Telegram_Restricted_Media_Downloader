@@ -34,7 +34,9 @@ class TelegramUploader:
             client: pyrogram.Client,
             loop,
             progress,
-            queue
+            queue,
+            max_upload_task: int = 3,
+            max_retry_count: int = 3
     ):
         self.client: pyrogram.Client = client
         self.loop = loop
@@ -42,8 +44,8 @@ class TelegramUploader:
         self.queue = queue
         self.pb = progress
         self.current_task_num = 0
-        self.max_upload_task = 3
-        self.max_retry_count = 3
+        self.max_upload_task = max_upload_task
+        self.max_retry_count = max_retry_count
 
     async def send_media(
             self,

@@ -90,7 +90,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             client=self.app.client,
             loop=self.loop,
             queue=self.queue,
-            progress=self.pb
+            progress=self.pb,
+            max_upload_task=self.app.max_upload_task,
+            max_retry_count=self.app.max_upload_retries
         )
 
     async def get_download_link_from_bot(
@@ -971,7 +973,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     num=self.app.current_task_num
                 )
             else:
-                if retry_count < self.app.max_retry_count:
+                if retry_count < self.app.max_download_retries:
                     retry_count += 1
                     task = self.loop.create_task(
                         self.create_download_task(link=link, retry={'id': file_id, 'count': retry_count}))
@@ -979,11 +981,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         partial(
                             self.__retry_call,
                             f'{_t(KeyWord.RE_DOWNLOAD)}:"{file_name}",'
-                            f'{_t(KeyWord.RETRY_TIMES)}:{retry_count}/{self.app.max_retry_count}。'
+                            f'{_t(KeyWord.RETRY_TIMES)}:{retry_count}/{self.app.max_download_retries}。'
                         )
                     )
                 else:
-                    _error = f'(达到最大重试次数:{self.app.max_retry_count}次)。'
+                    _error = f'(达到最大重试次数:{self.app.max_download_retries}次)。'
                     console.log(
                         f'{_t(KeyWord.FILE)}:"{file_name}",'
                         f'{_t(KeyWord.SIZE)}:{format_file_size},'
