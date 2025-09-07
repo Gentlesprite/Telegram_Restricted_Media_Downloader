@@ -21,7 +21,7 @@ from module.language import _t
 
 from module.stdio import MetaData
 from module.task import UploadTask
-from module.path_tool import split_path
+from module.path_tool import split_path, safe_delete
 from module.enums import (
     KeyWord,
     UploadStatus
@@ -95,7 +95,8 @@ class TelegramUploader:
     async def create_upload_task(
             self,
             link: str,
-            file_name: str
+            file_name: str,
+            with_delete: bool = False
     ):
         target_meta: Union[dict, None] = await extract_link_content(
             client=self.client,
@@ -124,7 +125,8 @@ class TelegramUploader:
                     chat_id=chat_id,
                     link=link,
                     file_name=file_name,
-                    size=file_size
+                    size=file_size,
+                    with_delete=with_delete
                 )
                 return {
                     'chat_id': chat_id,
@@ -154,7 +156,8 @@ class TelegramUploader:
             chat_id: Union[str, int],
             link: str,
             file_name: str,
-            size: int
+            size: int,
+            with_delete: bool
     ):
         while self.current_task_num >= self.max_upload_task:  # v1.0.7 增加下载任务数限制。
             await self.event.wait()
@@ -182,7 +185,8 @@ class TelegramUploader:
                 self.upload_complete_callback,
                 size,
                 file_name,
-                task_id
+                task_id,
+                with_delete
             )
         )
 
@@ -199,8 +203,10 @@ class TelegramUploader:
             local_file_size,
             file_path,
             task_id,
+            with_delete,
             _future
     ):
+        safe_delete(file_p_d=file_path) if with_delete else None
         console.log(
             f'{_t(KeyWord.UPLOAD_TASK)}'
             f'{_t(KeyWord.FILE)}:"{file_path}",'
