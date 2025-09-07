@@ -317,8 +317,8 @@ class UserConfig(BaseConfig):
                 self.re_config = True  # v1.3.4 修复配置文件不存在时,无法重新生成配置文件的问题。
             with open(self.config_path, 'r', encoding='UTF-8') as f:
                 config: dict = yaml.safe_load(f)  # v1.1.4 加入对每个字段的完整性检测。
-            compare_config: dict = config.copy()
-            config: dict = self.__check_params(config)  # 检查所有字段是否完整,modified代表是否有修改记录(只记录缺少的)
+            compare_config: dict = config.copy() if config else {}
+            config: dict = self.__check_params(config) if compare_config else None
             if config != compare_config or config == UserConfig.TEMPLATE:  # v1.3.4 修复配置文件所有参数都为空时报错问题。
                 self.re_config = True
         except UnicodeDecodeError as e:  # v1.1.3 加入配置文件路径是中文或特殊字符时的错误提示,由于nuitka打包的性质决定,
