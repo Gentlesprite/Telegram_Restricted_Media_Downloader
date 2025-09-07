@@ -888,11 +888,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。'
                         )
                         self.app.guess_file_type(file_name, DownloadStatus.SKIP)
-                        DownloadTask.LINK_INFO.get(link).get('error_msg')[file_name] = _error.replace('。', '')
+                        DownloadTask.set_error(link=link, key=file_name, value=_error.replace('。', ''))
                     else:
                         raise Exception('不支持或被忽略的类型。')
                 except Exception as _:
-                    DownloadTask.LINK_INFO.get(link).get('error_msg')['all_member'] = _error.replace('。', '')
+                    DownloadTask.set_error(link=link, value=_error.replace('。', ''))
                     console.log(
                         f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
                         f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
@@ -993,7 +993,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}'
                         f'{_error}'
                     )
-                    DownloadTask.LINK_INFO.get(link).get('error_msg')[file_name] = _error.replace('。', '')
+                    DownloadTask.set_error(link=link, key=file_name, value=_error.replace('。', ''))
                     self.bot_task_link.discard(link)
                 link, file_name = None, None
             self.pb.progress.remove_task(task_id=task_id)
@@ -1014,8 +1014,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 single_link=single_link
             )
             link_type, chat_id, message, member_num = meta.values()
-            DownloadTask.LINK_INFO.get(link)['link_type'] = link_type
-            DownloadTask.LINK_INFO.get(link)['member_num'] = member_num
+            DownloadTask.set(link, 'link_type', link_type)
+            DownloadTask.set(link, 'member_num', member_num)
             await self.__add_task(chat_id, link_type, link, message, retry)
             return {
                 'chat_id': chat_id,

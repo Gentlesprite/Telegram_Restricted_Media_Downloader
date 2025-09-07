@@ -86,3 +86,11 @@ class DownloadTask:
             return res
 
         return wrapper
+
+    @staticmethod
+    def set(link: str, key: str, value):
+        DownloadTask.LINK_INFO.get(link)[key] = value
+
+    @staticmethod
+    def set_error(link: str, value, key: Union[str, None] = None):
+        DownloadTask.LINK_INFO.get(link).get('error_msg')[key if key else 'all_member'] = value
