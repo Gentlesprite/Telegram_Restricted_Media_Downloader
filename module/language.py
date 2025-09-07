@@ -13,6 +13,7 @@ translations: dict = {
     'document': ['文档'],
     'media': ['媒体'],
     'downloading': ['下载中'],
+    'uploading': ['上传中'],
     'success': ['成功'],
     'failure': ['失败'],
     'skip': ['跳过'],
@@ -33,7 +34,9 @@ translations: dict = {
     'current download task': ['[当前下载任务数]'],
     'current upload task': ['[当前上传任务数]'],
     'reason': ['原因'],
-    'resume': ['[断点续传]']
+    'resume': ['[断点续传]'],
+    'download task': ['「下载任务」'],
+    'upload task': ['「上传任务」']
 }
 
 

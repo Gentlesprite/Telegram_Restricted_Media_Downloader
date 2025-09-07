@@ -39,6 +39,12 @@ class DownloadStatus:
     RETRY = 'retry'
 
 
+class UploadStatus:
+    UPLOADING = 'uploading'
+    SUCCESS = 'success'
+    FAILURE = 'failure'
+
+
 class KeyWord:
     LINK: str = 'link'
     LINK_TYPE: str = 'link type'
@@ -57,6 +63,8 @@ class KeyWord:
     CURRENT_UPLOAD_TASK: str = 'current upload task'
     REASON: str = 'reason'
     RESUME: str = 'resume'
+    DOWNLOAD_TASK: str = 'download task'
+    UPLOAD_TASK: str = 'upload task'
 
 
 class Extension:

@@ -735,6 +735,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             local_file_size: int = get_file_size(file_path=file_name)
             if compare_file_size(a_size=local_file_size, b_size=compare_size):
                 console.log(
+                    f'{_t(KeyWord.DOWNLOAD_TASK)}'
                     f'{_t(KeyWord.RESUME)}:"{file_name}",'
                     f'{_t(KeyWord.STATUS)}:{_t(KeyWord.ALREADY_EXIST)}')
                 return file_name
@@ -748,6 +749,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             local_file_size: int = get_file_size(file_path=temp_path)
             if compare_file_size(a_size=local_file_size, b_size=compare_size):
                 console.log(
+                    f'{_t(KeyWord.DOWNLOAD_TASK)}'
                     f'{_t(KeyWord.RESUME)}:"{temp_path}",'
                     f'{_t(KeyWord.STATUS)}:{_t(KeyWord.ALREADY_EXIST)}')
                 result: str = safe_replace(origin_file=temp_path, overwrite_file=file_name).get('e_code')
@@ -764,6 +766,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         else:
             mode = 'ab'
             console.log(
+                f'{_t(KeyWord.DOWNLOAD_TASK)}'
                 f'{_t(KeyWord.RESUME)}:"{file_name}",'
                 f'{_t(KeyWord.ERROR_SIZE)}:{MetaData.suitable_units_display(downloaded)}。')
         with open(file=temp_path, mode=mode) as f:
@@ -803,6 +806,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             if valid_dtype in self.app.download_type:
                 # 如果是匹配到的消息类型就创建任务。
                 console.log(
+                    f'{_t(KeyWord.DOWNLOAD_TASK)}'
                     f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
                     f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
                     f'{_t(KeyWord.LINK_TYPE)}:{_t(link_type)}。'  # 链接类型。
@@ -832,6 +836,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                 else:
                     console.log(
+                        f'{_t(KeyWord.DOWNLOAD_TASK)}'
                         f'{_t(KeyWord.FILE)}:"{file_name}",'
                         f'{_t(KeyWord.SIZE)}:{format_file_size},'
                         f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.DOWNLOADING))},'
@@ -882,6 +887,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     ).values()
                     if file_name:
                         console.log(
+                            f'{_t(KeyWord.DOWNLOAD_TASK)}'
                             f'{_t(KeyWord.FILE)}:"{file_name}",'
                             f'{_t(KeyWord.SIZE)}:{format_file_size},'
                             f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.SKIP))},'
@@ -894,6 +900,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 except Exception as _:
                     DownloadTask.set_error(link=link, value=_error.replace('。', ''))
                     console.log(
+                        f'{_t(KeyWord.DOWNLOAD_TASK)}'
                         f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
                         f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
                         f'{_t(KeyWord.LINK_TYPE)}:{_error}'  # 链接类型。
@@ -921,6 +928,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 ).get('e_code')
                 log.warning(result) if result is not None else None
             console.log(
+                f'{_t(KeyWord.DOWNLOAD_TASK)}'
                 f'{_t(KeyWord.FILE)}:"{file_path}",'
                 f'{_t(KeyWord.SIZE)}:{format_local_size},'
                 f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(temp_file_path, DownloadStatus.SUCCESS))},'
@@ -928,6 +936,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
             return True
         console.log(
+            f'{_t(KeyWord.DOWNLOAD_TASK)}'
             f'{_t(KeyWord.FILE)}:"{file_path}",'
             f'{_t(KeyWord.ERROR_SIZE)}:{format_local_size},'
             f'{_t(KeyWord.ACTUAL_SIZE)}:{format_sever_size},'
@@ -951,8 +960,12 @@ class TelegramRestrictedMediaDownloader(Bot):
     ):
         if task_id is None:
             if retry_count == 0:
-                console.log(f'{_t(KeyWord.ALREADY_EXIST)}:"{_future}"')
                 console.log(
+                    f'{_t(KeyWord.DOWNLOAD_TASK)}'
+                    f'{_t(KeyWord.ALREADY_EXIST)}:"{_future}"'
+                )
+                console.log(
+                    f'{_t(KeyWord.DOWNLOAD_TASK)}'
                     f'{_t(KeyWord.FILE)}:"{file_name}",'
                     f'{_t(KeyWord.SIZE)}:{format_file_size},'
                     f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.SKIP))},'
@@ -987,6 +1000,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 else:
                     _error = f'(达到最大重试次数:{self.app.max_download_retries}次)。'
                     console.log(
+                        f'{_t(KeyWord.DOWNLOAD_TASK)}'
                         f'{_t(KeyWord.FILE)}:"{file_name}",'
                         f'{_t(KeyWord.SIZE)}:{format_file_size},'
                         f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.FAILURE))},'

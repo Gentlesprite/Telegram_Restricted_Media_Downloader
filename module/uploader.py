@@ -18,9 +18,14 @@ from pyrogram import raw, utils
 
 from module import console
 from module.language import _t
-from module.enums import KeyWord
+
 from module.stdio import MetaData
+from module.task import UploadTask
 from module.path_tool import split_path
+from module.enums import (
+    KeyWord,
+    UploadStatus
+)
 from module.util import (
     truncate_display_filename,
     extract_link_content,
@@ -86,6 +91,7 @@ class TelegramUploader:
             )
             return await utils.parse_messages(self.client, r)
 
+    @UploadTask.on_create_task
     async def create_upload_task(
             self,
             link: str,
@@ -103,39 +109,62 @@ class TelegramUploader:
         )
         if not target_chat:
             raise ValueError
+        file_size: int = os.path.getsize(file_name)
+        UploadTask(chat_id=chat_id, file_name=file_name, size=file_size, error_msg=None)
         for retry in range(self.max_retry_count):
             try:
+                console.log(
+                    f'{_t(KeyWord.UPLOAD_TASK)}'
+                    f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'
+                    f'{_t(KeyWord.FILE)}:"{file_name}",'
+                    f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(file_size)},'
+                    f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.UPLOADING)}。'
+                )
                 await self.__add_task(
                     chat_id=chat_id,
                     link=link,
-                    file_name=file_name
+                    file_name=file_name,
+                    size=file_size
                 )
-                return True
+                return {
+                    'chat_id': chat_id,
+                    'file_name': file_name,
+                    'size': os.path.getsize(file_name),
+                    'status': UploadStatus.SUCCESS,
+                    'error_msg': None
+                }
             except Exception as e:
                 console.log(
+                    f'{_t(KeyWord.UPLOAD_TASK)}'
                     f'{_t(KeyWord.RE_UPLOAD)}:"{file_name}",'
-                    f'{_t(KeyWord.RETRY_TIMES)}:{retry}/{self.max_retry_count},'
+                    f'{_t(KeyWord.RETRY_TIMES)}:{retry + 1}/{self.max_retry_count},'
                     f'{_t(KeyWord.REASON)}:"{e}"'
                 )
                 if retry == self.max_retry_count - 1:
-                    return False
+                    return {
+                        'chat_id': chat_id,
+                        'file_name': file_name,
+                        'size': os.path.getsize(file_name),
+                        'status': UploadStatus.FAILURE,
+                        'error_msg': str(e)
+                    }
 
     async def __add_task(
             self,
             chat_id: Union[str, int],
             link: str,
-            file_name: str
+            file_name: str,
+            size: int
     ):
         while self.current_task_num >= self.max_upload_task:  # v1.0.7 增加下载任务数限制。
             await self.event.wait()
             self.event.clear()
-        local_file_size: int = os.path.getsize(file_name)
-        format_file_size: str = MetaData.suitable_units_display(local_file_size)
+        format_file_size: str = MetaData.suitable_units_display(size)
         task_id = self.pb.progress.add_task(
             description='',
             filename=truncate_display_filename(file_name),
             info=f'0.00B/{format_file_size}',
-            total=local_file_size
+            total=size
         )
         _task = self.loop.create_task(
             self.send_media(
@@ -151,7 +180,7 @@ class TelegramUploader:
         _task.add_done_callback(
             partial(
                 self.upload_complete_callback,
-                local_file_size,
+                size,
                 file_name,
                 task_id
             )
@@ -172,6 +201,12 @@ class TelegramUploader:
             task_id,
             _future
     ):
+        console.log(
+            f'{_t(KeyWord.UPLOAD_TASK)}'
+            f'{_t(KeyWord.FILE)}:"{file_path}",'
+            f'{_t(KeyWord.SIZE)}:{local_file_size},'
+            f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.SUCCESS)}。',
+        )
         self.current_task_num -= 1
         self.pb.progress.remove_task(task_id=task_id)
         self.event.set()

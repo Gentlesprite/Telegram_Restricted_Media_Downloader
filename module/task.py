@@ -4,12 +4,16 @@
 # Time:2025/2/27 17:38
 # File:task.py
 import asyncio
-from typing import Union
 from functools import wraps
+from typing import Union
 
 from module import console, log
 from module.language import _t
-from module.enums import DownloadStatus, KeyWord
+from module.enums import (
+    DownloadStatus,
+    UploadStatus,
+    KeyWord
+)
 
 
 class DownloadTask:
@@ -45,12 +49,14 @@ class DownloadTask:
                 reason: str = e_code.get('error_msg')
                 if reason:
                     log.error(
+                        f'{_t(KeyWord.DOWNLOAD_TASK)}'
                         f'{_t(KeyWord.LINK)}:"{link}"{reason},'
                         f'{_t(KeyWord.REASON)}:"{e_code.get("all_member")}",'
                         f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
                     )
                 else:
                     log.warning(
+                        f'{_t(KeyWord.DOWNLOAD_TASK)}'
                         f'{_t(KeyWord.LINK)}:"{link}"{e_code.get("all_member")},'
                         f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
                     )
@@ -77,6 +83,7 @@ class DownloadTask:
             complete_num: int = DownloadTask.get(link=link, key='complete_num')
             if all_num == complete_num:
                 console.log(
+                    f'{_t(KeyWord.DOWNLOAD_TASK)}'
                     f'{_t(KeyWord.LINK)}:"{link}",'
                     f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SUCCESS)}。'
                 )
@@ -102,3 +109,46 @@ class DownloadTask:
     @staticmethod
     def set_error(link: str, value, key: Union[str, None] = None):
         DownloadTask.LINK_INFO.get(link).get('error_msg')[key if key else 'all_member'] = value
+
+
+class UploadTask:
+    CHAT_ID_INFO: dict = {}
+
+    def __init__(
+            self,
+            chat_id: Union[str, int],
+            file_name: str,
+            size: Union[str, int],
+            error_msg: Union[str, None]
+    ):
+        # 如果 chat_id 不存在，初始化结构
+        if chat_id not in UploadTask.CHAT_ID_INFO:
+            UploadTask.CHAT_ID_INFO[chat_id] = {
+                file_name: []
+            }
+
+        UploadTask.CHAT_ID_INFO.get(chat_id)[file_name].append({
+            'size': size,
+            'error_msg': error_msg
+        })
+
+    def on_create_task(func):
+        @wraps(func)
+        async def wrapper(self, *args, **kwargs):
+            res: dict = await func(self, *args, **kwargs)
+            chat_id, file_name, size, status, e_code = res.values()
+            if status == UploadStatus.FAILURE:
+                UploadTask.set(chat_id=chat_id, key=file_name, value=e_code)
+                log.warning(
+                    f'{_t(KeyWord.UPLOAD_TASK)}:'
+                    f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'
+                    f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
+                    f'{_t(KeyWord.REASON)}:"{e_code}"'
+                )
+            return res
+
+        return wrapper
+
+    @staticmethod
+    def set(chat_id: Union[str, int], key, value):
+        UploadTask.CHAT_ID_INFO.get(chat_id)[key].append(value)
