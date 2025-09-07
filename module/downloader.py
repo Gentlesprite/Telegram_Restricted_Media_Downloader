@@ -43,7 +43,7 @@ from module import (
     SLEEP_THRESHOLD
 )
 from module.bot import Bot, KeyboardButton
-from module.task import Task
+from module.task import DownloadTask
 from module.language import _t
 from module.app import Application, MetaData
 from module.stdio import ProgressBar, Base64Image
@@ -107,7 +107,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         invalid_link: set = link_meta.get('invalid_link')
         last_bot_message: Union[pyrogram.types.Message, None] = link_meta.get('last_bot_message')
         exist_link: set = set([_ for _ in right_link if _ in self.bot_task_link])
-        exist_link.update(right_link & Task.COMPLETE_LINK)
+        exist_link.update(right_link & DownloadTask.COMPLETE_LINK)
         right_link -= exist_link
         if last_bot_message:
             await self.safe_edit_message(
@@ -295,7 +295,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _prompt_string: str = '链接统计表'
                 _false_text: str = '😵😵😵没有链接需要统计。'
                 _choice: str = BotCallbackText.EXPORT_LINK_TABLE
-                res: Union[bool, None] = self.app.print_link_table(Task.LINK_INFO)
+                res: Union[bool, None] = self.app.print_link_table(DownloadTask.LINK_INFO)
             elif callback_data == BotCallbackText.COUNT_TABLE:
                 _prompt_string: str = '计数统计表'
                 _false_text: str = '😵😵😵当前没有任何下载。'
@@ -334,7 +334,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             if callback_data == BotCallbackText.EXPORT_LINK_TABLE:
                 _prompt_string: str = '链接统计表'
                 res: Union[bool, None] = self.app.print_link_table(
-                    link_info=Task.LINK_INFO,
+                    link_info=DownloadTask.LINK_INFO,
                     export=True,
                     only_export=True
                 )
@@ -888,11 +888,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。'
                         )
                         self.app.guess_file_type(file_name, DownloadStatus.SKIP)
-                        Task.LINK_INFO.get(link).get('error_msg')[file_name] = _error.replace('。', '')
+                        DownloadTask.LINK_INFO.get(link).get('error_msg')[file_name] = _error.replace('。', '')
                     else:
                         raise Exception('不支持或被忽略的类型。')
                 except Exception as _:
-                    Task.LINK_INFO.get(link).get('error_msg')['all_member'] = _error.replace('。', '')
+                    DownloadTask.LINK_INFO.get(link).get('error_msg')['all_member'] = _error.replace('。', '')
                     console.log(
                         f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
                         f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
@@ -936,7 +936,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         )
         return False
 
-    @Task.on_complete
+    @DownloadTask.on_complete
     def download_complete_callback(
             self,
             sever_file_size,
@@ -993,13 +993,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}'
                         f'{_error}'
                     )
-                    Task.LINK_INFO.get(link).get('error_msg')[file_name] = _error.replace('。', '')
+                    DownloadTask.LINK_INFO.get(link).get('error_msg')[file_name] = _error.replace('。', '')
                     self.bot_task_link.discard(link)
                 link, file_name = None, None
             self.pb.progress.remove_task(task_id=task_id)
         return link, file_name
 
-    @Task.on_create_task
+    @DownloadTask.on_create_task
     async def create_download_task(
             self,
             link: str,
@@ -1014,8 +1014,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 single_link=single_link
             )
             link_type, chat_id, message, member_num = meta.values()
-            Task.LINK_INFO.get(link)['link_type'] = link_type
-            Task.LINK_INFO.get(link)['member_num'] = member_num
+            DownloadTask.LINK_INFO.get(link)['link_type'] = link_type
+            DownloadTask.LINK_INFO.get(link)['member_num'] = member_num
             await self.__add_task(chat_id, link_type, link, message, retry)
             return {
                 'chat_id': chat_id,
@@ -1285,7 +1285,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.pb.progress.stop()
             if not record_error:
                 self.app.print_link_table(
-                    link_info=Task.LINK_INFO,
+                    link_info=DownloadTask.LINK_INFO,
                     export=self.gc.get_config('export_table').get('link')
                 )
                 self.app.print_count_table(
