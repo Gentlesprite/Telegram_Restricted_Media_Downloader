@@ -379,10 +379,16 @@ class TelegramRestrictedMediaDownloader(Bot):
         start_id: int = meta.get('message_range')[0]
         end_id: int = meta.get('message_range')[1]
         try:
-            origin_meta: Union[dict, None] = await extract_link_content(client=self.app.client, link=origin_link,
-                                                                        only_chat_id=True)
-            target_meta: Union[dict, None] = await extract_link_content(client=self.app.client, link=target_link,
-                                                                        only_chat_id=True)
+            origin_meta: Union[dict, None] = await extract_link_content(
+                client=self.app.client,
+                link=origin_link,
+                only_chat_id=True
+            )
+            target_meta: Union[dict, None] = await extract_link_content(
+                client=self.app.client,
+                link=target_link,
+                only_chat_id=True
+            )
             if not all([origin_meta, target_meta]):
                 raise Exception('Invalid origin_link or target_link.')
             origin_chat: Union[pyrogram.types.Chat, None] = await get_chat_with_notify(
@@ -662,10 +668,16 @@ class TelegramRestrictedMediaDownloader(Bot):
             listen_chat_id = meta.get('chat_id')
             for m in self.listen_forward_chat:
                 listen_link, target_link = m.split()
-                _listen_link_meta = await extract_link_content(client=self.app.client, link=listen_link,
-                                                               only_chat_id=True)
-                _target_link_meta = await extract_link_content(client=self.app.client, link=target_link,
-                                                               only_chat_id=True)
+                _listen_link_meta = await extract_link_content(
+                    client=self.app.client,
+                    link=listen_link,
+                    only_chat_id=True
+                )
+                _target_link_meta = await extract_link_content(
+                    client=self.app.client,
+                    link=target_link,
+                    only_chat_id=True
+                )
                 _listen_chat_id = _listen_link_meta.get('chat_id')
                 _target_link_id = _target_link_meta.get('chat_id')
                 if listen_chat_id == _listen_chat_id:
@@ -988,7 +1000,11 @@ class TelegramRestrictedMediaDownloader(Bot):
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
         try:
-            meta: dict = await extract_link_content(client=self.app.client, link=link, single_link=single_link)
+            meta: dict = await extract_link_content(
+                client=self.app.client,
+                link=link,
+                single_link=single_link
+            )
             link_type, chat_id, message, member_num = meta.values()
             Task.LINK_INFO.get(link)['link_type'] = link_type
             Task.LINK_INFO.get(link)['member_num'] = member_num
