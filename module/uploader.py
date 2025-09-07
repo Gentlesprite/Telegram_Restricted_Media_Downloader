@@ -17,8 +17,9 @@ from module.path_tool import split_path
 
 
 class TelegramUploader:
-    def __init__(self, client: pyrogram.Client):
+    def __init__(self, client: pyrogram.Client, progress):
         self.client: pyrogram.Client = client
+        self.pb = progress
 
     async def send_media(
             self,
@@ -58,3 +59,17 @@ class TelegramUploader:
                 )
             )
             return await utils.parse_messages(self.client, r)
+
+    async def __create_upload_task(
+            self
+    ):
+        ...
+
+    def upload_complete_callback(
+            self,
+            local_file_size,
+            file_path,
+            task_id,
+            _future
+    ):
+        self.pb.progress.remove_task(task_id=task_id)
