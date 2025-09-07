@@ -124,7 +124,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         if links is None:
             return None
         for link in links:
-            task: dict = await self.__create_download_task(link=link, retry=None)
+            task: dict = await self.create_download_task(link=link, retry=None)
             invalid_link.add(link) if task.get('status') == DownloadStatus.FAILURE else self.bot_task_link.add(link)
         right_link -= invalid_link
         await self.safe_edit_message(
@@ -647,7 +647,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             message: pyrogram.types.Message
     ):
         try:
-            await self.__create_download_task(link=message.link, single_link=True)
+            await self.create_download_task(link=message.link, single_link=True)
         except Exception as e:
             log.exception(f'监听下载出现错误,{_t(KeyWord.REASON)}:{e}')
 
@@ -956,7 +956,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if retry_count < self.app.max_retry_count:
                     retry_count += 1
                     task = self.loop.create_task(
-                        self.__create_download_task(link=link, retry={'id': file_id, 'count': retry_count}))
+                        self.create_download_task(link=link, retry={'id': file_id, 'count': retry_count}))
                     task.add_done_callback(
                         partial(
                             self.__retry_call,
@@ -980,7 +980,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         return link, file_name
 
     @Task.on_create_task
-    async def __create_download_task(
+    async def create_download_task(
             self,
             link: str,
             retry: Union[dict, None] = None,
@@ -1178,7 +1178,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.running_log.add(self.is_running)
         links: Union[set, None] = self.__process_links(link=self.app.links)
         # 将初始任务添加到队列中。
-        [await self.loop.create_task(self.__create_download_task(link=link, retry=None)) for link in
+        [await self.loop.create_task(self.create_download_task(link=link, retry=None)) for link in
          links] if links else None
         # 处理队列中的任务与机器人事件。
         while not self.queue.empty() or self.is_bot_running:
