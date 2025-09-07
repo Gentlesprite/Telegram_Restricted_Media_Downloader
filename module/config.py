@@ -32,7 +32,105 @@ from module.enums import (
 )
 
 
-class Config:
+class BaseConfig:
+    FILE_NAME: str = 'base_config.yaml'
+    PATH: str = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), FILE_NAME)
+    TEMPLATE: dict = {}
+
+    def __init__(self):
+        self.config: dict = self.TEMPLATE.copy()
+        self.config_path: str = self.PATH
+
+    @staticmethod
+    def add_missing_keys(target, template, log_message) -> None:
+        """添加缺失的配置文件参数。"""
+        for key, value in template.items():
+            if key not in target:
+                target[key] = value
+                console.log(log_message.format(key))
+
+    @staticmethod
+    def remove_extra_keys(target, template, log_message) -> None:
+        """删除多余的配置文件参数。"""
+        keys_to_remove: list = [key for key in target.keys() if key not in template]
+        for key in keys_to_remove:
+            target.pop(key)
+            console.log(log_message.format(key))
+
+    def process_nesting(self, param_name: Union[str, dict], config):
+        param_template = self.TEMPLATE.get(param_name)
+        param_length = len(param_template)
+        if param_name in config:
+            param_template = self.TEMPLATE.get(param_name)
+            param_config = config.get(param_name)
+            if not isinstance(param_config, dict) or (
+                    isinstance(param_config, dict) and len(param_config) != param_length):
+                param_config: dict = {}
+                config[param_name] = param_config
+            self.add_missing_keys(
+                target=param_config,
+                template=param_template,
+                log_message='"{}"'
+                            f'不在{param_name}配置文件中,已添加。'
+            )
+            self.remove_extra_keys(
+                target=param_config,
+                template=param_template,
+                log_message='"{}"'
+                            f'不在{param_name}配置文件中,已删除。'
+            )
+
+    def __check_params(self, config: dict) -> None:
+        """检查配置文件的参数是否完整。"""
+        # 如果 config 为 None，初始化为一个空字典。
+        if config is None:
+            config = {}
+
+        # 处理父级参数。
+        self.add_missing_keys(target=config, template=self.TEMPLATE, log_message='"{}"不在全局配置文件中,已添加。')
+        # 删除父级模板中没有的字段。
+        self.remove_extra_keys(config, self.TEMPLATE, '"{}"不在模板中,已删除。')
+
+        if config != self.config:
+            self.config = config
+            self.save_config(self.config)
+
+    def load_config(self) -> None:
+        """加载全局配置文件。"""
+        try:
+            if not os.path.exists(self.PATH):
+                with open(file=self.PATH, mode='w', encoding='UTF-8') as f:
+                    yaml.dump(self.TEMPLATE, f, Dumper=CustomDumper)
+                return
+            with open(file=self.PATH, mode='r', encoding='UTF-8') as f:
+                config = yaml.safe_load(f)
+                if config:
+                    self.config = config
+                else:
+                    raise ValueError('The file is empty or has invalid format.')
+        except Exception as e:
+            log.error(f'检测到无效或损坏的全局配置文件。已生成新的模板文件. . .{_t(KeyWord.REASON)}:"{e}"')
+            self.config: dict = self.TEMPLATE.copy()
+            self.save_config(self.config)
+
+    def save_config(self, config: dict) -> None:
+        """保存配置文件。"""
+        try:
+            with open(file=self.config_path, mode='w', encoding='UTF-8') as f:
+                yaml.dump(config, f)
+            log.info('全局配置文件已保存。')
+        except Exception as e:
+            log.error(f'保存全局配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
+        finally:
+            self.config = config
+
+    def get_config(self, param, error_param=None) -> Union[str, None]:
+        """获取实时的配置文件。"""
+        self.load_config()
+        return self.config.get(param, error_param)
+
+
+class UserConfig(BaseConfig):
     DIRECTORY_NAME: str = os.path.dirname(os.path.abspath(sys.argv[0]))  # 获取软件工作绝对目录。
     FILE_NAME: str = 'config.yaml'  # 配置文件名。
     PATH: str = os.path.join(DIRECTORY_NAME, FILE_NAME)
@@ -67,6 +165,8 @@ class Config:
     WORK_DIRECTORY: str = os.path.join(os.getcwd(), 'sessions')
 
     def __init__(self):
+        super().__init__()
+        self.config_path: str = UserConfig.PATH
         self.platform: str = PLATFORM
         self.history_timestamp: dict = {}
         self.input_link: list = []
@@ -74,9 +174,8 @@ class Config:
         self.difference_timestamp: dict = {}
         self.download_type: list = []
         self.record_dtype: set = set()
-        self.config_path: str = Config.PATH
-        self.work_directory: str = Config.WORK_DIRECTORY
-        self.temp_directory: str = Config.TEMP_DIRECTORY
+        self.work_directory: str = UserConfig.WORK_DIRECTORY
+        self.temp_directory: str = UserConfig.TEMP_DIRECTORY
         self.record_flag: bool = False
         self.modified: bool = False
         self.get_last_history_record()
@@ -102,7 +201,7 @@ class Config:
         """获取最近一次保存的历史配置文件。"""
         # 首先判断是否存在目录文件。
         try:
-            res: list = os.listdir(Config.ABSOLUTE_BACKUP_DIRECTORY)
+            res: list = os.listdir(UserConfig.ABSOLUTE_BACKUP_DIRECTORY)
         except FileNotFoundError:
             return
         except Exception as e:
@@ -144,12 +243,12 @@ class Config:
             min_config_file: str = self.history_timestamp.get(min_diff_timestamp)
             if not min_config_file:
                 return {}
-            last_config_file: str = os.path.join(Config.ABSOLUTE_BACKUP_DIRECTORY, min_config_file)  # 拼接文件路径。
+            last_config_file: str = os.path.join(UserConfig.ABSOLUTE_BACKUP_DIRECTORY, min_config_file)  # 拼接文件路径。
             with open(file=last_config_file, mode='r', encoding='UTF-8') as f:
                 config: dict = yaml.safe_load(f)
             last_record: dict = self.__check_params(config, history=True)  # v1.1.6修复读取历史如果缺失字段使得flag置True。
 
-            if last_record == Config.TEMPLATE:
+            if last_record == UserConfig.TEMPLATE:
                 # 从字典中删除当前文件。
                 self.history_timestamp.pop(min_diff_timestamp, None)
                 self.difference_timestamp.pop(min_key, None)
@@ -160,85 +259,67 @@ class Config:
         except Exception as _:
             return {}
 
+    def add_missing_keys(self, target, template, log_message, history=False) -> None:
+        """添加缺失的配置文件参数。"""
+        for key, value in template.items():
+            if key not in target:
+                target[key] = value
+                if not history:
+                    console.log(log_message.format(key))
+                    self.modified = True
+                    self.record_flag = True
+
+    def remove_extra_keys(self, target, template, log_message, history=False) -> None:
+        """删除多余的配置文件参数。"""
+        keys_to_remove: list = [key for key in target.keys() if key not in template]
+        for key in keys_to_remove:
+            target.pop(key)
+            if not history:
+                console.log(log_message.format(key))
+                self.record_flag = True
+
     def __check_params(self, config: dict, history=False) -> dict:
         """检查配置文件的参数是否完整。"""
         # 如果 config 为 None，初始化为一个空字典。
         if config is None:
             config = {}
 
-        def add_missing_keys(target, template, log_message) -> None:
-            """添加缺失的配置文件参数。"""
-            for key, value in template.items():
-                if key not in target:
-                    target[key] = value
-                    if not history:
-                        console.log(log_message.format(key))
-                        self.modified = True
-                        self.record_flag = True
-
-        def remove_extra_keys(target, template, log_message) -> None:
-            """删除多余的配置文件参数。"""
-            keys_to_remove: list = [key for key in target.keys() if key not in template]
-            for key in keys_to_remove:
-                target.pop(key)
-                if not history:
-                    console.log(log_message.format(key))
-                    self.record_flag = True
-
-        def process_nesting(param_name: str):
-            if param_name in config:
-                param_template = Config.TEMPLATE.get(param_name)
-                param_config = config.get(param_name)
-                if not isinstance(param_config, dict):
-                    param_config: dict = {}
-                    config[param_name] = param_config
-                add_missing_keys(
-                    target=param_config,
-                    template=param_template,
-                    log_message='"{}"'
-                                f'不在{param_name}配置文件中,已添加。'
-                )
-                remove_extra_keys(
-                    target=param_config,
-                    template=param_template,
-                    log_message='"{}"'
-                                f'不在{param_name}配置文件中,已删除。'
-                )
-
         # 处理父级参数。
-        add_missing_keys(
+        self.add_missing_keys(
             target=config,
-            template=Config.TEMPLATE,
-            log_message='"{}"不在配置文件中,已添加。'
+            template=UserConfig.TEMPLATE,
+            log_message='"{}"不在配置文件中,已添加。',
+            history=history
         )
 
-        process_nesting('proxy')
-        process_nesting('max_tasks')
-        process_nesting('max_retries')
+        self.process_nesting(param_name='proxy', config=config)
+        self.process_nesting(param_name='max_tasks', config=config)
+        self.process_nesting(param_name='max_retries', config=config)
 
         # 删除父级模板中没有的字段。
-        remove_extra_keys(
+        self.remove_extra_keys(
             target=config,
-            template=Config.TEMPLATE,
-            log_message='"{}"不在模板中,已删除。'
+            template=UserConfig.TEMPLATE,
+            log_message='"{}"不在模板中,已删除。',
+            history=history
         )
 
         return config
 
     def load_config(self) -> dict:
         """加载一次当前的配置文件,并附带合法性验证、缺失参数的检测以及各种异常时的处理措施。"""
-        config: dict = Config.TEMPLATE.copy()
+        config: dict = UserConfig.TEMPLATE.copy()
         try:
             if not os.path.exists(self.config_path):
                 with open(file=self.config_path, mode='w', encoding='UTF-8') as f:
-                    yaml.dump(Config.TEMPLATE, f, Dumper=CustomDumper)
+                    yaml.dump(UserConfig.TEMPLATE, f, Dumper=CustomDumper)
                 console.log('未找到配置文件,已生成新的模板文件. . .')
                 self.re_config = True  # v1.3.4 修复配置文件不存在时,无法重新生成配置文件的问题。
             with open(self.config_path, 'r', encoding='UTF-8') as f:
                 config: dict = yaml.safe_load(f)  # v1.1.4 加入对每个字段的完整性检测。
             compare_config: dict = config.copy()
             config: dict = self.__check_params(config)  # 检查所有字段是否完整,modified代表是否有修改记录(只记录缺少的)
-            if config != compare_config or config == Config.TEMPLATE:  # v1.3.4 修复配置文件所有参数都为空时报错问题。
+            if config != compare_config or config == UserConfig.TEMPLATE:  # v1.3.4 修复配置文件所有参数都为空时报错问题。
                 self.re_config = True
         except UnicodeDecodeError as e:  # v1.1.3 加入配置文件路径是中文或特殊字符时的错误提示,由于nuitka打包的性质决定,
             # 中文路径无法被打包好的二进制文件识别,故在配置文件时无论是链接路径还是媒体保存路径都请使用英文命名。
@@ -255,7 +336,7 @@ class Config:
             if config is None:
                 self.re_config = True
                 log.warning('检测到空的配置文件。已生成新的模板文件. . .')
-                config: dict = Config.TEMPLATE.copy()
+                config: dict = UserConfig.TEMPLATE.copy()
             return config
 
     def backup_config(
@@ -265,10 +346,10 @@ class Config:
             force: bool = False
     ) -> None:  # v1.2.9 更正backup_config参数类型。
         """备份当前的配置文件。"""
-        if backup_config != Config.TEMPLATE or force:  # v1.2.9 修复比较变量错误的问题。
+        if backup_config != UserConfig.TEMPLATE or force:  # v1.2.9 修复比较变量错误的问题。
             backup_path: str = gen_backup_config(
                 old_path=self.config_path,
-                absolute_backup_dir=Config.ABSOLUTE_BACKUP_DIRECTORY,
+                absolute_backup_dir=UserConfig.ABSOLUTE_BACKUP_DIRECTORY,
                 error_config=error_config
             )
             console.log(f'原来的配置文件已备份至"{backup_path}"', style='#B1DB74')
@@ -281,11 +362,11 @@ class Config:
         gsp = GetStdioParams()
         # v1.1.0 更替api_id和api_hash位置,与telegram申请的api位置对应以免输错。
         try:
-            if not self.modified and pre_load_config != Config.TEMPLATE:
+            if not self.modified and pre_load_config != UserConfig.TEMPLATE:
                 re_config: bool = gsp.get_is_re_config().get('is_re_config')
                 if re_config:
                     self.re_config = re_config
-                    pre_load_config: dict = Config.TEMPLATE.copy()
+                    pre_load_config: dict = UserConfig.TEMPLATE.copy()
                     self.backup_config(backup_config=pre_load_config, error_config=False, force=True)
                     self.get_last_history_record()  # 更新到上次填写的记录。
                     self.is_change_account = gsp.get_is_change_account(valid_format='y|n').get(
@@ -480,106 +561,6 @@ class Config:
                 pass
 
 
-class BaseConfig:
-    FILE_NAME: str = 'base_config.yaml'
-    PATH: str = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), FILE_NAME)
-    TEMPLATE: dict = {}
-
-    def __init__(self):
-        self.config_path: str = self.PATH
-        self.config: dict = self.TEMPLATE.copy()
-        self.__load_config()
-        self.__check_params(self.config.copy())
-
-    @staticmethod
-    def add_missing_keys(target, template, log_message) -> None:
-        """添加缺失的配置文件参数。"""
-        for key, value in template.items():
-            if key not in target:
-                target[key] = value
-                console.log(log_message.format(key))
-
-    @staticmethod
-    def remove_extra_keys(target, template, log_message) -> None:
-        """删除多余的配置文件参数。"""
-        keys_to_remove: list = [key for key in target.keys() if key not in template]
-        for key in keys_to_remove:
-            target.pop(key)
-            console.log(log_message.format(key))
-
-    def process_nesting(self, param_name: Union[str, dict], config):
-        param_template = self.TEMPLATE.get(param_name)
-        param_length = len(param_template)
-        if param_name in config:
-            param_template = self.TEMPLATE.get(param_name)
-            param_config = config.get(param_name)
-            if not isinstance(param_config, dict) or (
-                    isinstance(param_config, dict) and len(param_config) != param_length):
-                param_config: dict = {}
-                config[param_name] = param_config
-            self.add_missing_keys(
-                target=param_config,
-                template=param_template,
-                log_message='"{}"'
-                            f'不在{param_name}配置文件中,已添加。'
-            )
-            self.remove_extra_keys(
-                target=param_config,
-                template=param_template,
-                log_message='"{}"'
-                            f'不在{param_name}配置文件中,已删除。'
-            )
-
-    def __check_params(self, config: dict) -> None:
-        """检查配置文件的参数是否完整。"""
-        # 如果 config 为 None，初始化为一个空字典。
-        if config is None:
-            config = {}
-
-        # 处理父级参数。
-        self.add_missing_keys(target=config, template=self.TEMPLATE, log_message='"{}"不在全局配置文件中,已添加。')
-        # 删除父级模板中没有的字段。
-        self.remove_extra_keys(config, self.TEMPLATE, '"{}"不在模板中,已删除。')
-
-        if config != self.config:
-            self.config = config
-            self.save_config(self.config)
-
-    def __load_config(self) -> None:
-        """加载全局配置文件。"""
-        try:
-            if not os.path.exists(self.PATH):
-                with open(file=self.PATH, mode='w', encoding='UTF-8') as f:
-                    yaml.dump(self.TEMPLATE, f, Dumper=CustomDumper)
-                return
-            with open(file=self.PATH, mode='r', encoding='UTF-8') as f:
-                config = yaml.safe_load(f)
-                if config:
-                    self.config = config
-                else:
-                    raise ValueError('The file is empty or has invalid format.')
-        except Exception as e:
-            log.error(f'检测到无效或损坏的全局配置文件。已生成新的模板文件. . .{_t(KeyWord.REASON)}:"{e}"')
-            self.config: dict = self.TEMPLATE.copy()
-            self.save_config(self.config)
-
-    def save_config(self, config: dict) -> None:
-        """保存配置文件。"""
-        try:
-            with open(file=self.config_path, mode='w', encoding='UTF-8') as f:
-                yaml.dump(config, f)
-            log.info('全局配置文件已保存。')
-        except Exception as e:
-            log.error(f'保存全局配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
-        finally:
-            self.config = config
-
-    def get_config(self, param, error_param=None) -> Union[str, None]:
-        """获取实时的配置文件。"""
-        self.__load_config()
-        return self.config.get(param, error_param)
-
-
 class GlobalConfig(BaseConfig):
     FILE_NAME: str = GLOBAL_CONFIG_NAME
     PATH: str = GLOBAL_CONFIG_PATH
@@ -595,6 +576,7 @@ class GlobalConfig(BaseConfig):
 
     def __init__(self):
         super().__init__()
+        self.load_config()
         self.__check_params(self.config.copy())
 
     def __check_params(self, config: dict) -> None:

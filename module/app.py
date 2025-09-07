@@ -23,7 +23,7 @@ from module import (
     SOFTWARE_FULL_NAME
 )
 from module.language import _t
-from module.config import Config
+from module.config import UserConfig
 from module.stdio import StatisticalTable, MetaData
 from module.client import TelegramRestrictedMediaDownloaderClient
 from module.enums import (
@@ -39,10 +39,10 @@ from module.path_tool import (
 )
 
 
-class Application(Config, StatisticalTable):
+class Application(UserConfig, StatisticalTable):
 
     def __init__(self):
-        Config.__init__(self)
+        UserConfig.__init__(self)
         StatisticalTable.__init__(self)
         self.client = self.build_client()
         self.__get_download_type()
