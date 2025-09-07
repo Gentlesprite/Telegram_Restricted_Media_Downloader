@@ -819,7 +819,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         save_directory=save_directory,
                         sever_file_size=sever_file_size
                 ):  # 检测是否存在。
-                    self.download_complete_call(
+                    self.download_complete_callback(
                         sever_file_size=sever_file_size,
                         temp_file_path=temp_file_path,
                         link=link,
@@ -862,7 +862,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     _task.add_done_callback(
                         partial(
-                            self.download_complete_call,
+                            self.download_complete_callback,
                             sever_file_size,
                             temp_file_path,
                             link,
@@ -937,7 +937,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         return False
 
     @Task.on_complete
-    def download_complete_call(
+    def download_complete_callback(
             self,
             sever_file_size,
             temp_file_path,
