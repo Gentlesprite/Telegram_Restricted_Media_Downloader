@@ -978,8 +978,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     task.add_done_callback(
                         partial(
                             self.__retry_call,
-                            f'{_t(KeyWord.RELOAD)}:"{file_name}",'
-                            f'{_t(KeyWord.RELOAD_TIMES)}:{retry_count}/{self.app.max_retry_count}。'
+                            f'{_t(KeyWord.RE_DOWNLOAD)}:"{file_name}",'
+                            f'{_t(KeyWord.RETRY_TIMES)}:{retry_count}/{self.app.max_retry_count}。'
                         )
                     )
                 else:

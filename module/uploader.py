@@ -16,6 +16,7 @@ from typing import (
 import pyrogram
 from pyrogram import raw, utils
 
+from module import console
 from module.language import _t
 from module.enums import KeyWord
 from module.stdio import MetaData
@@ -42,6 +43,7 @@ class TelegramUploader:
         self.pb = progress
         self.current_task_num = 0
         self.max_upload_task = 3
+        self.max_retry_count = 3
 
     async def send_media(
             self,
@@ -99,18 +101,28 @@ class TelegramUploader:
         )
         if not target_chat:
             raise ValueError
-
-        await self.__add_task(
-            chat_id=chat_id,
-            link=link,
-            file_name=file_name
-        )
+        for retry in range(self.max_retry_count):
+            try:
+                await self.__add_task(
+                    chat_id=chat_id,
+                    link=link,
+                    file_name=file_name
+                )
+                return True
+            except Exception as e:
+                console.log(
+                    f'{_t(KeyWord.RE_UPLOAD)}:"{file_name}",'
+                    f'{_t(KeyWord.RETRY_TIMES)}:{retry}/{self.max_retry_count},'
+                    f'{_t(KeyWord.REASON)}:"{e}"'
+                )
+                if retry == self.max_retry_count - 1:
+                    return False
 
     async def __add_task(
             self,
-            chat_id,
-            link,
-            file_name
+            chat_id: Union[str, int],
+            link: str,
+            file_name: str
     ):
         while self.current_task_num >= self.max_upload_task:  # v1.0.7 增加下载任务数限制。
             await self.event.wait()
@@ -159,9 +171,10 @@ class TelegramUploader:
             _future
     ):
         self.current_task_num -= 1
+        self.pb.progress.remove_task(task_id=task_id)
+        self.event.set()
+        self.queue.task_done()
         MetaData.print_current_task_num(
             prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
             num=self.current_task_num
         )
-        self.pb.progress.remove_task(task_id=task_id)
-        self.event.set()
