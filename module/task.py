@@ -41,7 +41,7 @@ class DownloadTask:
             res: dict = await func(self, *args, **kwargs)
             chat_id, link_type, member_num, status, e_code = res.values()
             if status == DownloadStatus.FAILURE:
-                DownloadTask.LINK_INFO.get(link)['error_msg'] = e_code
+                DownloadTask.set(link=link, key='error_msg', value=e_code)
                 reason: str = e_code.get('error_msg')
                 if reason:
                     log.error(
@@ -67,14 +67,14 @@ class DownloadTask:
             if all(i is None for i in res):
                 return None
             link, file_name = res
-            DownloadTask.LINK_INFO.get(link).get('file_name').add(file_name)
+            DownloadTask.add_file_name(link=link, file_name=file_name)
             for i in DownloadTask.LINK_INFO.items():
                 compare_link: str = i[0]
                 info: dict = i[1]
                 if compare_link == link:
                     info['complete_num'] = len(info.get('file_name'))
-            all_num: int = DownloadTask.LINK_INFO.get(link).get('member_num')
-            complete_num: int = DownloadTask.LINK_INFO.get(link).get('complete_num')
+            all_num: int = DownloadTask.get(link=link, key='member_num')
+            complete_num: int = DownloadTask.get(link=link, key='complete_num')
             if all_num == complete_num:
                 console.log(
                     f'{_t(KeyWord.LINK)}:"{link}",'
@@ -86,6 +86,14 @@ class DownloadTask:
             return res
 
         return wrapper
+
+    @staticmethod
+    def add_file_name(link, file_name):
+        DownloadTask.LINK_INFO.get(link).get('file_name').add(file_name)
+
+    @staticmethod
+    def get(link: str, key: str) -> Union[str, int, set, dict, None]:
+        return DownloadTask.LINK_INFO.get(link).get(key)
 
     @staticmethod
     def set(link: str, key: str, value):
