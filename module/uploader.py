@@ -161,7 +161,7 @@ class TelegramUploader:
             self.event.clear()
         format_file_size: str = MetaData.suitable_units_display(size)
         task_id = self.pb.progress.add_task(
-            description='',
+            description='📤',
             filename=truncate_display_filename(file_name),
             info=f'0.00B/{format_file_size}',
             total=size

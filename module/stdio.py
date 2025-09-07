@@ -435,7 +435,7 @@ class ProgressBar:
     def __init__(self):
         self.progress = Progress(
             SpinnerColumn(),
-            TextColumn('[bold blue]{task.fields[filename]}', justify='right'),
+            TextColumn('[progress.description]{task.description} [bold blue]{task.fields[filename]}', justify='right'),
             BarColumn(bar_width=max(int(get_terminal_width() * 0.2), 1)),
             '[progress.percentage]{task.percentage:>3.1f}%',
             '•',
