@@ -123,7 +123,6 @@ class TelegramUploader:
                 )
                 await self.__add_task(
                     chat_id=chat_id,
-                    link=link,
                     file_name=file_name,
                     size=file_size,
                     with_delete=with_delete
@@ -154,7 +153,6 @@ class TelegramUploader:
     async def __add_task(
             self,
             chat_id: Union[str, int],
-            link: str,
             file_name: str,
             size: int,
             with_delete: bool
