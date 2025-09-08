@@ -910,7 +910,7 @@ class KeyboardButton:
                             text=BotButton.CLOSE_UPLOAD_DOWNLOAD_DELETE if global_config.get('upload').get(
                                 'delete') else BotButton.OPEN_UPLOAD_DOWNLOAD_DELETE,
                             callback_data=BotCallbackText.UPLOAD_DOWNLOAD_DELETE
-                        ),
+                        )
                     ],
                     [
                         InlineKeyboardButton(

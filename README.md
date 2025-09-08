@@ -173,6 +173,7 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
    | `/listen_download` | `/listen_download https://t.me/A https://t.me/B https://t.me/n` | **实时**监听**频道A**、**频道B**和**频道n**的**最新消息**(视频和图片)进行下载。 |
    | `/listen_forward`  | `/listen_forward https://t.me/A https://t.me/B`              | **实时**监听**频道A**的**最新消息**(任意消息)转发至**频道B**。但当**频道A**为**私密频道**时候无法转发。 |
    | `/listen_info`     | 向机器人发送`/listen_info`即可。                             | 查看当前已经创建的监听信息。                                 |
+   | `/upload`          | `/upload` `本地文件` `目标频道`                              | 上传**本地的文件**到**指定频道**。                           |
 
 6. `/help`命令使用教程，如下图所示：
 
@@ -231,7 +232,7 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 > [!NOTE]
 > 消息能否转发，在于频道是否开启了`限制保存内容`功能。  
-> 如果**无法转发**，**机器人**会在**聊天框**提供一个**下载按钮**。
+> 如果**无法转发**，**机器人**会在**聊天框**提供一个**下载按钮**与**下载后上传按钮(`≥v1.6.7`)**。
 
 ```bash
 # 语法格式如下：
@@ -277,29 +278,35 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 13. `/listen_forward`命令使用教程：
 
-    `/listen_download`监听转发用于，实时监听该链接的最新消息进行下载。
+> [!NOTE]
+> 自版本`≥v1.6.7`起：  
+> 当检测到"受限转发"时,自动采用"下载后上传"的方式(默认**开启**)。  
+> 当**下载并完成上传**后，可选择**是否删除本地文件**(默认**关闭**)。  
+> 并且可通过`[帮助页面]`->`[设置]`->`[上传设置]`进行修改(**重新注册或注销监听转发后生效**)。
 
-    与`/forward`命令一样，消息能否转发，在于频道是否开启了`限制保存内容`功能。
+`/listen_download`监听转发用于，实时监听该链接的最新消息进行下载。
 
-    在用户发送了正确的监听命令后，会收到机器人的成功提示，当被监听的频道有**任何**新内容时，就会自动转发至用户所指定的频道。
+与`/forward`命令一样，消息能否转发，在于频道是否开启了`限制保存内容`功能。
 
-    ```bash
-    # 语法格式如下：
-    /listen_forward https://t.me/A https://t.me/B
-    # https://t.me/A代表要监听的频道。
-    # https://t.me/B代表要转发到的频道。
-    /listen_forward 监听频道 转发频道
-    # /listen_forward命令必须填写监听频道与转发频道。
-    # 取消监听方法：
-    # 再次发送与之前创建监听的命令一样的,即可得到机器人发送给用户的一个内联键盘,点击确认即可。
-    # 如果之前已经创建过监听,已创建的监听就会提示重复并询问是否关闭。
-    # 注意:由于电报对内联键盘回调数据位数的限制为64位,若回调数据超过64位,则无法通过内联键盘进行取消,只能重启软件。
-    # 举例：
-    # 例如取消监听频道https://t.me/A转发到https://t.me/B频道的监听转发。
-    # 则再次发送:
-    # /listen_forward https://t.me/A https://t.me/B
-    # 此时在机器人发送的内联键盘,选择确定即可取消。
-    ```
+在用户发送了正确的监听命令后，会收到机器人的成功提示，当被监听的频道有**任何**新内容时，就会自动转发至用户所指定的频道。
+
+```bash
+# 语法格式如下：
+/listen_forward https://t.me/A https://t.me/B
+# https://t.me/A代表要监听的频道。
+# https://t.me/B代表要转发到的频道。
+/listen_forward 监听频道 转发频道
+# /listen_forward命令必须填写监听频道与转发频道。
+# 取消监听方法：
+# 再次发送与之前创建监听的命令一样的,即可得到机器人发送给用户的一个内联键盘,点击确认即可。
+# 如果之前已经创建过监听,已创建的监听就会提示重复并询问是否关闭。
+# 注意:由于电报对内联键盘回调数据位数的限制为64位,若回调数据超过64位,则无法通过内联键盘进行取消,只能重启软件。
+# 举例：
+# 例如取消监听频道https://t.me/A转发到https://t.me/B频道的监听转发。
+# 则再次发送:
+# /listen_forward https://t.me/A https://t.me/B
+# 此时在机器人发送的内联键盘,选择确定即可取消。
+```
 
 14. `/listen_info`命令使用教程：
 
@@ -309,7 +316,33 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
     /listen_info
     ```
 
+15. `/upload`命令使用教程：
+
+    `/upload`用于上传本地的文件到指定频道。
+
+    语法格式为：`/upload` `本地文件` `目标频道`
+
+    ### 注意：
+
+    `Telegram` 对上传的**单个文件**大小设有**明确限制**：
+
+    - **普通用户**：**单个文件**最大上传大小为`2000 MiB`（约 2 GB）
+    - **会员用户（Telegram Premium）**：**单个文件**最大上传大小为`4000 MiB`（约 4 GB）
+
+    ### 对于Windows用户：
+
+    ```bash
+    /upload C:\files\video.mp4 https://t.me/test
+    ```
+
+    ### 对于Linux用户：
+
+    ```
+    /upload /home/username/files/video.mp4 https://t.me/test
+    ```
+
    ### 监听行为说明：
+
    1. **频道独占原则:**
    - 每个频道**同一时间**只能激活一种监听模式（下载或转发）。
    - 对于`/listen_forward`命令，"同一频道"特指**被监听**的源频道。
@@ -324,6 +357,8 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 ## 2.3.配置文件说明:
 
+## 用户配置文件
+
 ```yaml
 # 这里只是介绍每个参数的含义,软件会详细地引导配置参数。
 # 如果是按照软件的提示填,选看。如果是手动打开config.yaml修改配置,请仔细阅读下面内容。
@@ -334,13 +369,18 @@ api_id: 'xxxxxxxx' # 申请的api_id。
 bot_token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 download_type: # 需要下载的类型。支持的参数:video,photo,document。
 - document
-- video 
+- video
 - photo
 is_shutdown: true # 下载完成后是否自动关机。支持的参数:true,false。
 links: D:\path\where\your\link\files\save\content.txt # 链接地址写法如下:
 # 新建txt文本,一个链接为一行,将路径填入即可请不要加引号,在软件运行前就准备好。
 # D:\path\where\your\link\txt\save\content.txt 一个链接一行。
-max_download_task: 5 # 最大的下载任务数,值过高可能会导致网络相关问题。支持的参数:所有>0的整数。
+max_retries:
+  download: 5 # 最大的下载任务的重试次数。
+  upload: 3 # 最大的上传任务的重试次数。
+max_tasks:
+  download: 5 # 最大同时下载的任务数。
+  upload: 3 # 最大同时上传的任务数。
 proxy: # 代理部分,如不使用请全部填null注意冒号后面有空格,否则不生效导致报错。
   enable_proxy: true # 是否开启代理。支持的参数:true,false。
   hostname: 127.0.0.1 # 代理的ip地址。
@@ -349,6 +389,24 @@ proxy: # 代理部分,如不使用请全部填null注意冒号后面有空格,�
   username: null # 代理的账号,没有就填null。
   password: null # 代理的密码,没有就填null。
 save_directory: F:\directory\media\where\you\save # 下载的媒体保存的目录(不支持网络路径)。
+```
+
+## 全局配置文件
+
+```yaml
+# 全局配置文件无需自行配置,这里只是介绍每个参数的含义。
+# Windows存放路径:%APPDATA%/TRMD
+# Linux存放路径:~/.config/TRMD
+# 部分参数可以通过机器人设置修改。
+console_log_level: WARNING # 在终端显示的最低日志类型。
+export_table:
+  count: false # 控制运行结束时是否导出下载计数统计表。
+  link: false # 控制运行结束时是否导出下载链接统计表。
+file_log_level: INFO # 在TRMD_LOG.log文件中记录的最低日志类型。
+notice: false # 控制机器人启动时候是否发送启动通知。
+upload:
+  delete: false # 控制/listen_forward命令遇到受限内容时,下载上传完成后是否删除已上传完成的本地文件。
+  download_upload: true # 控制/listen_forward命令遇到受限内容时,是否下载后上传到指定的转发频道。
 ```
 
 ## 2.4.**使用注意事项:**

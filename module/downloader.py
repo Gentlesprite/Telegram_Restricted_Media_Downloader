@@ -394,7 +394,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await callback_query.message.reply_text(
                     '上传设置失败\n(具体原因请前往终端查看报错信息)')
                 log.error(f'上传设置失败,{_t(KeyWord.REASON)}:"{e}"')
-
         elif callback_data == BotCallbackText.REMOVE_LISTEN_FORWARD or callback_data.startswith(
                 BotCallbackText.REMOVE_LISTEN_DOWNLOAD):
             if callback_data.startswith(BotCallbackText.REMOVE_LISTEN_DOWNLOAD):

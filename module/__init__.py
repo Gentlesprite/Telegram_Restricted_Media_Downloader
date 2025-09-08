@@ -69,7 +69,7 @@ SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
 __version__ = '1.6.7'
 __license__ = 'MIT License'
-__update_date__ = '2025/09/08 15:40:51'
+__update_date__ = '2025/09/09 00:07:49'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/Gentlesprite>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
@@ -149,13 +149,18 @@ api_id: 'xxxxxxxx' # 申请的api_id。
 bot_token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 download_type: # 需要下载的类型。支持的参数:video,photo,document。
 - document
-- video 
+- video
 - photo
 is_shutdown: true # 下载完成后是否自动关机。支持的参数:true,false。
 links: D:\path\where\your\link\files\save\content.txt # 链接地址写法如下:
 # 新建txt文本,一个链接为一行,将路径填入即可请不要加引号,在软件运行前就准备好。
 # D:\path\where\your\link\txt\save\content.txt 一个链接一行。
-max_download_task: 5 # 最大的下载任务数,值过高可能会导致网络相关问题。支持的参数:所有>0的整数。
+max_retries:
+  download: 5 # 最大的下载任务的重试次数。
+  upload: 3 # 最大的上传任务的重试次数。
+max_tasks:
+  download: 5 # 最大同时下载的任务数。
+  upload: 3 # 最大同时上传的任务数。
 proxy: # 代理部分,如不使用请全部填null注意冒号后面有空格,否则不生效导致报错。
   enable_proxy: true # 是否开启代理。支持的参数:true,false。
   hostname: 127.0.0.1 # 代理的ip地址。

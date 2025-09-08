@@ -975,7 +975,7 @@ class BotCallbackText:
     SETTING: str = 'setting'
     UPLOAD_SETTING: str = 'upload_setting'
     UPLOAD_DOWNLOAD: str = 'upload_download'
-    UPLOAD_DOWNLOAD_DELETE:str = 'upload_download_delete'
+    UPLOAD_DOWNLOAD_DELETE: str = 'upload_download_delete'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
