@@ -222,7 +222,7 @@ class TelegramUploader:
         console.log(
             f'{_t(KeyWord.UPLOAD_TASK)}'
             f'{_t(KeyWord.FILE)}:"{file_path}",'
-            f'{_t(KeyWord.SIZE)}:{local_file_size},'
+            f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(local_file_size)},'
             f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.SUCCESS)}。',
         )
         self.current_task_num -= 1

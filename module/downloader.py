@@ -42,7 +42,7 @@ from module import (
     LINK_PREVIEW_OPTIONS,
     SLEEP_THRESHOLD
 )
-from module.bot import Bot, KeyboardButton
+from module.bot import Bot, KeyboardButton, CallbackData
 from module.task import DownloadTask
 from module.language import _t
 from module.app import Application, MetaData
@@ -86,7 +86,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.running_log: set = set()
         self.running_log.add(self.is_running)
         self.pb = ProgressBar()
-        self.uploader = None
+        self.uploader: Union[TelegramUploader, None] = None
+        self.cd: Union[CallbackData, None] = None
 
     async def get_download_link_from_bot(
             self,
@@ -243,48 +244,32 @@ class TelegramRestrictedMediaDownloader(Bot):
             meta: dict = await self.table()
             await callback_query.message.edit_text(meta.get('text'))
             await callback_query.message.edit_reply_markup(meta.get('keyboard'))
-        elif callback_data in (BotCallbackText.DOWNLOAD, BotCallbackText.DOWNLOAD_UPLOAD):  # todo 处理下载后上传的逻辑。
+        elif callback_data in (BotCallbackText.DOWNLOAD, BotCallbackText.DOWNLOAD_UPLOAD):  # todo 处理监听转发存在限制的逻辑。
+            meta: Union[dict] = self.cd.data
+            if not isinstance(meta, dict):
+                return None
+            origin_link: str = meta.get('origin_link')
+            target_link: str = meta.get('target_link')
+            start_id: Union[int, None] = meta.get('start_id')
+            end_id: Union[int, None] = meta.get('end_id')
             if callback_data == BotCallbackText.DOWNLOAD:
-                command: str = ''
-                data: list = callback_data.split()
-                callback_data_len: int = len(data)
-                if callback_data_len == 1:  # /listen_forward
-                    link = data[0]
-                    command = f'/download {link}'
-                elif callback_data_len == 3:  # /forward
-                    origin_link, start_id, end_id = data
-                    command = f'/download {origin_link} {start_id} {end_id}'
-                await self.app.client.send_message(
-                    chat_id=callback_query.message.from_user.id,
-                    text=command,
-                    link_preview_options=LINK_PREVIEW_OPTIONS
+                self.last_message.text = f'/download {origin_link} {start_id} {end_id}'
+                await self.get_download_link_from_bot(
+                    client=self.last_client,
+                    message=self.last_message
                 )
                 await kb.task_assign_button()
             elif callback_data == BotCallbackText.DOWNLOAD_UPLOAD:
-                data: list = callback_data.split()
-                callback_data_len: int = len(data)
-                if callback_data_len == 1:  # /listen_forward
-                    link = data[0]
-                    await self.create_download_task(
-                        link=link,
-                        with_upload={
-                            'link': link,
-                            'file_name': None,
-                            'with_delete': False
-                        }
-                    )
-                elif callback_data_len == 4:  # /forward
-                    target_link, origin_link, start_id, end_id = data
-                    callback_query.message.text = f'/download {origin_link} {start_id} {end_id}'
-                    await self.get_download_link_from_bot(
-                        client=self.app.client,
-                        message=callback_query.message,
-                        with_upload={
-                            'link': target_link,
-                            'file_name': None,
-                            'with_delete': False
-                        }
-                    )
+                self.last_message.text = f'/download {origin_link} {start_id} {end_id}'
+                await self.get_download_link_from_bot(
+                    client=self.last_client,
+                    message=self.last_message,
+                    with_upload={
+                        'link': target_link,
+                        'file_name': None,
+                        'with_delete': False
+                    }
+                )
                 await kb.task_assign_button()
         elif callback_data == BotCallbackText.LOOKUP_LISTEN_INFO:
             await self.app.client.send_message(
@@ -397,6 +382,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         meta: Union[dict, None] = await super().get_forward_link_from_bot(client, message)
         if meta is None:
             return None
+        self.last_client: pyrogram.Client = client
+        self.last_message: pyrogram.types.Message = message
         origin_link: str = meta.get('origin_link')
         target_link: str = meta.get('target_link')
         start_id: int = meta.get('message_range')[0]
@@ -508,26 +495,17 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                 )
         except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
-            BotCallbackText.DOWNLOAD = f'{origin_link} {start_id} {end_id}'
-            BotCallbackText.DOWNLOAD_UPLOAD = f'{target_link} {origin_link} {start_id} {end_id}'
+            self.cd.data = {
+                'origin_link': origin_link,
+                'target_link': target_link,
+                'start_id': start_id,
+                'end_id': end_id
+            }
             await client.send_message(
                 chat_id=message.from_user.id,
                 text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{origin_link}`存在内容保护限制。',
                 reply_parameters=ReplyParameters(message_id=message.id),
-                reply_markup=InlineKeyboardMarkup(
-                    [
-                        [
-                            InlineKeyboardButton(
-                                BotButton.DOWNLOAD,
-                                callback_data=BotCallbackText.DOWNLOAD
-                            ),
-                            InlineKeyboardButton(
-                                BotButton.DOWNLOAD_UPLOAD,
-                                callback_data=BotCallbackText.DOWNLOAD_UPLOAD
-                            ),
-                        ]
-                    ]
-                )
+                reply_markup=KeyboardButton.restrict_forward_button()
             )
         except AttributeError as e:
             log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
@@ -720,7 +698,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'{_t(KeyWord.STATUS)}:转发成功。'
                         )
                     except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
-                        BotCallbackText.DOWNLOAD = f'https://t.me/{meta.get("chat_id")}/{meta.get("message").id}'
+                        BotCallbackText.DOWNLOAD = f'https://t.me/{meta.get("chat_id")}/{meta.get("message").id}'  # 私密频道,话题频道未考虑。
                         await self.bot.send_message(
                             chat_id=message.from_user.id,
                             text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{listen_chat_id}`存在内容保护限制。',
@@ -1257,6 +1235,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     max_upload_task=self.app.max_upload_task,
                     max_retry_count=self.app.max_upload_retries
                 )
+                self.cd = CallbackData()
         self.is_running = True
         self.running_log.add(self.is_running)
         links: Union[set, None] = self.__process_links(link=self.app.links)

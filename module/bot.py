@@ -435,7 +435,6 @@ class Bot:
                          f'(普通用户2000MiB,会员用户4000MiB)',
                     link_preview_options=LINK_PREVIEW_OPTIONS
                 )
-                log.warning(f'上传文件:"{file_path}",超过大小限制:{format_file_size}。')
 
             log.info(f'上传文件:"{file_path}",上传频道:"{target_link}"。')
             # 验证目标链接格式
@@ -997,3 +996,27 @@ class KeyboardButton:
                 ]
             )
         )
+
+    @staticmethod
+    def restrict_forward_button():
+        return (
+            InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            BotButton.DOWNLOAD,
+                            callback_data=BotCallbackText.DOWNLOAD
+                        ),
+                        InlineKeyboardButton(
+                            BotButton.DOWNLOAD_UPLOAD,
+                            callback_data=BotCallbackText.DOWNLOAD_UPLOAD
+                        ),
+                    ]
+                ]
+            )
+        )
+
+
+class CallbackData:
+    def __init__(self, data: Union[dict, None] = None):
+        self.data: Union[dict, None] = data
