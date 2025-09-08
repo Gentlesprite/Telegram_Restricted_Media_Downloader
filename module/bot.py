@@ -600,45 +600,14 @@ class Bot:
     ):
         pass
 
-    @staticmethod
     async def cancel_listen(
+            self,
             client: pyrogram.Client,
             message: pyrogram.types,
             link: str,
             command: str
     ):
-
-        try:
-            args: list = link.split()
-            forward_emoji = ' ➡️ '
-            await client.send_message(
-                chat_id=message.from_user.id,
-                reply_parameters=ReplyParameters(message_id=message.id),
-                text=f'`{link if len(args) == 1 else forward_emoji.join(args)}`\n⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n请选择是否移除',
-                link_preview_options=LINK_PREVIEW_OPTIONS,
-                reply_markup=InlineKeyboardMarkup([
-                    [
-                        InlineKeyboardButton(
-                            BotButton.OK,
-                            callback_data=f'{BotCallbackText.REMOVE_LISTEN_DOWNLOAD} {link}' if command == '/listen_download' else f'{BotCallbackText.REMOVE_LISTEN_FORWARD} {link}'
-                        ),
-                        InlineKeyboardButton(
-                            BotButton.CANCEL,
-                            callback_data=BotCallbackText.REMOVE_LISTEN_DOWNLOAD if command == '/listen_download' else BotCallbackText.REMOVE_LISTEN_FORWARD
-                        )
-                    ]
-                ]
-                )
-            )
-        except ButtonDataInvalid:
-            len_data: int = len(f'{BotCallbackText.REMOVE_LISTEN_FORWARD} {link}')
-            await client.send_message(
-                chat_id=message.from_user.id,
-                reply_parameters=ReplyParameters(message_id=message.id),
-                link_preview_options=LINK_PREVIEW_OPTIONS,
-                text='⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n'
-                     f'由于数据位[{len_data}]超过[64]位,当前监听无法移除。'
-            )
+        pass
 
     async def listen_info(
             self,
@@ -1014,6 +983,19 @@ class KeyboardButton:
                     ]
                 ]
             )
+        )
+
+    @staticmethod
+    def single_button(text: str, callback_data: str):
+        return InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        text=text,
+                        callback_data=callback_data
+                    )
+                ]
+            ]
         )
 
 

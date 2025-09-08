@@ -245,9 +245,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             await callback_query.message.edit_text(meta.get('text'))
             await callback_query.message.edit_reply_markup(meta.get('keyboard'))
         elif callback_data in (BotCallbackText.DOWNLOAD, BotCallbackText.DOWNLOAD_UPLOAD):  # todo 处理监听转发存在限制的逻辑。
-            meta: Union[dict] = self.cd.data
-            if not isinstance(meta, dict):
+            if not isinstance(self.cd.data, dict):
                 return None
+            meta: Union[dict, None] = self.cd.data.copy()
+            self.cd.data = None
             origin_link: str = meta.get('origin_link')
             target_link: str = meta.get('target_link')
             start_id: Union[int, None] = meta.get('start_id')
@@ -359,21 +360,39 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await callback_query.message.edit_text(
                     f'😵‍💫😵‍💫😵‍💫`{_prompt_string}`导出失败。\n(具体原因请前往终端查看报错信息)')
             await kb.back_table_button()
-        elif callback_data.startswith((BotCallbackText.REMOVE_LISTEN_DOWNLOAD, BotCallbackText.REMOVE_LISTEN_FORWARD)):
-            msg: str = ''
-            await callback_query.message.edit_reply_markup()
-            args: list = callback_data.split()
-            if len(args) == 2:
-                msg: str = '✅已移除'
-                channel: str = args[1]
-                self.app.client.remove_handler(self.listen_download_chat.get(channel))
-                self.listen_download_chat.pop(channel)
-            elif len(args) == 3:
-                msg: str = '✅已移除'
-                channel: str = f'{args[1]} {args[2]}'
-                self.app.client.remove_handler(self.listen_forward_chat.get(channel))
-                self.listen_forward_chat.pop(channel)
-            await callback_query.message.edit_text(callback_query.message.text.replace('请选择是否移除', msg))
+        elif callback_data == BotCallbackText.REMOVE_LISTEN_FORWARD or callback_data.startswith(
+                BotCallbackText.REMOVE_LISTEN_DOWNLOAD):
+            if callback_data.startswith(BotCallbackText.REMOVE_LISTEN_DOWNLOAD):
+                args: list = callback_data.split()
+                link: str = args[1]
+                self.app.client.remove_handler(self.listen_download_chat.get(link))
+                self.listen_download_chat.pop(link)
+                await callback_query.message.edit_text(link)
+                await callback_query.message.edit_reply_markup(
+                    KeyboardButton.single_button(text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL)
+                )
+                p = f'已删除监听下载,频道链接:"{link}"。'
+                console.log(p, style='#FF4689')
+                log.info(f'{p}当前的监听下载信息:{self.listen_download_chat}')
+                return None
+            if not isinstance(self.cd.data, dict):
+                return None
+            meta: Union[dict, None] = self.cd.data.copy()
+            self.cd.data = None
+            link: str = meta.get('link')
+            self.app.client.remove_handler(self.listen_forward_chat.get(link))
+            self.listen_forward_chat.pop(link)
+            m: list = link.split()
+            _ = ' -> '.join(m)
+            p = f'已删除监听转发,转发规则:"{_}"'
+            await callback_query.message.edit_text(
+                ' ➡️ '.join(m)
+            )
+            await callback_query.message.edit_reply_markup(
+                KeyboardButton.single_button(text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL)
+            )
+            console.log(p, style='#FF4689')
+            log.info(f'{p}当前的监听转发信息:{self.listen_forward_chat}')
 
     async def get_forward_link_from_bot(
             self, client: pyrogram.Client,
@@ -531,6 +550,39 @@ class TelegramRestrictedMediaDownloader(Bot):
                 text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
             )
 
+    async def cancel_listen(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types,
+            link: str,
+            command: str
+    ):
+        if command == '/listen_forward':
+            self.cd.data = {
+                'link': link
+            }
+        args: list = link.split()
+        forward_emoji = ' ➡️ '
+        await client.send_message(
+            chat_id=message.from_user.id,
+            reply_parameters=ReplyParameters(message_id=message.id),
+            text=f'`{link if len(args) == 1 else forward_emoji.join(args)}`\n⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n请选择是否移除',
+            link_preview_options=LINK_PREVIEW_OPTIONS,
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(
+                        BotButton.OK,
+                        callback_data=f'{BotCallbackText.REMOVE_LISTEN_DOWNLOAD} {link}' if command == '/listen_download' else BotCallbackText.REMOVE_LISTEN_FORWARD
+                    ),
+                    InlineKeyboardButton(
+                        BotButton.CANCEL,
+                        callback_data=BotCallbackText.NULL
+                    )
+                ]
+            ]
+            )
+        )
+
     async def on_listen(
             self,
             client: pyrogram.Client,
@@ -550,7 +602,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                     return True
                 except PeerIdInvalid as e:
                     chat_id, topic_id = None, None
-                    l_link, _ = _link.split()
+                    link_meta: list = _link.split()
+                    link_length: int = len(link_meta)
+                    if link_length >= 1:
+                        l_link = link_meta[0]  # v1.6.7 修复内部函数add_listen_chat中,抛出PeerIdInvalid后,在获取链接时抛出ValueError错误。
+                    else:
+                        return False
 
                     def _get_m(s: str):
                         return re.match(
@@ -577,9 +634,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         if match:
                             chat_id, topic_id = _get_c_t(match, False)
                     if all([chat_id, topic_id]):
+                        filters = pyrogram.filters.chat(chat_id) if '/c' in l_link else pyrogram.filters.chat(
+                            chat_id) & pyrogram.filters.topic(topic_id)  # v1.6.7 修复私密频道的监听下载作为话题频道监听的问题。
                         handler = MessageHandler(
                             _callback,
-                            filters=pyrogram.filters.chat(chat_id) & pyrogram.filters.topic(topic_id)
+                            filters=filters
                         )
                         _listen_chat[_link] = handler
                         self.user.add_handler(handler)
@@ -629,6 +688,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                             )
                         ]])
                     )
+                    p = f'已新增监听下载,频道链接:"{link}"。'
+                    console.log(p, style='#FF4689')
+                    log.info(f'{p}当前的监听下载信息:{self.listen_download_chat}')
         elif command == '/listen_forward':
             listen_link, target_link = links
             if await add_listen_chat(f'{listen_link} {target_link}', self.listen_forward_chat, self.listen_forward):
@@ -648,6 +710,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                         ]
                     )
                 )
+                p = f'已新增监听转发,转发规则:"{listen_link} -> {target_link}"。'
+                console.log(p, style='#FF4689')
+                log.info(f'{p}当前的监听转发信息:{self.listen_forward_chat}')
 
     async def listen_download(
             self,
@@ -700,7 +765,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
                         BotCallbackText.DOWNLOAD = f'https://t.me/{meta.get("chat_id")}/{meta.get("message").id}'  # 私密频道,话题频道未考虑。
                         await self.bot.send_message(
-                            chat_id=message.from_user.id,
+                            chat_id=client.me.id,
                             text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{listen_chat_id}`存在内容保护限制。',
                             reply_parameters=ReplyParameters(message_id=message.id),
                             reply_markup=InlineKeyboardMarkup(

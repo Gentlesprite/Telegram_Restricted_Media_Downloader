@@ -1013,3 +1013,4 @@ class BotButton:
     RETURN: str = '🔙返回'
     OPEN_EXIT_SHUTDOWN: str = '✅启用退出后关机'
     CLOSE_EXIT_SHUTDOWN: str = '❌禁用退出后关机'
+    ALREADY_REMOVE: str = '✅已移除'
