@@ -259,7 +259,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     client=self.last_client,
                     message=self.last_message
                 )
-                await kb.task_assign_button()
             elif callback_data == BotCallbackText.DOWNLOAD_UPLOAD:
                 self.last_message.text = f'/download {origin_link} {start_id} {end_id}'
                 await self.get_download_link_from_bot(
@@ -271,7 +270,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         'with_delete': False
                     }
                 )
-                await kb.task_assign_button()
+            await kb.task_assign_button()
         elif callback_data == BotCallbackText.LOOKUP_LISTEN_INFO:
             await self.app.client.send_message(
                 chat_id=callback_query.message.from_user.id,
@@ -763,7 +762,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'{_t(KeyWord.STATUS)}:转发成功。'
                         )
                     except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
-                        BotCallbackText.DOWNLOAD = f'https://t.me/{meta.get("chat_id")}/{meta.get("message").id}'  # 私密频道,话题频道未考虑。
+                        BotCallbackText.DOWNLOAD = f'https://t.me/{meta.get("chat_id")}/{meta.get("message").id}'  # todo 私密频道,话题频道情况未考虑。
                         await self.bot.send_message(
                             chat_id=client.me.id,
                             text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{listen_chat_id}`存在内容保护限制。',
