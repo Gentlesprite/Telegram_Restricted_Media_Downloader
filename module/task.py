@@ -122,7 +122,6 @@ class UploadTask:
             size: Union[str, int],
             error_msg: Union[str, None]
     ):
-        # 如果 chat_id 不存在，初始化结构
         if chat_id not in UploadTask.CHAT_ID_INFO:
             UploadTask.CHAT_ID_INFO[chat_id] = {}
 

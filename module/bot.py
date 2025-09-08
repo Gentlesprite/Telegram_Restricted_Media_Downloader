@@ -862,7 +862,6 @@ class KeyboardButton:
                             text=BotButton.CLOSE_NOTICE if global_config.get(
                                 BotCallbackText.NOTICE) else BotButton.OPEN_NOTICE,
                             callback_data=BotCallbackText.NOTICE
-
                         ),
                         InlineKeyboardButton(
                             text=BotButton.EXPORT_TABLE,
@@ -874,6 +873,10 @@ class KeyboardButton:
                             text=BotButton.CLOSE_EXIT_SHUTDOWN if user_config.get(
                                 'is_shutdown') else BotButton.OPEN_EXIT_SHUTDOWN,
                             callback_data=BotCallbackText.SHUTDOWN
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.UPLOAD_SETTING,
+                            callback_data=BotCallbackText.UPLOAD_SETTING
                         )
                     ],
                     [
@@ -889,6 +892,35 @@ class KeyboardButton:
         except Exception as e:
             await self.callback_query.message.reply_text('切换按钮状态失败\n(具体原因请前往终端查看报错信息)')
             log.error(f'切换按钮状态失败,{_t(KeyWord.REASON)}:"{e}"')
+
+    async def toggle_upload_setting_button(
+            self,
+            global_config: dict
+    ):
+        await self.callback_query.message.edit_reply_markup(
+            InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.CLOSE_UPLOAD_DOWNLOAD if global_config.get('upload').get(
+                                'download_upload') else BotButton.OPEN_UPLOAD_DOWNLOAD,
+                            callback_data=BotCallbackText.UPLOAD_DOWNLOAD
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.CLOSE_UPLOAD_DOWNLOAD_DELETE if global_config.get('upload').get(
+                                'delete') else BotButton.OPEN_UPLOAD_DOWNLOAD_DELETE,
+                            callback_data=BotCallbackText.UPLOAD_DOWNLOAD_DELETE
+                        ),
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.RETURN,
+                            callback_data=BotCallbackText.SETTING
+                        )
+                    ]
+                ]
+            )
+        )
 
     async def toggle_table_button(
             self,

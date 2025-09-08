@@ -571,13 +571,32 @@ class GlobalConfig(BaseConfig):
         'export_table': {
             'link': False,
             'count': False
-        }
+        },
+        'upload':
+            {
+                'download_upload': True,
+                'delete': False
+            }
     }
 
     def __init__(self):
         super().__init__()
         self.load_config()
         self.__check_params(self.config.copy())
+        self.default_upload_nesting = self.TEMPLATE.get('upload')
+        self.download_upload: bool = self.get_nesting_config(
+            default_nesting=self.default_upload_nesting,
+            param='upload',
+            nesting_param='download_upload'
+        )
+        self.upload_delete: bool = self.get_nesting_config(
+            default_nesting=self.default_upload_nesting,
+            param='upload',
+            nesting_param='delete'
+        )
+
+    def get_nesting_config(self, default_nesting, param, nesting_param):
+        return self.config.get(param, default_nesting).get(nesting_param)
 
     def __check_params(self, config: dict) -> None:
         if config is None:

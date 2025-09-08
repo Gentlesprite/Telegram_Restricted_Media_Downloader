@@ -21,7 +21,10 @@ from module.language import _t
 
 from module.stdio import MetaData
 from module.task import UploadTask
-from module.path_tool import split_path
+from module.path_tool import (
+    split_path,
+    safe_delete
+)
 from module.enums import (
     KeyWord,
     UploadStatus
@@ -99,7 +102,8 @@ class TelegramUploader:
     async def create_upload_task(
             self,
             link: str,
-            file_path: str
+            file_path: str,
+            with_delete: bool = False
     ):
         target_meta: Union[dict, None] = await extract_link_content(
             client=self.client,
@@ -143,7 +147,8 @@ class TelegramUploader:
                 await self.__add_task(
                     chat_id=chat_id,
                     file_path=file_path,
-                    size=file_size
+                    size=file_size,
+                    with_delete=with_delete
                 )
                 return {
                     'chat_id': chat_id,
@@ -172,7 +177,8 @@ class TelegramUploader:
             self,
             chat_id: Union[str, int],
             file_path: str,
-            size: int
+            size: int,
+            with_delete: bool = False
     ):
         while self.current_task_num >= self.max_upload_task:  # v1.0.7 增加下载任务数限制。
             await self.event.wait()
@@ -200,7 +206,8 @@ class TelegramUploader:
                 self.upload_complete_callback,
                 size,
                 file_path,
-                task_id
+                task_id,
+                with_delete
             )
         )
 
@@ -217,13 +224,18 @@ class TelegramUploader:
             local_file_size,
             file_path,
             task_id,
+            with_delete,
             _future
     ):
+        more = ''
+        if with_delete:
+            safe_delete(file_path)
+            more = '(本地文件已删除)'
         console.log(
             f'{_t(KeyWord.UPLOAD_TASK)}'
             f'{_t(KeyWord.FILE)}:"{file_path}",'
             f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(local_file_size)},'
-            f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.SUCCESS)}。',
+            f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.SUCCESS)}{more}。',
         )
         self.current_task_num -= 1
         self.pb.progress.remove_task(task_id=task_id)
@@ -239,6 +251,7 @@ class TelegramUploader:
             asyncio.create_task(
                 self.create_upload_task(
                     link=with_upload.get('link'),
-                    file_path=file_path
+                    file_path=file_path,
+                    with_delete=with_upload.get('with_delete')
                 )
             )

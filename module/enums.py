@@ -65,6 +65,7 @@ class KeyWord:
     RESUME: str = 'resume'
     DOWNLOAD_TASK: str = 'download task'
     UPLOAD_TASK: str = 'upload task'
+    DOWNLOAD_AND_UPLOAD_TASK: str = 'download and upload task'
 
 
 class Extension:
@@ -972,6 +973,9 @@ class BotCallbackText:
     EXPORT_TABLE: str = 'export_table'
     SHUTDOWN: str = 'shutdown'
     SETTING: str = 'setting'
+    UPLOAD_SETTING: str = 'upload_setting'
+    UPLOAD_DOWNLOAD: str = 'upload_download'
+    UPLOAD_DOWNLOAD_DELETE:str = 'upload_download_delete'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
@@ -1014,3 +1018,8 @@ class BotButton:
     OPEN_EXIT_SHUTDOWN: str = '✅启用退出后关机'
     CLOSE_EXIT_SHUTDOWN: str = '❌禁用退出后关机'
     ALREADY_REMOVE: str = '✅已移除'
+    UPLOAD_SETTING: str = '📤上传设置'
+    OPEN_UPLOAD_DOWNLOAD: str = '🔓启用下载后上传'
+    CLOSE_UPLOAD_DOWNLOAD: str = '🔒禁用下载后上传'
+    OPEN_UPLOAD_DOWNLOAD_DELETE: str = '🔓启用下载后上传并删除'
+    CLOSE_UPLOAD_DOWNLOAD_DELETE: str = '🔒禁用下载后上传并删除'
