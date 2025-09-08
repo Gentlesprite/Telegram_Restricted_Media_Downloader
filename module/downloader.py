@@ -1092,10 +1092,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.SKIP))},'
                     f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。', style='#e6db74'
                 )
-                self.uploader.download_upload(
-                    with_upload=with_upload,
-                    file_path=os.path.join(self.app.save_directory, file_name)
-                )
+                if self.uploader:
+                    self.uploader.download_upload(
+                        with_upload=with_upload,
+                        file_path=os.path.join(self.app.save_directory, file_name)
+                    )
         else:
             self.app.current_task_num -= 1
             self.event.set()  # v1.3.4 修复重试下载被阻塞的问题。
@@ -1110,10 +1111,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                     prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
                     num=self.app.current_task_num
                 )
-                self.uploader.download_upload(
-                    with_upload=with_upload,
-                    file_path=os.path.join(self.app.save_directory, file_name)
-                )
+                if self.uploader:
+                    self.uploader.download_upload(
+                        with_upload=with_upload,
+                        file_path=os.path.join(self.app.save_directory, file_name)
+                    )
             else:
                 if retry_count < self.app.max_download_retries:
                     retry_count += 1

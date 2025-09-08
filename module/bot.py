@@ -12,8 +12,7 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.errors.exceptions.flood_420 import FloodWait
 from pyrogram.errors.exceptions.bad_request_400 import (
     MessageNotModified,
-    AccessTokenInvalid,
-    ButtonDataInvalid
+    AccessTokenInvalid
 )
 from pyrogram.types.bots_and_keyboards import (
     BotCommand,
