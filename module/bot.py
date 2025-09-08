@@ -3,7 +3,7 @@
 # Software:PyCharm
 # Time:2025/1/24 21:27
 # File:bot.py
-import shlex
+import os
 from typing import List, Dict, Union
 
 import pyrogram
@@ -31,8 +31,13 @@ from module import (
     LINK_PREVIEW_OPTIONS
 )
 from module.language import _t
+from module.stdio import MetaData
 from module.config import GlobalConfig
-from module.util import safe_index, safe_message
+from module.util import (
+    safe_index,
+    safe_message,
+    is_allow_upload
+)
 from module.enums import (
     BotCommandText,
     BotMessage,
@@ -57,8 +62,8 @@ class Bot:
     ]
 
     def __init__(self):
-        self.user = None
-        self.bot = None
+        self.user: Union[pyrogram.Client, None] = None
+        self.bot: Union[pyrogram.Client, None] = None
         self.is_bot_running: bool = False
         self.bot_task_link: set = set()
         self.gc = GlobalConfig()
@@ -111,7 +116,8 @@ class Bot:
     async def get_download_link_from_bot(
             self,
             client: pyrogram.Client,
-            message: pyrogram.types.Message
+            message: pyrogram.types.Message,
+            with_upload: Union[dict, None] = None
     ) -> Union[Dict[str, Union[set, pyrogram.types.Message]], None]:
         text: str = message.text
         if text == '/download':
@@ -169,7 +175,7 @@ class Bot:
                 right_link: set = set()
                 invalid_link: set = set()
                 for i in range(start_id, end_id + 1):
-                    right_link.add(f'{link[0]}/{i}')
+                    right_link.add(f'{link[0]}/{i}?single')  # v1.6.7 修复范围下载链接为组时,重复下载问题。
             else:
                 right_link: set = set([_ for _ in link if _.startswith('https://t.me/')])
                 invalid_link: set = set([_ for _ in link if not _.startswith('https://t.me/')])
@@ -398,13 +404,44 @@ class Bot:
         parts = remaining_text.rsplit(maxsplit=1)
 
         if len(parts) == 2:
-            file_name = parts[0]  # 文件名部分（可能包含空格）
+            file_path = parts[0]  # 文件名部分（可能包含空格）
             target_link = parts[1]  # URL 部分
-            log.info(f'上传文件:"{file_name}",上传频道:"{target_link}"。')
+
+            if not os.path.isfile(file_path):
+                log.error(f'上传出错,{_t(KeyWord.REASON)}:"{file_path}"不存在。')
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
+                    text=f'⚠️⚠️⚠️上传文件不存在⚠️⚠️⚠️\n`{file_path}`',
+                    link_preview_options=LINK_PREVIEW_OPTIONS
+                )
+                return None
+            file_size = os.path.getsize(file_path)
+            if file_size == 0:
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
+                    text=f'⚠️⚠️⚠️上传文件大小为0⚠️⚠️⚠️\n`{file_path}`',
+                    link_preview_options=LINK_PREVIEW_OPTIONS
+                )
+
+            if not is_allow_upload(file_size=file_size, is_premium=self.user.me.is_premium):
+                format_file_size: str = MetaData.suitable_units_display(file_size, unit='MiB', mebibyte=True)
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
+                    text=f'⚠️⚠️⚠️上传大小超过限制({format_file_size})⚠️⚠️⚠️\n'
+                         f'`{file_path}`\n'
+                         f'(普通用户2000MiB,会员用户4000MiB)',
+                    link_preview_options=LINK_PREVIEW_OPTIONS
+                )
+                log.warning(f'上传文件:"{file_path}",超过大小限制:{format_file_size}。')
+
+            log.info(f'上传文件:"{file_path}",上传频道:"{target_link}"。')
             # 验证目标链接格式
             if target_link.startswith('https://t.me/'):
                 return {
-                    'file_name': file_name,
+                    'file_path': file_path,
                     'target_link': target_link
                 }
         await self.help(client, message)

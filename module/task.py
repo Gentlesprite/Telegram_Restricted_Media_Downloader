@@ -4,6 +4,7 @@
 # Time:2025/2/27 17:38
 # File:task.py
 import asyncio
+import os.path
 from functools import wraps
 from typing import Union
 
@@ -117,38 +118,44 @@ class UploadTask:
     def __init__(
             self,
             chat_id: Union[str, int],
-            file_name: str,
+            file_path: str,
             size: Union[str, int],
             error_msg: Union[str, None]
     ):
         # 如果 chat_id 不存在，初始化结构
         if chat_id not in UploadTask.CHAT_ID_INFO:
-            UploadTask.CHAT_ID_INFO[chat_id] = {
-                file_name: []
-            }
+            UploadTask.CHAT_ID_INFO[chat_id] = {}
 
-        UploadTask.CHAT_ID_INFO.get(chat_id)[file_name].append({
+        if file_path not in UploadTask.CHAT_ID_INFO[chat_id]:
+            UploadTask.CHAT_ID_INFO[chat_id][file_path] = {}
+
+        UploadTask.CHAT_ID_INFO.get(chat_id)[file_path] = {
             'size': size,
             'error_msg': error_msg
-        })
+        }
 
     def on_create_task(func):
         @wraps(func)
         async def wrapper(self, *args, **kwargs):
             res: dict = await func(self, *args, **kwargs)
-            chat_id, file_name, size, status, e_code = res.values()
+            chat_id, file_path, size, status, e_code = res.values()
             if status == UploadStatus.FAILURE:
-                UploadTask.set(chat_id=chat_id, key=file_name, value=e_code)
+                UploadTask.set_error_msg(chat_id=chat_id, file_path=file_path, value=e_code)
                 log.warning(
-                    f'{_t(KeyWord.UPLOAD_TASK)}:'
+                    f'{_t(KeyWord.UPLOAD_TASK)}'
                     f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'
+                    f'{_t(KeyWord.REASON)}:"{e_code}",'
                     f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
-                    f'{_t(KeyWord.REASON)}:"{e_code}"'
                 )
             return res
 
         return wrapper
 
     @staticmethod
-    def set(chat_id: Union[str, int], key, value):
-        UploadTask.CHAT_ID_INFO.get(chat_id)[key].append(value)
+    def set_error_msg(chat_id: Union[str, int], file_path: str, value: str):
+        meta: dict = UploadTask.CHAT_ID_INFO.get(chat_id)
+        file_meta: dict = meta.get(
+            file_path,
+            {'size': os.path.getsize(file_path) if os.path.isfile(file_path) else 0, 'error_msg': value}
+        )
+        file_meta['error_msg'] = value

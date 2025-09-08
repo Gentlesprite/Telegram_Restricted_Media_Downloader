@@ -190,6 +190,13 @@ async def get_chat_with_notify(
         return None
 
 
+def is_allow_upload(file_size: int, is_premium: bool) -> bool:
+    file_size_limit_mib: int = 4000 * 1024 * 1024 if is_premium else 2000 * 1024 * 1024
+    if file_size > file_size_limit_mib:
+        return False
+    return True
+
+
 def format_chat_link(url: str):
     parts: list = url.strip('/').split('/')
     len_parts: int = len(parts)

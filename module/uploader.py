@@ -21,7 +21,7 @@ from module.language import _t
 
 from module.stdio import MetaData
 from module.task import UploadTask
-from module.path_tool import split_path, safe_delete
+from module.path_tool import split_path
 from module.enums import (
     KeyWord,
     UploadStatus
@@ -29,7 +29,8 @@ from module.enums import (
 from module.util import (
     truncate_display_filename,
     extract_link_content,
-    get_chat_with_notify
+    get_chat_with_notify,
+    is_allow_upload
 )
 
 
@@ -40,8 +41,10 @@ class TelegramUploader:
             loop,
             progress,
             queue,
+            is_premium,
             max_upload_task: int = 3,
-            max_retry_count: int = 3
+            max_retry_count: int = 3,
+
     ):
         self.client: pyrogram.Client = client
         self.loop = loop
@@ -51,6 +54,7 @@ class TelegramUploader:
         self.current_task_num = 0
         self.max_upload_task = max_upload_task
         self.max_retry_count = max_retry_count
+        self.is_premium: bool = is_premium
 
     async def send_media(
             self,
@@ -68,12 +72,12 @@ class TelegramUploader:
             progress=progress,
             progress_args=progress_args
         )
-        file_name = getattr(file, 'name')
-        if file_name:
+        file_path: Union[str, None] = getattr(file, 'name')
+        if file_path:
             media = raw.types.InputMediaUploadedDocument(
-                mime_type=self.client.guess_mime_type(file_name) or 'application/octet-stream',
+                mime_type=self.client.guess_mime_type(file_path) or 'application/octet-stream',
                 file=file,
-                attributes=[raw.types.DocumentAttributeFilename(file_name=split_path(file_name).get('file_name'))]
+                attributes=[raw.types.DocumentAttributeFilename(file_name=split_path(file_path).get('file_name'))]
             )
             peer = await self.client.resolve_peer(chat_id)
             r = await self.client.invoke(
@@ -95,8 +99,7 @@ class TelegramUploader:
     async def create_upload_task(
             self,
             link: str,
-            file_name: str,
-            with_delete: bool = False
+            file_path: str
     ):
         target_meta: Union[dict, None] = await extract_link_content(
             client=self.client,
@@ -110,42 +113,57 @@ class TelegramUploader:
         )
         if not target_chat:
             raise ValueError
-        file_size: int = os.path.getsize(file_name)
-        UploadTask(chat_id=chat_id, file_name=file_name, size=file_size, error_msg=None)
+        file_size: int = os.path.getsize(file_path)
+        UploadTask(chat_id=chat_id, file_path=file_path, size=file_size, error_msg=None)
+        if not is_allow_upload(file_size, self.is_premium):
+            return {
+                'chat_id': chat_id,
+                'file_name': file_path,
+                'size': os.path.getsize(file_path),
+                'status': UploadStatus.FAILURE,
+                'error_msg': '上传大小超过限制(普通用户2000MiB,会员用户4000MiB)'
+            }
+        elif file_size == 0:
+            return {
+                'chat_id': chat_id,
+                'file_name': file_path,
+                'size': os.path.getsize(file_path),
+                'status': UploadStatus.FAILURE,
+                'error_msg': '上传文件大小为0'
+            }
         for retry in range(self.max_retry_count):
             try:
                 console.log(
                     f'{_t(KeyWord.UPLOAD_TASK)}'
                     f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'
-                    f'{_t(KeyWord.FILE)}:"{file_name}",'
+                    f'{_t(KeyWord.FILE)}:"{file_path}",'
                     f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(file_size)},'
                     f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.UPLOADING)}。'
                 )
                 await self.__add_task(
                     chat_id=chat_id,
-                    file_name=file_name,
-                    size=file_size,
-                    with_delete=with_delete
+                    file_path=file_path,
+                    size=file_size
                 )
                 return {
                     'chat_id': chat_id,
-                    'file_name': file_name,
-                    'size': os.path.getsize(file_name),
+                    'file_name': file_path,
+                    'size': os.path.getsize(file_path),
                     'status': UploadStatus.SUCCESS,
                     'error_msg': None
                 }
             except Exception as e:
                 console.log(
                     f'{_t(KeyWord.UPLOAD_TASK)}'
-                    f'{_t(KeyWord.RE_UPLOAD)}:"{file_name}",'
+                    f'{_t(KeyWord.RE_UPLOAD)}:"{file_path}",'
                     f'{_t(KeyWord.RETRY_TIMES)}:{retry + 1}/{self.max_retry_count},'
                     f'{_t(KeyWord.REASON)}:"{e}"'
                 )
                 if retry == self.max_retry_count - 1:
                     return {
                         'chat_id': chat_id,
-                        'file_name': file_name,
-                        'size': os.path.getsize(file_name),
+                        'file_name': file_path,
+                        'size': os.path.getsize(file_path),
                         'status': UploadStatus.FAILURE,
                         'error_msg': str(e)
                     }
@@ -153,9 +171,8 @@ class TelegramUploader:
     async def __add_task(
             self,
             chat_id: Union[str, int],
-            file_name: str,
-            size: int,
-            with_delete: bool
+            file_path: str,
+            size: int
     ):
         while self.current_task_num >= self.max_upload_task:  # v1.0.7 增加下载任务数限制。
             await self.event.wait()
@@ -163,14 +180,14 @@ class TelegramUploader:
         format_file_size: str = MetaData.suitable_units_display(size)
         task_id = self.pb.progress.add_task(
             description='📤',
-            filename=truncate_display_filename(file_name),
+            filename=truncate_display_filename(split_path(file_path).get('file_name')),
             info=f'0.00B/{format_file_size}',
             total=size
         )
         _task = self.loop.create_task(
             self.send_media(
                 chat_id=chat_id,
-                path=file_name,
+                path=file_path,
                 progress=self.pb.bar,
                 progress_args=(
                     self.pb.progress,
@@ -182,9 +199,8 @@ class TelegramUploader:
             partial(
                 self.upload_complete_callback,
                 size,
-                file_name,
-                task_id,
-                with_delete
+                file_path,
+                task_id
             )
         )
 
@@ -201,10 +217,8 @@ class TelegramUploader:
             local_file_size,
             file_path,
             task_id,
-            with_delete,
             _future
     ):
-        safe_delete(file_p_d=file_path) if with_delete else None
         console.log(
             f'{_t(KeyWord.UPLOAD_TASK)}'
             f'{_t(KeyWord.FILE)}:"{file_path}",'
@@ -219,3 +233,12 @@ class TelegramUploader:
             prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
             num=self.current_task_num
         )
+
+    def download_upload(self, with_upload: dict, file_path: str):
+        if isinstance(with_upload, dict):
+            asyncio.create_task(
+                self.create_upload_task(
+                    link=with_upload.get('link'),
+                    file_path=file_path
+                )
+            )

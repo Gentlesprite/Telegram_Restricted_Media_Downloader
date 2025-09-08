@@ -86,19 +86,13 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.running_log: set = set()
         self.running_log.add(self.is_running)
         self.pb = ProgressBar()
-        self.uploader = TelegramUploader(
-            client=self.app.client,
-            loop=self.loop,
-            queue=self.queue,
-            progress=self.pb,
-            max_upload_task=self.app.max_upload_task,
-            max_retry_count=self.app.max_upload_retries
-        )
+        self.uploader = None
 
     async def get_download_link_from_bot(
             self,
             client: pyrogram.Client,
-            message: pyrogram.types.Message
+            message: pyrogram.types.Message,
+            with_upload: Union[dict, None] = None
     ):
         link_meta: Union[dict, None] = await super().get_download_link_from_bot(client, message)
         if link_meta is None:
@@ -126,7 +120,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         if links is None:
             return None
         for link in links:
-            task: dict = await self.create_download_task(link=link, retry=None)
+            task: dict = await self.create_download_task(link=link, retry=None, with_upload=with_upload)
             invalid_link.add(link) if task.get('status') == DownloadStatus.FAILURE else self.bot_task_link.add(link)
         right_link -= invalid_link
         await self.safe_edit_message(
@@ -150,12 +144,12 @@ class TelegramRestrictedMediaDownloader(Bot):
         link_meta: Union[dict, None] = await super().get_upload_link_from_bot(client, message)
         if link_meta is None:
             return None
-        file_name: str = link_meta.get('file_name')
+        file_path: str = link_meta.get('file_path')
         target_link: str = link_meta.get('target_link')
         try:
             await self.uploader.create_upload_task(
                 link=target_link,
-                file_name=file_name
+                file_path=file_path
             )
         except ValueError:
             await client.send_message(
@@ -250,21 +244,48 @@ class TelegramRestrictedMediaDownloader(Bot):
             await callback_query.message.edit_text(meta.get('text'))
             await callback_query.message.edit_reply_markup(meta.get('keyboard'))
         elif callback_data in (BotCallbackText.DOWNLOAD, BotCallbackText.DOWNLOAD_UPLOAD):  # todo 处理下载后上传的逻辑。
-            command: str = ''
-            data: list = callback_data.split()
-            callback_data_len: int = len(data)
-            if callback_data_len == 1:
-                link = data[0]
-                command = f'/download {link}'
-            elif callback_data_len == 3:
-                origin_link, start_id, end_id = data
-                command = f'/download {origin_link} {start_id} {end_id}'
-            await self.app.client.send_message(
-                chat_id=callback_query.message.from_user.id,
-                text=command,
-                link_preview_options=LINK_PREVIEW_OPTIONS
-            )
-            await kb.task_assign_button()
+            if callback_data == BotCallbackText.DOWNLOAD:
+                command: str = ''
+                data: list = callback_data.split()
+                callback_data_len: int = len(data)
+                if callback_data_len == 1:  # /listen_forward
+                    link = data[0]
+                    command = f'/download {link}'
+                elif callback_data_len == 3:  # /forward
+                    origin_link, start_id, end_id = data
+                    command = f'/download {origin_link} {start_id} {end_id}'
+                await self.app.client.send_message(
+                    chat_id=callback_query.message.from_user.id,
+                    text=command,
+                    link_preview_options=LINK_PREVIEW_OPTIONS
+                )
+                await kb.task_assign_button()
+            elif callback_data == BotCallbackText.DOWNLOAD_UPLOAD:
+                data: list = callback_data.split()
+                callback_data_len: int = len(data)
+                if callback_data_len == 1:  # /listen_forward
+                    link = data[0]
+                    await self.create_download_task(
+                        link=link,
+                        with_upload={
+                            'link': link,
+                            'file_name': None,
+                            'with_delete': False
+                        }
+                    )
+                elif callback_data_len == 4:  # /forward
+                    target_link, origin_link, start_id, end_id = data
+                    callback_query.message.text = f'/download {origin_link} {start_id} {end_id}'
+                    await self.get_download_link_from_bot(
+                        client=self.app.client,
+                        message=callback_query.message,
+                        with_upload={
+                            'link': target_link,
+                            'file_name': None,
+                            'with_delete': False
+                        }
+                    )
+                await kb.task_assign_button()
         elif callback_data == BotCallbackText.LOOKUP_LISTEN_INFO:
             await self.app.client.send_message(
                 chat_id=callback_query.message.from_user.id,
@@ -488,6 +509,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
         except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
             BotCallbackText.DOWNLOAD = f'{origin_link} {start_id} {end_id}'
+            BotCallbackText.DOWNLOAD_UPLOAD = f'{target_link} {origin_link} {start_id} {end_id}'
             await client.send_message(
                 chat_id=message.from_user.id,
                 text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{origin_link}`存在内容保护限制。',
@@ -788,7 +810,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             link_type: str,
             link: str,
             message: Union[pyrogram.types.Message, list],
-            retry: dict
+            retry: dict,
+            with_upload: Union[dict, None] = None
     ) -> None:
         retry_count = retry.get('count')
         retry_id = retry.get('id')
@@ -796,10 +819,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             for _message in message:
                 if retry_count != 0:
                     if _message.id == retry_id:
-                        await self.__add_task(chat_id, link_type, link, _message, retry)
+                        await self.__add_task(chat_id, link_type, link, _message, retry, with_upload)
                         break
                 else:
-                    await self.__add_task(chat_id, link_type, link, _message, retry)
+                    await self.__add_task(chat_id, link_type, link, _message, retry, with_upload)
         else:
             _task = None
             valid_dtype: str = next((_ for _ in DownloadType() if getattr(message, _, None)), None)  # 判断该链接是否为有支持的类型。
@@ -832,6 +855,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         file_id=file_id,
                         format_file_size=format_file_size,
                         task_id=None,
+                        with_upload=with_upload,
                         _future=save_directory
                     )
                 else:
@@ -875,7 +899,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                             retry_count,
                             file_id,
                             format_file_size,
-                            task_id
+                            task_id,
+                            with_upload
                         )
                     )
             else:
@@ -956,6 +981,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             file_id,
             format_file_size,
             task_id,
+            with_upload,
             _future
     ):
         if task_id is None:
@@ -971,6 +997,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.SKIP))},'
                     f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。', style='#e6db74'
                 )
+                self.uploader.download_upload(
+                    with_upload=with_upload,
+                    file_path=os.path.join(self.app.save_directory, file_name)
+                )
         else:
             self.app.current_task_num -= 1
             self.event.set()  # v1.3.4 修复重试下载被阻塞的问题。
@@ -984,6 +1014,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                 MetaData.print_current_task_num(
                     prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
                     num=self.app.current_task_num
+                )
+                self.uploader.download_upload(
+                    with_upload=with_upload,
+                    file_path=os.path.join(self.app.save_directory, file_name)
                 )
             else:
                 if retry_count < self.app.max_download_retries:
@@ -1018,7 +1052,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             self,
             link: str,
             retry: Union[dict, None] = None,
-            single_link: bool = False
+            single_link: bool = False,
+            with_upload: Union[dict, None] = None
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
         try:
@@ -1030,7 +1065,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             link_type, chat_id, message, member_num = meta.values()
             DownloadTask.set(link, 'link_type', link_type)
             DownloadTask.set(link, 'member_num', member_num)
-            await self.__add_task(chat_id, link_type, link, message, retry)
+            await self.__add_task(chat_id, link_type, link, message, retry, with_upload)
             return {
                 'chat_id': chat_id,
                 'member_num': member_num,
@@ -1212,6 +1247,16 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
             )
             console.log(result, style='#B1DB74' if self.is_bot_running else '#FF4689')
+            if self.is_bot_running:
+                self.uploader = TelegramUploader(
+                    client=self.app.client,
+                    loop=self.loop,
+                    queue=self.queue,
+                    progress=self.pb,
+                    is_premium=self.app.client.me.is_premium,
+                    max_upload_task=self.app.max_upload_task,
+                    max_retry_count=self.app.max_upload_retries
+                )
         self.is_running = True
         self.running_log.add(self.is_running)
         links: Union[set, None] = self.__process_links(link=self.app.links)

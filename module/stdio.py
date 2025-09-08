@@ -382,25 +382,35 @@ class MetaData:
         )
 
     @staticmethod
-    def suitable_units_display(number: int) -> str:
-        result: dict = MetaData.__determine_suitable_units(number)
+    def suitable_units_display(number: int, unit=None, mebibyte=False) -> str:
+        result: dict = MetaData.__determine_suitable_units(number, unit, mebibyte)
         return result.get('number') + result.get('unit')
 
     @staticmethod
-    def __determine_suitable_units(number, unit=None) -> dict:
-        units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
-        if unit in units:
-            index = units.index(unit)
-            value = number / (1024 ** index)
-            return {'number': float('{:.2f}'.format(value)), 'unit': unit}
+    def __determine_suitable_units(number, unit=None, mebibyte=False) -> dict:
+        if mebibyte:
+            units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']  # 二进制单位。
+            base = 1024
         else:
+            units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']  # 十进制单位。
+            base = 1000
+
+        if unit in units:  # 如果指定了单位,直接计算。
+            index = units.index(unit)
+            value = number / (base ** index)
+            return {'number': '{:.2f}'.format(value), 'unit': unit}
+
+        else:  # 否则自动计算最合适的单位。
             values = [number]
             for i in range(len(units) - 1):
-                if values[i] >= 1024:
-                    values.append(values[i] / 1024)
+                if values[i] >= base:
+                    values.append(values[i] / base)
                 else:
                     break
-            return {'number': '{:.2f}'.format(values[-1]), 'unit': units[len(values) - 1]}
+            return {
+                'number': '{:.2f}'.format(values[-1]),
+                'unit': units[len(values) - 1]
+            }
 
     @staticmethod
     def print_helper():

@@ -35,8 +35,8 @@ translations: dict = {
     'current upload task': ['[当前上传任务数]'],
     'reason': ['原因'],
     'resume': ['[断点续传]'],
-    'download task': ['「下载任务」'],
-    'upload task': ['「上传任务」']
+    'download task': ['📥下载任务📥'],
+    'upload task': ['📤上传任务📤']
 }
 
 
