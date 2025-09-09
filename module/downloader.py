@@ -486,16 +486,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                     reverse=True
             ):
                 try:
-                    await self.app.client.forward_messages(
+                    await self.app.client.copy_message(
                         chat_id=target_chat.id,
                         from_chat_id=origin_chat.id,
-                        message_ids=i.id,
+                        message_id=i.id,
                         disable_notification=True,
-                        hide_sender_name=True,
-                        hide_captions=True,
                         protect_content=False
                     )
-                except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
+                except (ValueError, ChatForwardsRestricted_400, ChatForwardsRestricted_406):
                     raise
                 except Exception as e:
                     if not last_message:
@@ -547,7 +545,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         ]
                     )
                 )
-        except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
+        except (ValueError, ChatForwardsRestricted_400, ChatForwardsRestricted_406):
             self.cd.data = {
                 'origin_link': origin_link,
                 'target_link': target_link,
@@ -666,7 +664,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         try:
                             c = utils.get_channel_id(int(m.group(1)))
                             t = int(m.group(2))
-                        except ValueError:
+                        except (TypeError, ValueError):
                             t = m.group(1)
                         if catch and not all([c, t]):
                             raise ValueError('Invalid chat id or topic id.')
@@ -796,20 +794,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _target_link_id = _target_link_meta.get('chat_id')
                 if listen_chat_id == _listen_chat_id:
                     try:
-                        await self.app.client.forward_messages(
+                        await self.app.client.copy_message(
                             chat_id=_target_link_id,
                             from_chat_id=_listen_chat_id,
-                            message_ids=message.id,
+                            message_id=message.id,
                             disable_notification=True,
-                            hide_sender_name=True,
-                            hide_captions=True,
                             protect_content=False
                         )
                         console.log(
                             f'{_t(KeyWord.LINK)}:"{link}" -> "{target_link}",'
                             f'{_t(KeyWord.STATUS)}:转发成功。'
                         )
-                    except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
+                    except (ValueError, ChatForwardsRestricted_400, ChatForwardsRestricted_406):
                         if not self.gc.download_upload:
                             await self.bot.send_message(
                                 chat_id=client.me.id,

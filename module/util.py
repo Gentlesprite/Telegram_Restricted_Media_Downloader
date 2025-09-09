@@ -79,14 +79,14 @@ async def extract_link_content(
     if '?comment' in link:  # 链接中包含?comment表示用户需要同时下载评论中的媒体。
         link = link.split('?comment')[0]
         record_type.add(LinkType.COMMENT)
-    if link.count('/') >= 5:
+    if link.count('/') >= 5 or 't.me/c/' in link:
         if link.startswith('https://t.me/c/'):
             count: int = link.split('https://t.me/c/')[1].count('/')
             record_type.add(LinkType.TOPIC) if count == 2 else None
         elif link.startswith('https://t.me'):
             record_type.add(LinkType.TOPIC)
     # https://github.com/KurimuzonAkuma/pyrogram/blob/dev/pyrogram/methods/messages/get_messages.py#L101
-    if only_chat_id:  # todo 话题频道的转发的关键在于解析链接时获取到正确的topic_id。
+    if only_chat_id:
         match = re.match(
             r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/(\d+))?$',
             link.lower())
