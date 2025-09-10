@@ -166,7 +166,7 @@ class TelegramUploader:
             return {
                 'chat_id': chat_id,
                 'file_name': file_path,
-                'size': os.path.getsize(file_path),
+                'size': file_size,
                 'status': UploadStatus.FAILURE,
                 'error_msg': '上传大小超过限制(普通用户2000MiB,会员用户4000MiB)'
             }
@@ -174,7 +174,7 @@ class TelegramUploader:
             return {
                 'chat_id': chat_id,
                 'file_name': file_path,
-                'size': os.path.getsize(file_path),
+                'size': file_size,
                 'status': UploadStatus.FAILURE,
                 'error_msg': '上传文件大小为0'
             }
@@ -196,7 +196,7 @@ class TelegramUploader:
                 return {
                     'chat_id': chat_id,
                     'file_name': file_path,
-                    'size': os.path.getsize(file_path),
+                    'size': file_size,
                     'status': UploadStatus.SUCCESS,
                     'error_msg': None
                 }
@@ -211,7 +211,7 @@ class TelegramUploader:
                     return {
                         'chat_id': chat_id,
                         'file_name': file_path,
-                        'size': os.path.getsize(file_path),
+                        'size': file_size,
                         'status': UploadStatus.FAILURE,
                         'error_msg': str(e)
                     }
@@ -271,6 +271,10 @@ class TelegramUploader:
             _future
     ):
         more = ''
+        self.current_task_num -= 1
+        self.pb.progress.remove_task(task_id=task_id)
+        asyncio.create_task(self.notify(f'"{file_path}"已上传完成。')) if isinstance(self.notify, Callable) else None
+        self.event.set()
         if with_delete:
             safe_delete(file_path)
             more = '(本地文件已删除)'
@@ -280,10 +284,6 @@ class TelegramUploader:
             f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(local_file_size)},'
             f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.SUCCESS)}{more}。',
         )
-        self.current_task_num -= 1
-        self.pb.progress.remove_task(task_id=task_id)
-        asyncio.create_task(self.notify(f'"{file_path}"已上传完成。')) if isinstance(self.notify, Callable) else None
-        self.event.set()
         MetaData.print_current_task_num(
             prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
             num=self.current_task_num
