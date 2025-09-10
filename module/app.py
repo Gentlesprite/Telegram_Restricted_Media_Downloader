@@ -115,7 +115,9 @@ class Application(UserConfig, StatisticalTable):
         elif dtype == DownloadType.DOCUMENT:
             file_name: str = dt.get_document_filename()
         else:
-            file_name: str = f'{getattr(message, "id", "0")} - {datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.unknown'
+            file_id = getattr(message, 'id', '0')
+            time_format = '%Y-%m-%d_%H-%M-%S'
+            file_name: str = f'{file_id} - {datetime.datetime.now().strftime(time_format)}.unknown'
         return truncate_filename(splice_chat_id(file_name))
 
     def __on_media_record(func):
