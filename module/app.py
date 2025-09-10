@@ -310,4 +310,6 @@ class DownloadFileName:
                 )
             except Exception as e:
                 log.info(f'无法找到的该文档文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')
-                return f'{getattr(self.message, "id", "0")} - {datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.unknown'
+                file_id = getattr(self.message, 'id', '0')
+                time_format = '%Y-%m-%d_%H-%M-%S'
+                return f'{file_id} - {datetime.datetime.now().strftime(time_format)}.unknown'
