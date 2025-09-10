@@ -40,7 +40,6 @@ from module.util import (
     get_chat_with_notify,
     is_allow_upload
 )
-import random
 
 
 class TelegramUploader:
