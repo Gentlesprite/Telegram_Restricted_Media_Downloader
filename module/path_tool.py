@@ -12,9 +12,8 @@ import mimetypes
 import unicodedata
 
 from io import BytesIO
-from typing import Optional, Dict
+from typing import Optional
 
-from moviepy import VideoFileClip
 from pyrogram.file_id import (
     FILE_REFERENCE_FLAG,
     PHOTO_TYPES,
@@ -86,10 +85,12 @@ def truncate_filename(path: str, limit: int = 230) -> str:
 
 def gen_backup_config(old_path: str, absolute_backup_dir: str, error_config: bool = False) -> str:
     """备份配置文件。"""
+    time_format: str = '%Y-%m-%d_%H-%M-%S'
     os.makedirs(absolute_backup_dir, exist_ok=True)
+    error_flag: str = 'error_' if error_config else ''
     new_path = os.path.join(
         absolute_backup_dir,
-        f'{"error_" if error_config else ""}history_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_config.yaml'
+        f'{error_flag}history_{datetime.datetime.now().strftime(time_format)}_config.yaml'
     )
     os.rename(old_path, new_path)
     return new_path
@@ -239,10 +240,3 @@ def get_mime_from_extension(file_path: str) -> str:
     return Extension.ALL_REVERSE.get(ext, 'application/octet-stream')
 
 
-def get_video_info(file_path: str) -> Dict[str, int]:
-    with VideoFileClip(file_path) as clip:
-        return {
-            'duration': round(clip.duration),
-            'width': clip.size[0],
-            'height': clip.size[1]
-        }

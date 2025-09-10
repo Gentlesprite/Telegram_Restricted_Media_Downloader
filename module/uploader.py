@@ -8,20 +8,24 @@ import asyncio
 
 from functools import partial
 from typing import (
-    Callable,
+    Dict,
     Union,
+    Optional,
+    Callable,
     BinaryIO
 )
 
 import pyrogram
 from pyrogram import raw, utils
+from moviepy import VideoFileClip
 
 from module import console, log
 from module.language import _t
 
 from module.stdio import MetaData
 from module.task import UploadTask
-from module.path_tool import get_mime_from_extension, get_video_info
+from module.path_tool import get_mime_from_extension
+
 from module.path_tool import (
     split_path,
     safe_delete
@@ -36,6 +40,7 @@ from module.util import (
     get_chat_with_notify,
     is_allow_upload
 )
+import random
 
 
 class TelegramUploader:
@@ -43,22 +48,21 @@ class TelegramUploader:
             self,
             client: pyrogram.Client,
             loop,
+            is_premium: bool,
             progress,
-            queue,
-            is_premium,
             max_upload_task: int = 3,
             max_retry_count: int = 3,
-
+            notify: Optional[Callable] = None
     ):
         self.client: pyrogram.Client = client
         self.loop = loop
         self.event = asyncio.Event()
-        self.queue = queue
         self.pb = progress
         self.current_task_num = 0
         self.max_upload_task = max_upload_task
         self.max_retry_count = max_retry_count
         self.is_premium: bool = is_premium
+        self.notify: Callable = notify
 
     async def send_media(
             self,
@@ -90,29 +94,23 @@ class TelegramUploader:
                 spoiler=False
             )
         else:
-            # 其他文件类型
             attributes = [raw.types.DocumentAttributeFilename(file_name=file_name)]
-
             if file_path.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
-                try:
-                    video_info = get_video_info(path)
-                    attributes.append(raw.types.DocumentAttributeVideo(
-                        supports_streaming=True,
-                        duration=video_info['duration'],
-                        w=video_info['width'],
-                        h=video_info['height']
-                    ))
-                except Exception as e:
-                    log.error(f'添加视频属性失败,{_t(KeyWord.REASON)}:"{e}"')
+                video_meta: Union[dict, None] = self.get_video_info(path)
+                attributes.append(raw.types.DocumentAttributeVideo(
+                    supports_streaming=True,
+                    duration=video_meta.get('duration'),
+                    w=video_meta.get('width'),
+                    h=video_meta.get('height')
+                ))
 
             media = raw.types.InputMediaUploadedDocument(
                 mime_type=mime_type,
                 file=file,
                 attributes=attributes,
-                force_file=False,  # 重要：不要强制作为文件发送
-                thumb=None  # 可以添加缩略图
+                force_file=False,  # 不要强制作为文件发送。
+                thumb=None  # 缩略图。
             )
-
         peer = await self.client.resolve_peer(chat_id)
         r = await self.client.invoke(
             raw.functions.messages.SendMedia(
@@ -128,6 +126,18 @@ class TelegramUploader:
             )
         )
         return await utils.parse_messages(self.client, r)
+
+    @staticmethod
+    def get_video_info(video_path: str) -> Dict[str, int]:
+        try:
+            with VideoFileClip(video_path) as clip:
+                return {
+                    'duration': round(clip.duration),
+                    'width': clip.size[0],
+                    'height': clip.size[1]
+                }
+        except Exception as e:
+            log.error(f'添加视频属性失败,{_t(KeyWord.REASON)}:"{e}"')
 
     @UploadTask.on_create_task
     async def create_upload_task(
@@ -247,7 +257,7 @@ class TelegramUploader:
                 prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
                 num=self.current_task_num
             )
-            self.queue.put_nowait(_task)
+            await _task
 
     def upload_complete_callback(
             self,
@@ -269,8 +279,8 @@ class TelegramUploader:
         )
         self.current_task_num -= 1
         self.pb.progress.remove_task(task_id=task_id)
+        asyncio.create_task(self.notify(f'"{file_path}"已上传完成。')) if isinstance(self.notify, Callable) else None
         self.event.set()
-        self.queue.task_done()
         MetaData.print_current_task_num(
             prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
             num=self.current_task_num

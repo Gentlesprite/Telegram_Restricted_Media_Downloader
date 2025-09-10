@@ -654,13 +654,13 @@ class Bot:
 
     async def done_notice(
             self,
-            link: str
+            text
     ):
         if all([self.last_client, self.last_message]):
             if self.gc.get_config(BotCallbackText.NOTICE):
                 await self.last_client.send_message(
                     chat_id=self.last_message.from_user.id,
-                    text=f'"{link}"已下载完成。',
+                    text=text,
                     link_preview_options=LINK_PREVIEW_OPTIONS
                 )
 

@@ -3,9 +3,10 @@
 # Software:PyCharm
 # Time:2023/10/3 1:00:03
 # File:downloader.py
-import asyncio
 import os
 import sys
+import asyncio
+
 from functools import partial
 from sqlite3 import OperationalError
 from typing import Union, Callable
@@ -33,8 +34,11 @@ from pyrogram.errors.exceptions.unauthorized_401 import (
 )
 from pyrogram.errors.exceptions.forbidden_403 import ChatWriteForbidden
 from pyrogram.handlers import MessageHandler
-from pyrogram.types.bots_and_keyboards import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.types.messages_and_media import ReplyParameters
+from pyrogram.types.bots_and_keyboards import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup
+)
 
 from module import (
     console,
@@ -62,8 +66,8 @@ from module.path_tool import (
     move_to_save_directory,
     safe_replace
 )
-from module.stdio import ProgressBar, Base64Image
 from module.task import DownloadTask
+from module.stdio import ProgressBar, Base64Image
 from module.uploader import TelegramUploader
 from module.util import (
     parse_link,
@@ -649,8 +653,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     try:
                         link_meta: list = _link.split()
                         link_length: int = len(link_meta)
-                        if link_length >= 1:
-                            l_link = link_meta[0]  # v1.6.7 修复内部函数add_listen_chat中,抛出PeerIdInvalid后,在获取链接时抛出ValueError错误。
+                        if link_length >= 1:  # v1.6.7 修复内部函数add_listen_chat中,抛出PeerIdInvalid后,在获取链接时抛出ValueError错误。
+                            l_link = link_meta[0]
                         else:
                             return False
                         m: dict = await parse_link(client=self.app.client, link=l_link)
@@ -1326,11 +1330,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                 self.uploader = TelegramUploader(
                     client=self.app.client,
                     loop=self.loop,
-                    queue=self.queue,
-                    progress=self.pb,
                     is_premium=self.app.client.me.is_premium,
+                    progress=self.pb,
                     max_upload_task=self.app.max_upload_task,
-                    max_retry_count=self.app.max_upload_retries
+                    max_retry_count=self.app.max_upload_retries,
+                    notify=self.done_notice
                 )
                 self.cd = CallbackData()
                 if self.gc.upload_delete:
