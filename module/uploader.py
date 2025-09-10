@@ -16,17 +16,17 @@ from typing import (
 import pyrogram
 from pyrogram import raw, utils
 
-from module import console
+from module import console, log
 from module.language import _t
 
 from module.stdio import MetaData
 from module.task import UploadTask
+from module.path_tool import get_mime_from_extension, get_video_info
 from module.path_tool import (
     split_path,
     safe_delete
 )
 from module.enums import (
-    Link,
     KeyWord,
     UploadStatus
 )
@@ -76,28 +76,58 @@ class TelegramUploader:
             progress=progress,
             progress_args=progress_args
         )
-        file_path: Union[str, None] = getattr(file, 'name')
-        if file_path:
-            media = raw.types.InputMediaUploadedDocument(
-                mime_type=self.client.guess_mime_type(file_path) or 'application/octet-stream',
+
+        file_path: Union[str, None] = getattr(file, 'name', '')
+        if not file_path:
+            file_path = str(path) if isinstance(path, str) else ''
+
+        mime_type = self.client.guess_mime_type(file_path) or get_mime_from_extension(file_path)
+        file_name = split_path(file_path).get('file_name', 'file')
+
+        if file_path.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+            media = raw.types.InputMediaUploadedPhoto(
                 file=file,
-                attributes=[raw.types.DocumentAttributeFilename(file_name=split_path(file_path).get('file_name'))]
+                spoiler=False
             )
-            peer = await self.client.resolve_peer(chat_id)
-            r = await self.client.invoke(
-                raw.functions.messages.SendMedia(
-                    peer=peer,
-                    media=media,
-                    random_id=self.client.rnd_id(),
-                    **await utils.parse_text_entities(
-                        self.client,
-                        text='',
-                        parse_mode=None,
-                        entities=None
-                    )
+        else:
+            # 其他文件类型
+            attributes = [raw.types.DocumentAttributeFilename(file_name=file_name)]
+
+            if file_path.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
+                try:
+                    video_info = get_video_info(path)
+                    attributes.append(raw.types.DocumentAttributeVideo(
+                        supports_streaming=True,
+                        duration=video_info['duration'],
+                        w=video_info['width'],
+                        h=video_info['height']
+                    ))
+                except Exception as e:
+                    log.error(f'添加视频属性失败,{_t(KeyWord.REASON)}:"{e}"')
+
+            media = raw.types.InputMediaUploadedDocument(
+                mime_type=mime_type,
+                file=file,
+                attributes=attributes,
+                force_file=False,  # 重要：不要强制作为文件发送
+                thumb=None  # 可以添加缩略图
+            )
+
+        peer = await self.client.resolve_peer(chat_id)
+        r = await self.client.invoke(
+            raw.functions.messages.SendMedia(
+                peer=peer,
+                media=media,
+                random_id=self.client.rnd_id(),
+                **await utils.parse_text_entities(
+                    self.client,
+                    text='',
+                    parse_mode=None,
+                    entities=None
                 )
             )
-            return await utils.parse_messages(self.client, r)
+        )
+        return await utils.parse_messages(self.client, r)
 
     @UploadTask.on_create_task
     async def create_upload_task(

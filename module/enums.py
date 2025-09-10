@@ -111,6 +111,68 @@ class Extension:
         'video/x-sgi-movie': 'movie',
         'video/x-matroska': 'mkv'
     }
+    REVERSE_PHOTO = {
+        'avif': 'image/avif',
+        'bmp': 'image/bmp',
+        'gif': 'image/gif',
+        'ief': 'image/ief',
+        'jpg': 'image/jpg',
+        'jpeg': 'image/jpeg',
+        'heic': 'image/heic',
+        'heif': 'image/heif',
+        'png': 'image/png',
+        'svg': 'image/svg+xml',
+        'tif': 'image/tiff',
+        'ico': 'image/vnd.microsoft.icon',
+        'ras': 'image/x-cmu-raster',
+        'pnm': 'image/x-portable-anymap',
+        'pbm': 'image/x-portable-bitmap',
+        'pgm': 'image/x-portable-graymap',
+        'ppm': 'image/x-portable-pixmap',
+        'rgb': 'image/x-rgb',
+        'xbm': 'image/x-xbitmap',
+        'xpm': 'image/x-xpixmap',
+        'xwd': 'image/x-xwindowdump'
+    }
+    REVERSE_VIDEO = {
+        'mp4': 'video/mp4',
+        'mpg': 'video/mpeg',
+        'qt': 'video/quicktime',
+        'webm': 'video/webm',
+        'avi': 'video/x-msvideo',
+        'movie': 'video/x-sgi-movie',
+        'mkv': 'video/x-matroska'
+    }
+    ALL_REVERSE = {
+        'avif': 'image/avif',
+        'bmp': 'image/bmp',
+        'gif': 'image/gif',
+        'ief': 'image/ief',
+        'jpg': 'image/jpg',
+        'jpeg': 'image/jpeg',
+        'heic': 'image/heic',
+        'heif': 'image/heif',
+        'png': 'image/png',
+        'svg': 'image/svg+xml',
+        'tif': 'image/tiff',
+        'ico': 'image/vnd.microsoft.icon',
+        'ras': 'image/x-cmu-raster',
+        'pnm': 'image/x-portable-anymap',
+        'pbm': 'image/x-portable-bitmap',
+        'pgm': 'image/x-portable-graymap',
+        'ppm': 'image/x-portable-pixmap',
+        'rgb': 'image/x-rgb',
+        'xbm': 'image/x-xbitmap',
+        'xpm': 'image/x-xpixmap',
+        'xwd': 'image/x-xwindowdump',
+        'video/mp4': 'mp4',
+        'video/mpeg': 'mpg',
+        'video/quicktime': 'qt',
+        'video/webm': 'webm',
+        'video/x-msvideo': 'avi',
+        'video/x-sgi-movie': 'movie',
+        'video/x-matroska': 'mkv'
+    }
 
 
 class GradientColor:

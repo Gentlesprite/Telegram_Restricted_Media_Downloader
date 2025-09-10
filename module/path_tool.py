@@ -12,8 +12,9 @@ import mimetypes
 import unicodedata
 
 from io import BytesIO
-from typing import Optional
+from typing import Optional, Dict
 
+from moviepy import VideoFileClip
 from pyrogram.file_id import (
     FILE_REFERENCE_FLAG,
     PHOTO_TYPES,
@@ -231,3 +232,17 @@ def get_file_size(file_path: str, temp_ext: str = '.temp') -> int:
         return os.path.getsize(file_path + temp_ext)
     else:
         return 0
+
+
+def get_mime_from_extension(file_path: str) -> str:
+    ext = file_path.split('.')[-1].lower()
+    return Extension.ALL_REVERSE.get(ext, 'application/octet-stream')
+
+
+def get_video_info(file_path: str) -> Dict[str, int]:
+    with VideoFileClip(file_path) as clip:
+        return {
+            'duration': round(clip.duration),
+            'width': clip.size[0],
+            'height': clip.size[1]
+        }
