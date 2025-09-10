@@ -625,19 +625,6 @@ class TelegramRestrictedMediaDownloader(Bot):
         meta: Union[dict, None] = await super().on_listen(client, message)
         if meta is None:
             return None
-        self.gc.download_upload = self.gc.get_nesting_config(
-            default_nesting=self.gc.default_upload_nesting,
-            param='upload',
-            nesting_param='download_upload'
-        )
-        self.gc.upload_delete = self.gc.get_nesting_config(
-            default_nesting=self.gc.default_upload_nesting,
-            param='upload',
-            nesting_param='delete'
-        )
-        p = '上传设置已重新加载。'
-        console.log(p, style='#FF4689')
-        log.info(f'{p}下载后上传:{self.gc.download_upload},下载上传后删除:{self.gc.upload_delete}')
 
         async def add_listen_chat(_link: str, _listen_chat: dict, _callback: callable) -> bool:
             if _link not in _listen_chat:
@@ -743,6 +730,19 @@ class TelegramRestrictedMediaDownloader(Bot):
                 p = f'已新增监听转发,转发规则:"{listen_link} -> {target_link}"。'
                 console.log(p, style='#FF4689')
                 log.info(f'{p}当前的监听转发信息:{self.listen_forward_chat}')
+        self.gc.download_upload = self.gc.get_nesting_config(
+            default_nesting=self.gc.default_upload_nesting,
+            param='upload',
+            nesting_param='download_upload'
+        )
+        self.gc.upload_delete = self.gc.get_nesting_config(
+            default_nesting=self.gc.default_upload_nesting,
+            param='upload',
+            nesting_param='delete'
+        )
+        p = '上传设置已重新加载。'
+        console.log(p, style='#FF4689')
+        log.info(f'{p}下载后上传:{self.gc.download_upload},下载上传后删除:{self.gc.upload_delete}')
 
     async def listen_download(
             self,
