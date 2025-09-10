@@ -7,7 +7,8 @@ import os
 import sys
 import ipaddress
 
-from typing import Union
+from typing import Union, Optional
+from dataclasses import dataclass
 
 from module import console, log
 from module.language import _t
@@ -18,6 +19,15 @@ class LinkType:
     GROUP: str = 'group'
     COMMENT: str = 'comment'
     TOPIC: str = 'topic'
+
+
+@dataclass
+class Link:
+    # https://github.com/tangyoha/telegram_media_downloader/blob/master/utils/format.py#L14
+    group_id: Union[str, int, None] = None
+    post_id: Optional[int] = None
+    comment_id: Optional[int] = None
+    topic_id: Optional[int] = None
 
 
 class DownloadType:

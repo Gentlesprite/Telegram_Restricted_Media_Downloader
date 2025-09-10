@@ -26,12 +26,13 @@ from module.path_tool import (
     safe_delete
 )
 from module.enums import (
+    Link,
     KeyWord,
     UploadStatus
 )
 from module.util import (
+    parse_link,
     truncate_display_filename,
-    extract_link_content,
     get_chat_with_notify,
     is_allow_upload
 )
@@ -105,10 +106,9 @@ class TelegramUploader:
             file_path: str,
             with_delete: bool = False
     ):
-        target_meta: Union[dict, None] = await extract_link_content(
+        target_meta: Union[dict, None] = await parse_link(
             client=self.client,
-            link=link,
-            only_chat_id=True
+            link=link
         )
         chat_id: Union[int, str] = target_meta.get('chat_id')
         target_chat = await get_chat_with_notify(

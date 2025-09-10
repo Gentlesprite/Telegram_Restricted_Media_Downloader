@@ -14,11 +14,12 @@ from pyrogram.errors.exceptions.bad_request_400 import (
     UsernameNotOccupied
 )
 from pyrogram.types.messages_and_media import ReplyParameters
-
+from urllib.parse import parse_qs, urlparse
 from rich.text import Text
 
 from module import utils
 from module.enums import (
+    Link,
     LinkType,
     DownloadType
 )
@@ -61,10 +62,72 @@ def safe_message(text: str, max_length: int = 3969) -> List[str]:
         return [part1] + safe_message(part2, max_length)
 
 
-async def extract_link_content(
+async def parse_link(client: pyrogram.Client, link: str) -> dict:
+    # https://github.com/tangyoha/telegram_media_downloader/blob/master/module/pyrogram_extension.py#L1092
+    try:
+        link = extract_info_from_link(link)
+        if link.comment_id:
+            chat = await client.get_chat(link.group_id)
+            if chat:
+                return {
+                    'chat_id': chat.linked_chat.id,
+                    'comment_id': link.comment_id,
+                    'topic_id': link.topic_id
+                }
+
+        return {
+            'chat_id': link.group_id,
+            'comment_id': link.post_id,
+            'topic_id': link.topic_id
+        }
+    except Exception:
+        raise ValueError('Invalid message link.')
+
+
+def extract_info_from_link(link: str) -> Link:
+    # https://github.com/tangyoha/telegram_media_downloader/blob/master/utils/format.py#L220
+    if link in ('me', 'self'):
+        return Link(group_id=link)
+
+    try:
+        u = urlparse(link)
+        paths = [p for p in u.path.split('/') if p]
+        query = parse_qs(u.query)
+    except ValueError:
+        return Link()
+
+    result = Link()
+
+    if 'comment' in query:
+        result.group_id = paths[0]
+        result.comment_id = int(query['comment'][0])
+    elif len(paths) == 1 and paths[0] != 'c':
+        result.group_id = paths[0]
+    elif len(paths) == 2:
+        if paths[0] == 'c':
+            result.group_id = int(f'-100{paths[1]}')
+        else:
+            result.group_id = paths[0]
+            result.post_id = int(paths[1])
+    elif len(paths) == 3:
+        if paths[0] == 'c':
+            result.group_id = int(f'-100{paths[1]}')
+            result.post_id = int(paths[2])
+        else:
+            result.group_id = paths[0]
+            result.topic_id = int(paths[1])
+            result.post_id = int(paths[2])
+    elif len(paths) == 4 and paths[0] == 'c':
+        result.group_id = int(f'-100{paths[1]}')
+        result.topic_id = int(paths[2])
+        result.post_id = int(paths[3])
+
+    return result
+
+
+async def get_message_by_link(
         client: pyrogram.Client,
         link: str,
-        only_chat_id: bool = False,  # 为True时,只解析传入link的chat_id。
         single_link: bool = False  # 为True时,将每个链接都视作是单文件。
 ) -> Union[dict, None]:
     origin_link: str = link
@@ -85,79 +148,69 @@ async def extract_link_content(
             record_type.add(LinkType.TOPIC) if count == 2 else None
         elif link.startswith('https://t.me'):
             record_type.add(LinkType.TOPIC)
+
     # https://github.com/KurimuzonAkuma/pyrogram/blob/dev/pyrogram/methods/messages/get_messages.py#L101
-    if only_chat_id:
-        match = re.match(
-            r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/(\d+))?$',
-            link.lower())
-        if match:
-            try:
-                chat_id = utils.get_channel_id(int(match.group(1)))
-            except ValueError:
-                chat_id = match.group(1)
-            return {'chat_id': chat_id}
-    else:
-        match = re.match(
-            r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/\d+)*/(\d+)/?$',
-            link.lower())
-        if match:
-            try:
-                chat_id = utils.get_channel_id(int(match.group(1)))
-            except ValueError:
-                chat_id = match.group(1)
-            message_id: int = int(match.group(2))
-            comment_message: list = []
-            if LinkType.COMMENT in record_type:
-                # 如果用户需要同时下载媒体下面的评论,把评论中的所有信息放入列表一起返回。
-                async for comment in client.get_discussion_replies(chat_id, message_id):
-                    if not any(getattr(comment, dtype) for dtype in DownloadType()):
-                        continue
-                    if single_link:  # 处理单链接情况。
-                        if '=' in origin_link and int(origin_link.split('=')[-1]) != comment.id:
-                            continue
-                    comment_message.append(comment)
-            message = await client.get_messages(chat_id=chat_id, message_ids=message_id)
-            is_group, group_message = await __is_group(message)
-            if single_link:
-                is_group = False
-                group_message: Union[list, None] = None
-            if is_group or comment_message:  # 组或评论区。
-                try:  # v1.1.2解决当group返回None时出现comment无法下载的问题。
-                    group_message.extend(comment_message) if comment_message else None
-                except AttributeError:
-                    if comment_message and group_message is None:
-                        group_message: list = []
-                        group_message.extend(comment_message)
-                if comment_message:
-                    return {
-                        'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.COMMENT,
-                        'chat_id': chat_id,
-                        'message': group_message,
-                        'member_num': len(group_message)
-                    }
-                else:
-                    return {
-                        'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.GROUP,
-                        'chat_id': chat_id,
-                        'message': group_message,
-                        'member_num': len(group_message)
-                    }
-            elif is_group is False and group_message is None:  # 单文件。
-                return {
-                    'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.SINGLE,
-                    'chat_id': chat_id,
-                    'message': message,
-                    'member_num': 1
-                }
-            elif is_group is None and group_message is None:
-                raise MsgIdInvalid(
-                    'The message does not exist, the channel has been disbanded or is not in the channel.')
-            elif is_group is None and group_message == 0:
-                raise Exception('Link parsing error.')
-            else:
-                raise Exception('Unknown error.')
+    match = re.match(
+        r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/\d+)*/(\d+)/?$',
+        link.lower())
+    if not match:
+        raise ValueError('Invalid message link.')
+
+    try:
+        chat_id = utils.get_channel_id(int(match.group(1)))
+    except ValueError:
+        chat_id = match.group(1)
+    message_id: int = int(match.group(2))
+    comment_message: list = []
+    if LinkType.COMMENT in record_type:
+        # 如果用户需要同时下载媒体下面的评论,把评论中的所有信息放入列表一起返回。
+        async for comment in client.get_discussion_replies(chat_id, message_id):
+            if not any(getattr(comment, dtype) for dtype in DownloadType()):
+                continue
+            if single_link:  # 处理单链接情况。
+                if '=' in origin_link and int(origin_link.split('=')[-1]) != comment.id:
+                    continue
+            comment_message.append(comment)
+    message = await client.get_messages(chat_id=chat_id, message_ids=message_id)
+    is_group, group_message = await __is_group(message)
+    if single_link:
+        is_group = False
+        group_message: Union[list, None] = None
+    if is_group or comment_message:  # 组或评论区。
+        try:  # v1.1.2解决当group返回None时出现comment无法下载的问题。
+            group_message.extend(comment_message) if comment_message else None
+        except AttributeError:
+            if comment_message and group_message is None:
+                group_message: list = []
+                group_message.extend(comment_message)
+        if comment_message:
+            return {
+                'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.COMMENT,
+                'chat_id': chat_id,
+                'message': group_message,
+                'member_num': len(group_message)
+            }
         else:
-            raise ValueError('Invalid message link.')
+            return {
+                'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.GROUP,
+                'chat_id': chat_id,
+                'message': group_message,
+                'member_num': len(group_message)
+            }
+    elif is_group is False and group_message is None:  # 单文件。
+        return {
+            'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.SINGLE,
+            'chat_id': chat_id,
+            'message': message,
+            'member_num': 1
+        }
+    elif is_group is None and group_message is None:
+        raise MsgIdInvalid(
+            'The message does not exist, the channel has been disbanded or is not in the channel.')
+    elif is_group is None and group_message == 0:
+        raise Exception('Link parsing error.')
+    else:
+        raise Exception('Unknown error.')
 
 
 async def __is_group(message) -> Tuple[Union[bool, None], Union[list, None]]:

@@ -5,7 +5,6 @@
 # File:downloader.py
 import asyncio
 import os
-import re
 import sys
 from functools import partial
 from sqlite3 import OperationalError
@@ -32,12 +31,12 @@ from pyrogram.errors.exceptions.unauthorized_401 import (
     SessionExpired,
     Unauthorized
 )
+from pyrogram.errors.exceptions.forbidden_403 import ChatWriteForbidden
 from pyrogram.handlers import MessageHandler
 from pyrogram.types.bots_and_keyboards import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.types.messages_and_media import ReplyParameters
 
 from module import (
-    utils,
     console,
     log,
     LINK_PREVIEW_OPTIONS,
@@ -67,9 +66,9 @@ from module.stdio import ProgressBar, Base64Image
 from module.task import DownloadTask
 from module.uploader import TelegramUploader
 from module.util import (
+    parse_link,
+    get_message_by_link,
     safe_message,
-    format_chat_link,
-    extract_link_content,
     get_chat_with_notify,
     truncate_display_filename
 )
@@ -119,6 +118,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         else:
             log.warning('消息过长编辑频繁,暂时无法通过机器人显示通知。')
         links: Union[set, None] = self.__process_links(link=list(right_link))
+
         if links is None:
             return None
         for link in links:
@@ -418,7 +418,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.listen_forward_chat.pop(link)
             m: list = link.split()
             _ = ' -> '.join(m)
-            p = f'已删除监听转发,转发规则:"{_}"'
+            p = f'已删除监听转发,转发规则:"{_}"。'
             await callback_query.message.edit_text(
                 ' ➡️ '.join(m)
             )
@@ -442,15 +442,13 @@ class TelegramRestrictedMediaDownloader(Bot):
         start_id: int = meta.get('message_range')[0]
         end_id: int = meta.get('message_range')[1]
         try:
-            origin_meta: Union[dict, None] = await extract_link_content(
+            origin_meta: Union[dict, None] = await parse_link(
                 client=self.app.client,
-                link=origin_link,
-                only_chat_id=True
+                link=origin_link
             )
-            target_meta: Union[dict, None] = await extract_link_content(
+            target_meta: Union[dict, None] = await parse_link(
                 client=self.app.client,
-                link=target_link,
-                only_chat_id=True
+                link=target_link
             )
             if not all([origin_meta, target_meta]):
                 raise Exception('Invalid origin_link or target_link.')
@@ -545,7 +543,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         ]
                     )
                 )
-        except (ValueError, ChatForwardsRestricted_400, ChatForwardsRestricted_406):
+        except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
             self.cd.data = {
                 'origin_link': origin_link,
                 'target_link': target_link,
@@ -565,10 +563,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
             )
-        except (ValueError, KeyError, UsernameInvalid):
+        except (ValueError, KeyError, UsernameInvalid, ChatWriteForbidden):
             msg: str = ''
             if any('/c' in link for link in (origin_link, target_link)):
-                msg = '(私密频道或话题频道必须让当前账号加入该频道)'
+                msg = '(私密频道或话题频道必须让当前账号加入转发频道,并且目标频道需有上传文件的权限)'
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
@@ -641,46 +639,28 @@ class TelegramRestrictedMediaDownloader(Bot):
             if _link not in _listen_chat:
                 try:
                     chat = await self.user.get_chat(_link)
+                    if chat.is_forum:
+                        raise PeerIdInvalid
                     handler = MessageHandler(_callback, filters=pyrogram.filters.chat(chat.id))
                     _listen_chat[_link] = handler
                     self.user.add_handler(handler)
                     return True
-                except PeerIdInvalid as e:
-                    chat_id, topic_id = None, None
-                    link_meta: list = _link.split()
-                    link_length: int = len(link_meta)
-                    if link_length >= 1:
-                        l_link = link_meta[0]  # v1.6.7 修复内部函数add_listen_chat中,抛出PeerIdInvalid后,在获取链接时抛出ValueError错误。
-                    else:
-                        return False
-
-                    def _get_m(s: str):
-                        return re.match(
-                            r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/(\d+))?$',
-                            s.lower())
-
-                    def _get_c_t(m, catch=True):
-                        c, t = None, None
-                        try:
-                            c = utils.get_channel_id(int(m.group(1)))
-                            t = int(m.group(2))
-                        except (TypeError, ValueError):
-                            t = m.group(1)
-                        if catch and not all([c, t]):
-                            raise ValueError('Invalid chat id or topic id.')
-                        return c, t
-
+                except PeerIdInvalid:
                     try:
-                        match = _get_m(l_link)
-                        if match:
-                            chat_id, topic_id = _get_c_t(match)
-                    except ValueError:
-                        match = _get_m(format_chat_link(l_link))
-                        if match:
-                            chat_id, topic_id = _get_c_t(match, False)
-                    if all([chat_id, topic_id]):
-                        filters = pyrogram.filters.chat(chat_id) if '/c' in l_link else pyrogram.filters.chat(
-                            chat_id) & pyrogram.filters.topic(topic_id)  # v1.6.7 修复私密频道的监听下载作为话题频道监听的问题。
+                        link_meta: list = _link.split()
+                        link_length: int = len(link_meta)
+                        if link_length >= 1:
+                            l_link = link_meta[0]  # v1.6.7 修复内部函数add_listen_chat中,抛出PeerIdInvalid后,在获取链接时抛出ValueError错误。
+                        else:
+                            return False
+                        m: dict = await parse_link(client=self.app.client, link=l_link)
+                        topic_id = m.get('topic_id')
+                        chat_id = m.get('chat_id')
+                        if topic_id:
+                            filters = pyrogram.filters.chat(
+                                chat_id) & pyrogram.filters.topic(topic_id)
+                        else:
+                            filters = pyrogram.filters.chat(chat_id)
                         handler = MessageHandler(
                             _callback,
                             filters=filters
@@ -688,14 +668,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                         _listen_chat[_link] = handler
                         self.user.add_handler(handler)
                         return True
-                    await client.send_message(
-                        chat_id=message.from_user.id,
-                        reply_parameters=ReplyParameters(message_id=message.id),
-                        link_preview_options=LINK_PREVIEW_OPTIONS,
-                        text=f'⚠️⚠️⚠️无法读取⚠️⚠️⚠️\n`{_link}`\n(具体原因请前往终端查看报错信息)'
-                    )
-                    log.error(f'频道"{_link}"解析失败,{_t(KeyWord.REASON)}:"{e}"')
-                    return False
+                    except ValueError as e:
+                        await client.send_message(
+                            chat_id=message.from_user.id,
+                            reply_parameters=ReplyParameters(message_id=message.id),
+                            link_preview_options=LINK_PREVIEW_OPTIONS,
+                            text=f'⚠️⚠️⚠️无法读取⚠️⚠️⚠️\n`{_link}`\n(具体原因请前往终端查看报错信息)'
+                        )
+                        log.error(f'频道"{_link}"解析失败,{_t(KeyWord.REASON)}:"{e}"')
+                        return False
                 except Exception as e:
                     await client.send_message(
                         chat_id=message.from_user.id,
@@ -776,19 +757,17 @@ class TelegramRestrictedMediaDownloader(Bot):
     ):
         try:
             link: str = message.link
-            meta = await extract_link_content(client=self.app.client, link=link)
+            meta = await parse_link(client=self.app.client, link=link)
             listen_chat_id = meta.get('chat_id')
             for m in self.listen_forward_chat:
                 listen_link, target_link = m.split()
-                _listen_link_meta = await extract_link_content(
+                _listen_link_meta = await parse_link(
                     client=self.app.client,
-                    link=listen_link,
-                    only_chat_id=True
+                    link=listen_link
                 )
-                _target_link_meta = await extract_link_content(
+                _target_link_meta = await parse_link(
                     client=self.app.client,
-                    link=target_link,
-                    only_chat_id=True
+                    link=target_link
                 )
                 _listen_chat_id = _listen_link_meta.get('chat_id')
                 _target_link_id = _target_link_meta.get('chat_id')
@@ -805,7 +784,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'{_t(KeyWord.LINK)}:"{link}" -> "{target_link}",'
                             f'{_t(KeyWord.STATUS)}:转发成功。'
                         )
-                    except (ValueError, ChatForwardsRestricted_400, ChatForwardsRestricted_406):
+                    except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
                         if not self.gc.download_upload:
                             await self.bot.send_message(
                                 chat_id=client.me.id,
@@ -831,6 +810,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                         p = f'{_t(KeyWord.DOWNLOAD_AND_UPLOAD_TASK)}{_t(KeyWord.CHANNEL)}:"{listen_chat_id}",{_t(KeyWord.LINK)}:"{link}"。'
                         console.log(p, style='#FF4689')
                         log.info(p)
+        except (ValueError, KeyError, UsernameInvalid, ChatWriteForbidden) as e:
+            log.error(
+                f'监听转发出现错误,{_t(KeyWord.REASON)}:{e}频道性质可能发生改变,包括但不限于(频道解散、频道名改变、频道类型改变、该账户没有在目标频道上传的权限、该账号被当前频道移除)。')
         except Exception as e:
             log.exception(f'监听转发出现错误,{_t(KeyWord.REASON)}:{e}')
 
@@ -1150,7 +1132,7 @@ class TelegramRestrictedMediaDownloader(Bot):
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
         try:
-            meta: dict = await extract_link_content(
+            meta: dict = await get_message_by_link(
                 client=self.app.client,
                 link=link,
                 single_link=single_link
@@ -1299,7 +1281,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     if i.startswith(start_content):
                         links.add(i)
                         self.bot_task_link.add(i)
-                    elif i == '':
+                    elif i == '' or '#':
                         continue
                     else:
                         log.warning(f'"{i}"是一个非法链接,{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。')
