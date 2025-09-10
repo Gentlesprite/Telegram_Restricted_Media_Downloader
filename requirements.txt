@@ -5,4 +5,4 @@ qrcode
 pyreadline3
 kurigram==2.2.10
 pygments
-moviepy
+pymediainfo

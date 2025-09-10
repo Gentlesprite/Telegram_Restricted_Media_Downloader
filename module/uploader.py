@@ -17,7 +17,7 @@ from typing import (
 
 import pyrogram
 from pyrogram import raw, utils
-from moviepy import VideoFileClip
+from pymediainfo import MediaInfo
 
 from module import console, log
 from module.language import _t
@@ -96,12 +96,13 @@ class TelegramUploader:
             attributes = [raw.types.DocumentAttributeFilename(file_name=file_name)]
             if file_path.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
                 video_meta: Union[dict, None] = self.get_video_info(path)
-                attributes.append(raw.types.DocumentAttributeVideo(
-                    supports_streaming=True,
-                    duration=video_meta.get('duration'),
-                    w=video_meta.get('width'),
-                    h=video_meta.get('height')
-                ))
+                if video_meta:
+                    attributes.append(raw.types.DocumentAttributeVideo(
+                        supports_streaming=True,
+                        duration=video_meta.get('duration'),
+                        w=video_meta.get('width'),
+                        h=video_meta.get('height')
+                    ))
 
             media = raw.types.InputMediaUploadedDocument(
                 mime_type=mime_type,
@@ -129,14 +130,17 @@ class TelegramUploader:
     @staticmethod
     def get_video_info(video_path: str) -> Dict[str, int]:
         try:
-            with VideoFileClip(video_path) as clip:
-                return {
-                    'duration': round(clip.duration),
-                    'width': clip.size[0],
-                    'height': clip.size[1]
-                }
+            media_info = MediaInfo.parse(video_path)
+            video_track = media_info.video_tracks[0]
+            meta = {
+                'width': video_track.width,
+                'height': video_track.height,
+                'duration': round(video_track.duration / 1000)
+            }
+            if all(meta.values()):
+                return meta
         except Exception as e:
-            log.error(f'添加视频属性失败,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(f'获取视频属性失败,{_t(KeyWord.REASON)}:"{e}"')
 
     @UploadTask.on_create_task
     async def create_upload_task(

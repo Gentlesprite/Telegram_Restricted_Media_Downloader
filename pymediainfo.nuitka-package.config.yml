@@ -1,0 +1,3 @@
+dlls:
+  includes:
+    - MediaInfo.dll
