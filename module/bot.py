@@ -123,7 +123,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❓❓❓请提供下载链接❓❓❓格式:\n`/download https://t.me/x/x`',
+                text='❓❓❓请提供下载链接❓❓❓语法:\n`/download https://t.me/x/x`',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
         elif text.startswith('https://t.me/'):
@@ -349,8 +349,8 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❌❌❌命令格式无效❌❌❌\n'
-                     '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
+                text='❌❌❌命令语法无效❌❌❌\n'
+                     '⬇️⬇️⬇️语法如下⬇️⬇️⬇️\n'
                      '`/forward 原始频道 目标频道 起始ID 结束ID`\n'
                      '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
                      '`/forward https://t.me/A https://t.me/B 1 100`\n'
@@ -390,7 +390,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❓❓❓请提供下载链接❓❓❓格式:\n`/upload 本地文件 目标频道`',
+                text='❓❓❓请提供参数❓❓❓语法:\n`/upload 本地文件 目标频道`',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
             return None
@@ -485,8 +485,8 @@ class Bot:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text='❌❌❌命令格式无效❌❌❌\n'
-                         '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
+                    text='❌❌❌命令语法错误❌❌❌\n'
+                         '⬇️⬇️⬇️语法如下⬇️⬇️⬇️\n'
                          f'`/listen_download 监听频道1 监听频道2 监听频道n`\n'
                          '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
                          f'`/listen_download https://t.me/A https://t.me/B https://t.me/n`\n'
@@ -552,7 +552,7 @@ class Bot:
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
                     text=f'❌❌❌{e}❌❌❌\n'
-                         '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
+                         '⬇️⬇️⬇️语法如下⬇️⬇️⬇️\n'
                          f'`/listen_forward 监听频道 转发频道`\n'
                          '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
                          f'`/listen_forward https://t.me/A https://t.me/B`\n'
@@ -577,7 +577,7 @@ class Bot:
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
                     text=f'❌❌❌{e}❌❌❌\n'
-                         '⬇️⬇️⬇️格式如下⬇️⬇️⬇️\n'
+                         '⬇️⬇️⬇️语法如下⬇️⬇️⬇️\n'
                          f'`/listen_forward 监听频道 转发频道`\n'
                          '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
                          f'`/listen_forward https://t.me/A https://t.me/B`\n'
