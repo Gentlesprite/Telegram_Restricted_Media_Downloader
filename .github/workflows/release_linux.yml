@@ -1,0 +1,59 @@
+name: Release Linux
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python 3.13.2
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13.2'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install nuitka==2.6.7
+
+    - name: Extract metadata
+      shell: bash
+      run: |
+        TAG_NAME=${GITHUB_REF#refs/tags/}
+        CLEAN_VERSION=${TAG_NAME#v}
+        echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+        echo "CLEAN_VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
+
+    - name: Build with Nuitka
+      shell: bash
+      run:
+        python3 build.py
+
+    - name: Prepare release files
+      shell: bash
+      run: |
+        mkdir -p "release/使用手册"
+        cp "output/TRMD" "release/TRMD"
+        cp "res/使用必读.pdf" "release/使用手册/使用必读.pdf"
+        cp "res/Wiki.pdf" "release/使用手册/常见问题及解决方案汇总.pdf"
+        cp "res/2_5_1.png" "release/使用手册/软件更新教程.png"
+        cd release
+        "../res/bin/rar" a "TRMD_${{ env.CLEAN_VERSION }}-linux-64.rar" "TRMD" "使用手册"
+        rm -rf "使用手册"
+
+    - name: Upload release asset to GitHub
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.TAG_NAME }}
+        files: release/*
