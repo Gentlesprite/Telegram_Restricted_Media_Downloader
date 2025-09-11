@@ -72,7 +72,9 @@ if __name__ == '__main__':
         ready_nuitka()
         media_info_lib_filename, media_info_lib_path = ready_pymediainfo()
         extension = '.exe' if platform == 'win32' else ''
-        print(f'找到pymediainfo依赖的运行库"{media_info_lib_filename}"的路径为"{media_info_lib_path}"。')
+        print(
+            f'The path to the runtime library"{media_info_lib_filename}"required by the pymediainfo dependency is"{media_info_lib_path}"。'
+        )
         ico_path = 'res/icon.ico'
         output = 'output'
         main = 'main.py'
