@@ -22,7 +22,7 @@ build_command = f'nuitka --standalone --onefile {include_module} '
 build_command += f'--output-dir={output} --file-version={__version__} --product-version={__version__} '
 build_command += f'--windows-icon-from-ico="{ico_path}" --assume-yes-for-downloads '
 build_command += f'--output-filename="{SOFTWARE_SHORT_NAME}.exe" --copyright="{copy_right}" --msvc=latest '
-build_command += f'--include-data-file="{media_info_lib_path}"=MediaInfo.dll '
+build_command += f'--include-data-file="{media_info_lib_path}"={media_info_lib_filename} '
 build_command += f'--remove-output '
 build_command += f'--script-name={main}'
 
