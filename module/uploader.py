@@ -103,7 +103,11 @@ class TelegramUploader:
                         w=video_meta.get('width'),
                         h=video_meta.get('height')
                     ))
-
+                    log.info(f'视频"{file_path}"将以原本格式进行上传。')
+                else:
+                    p = f'获取视频元数据失败,视频"{file_path}"将以文档格式进行上传。'
+                    console.log(p)
+                    log.info(p)
             media = raw.types.InputMediaUploadedDocument(
                 mime_type=mime_type,
                 file=file,
@@ -140,7 +144,7 @@ class TelegramUploader:
             if all(meta.values()):
                 return meta
         except Exception as e:
-            log.error(f'获取视频属性失败,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(f'获取视频元数据失败,{_t(KeyWord.REASON)}:"{e}"')
 
     @UploadTask.on_create_task
     async def create_upload_task(
