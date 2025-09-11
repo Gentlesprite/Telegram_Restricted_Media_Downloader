@@ -22,8 +22,8 @@
 </p>
 
 > [!NOTE]
-> 由于本项目**没有提供**Linux环境下的二进制文件，但**支持**Linux环境运行。  
-> 故Linux用户请**阅读**:[_"3.0.在生产环境中运行(对于Linux用户)"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7-1)。  
+> 由于本项目**提供**的Linux版本可能对较早版本的Linux系统兼容性较差。  
+> 若**无法运行的**Linux用户请**阅读**:[_"3.0.在生产环境中运行(对于Linux用户)"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7-1)。  
 > 如果你**遇到任何问题**，请先**阅读**:[_"常见问题及解决方案汇总"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
 > **没有找到解决方案**再进群或私聊提问。
 
@@ -552,7 +552,7 @@ upload:
 
 # 3.0.在生产环境中运行:
 
-_**推荐**使用`Python==3.13.2`作为该项目环境。(避免在其他`Python`版本运行时报错)_
+_**推荐**使用`Python==3.13.2`作为该项目环境(避免使用其他`Python`版本导致运行时出现报错)。_
 
 ## 对于Windows用户:
 
@@ -630,12 +630,24 @@ _由于新版本可能使用了**新的依赖**，使用`git pull`拉取后，�
 pip3 install -r requirements.txt
 ```
 
-# 4.0.联系作者:
+# 4.0.通过编译后运行:
+
+_**推荐**使用`Python==3.13.2`作为该项目环境(避免使用其他`Python`版本导致编译过程中或编译完成后出现报错)。_
+
+- 同"在生产环境中运行"**前置步骤一致**。
+
+- 然后执行编译代码(建议使用**虚拟环境**，**避免**添加不必要的库，从而**减小**输出的文件大小)。
+
+```bash
+python build.py
+```
+
+# 5.0.联系作者:
 
   Telegram:[@Gentlesprite](https://t.me/Gentlesprite)
 
   邮箱:Gentlesprites@outlook.com
 
-# 5.0.支持作者:
+# 6.0.支持作者:
 
 ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/pay.png)
