@@ -432,6 +432,60 @@ class TelegramRestrictedMediaDownloader(Bot):
             console.log(p, style='#FF4689')
             log.info(f'{p}当前的监听转发信息:{self.listen_forward_chat}')
 
+    async def forward(
+            self,
+            client,
+            message,
+            message_id,
+            origin_chat_id,
+            target_chat_id,
+            target_link,
+            download_upload: bool = False
+    ):
+        link = message.link
+        try:
+            await self.app.client.copy_message(
+                chat_id=target_chat_id,
+                from_chat_id=origin_chat_id,
+                message_id=message_id,
+                disable_notification=True,
+                protect_content=False
+            )
+            console.log(
+                f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{message_id}"'
+                f' -> '
+                f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",'
+                f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
+            )
+        except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
+            if not download_upload:
+                raise
+            if not self.gc.download_upload:
+                await self.bot.send_message(
+                    chat_id=client.me.id,
+                    text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n'
+                         f'`{target_chat_id}`存在内容保护限制。'
+                         f'(可在[设置]->[上传设置]中设置转发时遇到受限转发进行下载后上传)',
+                    reply_parameters=ReplyParameters(message_id=message_id),
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
+                        BotButton.SETTING,
+                        callback_data=BotCallbackText.SETTING
+                    )]]))
+                return None
+            self.last_message.text = f'/download {link}?single'
+            await self.get_download_link_from_bot(
+                client=self.last_client,
+                message=self.last_message,
+                with_upload={
+                    'link': target_link,
+                    'file_name': None,
+                    'with_delete': self.gc.upload_delete
+                }
+            )
+            p = f'{_t(KeyWord.DOWNLOAD_AND_UPLOAD_TASK)}{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.LINK)}:"{link}"。'
+            console.log(p, style='#FF4689')
+            log.info(p)
+
     async def get_forward_link_from_bot(
             self, client: pyrogram.Client,
             message: pyrogram.types.Message
@@ -490,18 +544,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                     reverse=True
             ):
                 try:
-                    await self.app.client.copy_message(
-                        chat_id=target_chat_id,
-                        from_chat_id=origin_chat_id,
+                    await self.forward(
+                        client=client,
+                        message=message,
                         message_id=i.id,
-                        disable_notification=True,
-                        protect_content=False
-                    )
-                    console.log(
-                        f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{i.id}"'
-                        f' -> '
-                        f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
-                        f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
+                        origin_chat_id=origin_chat_id,
+                        target_chat_id=target_chat_id,
+                        target_link=target_link
                     )
                 except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
                     raise
@@ -525,41 +574,42 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
                         f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_FAILURE)},'
                         f'{_t(KeyWord.REASON)}:"{e}"')
-            if isinstance(last_message, str):
-                log.warning('消息过长编辑频繁,暂时无法通过机器人显示通知。')
-            if not last_message:
-                await client.send_message(
-                    chat_id=message.from_user.id,
-                    reply_parameters=ReplyParameters(message_id=message.id),
-                    text='🌟🌟🌟转发任务已完成🌟🌟🌟',
-                    reply_markup=InlineKeyboardMarkup(
-                        [
-                            [
-                                InlineKeyboardButton(
-                                    BotButton.CLICK_VIEW,
-                                    url=target_link
-                                )
-                            ]
-                        ]
-                    )
-                )
             else:
-                await self.safe_edit_message(
-                    client=client,
-                    message=message,
-                    last_message_id=last_message.id,
-                    text=safe_message(f'{last_message.text}\n🌟🌟🌟转发任务已完成🌟🌟🌟'),
-                    reply_markup=InlineKeyboardMarkup(
-                        [
+                if isinstance(last_message, str):
+                    log.warning('消息过长编辑频繁,暂时无法通过机器人显示通知。')
+                if not last_message:
+                    await client.send_message(
+                        chat_id=message.from_user.id,
+                        reply_parameters=ReplyParameters(message_id=message.id),
+                        text='🌟🌟🌟转发任务已完成🌟🌟🌟',
+                        reply_markup=InlineKeyboardMarkup(
                             [
-                                InlineKeyboardButton(
-                                    BotButton.CLICK_VIEW,
-                                    url=target_link
-                                )
+                                [
+                                    InlineKeyboardButton(
+                                        BotButton.CLICK_VIEW,
+                                        url=target_link
+                                    )
+                                ]
                             ]
-                        ]
+                        )
                     )
-                )
+                else:
+                    await self.safe_edit_message(
+                        client=client,
+                        message=message,
+                        last_message_id=last_message.id,
+                        text=safe_message(f'{last_message.text}\n🌟🌟🌟转发任务已完成🌟🌟🌟'),
+                        reply_markup=InlineKeyboardMarkup(
+                            [
+                                [
+                                    InlineKeyboardButton(
+                                        BotButton.CLICK_VIEW,
+                                        url=target_link
+                                    )
+                                ]
+                            ]
+                        )
+                    )
         except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
             self.cd.data = {
                 'origin_link': origin_link,
@@ -789,46 +839,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _listen_chat_id = _listen_link_meta.get('chat_id')
                 _target_chat_id = _target_link_meta.get('chat_id')
                 if listen_chat_id == _listen_chat_id:
-                    try:
-                        await self.app.client.copy_message(
-                            chat_id=_target_chat_id,
-                            from_chat_id=_listen_chat_id,
-                            message_id=message.id,
-                            disable_notification=True,
-                            protect_content=False
-                        )
-                        console.log(
-                            f'{_t(KeyWord.CHANNEL)}:"{_listen_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{message.id}"'
-                            f' -> '
-                            f'{_t(KeyWord.CHANNEL)}:"{_target_chat_id}",'
-                            f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
-                        )
-                    except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
-                        if not self.gc.download_upload:
-                            await self.bot.send_message(
-                                chat_id=client.me.id,
-                                text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n'
-                                     f'`{listen_chat_id}`存在内容保护限制。'
-                                     f'(可在[设置]->[上传设置]中设置转发时遇到受限转发进行下载后上传)',
-                                reply_parameters=ReplyParameters(message_id=message.id),
-                                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
-                                    BotButton.SETTING,
-                                    callback_data=BotCallbackText.SETTING
-                                )]]))
-                            return None
-                        self.last_message.text = f'/download {link}?single'
-                        await self.get_download_link_from_bot(
-                            client=self.last_client,
-                            message=self.last_message,
-                            with_upload={
-                                'link': target_link,
-                                'file_name': None,
-                                'with_delete': self.gc.upload_delete
-                            }
-                        )
-                        p = f'{_t(KeyWord.DOWNLOAD_AND_UPLOAD_TASK)}{_t(KeyWord.CHANNEL)}:"{listen_chat_id}",{_t(KeyWord.LINK)}:"{link}"。'
-                        console.log(p, style='#FF4689')
-                        log.info(p)
+                    await self.forward(
+                        client=client,
+                        message=message,
+                        message_id=message.id,
+                        origin_chat_id=_listen_chat_id,
+                        target_chat_id=_target_chat_id,
+                        target_link=target_link,
+                        download_upload=True
+                    )
         except (ValueError, KeyError, UsernameInvalid, ChatWriteForbidden) as e:
             log.error(
                 f'监听转发出现错误,{_t(KeyWord.REASON)}:{e}频道性质可能发生改变,包括但不限于(频道解散、频道名改变、频道类型改变、该账户没有在目标频道上传的权限、该账号被当前频道移除)。')

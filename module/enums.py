@@ -76,7 +76,7 @@ class KeyWord:
     RESUME: str = 'resume'
     DOWNLOAD_TASK: str = 'download task'
     UPLOAD_TASK: str = 'upload task'
-    DOWNLOAD_AND_UPLOAD_TASK: str = 'download and upload task',
+    DOWNLOAD_AND_UPLOAD_TASK: str = 'download and upload task'
     FORWARD_SUCCESS: str = 'forward success'
     FORWARD_FAILURE: str = 'forward failure'
 
