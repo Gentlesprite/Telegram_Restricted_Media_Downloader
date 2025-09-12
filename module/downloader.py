@@ -573,7 +573,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     }
                     channel = '@' + origin_chat.username if isinstance(
                         getattr(origin_chat, 'username'),
-                        str) else origin_chat_id
+                        str) else ''
                     await client.send_message(
                         chat_id=message.from_user.id,
                         text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{origin_link}`\n{channel}存在内容保护限制。',
