@@ -576,6 +576,16 @@ class GlobalConfig(BaseConfig):
             {
                 'download_upload': True,
                 'delete': False
+            },
+        'forward_type':
+            {
+                'video': True,
+                'photo': True,
+                'audio': True,
+                'document': True,
+                'voice': True,
+                'text': True,
+                'animation': True
             }
     }
 
@@ -594,6 +604,7 @@ class GlobalConfig(BaseConfig):
             param='upload',
             nesting_param='delete'
         )
+        self.forward_type: dict = self.config.get('forward_type')
 
     def get_nesting_config(self, default_nesting, param, nesting_param):
         return self.config.get(param, default_nesting).get(nesting_param)

@@ -445,6 +445,14 @@ class TelegramRestrictedMediaDownloader(Bot):
             download_upload: Optional[bool] = False
     ):
         try:
+            if not self.check_type(message):
+                console.log(
+                    f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{message_id}"'
+                    f' -> '
+                    f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",'
+                    f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SKIP)}。'
+                )
+                return None
             await self.app.client.copy_message(
                 chat_id=target_chat_id,
                 from_chat_id=origin_chat_id,
@@ -832,6 +840,14 @@ class TelegramRestrictedMediaDownloader(Bot):
             await self.create_download_task(link=message.link, single_link=True)
         except Exception as e:
             log.exception(f'监听下载出现错误,{_t(KeyWord.REASON)}:{e}')
+
+    def check_type(self, message: pyrogram.types.Message):
+        for dtype, is_forward in self.gc.forward_type.items():
+            if is_forward:
+                result = getattr(message, dtype)
+                if result:
+                    return True
+        return False
 
     async def listen_forward(
             self,
