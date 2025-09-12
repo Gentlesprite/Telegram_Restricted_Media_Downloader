@@ -672,7 +672,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     client=client,
                     message=message,
                     last_message_id=last_message.id,
-                    text=safe_message(f'{last_message.text.strip(loading)}\n🌟🌟🌟转发任务已完成🌟🌟🌟'),
+                    text=safe_message(
+                        f'{last_message.text.strip(loading)}\n🌟🌟🌟转发任务已完成🌟🌟🌟\n(若设置了转发过滤规则,请前往终端查看转发记录,此处不做展示)'),
                     reply_markup=InlineKeyboardMarkup(
                         [
                             [
