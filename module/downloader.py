@@ -546,7 +546,6 @@ class TelegramRestrictedMediaDownloader(Bot):
             ):
                 try:
                     message_id = i.id
-                    record_id.append(message_id)
                     await self.forward(
                         client=client,
                         message=message,
@@ -555,6 +554,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         target_chat_id=target_chat_id,
                         target_link=target_link
                     )
+                    record_id.append(message_id)
                 except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
                     raise
                 except Exception as e:
