@@ -9,9 +9,10 @@ import asyncio
 
 from functools import partial
 from sqlite3 import OperationalError
-from typing import Union, Callable
+from typing import Union, Callable, Optional
 
 import pyrogram
+from pyrogram.enums.parse_mode import ParseMode
 from pyrogram.errors.exceptions.bad_request_400 import (
     MsgIdInvalid,
     UsernameInvalid,
@@ -435,13 +436,13 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     async def forward(
             self,
-            client,
-            message,
-            message_id,
-            origin_chat_id,
-            target_chat_id,
-            target_link,
-            download_upload: bool = False
+            client: pyrogram.Client,
+            message: pyrogram.types.Message,
+            message_id: int,
+            origin_chat_id: int,
+            target_chat_id: int,
+            target_link: str,
+            download_upload: Optional[bool] = False
     ):
         try:
             await self.app.client.copy_message(
@@ -465,8 +466,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await self.bot.send_message(
                     chat_id=client.me.id,
                     text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n'
-                         f'`{target_chat_id}`存在内容保护限制。'
-                         f'(可在[设置]->[上传设置]中设置转发时遇到受限转发进行下载后上传)',
+                         f'`{link}`\n'
+                         f'存在内容保护限制(可在[设置]->[上传设置]中设置转发时遇到受限转发进行下载后上传)。',
                     reply_parameters=ReplyParameters(message_id=message_id),
                     reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
                         BotButton.SETTING,
@@ -564,23 +565,24 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     record_id.append(message_id)
                 except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
-                    raise
-                except Exception as e:
-                    if not last_message or last_message.text == loading:
-                        last_message = await client.send_message(
-                            chat_id=message.from_user.id,
-                            reply_parameters=ReplyParameters(message_id=message.id),
-                            link_preview_options=LINK_PREVIEW_OPTIONS,
-                            text=BotMessage.INVALID
-                        )
-                    last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
-                        client=client,
-                        message=message,
-                        last_message_id=last_message.id,
-                        text=safe_message(
-                            f'{last_message.text}\n{format_chat_link(origin_link, topic=origin_chat.is_forum)}/{i.id}'
-                        )
+                    self.cd.data = {
+                        'origin_link': origin_link,
+                        'target_link': target_link,
+                        'start_id': start_id,
+                        'end_id': end_id
+                    }
+                    channel = '@' + origin_chat.username if isinstance(
+                        getattr(origin_chat, 'username'),
+                        str) else origin_chat_id
+                    await client.send_message(
+                        chat_id=message.from_user.id,
+                        text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{origin_link}`\n{channel}存在内容保护限制。',
+                        parse_mode=ParseMode.MARKDOWN,
+                        reply_parameters=ReplyParameters(message_id=message.id),
+                        reply_markup=KeyboardButton.restrict_forward_button()
                     )
+                    return None
+                except Exception as e:
                     log.warning(
                         f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{i.id}"'
                         f' -> '
@@ -591,71 +593,49 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if isinstance(last_message, str):
                     log.warning('消息过长编辑频繁,暂时无法通过机器人显示通知。')
                 if not record_id:
-                    await self.safe_edit_message(
+                    last_message = await self.safe_edit_message(
                         client=client,
                         message=message,
                         last_message_id=last_message.id,
                         text=safe_message(f'😅😅😅没有找到任何有效的消息😅😅😅')
                     )
-                    return
-
+                    return None
+                invalid_id: list = []
                 for i in range(start_id, end_id + 1):
                     if i not in record_id:
+                        invalid_id.append(i)
+                if invalid_id:
+                    last_message = await self.safe_edit_message(
+                        client=client,
+                        message=message,
+                        last_message_id=last_message.id,
+                        text=safe_message(BotMessage.INVALID)
+                    )
+                    for i in invalid_id:
                         last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
                             client=client,
                             message=message,
                             last_message_id=last_message.id,
                             text=safe_message(
-                                f'{BotMessage.INVALID}\n{format_chat_link(origin_link, topic=origin_chat.is_forum)}/{i}'
+                                f'{last_message.text}\n{format_chat_link(origin_link, topic=origin_chat.is_forum)}/{i}'
                             )
                         )
-
-                if not last_message or last_message.text == loading:
-                    await client.send_message(
-                        chat_id=message.from_user.id,
-                        reply_parameters=ReplyParameters(message_id=message.id),
-                        text='🌟🌟🌟转发任务已完成🌟🌟🌟',
-                        reply_markup=InlineKeyboardMarkup(
+                last_message = await self.safe_edit_message(
+                    client=client,
+                    message=message,
+                    last_message_id=last_message.id,
+                    text=safe_message(f'{last_message.text.strip(loading)}\n🌟🌟🌟转发任务已完成🌟🌟🌟'),
+                    reply_markup=InlineKeyboardMarkup(
+                        [
                             [
-                                [
-                                    InlineKeyboardButton(
-                                        BotButton.CLICK_VIEW,
-                                        url=target_link
-                                    )
-                                ]
+                                InlineKeyboardButton(
+                                    BotButton.CLICK_VIEW,
+                                    url=format_chat_link(target_link, topic=target_chat.is_forum)
+                                )
                             ]
-                        )
+                        ]
                     )
-                else:
-                    await self.safe_edit_message(
-                        client=client,
-                        message=message,
-                        last_message_id=last_message.id,
-                        text=safe_message(f'{last_message.text}\n🌟🌟🌟转发任务已完成🌟🌟🌟'),
-                        reply_markup=InlineKeyboardMarkup(
-                            [
-                                [
-                                    InlineKeyboardButton(
-                                        BotButton.CLICK_VIEW,
-                                        url=target_link
-                                    )
-                                ]
-                            ]
-                        )
-                    )
-        except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
-            self.cd.data = {
-                'origin_link': origin_link,
-                'target_link': target_link,
-                'start_id': start_id,
-                'end_id': end_id
-            }
-            await client.send_message(
-                chat_id=message.from_user.id,
-                text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{origin_link}`存在内容保护限制。',
-                reply_parameters=ReplyParameters(message_id=message.id),
-                reply_markup=KeyboardButton.restrict_forward_button()
-            )
+                )
         except AttributeError as e:
             log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             await client.send_message(
