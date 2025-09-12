@@ -71,9 +71,10 @@ from module.stdio import ProgressBar, Base64Image
 from module.uploader import TelegramUploader
 from module.util import (
     parse_link,
+    format_chat_link,
     get_message_by_link,
-    safe_message,
     get_chat_with_notify,
+    safe_message,
     truncate_display_filename
 )
 
@@ -499,6 +500,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         target_link: str = meta.get('target_link')
         start_id: int = meta.get('message_range')[0]
         end_id: int = meta.get('message_range')[1]
+        last_message: Union[pyrogram.types.Message, None] = None
+        loading = '🚛消息转发中,请稍候...'
         try:
             origin_meta: Union[dict, None] = await parse_link(
                 client=self.app.client,
@@ -534,10 +537,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                     reply_parameters=ReplyParameters(message_id=message.id),
                 )
                 return None
-            last_message: Union[pyrogram.types.Message, None] = None
             origin_chat_id = origin_chat.id
             target_chat_id = target_chat.id
             record_id: list = []
+            last_message = await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                link_preview_options=LINK_PREVIEW_OPTIONS,
+                text=loading
+            )
             async for i in self.app.client.get_chat_history(
                     chat_id=origin_chat.id,
                     offset_id=start_id,
@@ -558,7 +566,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
                     raise
                 except Exception as e:
-                    if not last_message:
+                    if not last_message or last_message.text == loading:
                         last_message = await client.send_message(
                             chat_id=message.from_user.id,
                             reply_parameters=ReplyParameters(message_id=message.id),
@@ -569,7 +577,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                         client=client,
                         message=message,
                         last_message_id=last_message.id,
-                        text=safe_message(f'{last_message.text}\n{origin_link}/{i.id}')
+                        text=safe_message(
+                            f'{last_message.text}\n{format_chat_link(origin_link, topic=origin_chat.is_forum)}/{i.id}'
+                        )
                     )
                     log.warning(
                         f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{i.id}"'
@@ -580,32 +590,27 @@ class TelegramRestrictedMediaDownloader(Bot):
             else:
                 if isinstance(last_message, str):
                     log.warning('消息过长编辑频繁,暂时无法通过机器人显示通知。')
-                user_send_id = range(start_id, end_id + 1)
-                if not last_message:
-                    last_message = await client.send_message(
-                        chat_id=message.from_user.id,
-                        reply_parameters=ReplyParameters(message_id=message.id),
-                        link_preview_options=LINK_PREVIEW_OPTIONS,
-                        text=BotMessage.INVALID
+                if not record_id:
+                    await self.safe_edit_message(
+                        client=client,
+                        message=message,
+                        last_message_id=last_message.id,
+                        text=safe_message(f'😅😅😅没有找到任何有效的消息😅😅😅')
                     )
-                for i in user_send_id:
-                    if not record_id:
-                        await self.safe_edit_message(
-                            client=client,
-                            message=message,
-                            last_message_id=last_message.id,
-                            text=safe_message(f'😅😅😅没有找到任何有效的消息😅😅😅')
-                        )
-                        return
-                    elif i not in record_id:
+                    return
+
+                for i in range(start_id, end_id + 1):
+                    if i not in record_id:
                         last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
                             client=client,
                             message=message,
                             last_message_id=last_message.id,
-                            text=safe_message(f'{last_message.text}\n{origin_link}/{i}')
+                            text=safe_message(
+                                f'{BotMessage.INVALID}\n{format_chat_link(origin_link, topic=origin_chat.is_forum)}/{i}'
+                            )
                         )
 
-                if not last_message:
+                if not last_message or last_message.text == loading:
                     await client.send_message(
                         chat_id=message.from_user.id,
                         reply_parameters=ReplyParameters(message_id=message.id),
@@ -674,6 +679,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
             )
+        finally:
+            if last_message and last_message.text == loading:
+                await last_message.delete()
 
     async def cancel_listen(
             self,

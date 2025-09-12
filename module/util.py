@@ -250,24 +250,28 @@ def is_allow_upload(file_size: int, is_premium: bool) -> bool:
     return True
 
 
-def format_chat_link(url: str):
-    parts: list = url.strip('/').split('/')
+def format_chat_link(link: str, topic: bool = False) -> str:
+    parts: list = link.strip('/').split('/')
     len_parts: int = len(parts)
-
-    if len_parts > 3:
+    result: Union[str, None] = None
+    if len_parts > 3 and topic is False:
         # 判断是否是/c/类型的频道链接(确保是独立的'c'部分)。
+        if parts[3] == 'c' and len_parts >= 5:  # 对于/c/类型。
+            if len_parts >= 6:
+                # 6个部分时,保留前5个部分 (去掉最后一个)。
+                result = '/'.join(parts[:5])  # https://t.me/c/2530641322/1 -> https://t.me/c/2530641322
+
+        else:  # 对于普通类型。
+            if len_parts >= 5:
+                # 5个部分时,保留前4个部分(去掉最后一个)。
+                result = '/'.join(parts[:4])  # https://t.me/coustomer/144 -> https://t.me/coustomer
+    else:  # 话题格式化。
         if parts[3] == 'c' and len_parts >= 5:  # 对于/c/类型。
             if len_parts >= 7:
                 # 7个部分时,保留前6个部分(去掉最后一个)。
-                return '/'.join(parts[:6])  # https://t.me/c/2495197831/100/200 -> https://t.me/c/2495197831/100
-            elif len_parts >= 6:
-                # 6个部分时,保留前5个部分 (去掉最后一个)。
-                return '/'.join(parts[:5])  # https://t.me/c/2530641322/1 -> https://t.me/c/2530641322
-        else:  # 对于普通类型。
-            if len_parts >= 6:
-                # 6个部分时,保留前5个部分(去掉最后一个)。
-                return '/'.join(parts[:5])  # https://t.me/coustomer/5/1 -> https://t.me/coustomer/5
-            elif len_parts >= 5:
-                # 5个部分时,保留前4个部分(去掉最后一个)。
-                return '/'.join(parts[:4])  # https://t.me/coustomer/144 -> https://t.me/coustomer
-    return url
+                result = '/'.join(parts[:6])  # https://t.me/c/2495197831/100/200 -> https://t.me/c/2495197831/100
+        elif len_parts >= 6:
+            # 6个部分时,保留前5个部分(去掉最后一个)。
+            result = '/'.join(parts[:5])  # https://t.me/coustomer/5/1 -> https://t.me/coustomer/5
+
+    return result if result else link
