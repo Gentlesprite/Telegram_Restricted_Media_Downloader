@@ -605,7 +605,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     message_id = i.id
                     await self.forward(
                         client=client,
-                        message=message,
+                        message=i,
                         message_id=message_id,
                         origin_chat_id=origin_chat_id,
                         target_chat_id=target_chat_id,
