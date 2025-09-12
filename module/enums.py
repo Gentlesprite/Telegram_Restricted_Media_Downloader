@@ -1052,6 +1052,7 @@ class BotCallbackText:
     UPLOAD_SETTING: str = 'upload_setting'
     UPLOAD_DOWNLOAD: str = 'upload_download'
     UPLOAD_DOWNLOAD_DELETE: str = 'upload_download_delete'
+    APPLY_SETTING: str = 'apply_setting'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
@@ -1099,3 +1100,4 @@ class BotButton:
     CLOSE_UPLOAD_DOWNLOAD: str = '🔒禁用下载后上传'
     OPEN_UPLOAD_DOWNLOAD_DELETE: str = '🔓启用下载后上传并删除'
     CLOSE_UPLOAD_DOWNLOAD_DELETE: str = '🔒禁用下载后上传并删除'
+    APPLY_SETTING: str = '🛠️应用设置'

@@ -609,6 +609,23 @@ class GlobalConfig(BaseConfig):
     def get_nesting_config(self, default_nesting, param, nesting_param):
         return self.config.get(param, default_nesting).get(nesting_param)
 
+    def save_config(self, config: dict) -> None:
+        super().save_config(config)
+        self.download_upload = self.get_nesting_config(
+            default_nesting=self.default_upload_nesting,
+            param='upload',
+            nesting_param='download_upload'
+        )
+        self.upload_delete = self.get_nesting_config(
+            default_nesting=self.default_upload_nesting,
+            param='upload',
+            nesting_param='delete'
+        )
+        self.forward_type: dict = self.config.get('forward_type')
+        p = '全局配置文件已重新加载。'
+        console.log(p, style='#FF4689')
+        log.info(f'{p}{self.config}')
+
     def __check_params(self, config: dict) -> None:
         if config is None:
             config = {}

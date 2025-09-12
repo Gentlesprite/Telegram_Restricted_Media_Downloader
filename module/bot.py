@@ -913,6 +913,12 @@ class KeyboardButton:
                     ],
                     [
                         InlineKeyboardButton(
+                            text=BotButton.APPLY_SETTING,
+                            callback_data=BotCallbackText.APPLY_SETTING
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
                             text=BotButton.RETURN,
                             callback_data=BotCallbackText.SETTING
                         )

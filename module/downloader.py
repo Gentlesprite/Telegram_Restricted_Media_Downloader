@@ -289,7 +289,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             try:
                 self.app.config['is_shutdown'] = not self.app.config.get('is_shutdown')
                 self.app.save_config(self.app.config)
-                s_s: str = '启用' if self.app.config.get("is_shutdown") else '禁用'
+                s_s: str = '启用' if self.app.config.get('is_shutdown') else '禁用'
                 s_p: str = f'退出后关机已{s_s}。'
                 log.info(s_p)
                 console.log(s_p, style='#FF4689')
@@ -400,6 +400,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await callback_query.message.reply_text(
                     '上传设置失败\n(具体原因请前往终端查看报错信息)')
                 log.error(f'上传设置失败,{_t(KeyWord.REASON)}:"{e}"')
+        elif callback_data == BotCallbackText.APPLY_SETTING:
+            self.gc.save_config(config=self.gc.config)
         elif callback_data == BotCallbackText.REMOVE_LISTEN_FORWARD or callback_data.startswith(
                 BotCallbackText.REMOVE_LISTEN_DOWNLOAD):
             if callback_data.startswith(BotCallbackText.REMOVE_LISTEN_DOWNLOAD):
@@ -817,19 +819,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                 p = f'已新增监听转发,转发规则:"{listen_link} -> {target_link}"。'
                 console.log(p, style='#FF4689')
                 log.info(f'{p}当前的监听转发信息:{self.listen_forward_chat}')
-        self.gc.download_upload = self.gc.get_nesting_config(
-            default_nesting=self.gc.default_upload_nesting,
-            param='upload',
-            nesting_param='download_upload'
-        )
-        self.gc.upload_delete = self.gc.get_nesting_config(
-            default_nesting=self.gc.default_upload_nesting,
-            param='upload',
-            nesting_param='delete'
-        )
-        p = '上传设置已重新加载。'
-        console.log(p, style='#FF4689')
-        log.info(f'{p}下载后上传:{self.gc.download_upload},下载上传后删除:{self.gc.upload_delete}')
 
     async def listen_download(
             self,
