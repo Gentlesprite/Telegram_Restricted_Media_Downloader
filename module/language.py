@@ -27,6 +27,7 @@ translations: dict = {
     'actual size': ['[实际大小]'],
     'already exist': ['[已存在]'],
     'channel': ['[频道]'],
+    'message id': ['[消息ID]'],
     'type': ['[类型]'],
     're-download': ['[重新下载]'],
     're-upload': ['重新上传'],
@@ -37,7 +38,9 @@ translations: dict = {
     'resume': ['[断点续传]'],
     'download task': ['「📥下载任务」'],
     'upload task': ['「📤上传任务」'],
-    'download and upload task': ['「📥📤下载后上传任务」']
+    'download and upload task': ['「📥📤下载后上传任务」'],
+    'forward success': ['转发成功'],
+    'forward failure': ['转发失败']
 }
 
 

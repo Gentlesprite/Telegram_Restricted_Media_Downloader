@@ -481,6 +481,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
                 return None
             last_message: Union[pyrogram.types.Message, None] = None
+            origin_chat_id = origin_chat.id
+            target_chat_id = target_chat.id
             async for i in self.app.client.get_chat_history(
                     chat_id=origin_chat.id,
                     offset_id=start_id,
@@ -489,13 +491,19 @@ class TelegramRestrictedMediaDownloader(Bot):
             ):
                 try:
                     await self.app.client.copy_message(
-                        chat_id=target_chat.id,
-                        from_chat_id=origin_chat.id,
+                        chat_id=target_chat_id,
+                        from_chat_id=origin_chat_id,
                         message_id=i.id,
                         disable_notification=True,
                         protect_content=False
                     )
-                except (ValueError, ChatForwardsRestricted_400, ChatForwardsRestricted_406):
+                    console.log(
+                        f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{i.id}"'
+                        f' -> '
+                        f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
+                        f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
+                    )
+                except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
                     raise
                 except Exception as e:
                     if not last_message:
@@ -511,7 +519,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                         last_message_id=last_message.id,
                         text=safe_message(f'{last_message.text}\n{origin_link}/{i.id}')
                     )
-                    log.warning(f'{_t(KeyWord.LINK)}:"{origin_link}/{i.id}"无效,{_t(KeyWord.REASON)}:{e}')
+                    log.warning(
+                        f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{i.id}"'
+                        f' -> '
+                        f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
+                        f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_FAILURE)},'
+                        f'{_t(KeyWord.REASON)}:"{e}"')
             if isinstance(last_message, str):
                 log.warning('消息过长编辑频繁,暂时无法通过机器人显示通知。')
             if not last_message:
@@ -774,19 +787,21 @@ class TelegramRestrictedMediaDownloader(Bot):
                     link=target_link
                 )
                 _listen_chat_id = _listen_link_meta.get('chat_id')
-                _target_link_id = _target_link_meta.get('chat_id')
+                _target_chat_id = _target_link_meta.get('chat_id')
                 if listen_chat_id == _listen_chat_id:
                     try:
                         await self.app.client.copy_message(
-                            chat_id=_target_link_id,
+                            chat_id=_target_chat_id,
                             from_chat_id=_listen_chat_id,
                             message_id=message.id,
                             disable_notification=True,
                             protect_content=False
                         )
                         console.log(
-                            f'{_t(KeyWord.LINK)}:"{link}" -> "{target_link}",'
-                            f'{_t(KeyWord.STATUS)}:转发成功。'
+                            f'{_t(KeyWord.CHANNEL)}:"{_listen_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{message.id}"'
+                            f' -> '
+                            f'{_t(KeyWord.CHANNEL)}:"{_target_chat_id}",'
+                            f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
                         )
                     except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
                         if not self.gc.download_upload:
