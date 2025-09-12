@@ -442,7 +442,6 @@ class TelegramRestrictedMediaDownloader(Bot):
             target_link,
             download_upload: bool = False
     ):
-        link = message.link
         try:
             await self.app.client.copy_message(
                 chat_id=target_chat_id,
@@ -460,6 +459,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
             if not download_upload:
                 raise
+            link = message.link
             if not self.gc.download_upload:
                 await self.bot.send_message(
                     chat_id=client.me.id,
@@ -537,6 +537,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             last_message: Union[pyrogram.types.Message, None] = None
             origin_chat_id = origin_chat.id
             target_chat_id = target_chat.id
+            record_id: list = []
             async for i in self.app.client.get_chat_history(
                     chat_id=origin_chat.id,
                     offset_id=start_id,
@@ -544,10 +545,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                     reverse=True
             ):
                 try:
+                    message_id = i.id
+                    record_id.append(message_id)
                     await self.forward(
                         client=client,
                         message=message,
-                        message_id=i.id,
+                        message_id=message_id,
                         origin_chat_id=origin_chat_id,
                         target_chat_id=target_chat_id,
                         target_link=target_link
@@ -577,6 +580,31 @@ class TelegramRestrictedMediaDownloader(Bot):
             else:
                 if isinstance(last_message, str):
                     log.warning('消息过长编辑频繁,暂时无法通过机器人显示通知。')
+                user_send_id = range(start_id, end_id + 1)
+                if not last_message:
+                    last_message = await client.send_message(
+                        chat_id=message.from_user.id,
+                        reply_parameters=ReplyParameters(message_id=message.id),
+                        link_preview_options=LINK_PREVIEW_OPTIONS,
+                        text=BotMessage.INVALID
+                    )
+                for i in user_send_id:
+                    if not record_id:
+                        await self.safe_edit_message(
+                            client=client,
+                            message=message,
+                            last_message_id=last_message.id,
+                            text=safe_message(f'😅😅😅没有找到任何有效的消息😅😅😅')
+                        )
+                        return
+                    elif i not in record_id:
+                        last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
+                            client=client,
+                            message=message,
+                            last_message_id=last_message.id,
+                            text=safe_message(f'{last_message.text}\n{origin_link}/{i}')
+                        )
+
                 if not last_message:
                     await client.send_message(
                         chat_id=message.from_user.id,
