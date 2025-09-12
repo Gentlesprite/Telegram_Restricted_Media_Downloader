@@ -880,6 +880,12 @@ class KeyboardButton:
                     ],
                     [
                         InlineKeyboardButton(
+                            text=BotButton.FORWARD_SETTING,
+                            callback_data=BotCallbackText.FORWARD_SETTING
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
                             text=BotButton.HELP_PAGE,
                             callback_data=BotCallbackText.BACK_HELP
                         )
@@ -913,8 +919,62 @@ class KeyboardButton:
                     ],
                     [
                         InlineKeyboardButton(
-                            text=BotButton.APPLY_SETTING,
-                            callback_data=BotCallbackText.APPLY_SETTING
+                            text=BotButton.RETURN,
+                            callback_data=BotCallbackText.SETTING
+                        )
+                    ]
+                ]
+            )
+        )
+
+    async def toggle_forward_setting_button(
+            self,
+            global_config: dict
+    ):
+        await self.callback_query.message.edit_reply_markup(
+            InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.VIDEO_ON if global_config.get('forward_type').get(
+                                'video') else BotButton.VIDEO_OFF,
+                            callback_data=BotCallbackText.TOGGLE_FORWARD_VIDEO
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.PHOTO_ON if global_config.get('forward_type').get(
+                                'photo') else BotButton.PHOTO_OFF,
+                            callback_data=BotCallbackText.TOGGLE_FORWARD_PHOTO
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.AUDIO_ON if global_config.get('forward_type').get(
+                                'audio') else BotButton.AUDIO_OFF,
+                            callback_data=BotCallbackText.TOGGLE_FORWARD_AUDIO
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.VOICE_ON if global_config.get('forward_type').get(
+                                'voice') else BotButton.VOICE_OFF,
+                            callback_data=BotCallbackText.TOGGLE_FORWARD_VOICE
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.ANIMATION_ON if global_config.get('forward_type').get(
+                                'animation') else BotButton.ANIMATION_OFF,
+                            callback_data=BotCallbackText.TOGGLE_FORWARD_ANIMATION
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.DOCUMENT_ON if global_config.get('forward_type').get(
+                                'document') else BotButton.DOCUMENT_OFF,
+                            callback_data=BotCallbackText.TOGGLE_FORWARD_DOCUMENT
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.TEXT_ON if global_config.get('forward_type').get(
+                                'text') else BotButton.TEXT_OFF,
+                            callback_data=BotCallbackText.TOGGLE_FORWARD_TEXT
                         )
                     ],
                     [

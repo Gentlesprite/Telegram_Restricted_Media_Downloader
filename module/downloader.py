@@ -303,6 +303,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             await kb.toggle_table_button(config=self.gc.config)
         elif callback_data == BotCallbackText.UPLOAD_SETTING:
             await kb.toggle_upload_setting_button(global_config=self.gc.config)
+        elif callback_data == BotCallbackText.FORWARD_SETTING:
+            await kb.toggle_forward_setting_button(global_config=self.gc.config)
         elif callback_data in (BotCallbackText.LINK_TABLE, BotCallbackText.COUNT_TABLE):
             _prompt_string: str = ''
             _false_text: str = ''
@@ -383,9 +385,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                 u_s: str = '禁用' if param else '开启'
                 u_p: str = ''
                 if _param == 'delete':
-                    u_p: str = f'遇到"受限转发"时,下载后上传并"删除上传完成的本地文件"的行为已{u_s}(重新注册或注销监听转发后生效)。'
+                    u_p: str = f'遇到"受限转发"时,下载后上传并"删除上传完成的本地文件"的行为已{u_s}。'
                 elif _param == 'download_upload':
-                    u_p: str = f'遇到"受限转发"时,下载后上传已{u_s}(重新注册或注销监听转发后生效)。'
+                    u_p: str = f'遇到"受限转发"时,下载后上传已{u_s}。'
                 console.log(u_p, style='#FF4689')
                 log.info(u_p)
 
@@ -400,8 +402,44 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await callback_query.message.reply_text(
                     '上传设置失败\n(具体原因请前往终端查看报错信息)')
                 log.error(f'上传设置失败,{_t(KeyWord.REASON)}:"{e}"')
-        elif callback_data == BotCallbackText.APPLY_SETTING:
-            self.gc.save_config(config=self.gc.config)
+        elif callback_data in (
+                BotCallbackText.TOGGLE_FORWARD_VIDEO,
+                BotCallbackText.TOGGLE_FORWARD_PHOTO,
+                BotCallbackText.TOGGLE_FORWARD_AUDIO,
+                BotCallbackText.TOGGLE_FORWARD_VOICE,
+                BotCallbackText.TOGGLE_FORWARD_ANIMATION,
+                BotCallbackText.TOGGLE_FORWARD_DOCUMENT,
+                BotCallbackText.TOGGLE_FORWARD_TEXT
+        ):
+            def _toggle_button(_param: str):
+                param_status = self.gc.config.get('forward_type', self.gc.TEMPLATE.get('forward_type')).get(_param)
+                self.gc.config.get('forward_type')[_param] = not param_status
+                status = '禁用' if param_status else '启用'
+                f_t_p = f'已{status}"{_param}"类型的转发。'
+                console.log(f_t_p, style='#FF4689')
+                log.info(f_t_p)
+
+            try:
+                if callback_data == BotCallbackText.TOGGLE_FORWARD_VIDEO:
+                    _toggle_button('video')
+                elif callback_data == BotCallbackText.TOGGLE_FORWARD_PHOTO:
+                    _toggle_button('photo')
+                elif callback_data == BotCallbackText.TOGGLE_FORWARD_AUDIO:
+                    _toggle_button('audio')
+                elif callback_data == BotCallbackText.TOGGLE_FORWARD_VOICE:
+                    _toggle_button('voice')
+                elif callback_data == BotCallbackText.TOGGLE_FORWARD_ANIMATION:
+                    _toggle_button('animation')
+                elif callback_data == BotCallbackText.TOGGLE_FORWARD_DOCUMENT:
+                    _toggle_button('document')
+                elif callback_data == BotCallbackText.TOGGLE_FORWARD_TEXT:
+                    _toggle_button('text')
+                self.gc.save_config(self.gc.config)
+                await kb.toggle_forward_setting_button(self.gc.config)
+            except Exception as e:
+                await callback_query.message.reply_text(
+                    '转发设置失败\n(具体原因请前往终端查看报错信息)')
+                log.error(f'转发设置失败,{_t(KeyWord.REASON)}:"{e}"')
         elif callback_data == BotCallbackText.REMOVE_LISTEN_FORWARD or callback_data.startswith(
                 BotCallbackText.REMOVE_LISTEN_DOWNLOAD):
             if callback_data.startswith(BotCallbackText.REMOVE_LISTEN_DOWNLOAD):
@@ -1396,10 +1434,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     console.log(
                         f'在使用监听转发(/listen_forward)时:\n'
                         f'当检测到"受限转发"时,自动采用"下载后上传"的方式,并在完成后删除本地文件。\n'
-                        f'如需关闭,请按以下步骤操作:\n'
-                        f'1.前往机器人[帮助页面]->[设置]->[上传设置]进行修改。\n'
-                        f'2.注销目前已注册的监听转发(否则不生效)。\n'
-                        f'3.重新注册监听转发使得新设置生效。\n',
+                        f'如需关闭,前往机器人[帮助页面]->[设置]->[上传设置]进行修改。\n',
                         style='#FF4689'
                     )
         self.is_running = True
