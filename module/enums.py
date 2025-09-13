@@ -841,7 +841,8 @@ class GetStdioParams:
                 download_type = last_record
             if download_type == '':
                 download_type = [_ for _ in DownloadType()]
-            download_type: list = list(set(download_type.split()))
+            if not isinstance(download_type, list):
+                download_type: list = list(set(download_type.split()))
             if Validator.is_valid_download_type(download_type):
                 console.print(
                     f'已设置「download_type」为:「{" ".join(download_type) if download_type else [_ for _ in DownloadType()]}」',
