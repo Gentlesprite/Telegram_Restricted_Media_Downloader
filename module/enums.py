@@ -460,10 +460,6 @@ class Validator:
                 if dtype:
                     return True
                 return False
-        except ValueError:  # 处理非整数字符串的情况
-            return False
-        except TypeError:  # 处理传入非数字类型的情况
-            return False
         except Exception as e:
             log.error(f'意外的错误,原因:"{e}"')
             return False
@@ -727,7 +723,7 @@ class GetStdioParams:
                         links_file_path = last_record
                     elif bot_notice:
                         links_file_path = os.path.join(os.getcwd(), 'links.txt')
-                if not os.path.exists(links_file_path):
+                if links_file_path and not os.path.exists(links_file_path):
                     try:
                         with open(file=links_file_path, mode='w', encoding='UTF-8'):
                             pass
