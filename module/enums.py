@@ -841,11 +841,11 @@ class GetStdioParams:
                 download_type = last_record
             if download_type == '':
                 download_type = [_ for _ in DownloadType()]
-            if not isinstance(download_type, list):
-                download_type: list = list(set(download_type.split()))
+            download_type: list = list(set(download_type.split())) if isinstance(download_type, str) else download_type
             if Validator.is_valid_download_type(download_type):
+                dtype = ' '.join(download_type) if download_type else [_ for _ in DownloadType()]
                 console.print(
-                    f'已设置「download_type」为:「{" ".join(download_type) if download_type else [_ for _ in DownloadType()]}」',
+                    f'已设置「download_type」为:「{dtype}」',
                     style=ProcessConfig.stdio_style('download_type')
                 )
                 return {
@@ -1064,7 +1064,7 @@ class BotCallbackText:
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
-            if not key.startswith('__') and not callable(value):  # 排除特殊方法和属性
+            if not key.startswith('__') and not callable(value):  # 排除特殊方法和属性。
                 yield value
 
 

@@ -67,9 +67,9 @@ Session.WAIT_TIMEOUT = 100
 Session.START_TIMEOUT = 60
 SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
-__version__ = '1.7.0'
+__version__ = '1.7.1'
 __license__ = 'MIT License'
-__update_date__ = '2025/09/13 03:18:26'
+__update_date__ = '2025/09/14 21:22:12'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/Gentlesprite>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
@@ -135,6 +135,7 @@ logging.basicConfig(
     ]
 )
 log = logging.getLogger('rich')
+log.info(f'{SOFTWARE_SHORT_NAME}:{__version__},更新日期:{__update_date__}。')
 log.info(f'文件日志等级:"{logging.getLevelName(FILE_LOG_LEVEL)}"。')
 log.info(f'终端日志等级:"{logging.getLevelName(CONSOLE_LOG_LEVEL)}"。')
 CustomDumper.add_representer(type(None), CustomDumper.represent_none)
