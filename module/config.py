@@ -592,6 +592,7 @@ class GlobalConfig(BaseConfig):
     def __init__(self):
         super().__init__()
         self.default_upload_nesting = self.TEMPLATE.get('upload')
+        self.default_forward_type_nesting = self.TEMPLATE.get('forward_type')
         self.download_upload: bool = self.get_nesting_config(
             default_nesting=self.default_upload_nesting,
             param='upload',

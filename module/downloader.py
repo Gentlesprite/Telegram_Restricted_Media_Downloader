@@ -412,9 +412,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                 BotCallbackText.TOGGLE_FORWARD_TEXT
         ):
             def _toggle_button(_param: str):
-                param_status = self.gc.config.get('forward_type', self.gc.TEMPLATE.get('forward_type')).get(_param)
-                self.gc.config.get('forward_type')[_param] = not param_status
-                status = '禁用' if param_status else '启用'
+                param = self.gc.get_nesting_config(
+                    default_nesting=self.gc.default_forward_type_nesting,
+                    param='forward_type',
+                    nesting_param=_param
+                )
+                self.gc.config.get('forward_type')[_param] = not param
+                status = '禁用' if param else '启用'
                 f_t_p = f'已{status}"{_param}"类型的转发。'
                 console.log(f_t_p, style='#FF4689')
                 log.info(f_t_p)
