@@ -412,16 +412,16 @@ class TelegramRestrictedMediaDownloader(Bot):
                 BotCallbackText.TOGGLE_FORWARD_TEXT
         ):
             def _toggle_button(_param: str):
-                param = self.gc.get_nesting_config(
+                param: bool = self.gc.get_nesting_config(
                     default_nesting=self.gc.default_forward_type_nesting,
                     param='forward_type',
                     nesting_param=_param
                 )
-                self.gc.config.get('forward_type')[_param] = not param
-                status = '禁用' if param else '启用'
-                f_t_p = f'已{status}"{_param}"类型的转发。'
-                console.log(f_t_p, style='#FF4689')
-                log.info(f_t_p)
+                self.gc.config.get('forward_type', self.gc.default_forward_type_nesting)[_param] = not param
+                f_s = '禁用' if param else '启用'
+                f_p = f'已{f_s}"{_param}"类型的转发。'
+                console.log(f_p, style='#FF4689')
+                log.info(f_p)
 
             try:
                 if callback_data == BotCallbackText.TOGGLE_FORWARD_VIDEO:
