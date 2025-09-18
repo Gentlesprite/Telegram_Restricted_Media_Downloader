@@ -4,6 +4,8 @@
 # Time:2025/1/24 21:27
 # File:bot.py
 import os
+import copy
+import asyncio
 from typing import List, Dict, Union
 
 import pyrogram
@@ -405,7 +407,21 @@ class Bot:
         if len(parts) == 2:
             file_path = parts[0]  # 文件名部分（可能包含空格）
             target_link = parts[1]  # URL 部分
-
+            if os.path.isdir(file_path):
+                upload_folder = []
+                for file_name in os.listdir(file_path):
+                    new_message = copy.copy(message)
+                    new_message.text = f'/upload {os.path.join(file_path, file_name)} {target_link}'
+                    upload_folder.append(
+                        self.get_upload_link_from_bot(
+                            client=client,
+                            message=new_message,
+                            delete=delete,
+                            save_directory=save_directory
+                        )
+                    )
+                await asyncio.gather(*upload_folder)
+                return None
             if not os.path.isfile(file_path):
                 log.error(f'上传出错,{_t(KeyWord.REASON)}:"{file_path}"不存在。')
                 await client.send_message(

@@ -3,13 +3,15 @@
 # Software:PyCharm
 # Time:2025/2/27 17:38
 # File:task.py
+import os
 import asyncio
-import os.path
+
 from functools import wraps
 from typing import Union
 
 from module import console, log
 from module.language import _t
+from module.stdio import MetaData
 from module.enums import (
     DownloadStatus,
     UploadStatus,
@@ -143,6 +145,8 @@ class UploadTask:
                 log.warning(
                     f'{_t(KeyWord.UPLOAD_TASK)}'
                     f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'
+                    f'{_t(KeyWord.FILE)}:"{file_path}",'
+                    f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(size)},'
                     f'{_t(KeyWord.REASON)}:"{e_code}",'
                     f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
                 )

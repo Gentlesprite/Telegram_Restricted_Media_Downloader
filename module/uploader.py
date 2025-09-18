@@ -251,6 +251,7 @@ class TelegramUploader:
         _task.add_done_callback(
             partial(
                 self.upload_complete_callback,
+                chat_id,
                 size,
                 file_path,
                 task_id,
@@ -268,6 +269,7 @@ class TelegramUploader:
 
     def upload_complete_callback(
             self,
+            chat_id,
             local_file_size,
             file_path,
             task_id,
@@ -284,6 +286,7 @@ class TelegramUploader:
             more = '(本地文件已删除)'
         console.log(
             f'{_t(KeyWord.UPLOAD_TASK)}'
+            f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'
             f'{_t(KeyWord.FILE)}:"{file_path}",'
             f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(local_file_size)},'
             f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.SUCCESS)}{more}。',

@@ -343,13 +343,13 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 15. `/upload`命令使用教程：
 
 - `/upload`用于上传本地的文件到指定频道。
-    
+   - 支持上传文件夹（当指定路径为文件夹时并且版本需≥v1.7.1）。
+   - _当指定的路径为**文件夹**时，将会上传指定文件夹下**所有**的文件。_
 - 上传文件语法：
     
     ```bash
-   /upload 本地文件 目标频道
+   /upload 本地文件(夹) 目标频道
    ```
-
     ### 注意：
 
     `Telegram` 对上传的**单个文件**大小设有**明确限制**：
@@ -358,15 +358,22 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
     - **会员用户（Telegram Premium）**：**单个文件**最大上传大小为`4000 MiB`（约 4 GB）
 
     ### 对于Windows用户：
-
+    #### 上传一个文件：
     ```bash
     /upload C:\files\video.mp4 https://t.me/test
     ```
-
+    #### 上传一个文件夹（≥v1.7.1）：
+    ```bash
+    /upload C:\files https://t.me/test
+    ```
     ### 对于Linux用户：
-
+    #### 上传一个文件：
     ```
     /upload /home/username/files/video.mp4 https://t.me/test
+    ```
+    #### 上传一个文件夹（≥v1.7.1）：
+    ```
+    /upload /home/username/files https://t.me/test
     ```
 
 ## 2.3.配置文件说明:
