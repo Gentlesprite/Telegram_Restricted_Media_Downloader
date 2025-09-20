@@ -23,7 +23,7 @@ from module import (
     SOFTWARE_FULL_NAME
 )
 from module.language import _t
-from module.config import UserConfig
+from module.config import UserConfig, SessionConfig
 from module.stdio import StatisticalTable, MetaData
 from module.client import TelegramRestrictedMediaDownloaderClient
 from module.enums import (
@@ -47,6 +47,7 @@ class Application(UserConfig, StatisticalTable):
         self.client = self.build_client()
         self.__get_download_type()
         self.current_task_num: int = 0
+        self.sc = SessionConfig()
 
     def build_client(self) -> pyrogram.Client:
         """用填写的配置文件,构造pyrogram客户端。"""

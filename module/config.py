@@ -80,7 +80,7 @@ class BaseConfig:
                             f'不在{param_name}配置文件中,已删除。'
             )
 
-    def __check_params(self, config: dict) -> None:
+    def check_params(self, config: dict) -> None:
         """检查配置文件的参数是否完整。"""
         # 如果 config 为 None，初始化为一个空字典。
         if config is None:
@@ -246,7 +246,7 @@ class UserConfig(BaseConfig):
             last_config_file: str = os.path.join(UserConfig.ABSOLUTE_BACKUP_DIRECTORY, min_config_file)  # 拼接文件路径。
             with open(file=last_config_file, mode='r', encoding='UTF-8') as f:
                 config: dict = yaml.safe_load(f)
-            last_record: dict = self.__check_params(config, history=True)  # v1.1.6修复读取历史如果缺失字段使得flag置True。
+            last_record: dict = self.check_params(config, history=True)  # v1.1.6修复读取历史如果缺失字段使得flag置True。
 
             if last_record == UserConfig.TEMPLATE:
                 # 从字典中删除当前文件。
@@ -278,7 +278,7 @@ class UserConfig(BaseConfig):
                 console.log(log_message.format(key))
                 self.record_flag = True
 
-    def __check_params(self, config: dict, history=False) -> dict:
+    def check_params(self, config: dict, history=False) -> dict:
         """检查配置文件的参数是否完整。"""
         # 如果 config 为 None，初始化为一个空字典。
         if config is None:
@@ -318,7 +318,7 @@ class UserConfig(BaseConfig):
             with open(self.config_path, 'r', encoding='UTF-8') as f:
                 config: dict = yaml.safe_load(f)  # v1.1.4 加入对每个字段的完整性检测。
             compare_config: dict = config.copy() if config else {}
-            config: dict = self.__check_params(config) if compare_config else None
+            config: dict = self.check_params(config) if compare_config else None
             if config != compare_config or config == UserConfig.TEMPLATE:  # v1.3.4 修复配置文件所有参数都为空时报错问题。
                 self.re_config = True
         except UnicodeDecodeError as e:  # v1.1.3 加入配置文件路径是中文或特殊字符时的错误提示,由于nuitka打包的性质决定,
@@ -605,7 +605,7 @@ class GlobalConfig(BaseConfig):
         )
         self.forward_type: dict = self.config.get('forward_type')
         self.load_config()
-        self.__check_params(self.config.copy())
+        self.check_params(self.config.copy())
 
     def get_nesting_config(self, default_nesting, param, nesting_param):
         return self.config.get(param, default_nesting).get(nesting_param)
@@ -627,7 +627,7 @@ class GlobalConfig(BaseConfig):
         console.log(p, style='#FF4689')
         log.info(f'{p}{self.config}')
 
-    def __check_params(self, config: dict) -> None:
+    def check_params(self, config: dict) -> None:
         if config is None:
             config = {}
 
@@ -648,3 +648,17 @@ class GlobalConfig(BaseConfig):
         if config != self.config:
             self.config = config
             self.save_config(self.config)
+
+
+class SessionConfig(BaseConfig):
+    FILE_NAME: str = '.session.json'
+    PATH: str = os.path.join(UserConfig.WORK_DIRECTORY, FILE_NAME)
+    TEMPLATE: dict = {
+        'first_name': None,
+        'phone_number': None
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.load_config()
+        self.check_params(self.config.copy())
