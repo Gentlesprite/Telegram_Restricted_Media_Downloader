@@ -3,6 +3,6 @@ PyYAML
 rich
 qrcode
 pyreadline3
-https://github.com/Gentlesprite/pyrogram/archive/refs/heads/dev.zip
+kurigram==2.2.12
 pygments
 pymediainfo==7.0.1
