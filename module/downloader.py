@@ -1409,8 +1409,8 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     async def __download_media_from_links(self) -> None:
         await self.app.client.start(use_qr=False)
-        self.app.sc.config['first_name'] = self.app.client.me.first_name
-        self.app.sc.config['phone_number'] = self.app.client.me.phone_number
+        self.app.sc.config['first_name'] = self.app.client.me.last_name or 'undefined'
+        self.app.sc.config['phone_number'] = self.app.client.me.phone_number or 'undefined'
         self.app.sc.save_config(self.app.sc.config)
         self.pb.progress.start()  # v1.1.8修复登录输入手机号不显示文本问题。
         if self.app.bot_token is not None:

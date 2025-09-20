@@ -9,6 +9,7 @@ venv/
 ConfigBackup/
 tests/
 test*
+sessions*
 downloads/
 DownloadRecordForm/
 # ignore files
@@ -20,6 +21,7 @@ DownloadRecordForm/
 *.lock
 *.session
 *.session-journal
+.session.json
 test*.py
 Pipfile
 # include files
