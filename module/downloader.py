@@ -918,6 +918,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                         if not media_group_ids:
                             raise ValueError
                         if (
+                                not self.gc.forward_type.get('video') or
+                                not self.gc.forward_type.get('photo')
+                        ):
+                            log.warning('由于过滤了图片或视频类型的转发,将不再以媒体组方式发送。')
+                            raise ValueError
+                        if (
                                 getattr(getattr(message, 'chat', None), 'is_creator', False) or
                                 getattr(getattr(message, 'chat', None), 'is_admin', False)
                         ) and (
