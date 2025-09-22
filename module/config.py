@@ -593,6 +593,8 @@ class GlobalConfig(BaseConfig):
         super().__init__()
         self.default_upload_nesting = self.TEMPLATE.get('upload')
         self.default_forward_type_nesting = self.TEMPLATE.get('forward_type')
+        self.load_config()
+        self.__check_params(self.config.copy())
         self.download_upload: bool = self.get_nesting_config(
             default_nesting=self.default_upload_nesting,
             param='upload',
@@ -604,8 +606,6 @@ class GlobalConfig(BaseConfig):
             nesting_param='delete'
         )
         self.forward_type: dict = self.config.get('forward_type')
-        self.load_config()
-        self.__check_params(self.config.copy())
 
     def get_nesting_config(self, default_nesting, param, nesting_param):
         return self.config.get(param, default_nesting).get(nesting_param)
