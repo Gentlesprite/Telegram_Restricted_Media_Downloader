@@ -486,7 +486,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             origin_chat_id: int,
             target_chat_id: int,
             target_link: str,
-            download_upload: Optional[bool] = False
+            download_upload: Optional[bool] = False,
+            media_group: Optional[list] = None
     ):
         try:
             if not self.check_type(message):
@@ -497,15 +498,24 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SKIP)}。'
                 )
                 return None
-            await self.app.client.copy_message(
-                chat_id=target_chat_id,
-                from_chat_id=origin_chat_id,
-                message_id=message_id,
-                disable_notification=True,
-                protect_content=False
-            )
+            if media_group:
+                await self.app.client.copy_media_group(
+                    chat_id=target_chat_id,
+                    from_chat_id=origin_chat_id,
+                    message_id=message_id,
+                    disable_notification=True
+                )
+            else:
+                await self.app.client.copy_message(
+                    chat_id=target_chat_id,
+                    from_chat_id=origin_chat_id,
+                    message_id=message_id,
+                    disable_notification=True,
+                    protect_content=False
+                )
+            p_message_id = ','.join(map(str, media_group)) if media_group else message_id
             console.log(
-                f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{message_id}"'
+                f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{p_message_id}"'
                 f' -> '
                 f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",'
                 f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
@@ -903,6 +913,48 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _listen_chat_id = _listen_link_meta.get('chat_id')
                 _target_chat_id = _target_link_meta.get('chat_id')
                 if listen_chat_id == _listen_chat_id:
+                    try:
+                        media_group_ids = await message.get_media_group()
+                        if not media_group_ids:
+                            raise ValueError
+                        if (
+                                getattr(getattr(message, 'chat', None), 'is_creator', False) or
+                                getattr(getattr(message, 'chat', None), 'is_admin', False)
+                        ) and (
+                                getattr(getattr(message, 'from_user', None), 'id', -1) ==
+                                getattr(getattr(client, 'me', None), 'id', None)
+                        ):
+                            pass
+                        elif (
+                                getattr(getattr(message, 'chat', None), 'has_protected_content', False) or
+                                getattr(getattr(message, 'sender_chat', None), 'has_protected_content', False) or
+                                getattr(message, 'has_protected_content', False)
+                        ):
+                            raise ValueError
+                        if not self.handle_media_groups.get(listen_chat_id):
+                            self.handle_media_groups[listen_chat_id] = set()
+                        if listen_chat_id in self.handle_media_groups and message.id not in self.handle_media_groups.get(
+                                listen_chat_id):
+                            ids: set = set()
+                            for peer_message in media_group_ids:
+                                peer_id = peer_message.id
+                                ids.add(peer_id)
+                            if ids:
+                                self.handle_media_groups[listen_chat_id] = ids
+                            await self.forward(
+                                client=client,
+                                message=message,
+                                message_id=message.id,
+                                origin_chat_id=_listen_chat_id,
+                                target_chat_id=_target_chat_id,
+                                target_link=target_link,
+                                download_upload=False,
+                                media_group=sorted(ids)
+                            )
+                            break
+                        break
+                    except ValueError:
+                        pass
                     await self.forward(
                         client=client,
                         message=message,

@@ -73,6 +73,7 @@ class Bot:
         self.last_message: Union[pyrogram.types.Message, None] = None
         self.listen_download_chat: dict = {}
         self.listen_forward_chat: dict = {}
+        self.handle_media_groups: dict = {}
 
     async def process_error_message(self, client: pyrogram.Client, message: pyrogram.types.Message) -> None:
         await self.help(client, message)
