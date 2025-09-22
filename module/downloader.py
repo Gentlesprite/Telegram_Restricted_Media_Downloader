@@ -946,7 +946,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 peer_id = peer_message.id
                                 ids.add(peer_id)
                             if ids:
-                                self.handle_media_groups[listen_chat_id] = ids
+                                old_ids: Union[None, set] = self.handle_media_groups.get(listen_chat_id)
+                                if old_ids and isinstance(old_ids, set):
+                                    old_ids.update(ids)
+                                    self.handle_media_groups[listen_chat_id] = old_ids
+                                else:
+                                    self.handle_media_groups[listen_chat_id] = ids
                             await self.forward(
                                 client=client,
                                 message=message,
