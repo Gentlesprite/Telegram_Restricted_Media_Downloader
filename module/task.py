@@ -9,6 +9,8 @@ import asyncio
 from functools import wraps
 from typing import Union
 
+import pyrogram
+
 from module import console, log
 from module.language import _t
 from module.stdio import MetaData
@@ -43,24 +45,28 @@ class DownloadTask:
     def on_create_task(func):
         @wraps(func)
         async def wrapper(self, *args, **kwargs):
-            link = kwargs.get('link')
-            DownloadTask(link=link, link_type=None, member_num=0, complete_num=0, file_name=set(), error_msg={})
+            link = kwargs.get('message_ids')
+            _link = link
+            if isinstance(link, pyrogram.types.Message):
+                _link = link.link if link.link else link.id
+            DownloadTask(link=_link, link_type=None,
+                         member_num=0, complete_num=0, file_name=set(), error_msg={})
             res: dict = await func(self, *args, **kwargs)
             chat_id, link_type, member_num, status, e_code = res.values()
             if status == DownloadStatus.FAILURE:
-                DownloadTask.set(link=link, key='error_msg', value=e_code)
+                DownloadTask.set(link=_link, key='error_msg', value=e_code)
                 reason: str = e_code.get('error_msg')
                 if reason:
                     log.error(
                         f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                        f'{_t(KeyWord.LINK)}:"{link}"{reason},'
+                        f'{_t(KeyWord.LINK)}:"{_link}"{reason},'
                         f'{_t(KeyWord.REASON)}:"{e_code.get("all_member")}",'
                         f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
                     )
                 else:
                     log.warning(
                         f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                        f'{_t(KeyWord.LINK)}:"{link}"{e_code.get("all_member")},'
+                        f'{_t(KeyWord.LINK)}:"{_link}"{e_code.get("all_member")},'
                         f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
                     )
             elif status == DownloadStatus.DOWNLOADING:

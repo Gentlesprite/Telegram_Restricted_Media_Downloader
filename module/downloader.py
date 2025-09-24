@@ -21,7 +21,6 @@ from pyrogram.errors.exceptions.bad_request_400 import (
     BotMethodInvalid,
     UsernameNotOccupied,
     PeerIdInvalid,
-    MessageNotModified,
     ChannelPrivate as ChannelPrivate_400,
     ChatForwardsRestricted as ChatForwardsRestricted_400
 )
@@ -54,6 +53,7 @@ from module.app import Application, MetaData
 from module.bot import Bot, KeyboardButton, CallbackData
 from module.enums import (
     DownloadStatus,
+    LinkType,
     KeyWord,
     BotCallbackText,
     BotButton,
@@ -132,7 +132,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         if links is None:
             return None
         for link in links:
-            task: dict = await self.create_download_task(link=link, retry=None, with_upload=with_upload)
+            task: dict = await self.create_download_task(message_ids=link, retry=None, with_upload=with_upload)
             invalid_link.add(link) if task.get('status') == DownloadStatus.FAILURE else self.bot_task_link.add(link)
         right_link -= invalid_link
         await self.safe_edit_message(
@@ -1002,7 +1002,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             message: pyrogram.types.Message
     ):
         try:
-            await self.create_download_task(link=message.link, single_link=True)
+            await self.create_download_task(message_ids=message.link, single_link=True)
         except Exception as e:
             log.exception(f'监听下载出现错误,{_t(KeyWord.REASON)}:{e}')
 
@@ -1386,7 +1386,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if retry_count < self.app.max_download_retries:
                     retry_count += 1
                     task = self.loop.create_task(
-                        self.create_download_task(link=link, retry={'id': file_id, 'count': retry_count}))
+                        self.create_download_task(message_ids=link, retry={'id': file_id, 'count': retry_count}))
                     task.add_done_callback(
                         partial(
                             self.__retry_call,
@@ -1433,25 +1433,37 @@ class TelegramRestrictedMediaDownloader(Bot):
                 reverse=True
         ):
             if _filter.date_filter(message, start_date, end_date):
-                links.append(message.link)
+                links.append(message.link if message.link else message)
         for link in links:
-            await self.create_download_task(link=link, single_link=True)
+            await self.create_download_task(message_ids=link, single_link=True)
 
     @DownloadTask.on_create_task
     async def create_download_task(
             self,
-            link: str,
+            message_ids: Union[pyrogram.types.Message, str],
             retry: Union[dict, None] = None,
             single_link: bool = False,
             with_upload: Union[dict, None] = None
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
         try:
-            meta: dict = await get_message_by_link(
-                client=self.app.client,
-                link=link,
-                single_link=single_link
-            )
+            if isinstance(message_ids, str):
+                meta: dict = await get_message_by_link(
+                    client=self.app.client,
+                    link=message_ids,
+                    single_link=single_link
+                )
+                link = message_ids
+            elif isinstance(message_ids, pyrogram.types.Message):
+                meta: dict = {
+                    'link_type': LinkType.SINGLE,
+                    'chat_id': message_ids.chat.id,
+                    'message': message_ids,
+                    'member_num': 1
+                }
+                link = message_ids.link if message_ids.link else message_ids.id
+            else:
+                raise MsgIdInvalid
             link_type, chat_id, message, member_num = meta.values()
             DownloadTask.set(link, 'link_type', link_type)
             DownloadTask.set(link, 'member_num', member_num)
@@ -1659,7 +1671,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.running_log.add(self.is_running)
         links: Union[set, None] = self.__process_links(link=self.app.links)
         # 将初始任务添加到队列中。
-        [await self.loop.create_task(self.create_download_task(link=link, retry=None)) for link in
+        [await self.loop.create_task(self.create_download_task(message_ids=link, retry=None)) for link in
          links] if links else None
         # 处理队列中的任务与机器人事件。
         while not self.queue.empty() or self.is_bot_running:
