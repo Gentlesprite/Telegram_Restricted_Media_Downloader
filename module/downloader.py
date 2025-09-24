@@ -503,7 +503,17 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if _chat_id in self.download_chat_filter:
                     self.download_chat_filter.pop(_chat_id)
 
-            if callback_data in (BotCallbackText.DOWNLOAD_CHAT_ID, BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL):  # 确定或取消下载。
+            async def _verification_time(_start_time, _end_time) -> bool:
+                if isinstance(_start_time, datetime.datetime) and isinstance(_end_time, datetime.datetime):
+                    if _start_time > _end_time:
+                        await callback_query.message.reply_text(
+                            text=f'❌❌❌日期设置失败❌❌❌\n'
+                                 f'`起始日期({_start_time})`>`结束日期({_end_time})`\n'
+                        )
+                        return False
+                return True
+
+            if callback_data in (BotCallbackText.DOWNLOAD_CHAT_ID, BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL):  # 执行或取消任务。
                 chat_id = BotCallbackText.DOWNLOAD_CHAT_ID
                 BotCallbackText.DOWNLOAD_CHAT_ID = 'download_chat_id'
                 if callback_data == chat_id:
@@ -559,21 +569,31 @@ class TelegramRestrictedMediaDownloader(Bot):
                     dtype = CalenderKeyboard.END_TIME_BUTTON
                 await kb.calendar_keyboard(year=int(parts[-2]), month=int(parts[-1]), dtype=dtype)
             elif callback_data.startswith('cal_select_'):
+                async def _set_time(_dtype, _timestamp) -> bool:
+                    _last_timestamp = self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range'][_dtype]
+                    self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range'][_dtype] = _timestamp
+                    _start_time, _end_time = _get_update_time()
+                    if not await _verification_time(_start_time, _end_time):
+                        self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range'][
+                            _dtype] = _last_timestamp
+                        return False
+                    return True
+
                 parts = callback_data.split('_')
                 date = parts[-1]
+                dtype = ''
                 p_s_d = ''
-                _time = ''
                 timestamp = datetime.datetime.timestamp(datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S'))
                 if callback_data.startswith('cal_select_start_'):
-                    self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range'][
-                        'start_date'] = timestamp
-                    _time = datetime.datetime.fromtimestamp(timestamp)
+                    dtype = 'start_date'
+                    if not await _set_time(_dtype='start_date', _timestamp=timestamp):
+                        return None
                     p_s_d = '起始'
                 elif callback_data.startswith('cal_select_end_'):
-                    self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range'][
-                        'end_date'] = timestamp
-                    _time = datetime.datetime.fromtimestamp(timestamp)
+                    dtype = 'end_date'
                     p_s_d = '结束'
+                if not await _set_time(_dtype=dtype, _timestamp=timestamp):
+                    return None
                 await callback_query.message.edit_text(
                     text=f'📅选择{p_s_d}日期:\n'
                          f'⏮️当前选择的起始日期为:{_get_update_time()[0]}\n'
@@ -1409,7 +1429,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         end_date = date_filter.get('end_date')
         links: list = []
         async for message in self.app.client.get_chat_history(
-                chat_id=chat_id
+                chat_id=chat_id,
+                reverse=True
         ):
             if _filter.date_filter(message, start_date, end_date):
                 links.append(message.link)
