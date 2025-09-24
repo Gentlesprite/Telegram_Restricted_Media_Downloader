@@ -292,14 +292,19 @@ class DownloadFileName:
 
     def get_document_filename(self):
         """处理文档文件的文件名。"""
-        _mime_type = getattr(getattr(self.message, self.download_type), 'mime_type')
-        if 'video' in _mime_type:
-            return self.get_video_filename()
-        elif 'image' in _mime_type:
-            return self.get_photo_filename()
-        elif _mime_type:
-            try:
-                extension = _mime_type.split('/')[-1]
+        try:
+            document_obj = getattr(self.message, self.download_type)
+            _mime_type = getattr(document_obj, 'mime_type')
+            if 'video' in _mime_type:
+                return self.get_video_filename()
+            elif 'image' in _mime_type:
+                return self.get_photo_filename()
+            elif _mime_type:
+                extension = get_extension(
+                    file_id=document_obj.file_id,
+                    mime_type=_mime_type,
+                    dot=False
+                )
                 if not extension:
                     raise Exception('Unknown mime type.')
                 media_object = getattr(self.message, self.download_type)
@@ -308,8 +313,8 @@ class DownloadFileName:
                     getattr(media_object, 'file_unique_id', 'None'),
                     extension
                 )
-            except Exception as e:
-                log.info(f'无法找到的该文档文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')
-                file_id = getattr(self.message, 'id', '0')
-                time_format = '%Y-%m-%d_%H-%M-%S'
-                return f'{file_id} - {datetime.datetime.now().strftime(time_format)}.unknown'
+        except (AttributeError, Exception) as e:
+            log.info(f'无法找到的该文档文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')
+            file_id = getattr(self.message, 'id', '0')
+            time_format = '%Y-%m-%d_%H-%M-%S'
+            return f'{file_id} - {datetime.datetime.now().strftime(time_format)}.unknown'
