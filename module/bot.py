@@ -234,7 +234,10 @@ class Bot:
             )
             return None
         chat_link = command[1]
-        meta = await parse_link(client=self.user, link=chat_link)
+        try:
+            meta = await parse_link(client=self.user, link=chat_link)
+        except ValueError:
+            meta = None
         if not isinstance(meta, dict):
             await client.send_message(
                 chat_id=message.from_user.id,

@@ -49,6 +49,7 @@ from module import (
     LINK_PREVIEW_OPTIONS,
     SLEEP_THRESHOLD
 )
+from module.filter import Filter
 from module.app import Application, MetaData
 from module.bot import Bot, KeyboardButton, CallbackData
 from module.enums import (
@@ -1393,6 +1394,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             self,
             chat_id: str
     ):
+        _filter = Filter()
         download_chat_filter: Union[dict, None] = None
         for i in self.download_chat_filter:
             if chat_id == i:
@@ -1409,7 +1411,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         async for message in self.app.client.get_chat_history(
                 chat_id=chat_id
         ):
-            if start_date < datetime.datetime.timestamp(message.date) < end_date:
+            if _filter.date_filter(message, start_date, end_date):
                 links.append(message.link)
         for link in links:
             await self.create_download_task(link=link, single_link=True)
