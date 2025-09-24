@@ -6,6 +6,7 @@
 import os
 import sys
 import ipaddress
+from enum import StrEnum
 
 from typing import Union, Optional
 from dataclasses import dataclass
@@ -53,6 +54,11 @@ class UploadStatus:
     UPLOADING = 'uploading'
     SUCCESS = 'success'
     FAILURE = 'failure'
+
+
+class CalenderKeyboard(StrEnum):
+    START_TIME_BUTTON: str = 'start time button'
+    END_TIME_BUTTON: str = 'end time button'
 
 
 class KeyWord:
@@ -1020,6 +1026,7 @@ class BotCommandText:
         'listen_forward', '实时监听该链接的最新消息(任意消息)进行转发。\n`/listen_forward 监听频道 转发频道`')
     LISTEN_INFO: tuple = ('listen_info', '查看当前已经创建的监听信息。')
     UPLOAD: tuple = ('upload', '上传本地的文件到指定频道。`/upload 本地文件 目标频道`')
+    DOWNLOAD_CHAT: tuple = ('download_chat', '下载指定频道并支持自定义内容过滤。`/download_chat 频道链接`')
 
     @staticmethod
     def with_description(text: tuple) -> str:
@@ -1057,6 +1064,13 @@ class BotCallbackText:
     FORWARD_SETTING: str = 'forward_setting'
     UPLOAD_DOWNLOAD: str = 'upload_download'
     UPLOAD_DOWNLOAD_DELETE: str = 'upload_download_delete'
+    DOWNLOAD_CHAT_ID: str = 'download_chat_id'
+    DOWNLOAD_CHAT_ID_CANCEL: str = 'download_chat_id_cancel'
+    DOWNLOAD_CHAT_FILTER: str = 'download_chat_filter'
+    DOWNLOAD_CHAT_DATE_FILTER: str = 'download_chat_date_filter'
+    CALENDAR_CONFIRM: str = 'calendar_confirm'
+    FILTER_START_DATE: str = 'filter_start_date'
+    FILTER_END_DATE: str = 'filter_end_date'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
@@ -1085,8 +1099,13 @@ class BotButton:
     DOWNLOAD: str = '⬇️下载'
     DOWNLOAD_UPLOAD: str = '↕️下载后上传'
     TASK_ASSIGN: str = '✅任务已分配'
+    TASK_CANCEL: str = '🗑️任务已取消'
+    EXECUTE_TASK: str = '▶️执行任务'
+    CANCEL_TASK: str = '⏹️取消任务'
     OK: str = '✅确定'
     CANCEL: str = '❌取消'
+    RETURN: str = '🔙返回'
+    CONFIRM_AND_RETURN: str = '↩️确定并返回'
     LOOKUP_LISTEN_INFO: str = '🔍查看监听信息'
     EXPORT_TABLE: str = '📊导出表格'
     RESELECT: str = '🔄重新选择'
@@ -1095,7 +1114,6 @@ class BotButton:
     CLOSE_LINK_TABLE: str = '🔒禁用导出链接表格'
     OPEN_COUNT_TABLE: str = '🔓启用导出计数表格'
     CLOSE_COUNT_TABLE: str = '🔒禁用导出计数表格'
-    RETURN: str = '🔙返回'
     OPEN_EXIT_SHUTDOWN: str = '✅启用退出后关机'
     CLOSE_EXIT_SHUTDOWN: str = '❌禁用退出后关机'
     ALREADY_REMOVE: str = '✅已移除'
@@ -1119,3 +1137,6 @@ class BotButton:
     ANIMATION_OFF: str = '🎨GIF ❌'
     DOCUMENT_OFF: str = '📄文档 ❌'
     TEXT_OFF: str = '💬文本消息 ❌'
+    DATE_RANGE_SETTING: str = '📅设置日期范围'
+    SELECT_START_DATE: str = '⏮️选择起始日期'
+    SELECT_END_DATE: str = '⏭️选择结束日期'

@@ -6,7 +6,9 @@
 import os
 import copy
 import asyncio
-from typing import List, Dict, Union
+import datetime
+import calendar
+from typing import List, Dict, Union, Optional
 
 import pyrogram
 from pyrogram.types.messages_and_media import ReplyParameters
@@ -35,11 +37,13 @@ from module.language import _t
 from module.stdio import MetaData
 from module.config import GlobalConfig
 from module.util import (
+    parse_link,
     safe_index,
     safe_message,
     is_allow_upload
 )
 from module.enums import (
+    CalenderKeyboard,
     BotCommandText,
     BotMessage,
     BotCallbackText,
@@ -60,6 +64,7 @@ class Bot:
         BotCommand(BotCommandText.LISTEN_FORWARD[0], BotCommandText.LISTEN_FORWARD[1].replace('`', '')),
         BotCommand(BotCommandText.LISTEN_INFO[0], BotCommandText.LISTEN_INFO[1]),
         BotCommand(BotCommandText.UPLOAD[0], BotCommandText.UPLOAD[1]),
+        BotCommand(BotCommandText.DOWNLOAD_CHAT[0], BotCommandText.DOWNLOAD_CHAT[1])
     ]
 
     def __init__(self):
@@ -74,6 +79,7 @@ class Bot:
         self.listen_download_chat: dict = {}
         self.listen_forward_chat: dict = {}
         self.handle_media_groups: dict = {}
+        self.download_chat_filter: dict = {}
 
     async def process_error_message(self, client: pyrogram.Client, message: pyrogram.types.Message) -> None:
         await self.help(client, message)
@@ -195,6 +201,82 @@ class Bot:
                 }
             else:
                 return None
+
+    async def get_download_chat_link_from_bot(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message,
+    ):
+        if BotCallbackText.DOWNLOAD_CHAT_ID != 'download_chat_id':
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text='⚠️⚠️⚠️请执行或取消上一次频道下载任务设置⚠️⚠️⚠️',
+                link_preview_options=LINK_PREVIEW_OPTIONS
+            )
+            return None
+        text: str = message.text
+        if text == '/download_chat':
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text='❓❓❓请提供下载链接❓❓❓语法:\n`/download_chat https://t.me/x/x`',
+                link_preview_options=LINK_PREVIEW_OPTIONS
+            )
+        command = text.split()
+        if len(command) != 2:
+            await self.help(client, message)
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text='⁉️⁉️⁉️命令语法错误⁉️⁉️⁉️\n请查看帮助后重试。',
+                link_preview_options=LINK_PREVIEW_OPTIONS
+            )
+            return None
+        chat_link = command[1]
+        meta = await parse_link(client=self.user, link=chat_link)
+        if not isinstance(meta, dict):
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text='❌❌❌找不到频道❌❌❌',
+                link_preview_options=LINK_PREVIEW_OPTIONS
+            )
+            return None
+        chat_id = meta.get('chat_id')
+        if not chat_id:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text='❌❌❌无法获取频道名❌❌❌',
+                link_preview_options=LINK_PREVIEW_OPTIONS
+            )
+            return None
+        if chat_id in self.download_chat_filter:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text='⚠️⚠️⚠️该频道已在下载中⚠️⚠️⚠️\n'
+                     f'{chat_link}',
+                link_preview_options=LINK_PREVIEW_OPTIONS
+            )
+            return None
+        BotCallbackText.DOWNLOAD_CHAT_ID = str(chat_id)
+        self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID] = {
+            'date_range':
+                {
+                    'start_date': None,
+                    'end_date': None
+                }
+        }
+        await client.send_message(
+            chat_id=message.from_user.id,
+            reply_parameters=ReplyParameters(message_id=message.id),
+            text=f'⏮️当前选择的起始日期为:未定义\n'
+                 f'⏭️当前选择的结束日期为:未定义',
+            reply_markup=KeyboardButton.download_chat_filter_button(),
+            link_preview_options=LINK_PREVIEW_OPTIONS
+        )
 
     @staticmethod
     async def safe_process_message(
@@ -714,6 +796,12 @@ class Bot:
             )
             self.bot.add_handler(
                 MessageHandler(
+                    self.get_download_chat_link_from_bot,
+                    filters=pyrogram.filters.command(['download_chat']) & pyrogram.filters.user(self.root)
+                )
+            )
+            self.bot.add_handler(
+                MessageHandler(
                     self.get_upload_link_from_bot,
                     filters=pyrogram.filters.command(['upload']) & pyrogram.filters.user(self.root)
                 )
@@ -1111,6 +1199,102 @@ class KeyboardButton:
                 ]
             ]
         )
+
+    @staticmethod
+    def download_chat_filter_button():
+        return InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.DATE_RANGE_SETTING,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.EXECUTE_TASK,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.CANCEL_TASK,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
+                    )
+                ]
+            ]
+        )
+
+    @staticmethod
+    def filter_date_range_button():
+        return InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.SELECT_START_DATE,
+                        callback_data=BotCallbackText.FILTER_START_DATE
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.SELECT_END_DATE,
+                        callback_data=BotCallbackText.FILTER_END_DATE
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.RETURN,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
+                    )
+                ]
+            ]
+        )
+
+    async def calendar_keyboard(
+            self,
+            dtype: CalenderKeyboard,
+            year: Optional[int] = datetime.datetime.now().year,
+            month: Optional[int] = datetime.datetime.now().month
+    ):
+        keyboard: list = []
+        prev_month: int = month - 1 if month > 1 else 12
+        prev_year: int = year if month > 1 else year - 1
+        next_month: int = month + 1 if month < 12 else 1
+        next_year: int = year if month < 12 else year + 1
+        if dtype == CalenderKeyboard.START_TIME_BUTTON:
+            _dtype = 'start'
+        elif dtype == CalenderKeyboard.END_TIME_BUTTON:
+            _dtype = 'end'
+        else:
+            return None
+        nav_row = [
+            InlineKeyboardButton('◀️', callback_data=f'cal_last_{_dtype}_{prev_year}_{prev_month}'),
+            InlineKeyboardButton(f'{year}-{month:02d}', callback_data=BotCallbackText.NULL),
+            InlineKeyboardButton('▶️', callback_data=f'cal_next_{_dtype}_{next_year}_{next_month}')
+        ]
+        keyboard.append(nav_row)
+
+        week_days = ['一', '二', '三', '四', '五', '六', '日']
+        week_row = [InlineKeyboardButton(day, callback_data=BotCallbackText.NULL) for day in week_days]
+        keyboard.append(week_row)
+
+        cal = calendar.monthcalendar(year, month)
+        for week in cal:
+            row = []
+            for day in week:
+                if day == 0:
+                    row.append(InlineKeyboardButton(' ', callback_data=BotCallbackText.NULL))
+                else:
+                    date_str = f'{year}-{month:02d}-{day:02d} 00:00:00'
+                    row.append(InlineKeyboardButton(str(day), callback_data=f'cal_select_{_dtype}_{date_str}'))
+            keyboard.append(row)
+
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    text=BotButton.CONFIRM_AND_RETURN,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER
+                )
+            ]
+        )
+
+        await self.callback_query.message.edit_reply_markup(InlineKeyboardMarkup(keyboard))
 
 
 class CallbackData:

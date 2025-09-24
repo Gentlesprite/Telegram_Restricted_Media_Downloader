@@ -6,6 +6,7 @@
 import os
 import sys
 import asyncio
+import datetime
 
 from functools import partial
 from sqlite3 import OperationalError
@@ -20,6 +21,7 @@ from pyrogram.errors.exceptions.bad_request_400 import (
     BotMethodInvalid,
     UsernameNotOccupied,
     PeerIdInvalid,
+    MessageNotModified,
     ChannelPrivate as ChannelPrivate_400,
     ChatForwardsRestricted as ChatForwardsRestricted_400
 )
@@ -55,7 +57,8 @@ from module.enums import (
     BotCallbackText,
     BotButton,
     BotMessage,
-    DownloadType
+    DownloadType,
+    CalenderKeyboard
 )
 from module.language import _t
 from module.path_tool import (
@@ -477,6 +480,105 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
             console.log(p, style='#FF4689')
             log.info(f'{p}当前的监听转发信息:{self.listen_forward_chat}')
+        elif callback_data in (
+                BotCallbackText.DOWNLOAD_CHAT_FILTER,  # 主页面。
+                BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER,  # 设置下载日期范围设置页面。
+                BotCallbackText.DOWNLOAD_CHAT_ID,  # 执行任务。
+                BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL,  # 取消任务。
+                BotCallbackText.FILTER_START_DATE,  # 设置下载起始日期。
+                BotCallbackText.FILTER_END_DATE  # 设置下载结束日期。
+        ) or callback_data.startswith(
+            ('cal_last_', 'cal_next_', 'cal_select_')  # 切换月份,选择日期。
+        ):
+            def _get_update_time():
+                _start_timestamp = self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range'][
+                    'start_date']
+                _end_timestamp = self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range']['end_date']
+                _start_time = datetime.datetime.fromtimestamp(_start_timestamp) if _start_timestamp else '未定义'
+                _end_time = datetime.datetime.fromtimestamp(_end_timestamp) if _end_timestamp else '未定义'
+                return _start_time, _end_time
+
+            def _remove_chat_id(_chat_id):
+                if _chat_id in self.download_chat_filter:
+                    self.download_chat_filter.pop(_chat_id)
+
+            if callback_data in (BotCallbackText.DOWNLOAD_CHAT_ID, BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL):  # 确定或取消下载。
+                chat_id = BotCallbackText.DOWNLOAD_CHAT_ID
+                BotCallbackText.DOWNLOAD_CHAT_ID = 'download_chat_id'
+                if callback_data == chat_id:
+                    await callback_query.message.edit_text(
+                        text=f'下载频道:`{chat_id}`\n{callback_query.message.text}',
+                        reply_markup=kb.single_button(
+                            text=BotButton.TASK_ASSIGN,
+                            callback_data=BotCallbackText.NULL
+                        )
+                    )
+                    await self.download_chat(
+                        chat_id=chat_id
+                    )
+                    _remove_chat_id(chat_id)
+                elif callback_data == BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL:
+                    _remove_chat_id(chat_id)
+                    await callback_query.message.edit_text(
+                        text=f'下载频道:`{chat_id}`\n{callback_query.message.text}',
+                        reply_markup=kb.single_button(
+                            text=BotButton.TASK_CANCEL,
+                            callback_data=BotCallbackText.NULL
+                        )
+                    )
+            elif callback_data in (
+                    BotCallbackText.DOWNLOAD_CHAT_FILTER,
+                    BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER
+            ):
+                # 返回或点击。
+                await callback_query.message.edit_text(
+                    text=f'⏮️当前选择的起始日期为:{_get_update_time()[0]}\n'
+                         f'⏭️当前选择的结束日期为:{_get_update_time()[1]}',
+                    reply_markup=kb.download_chat_filter_button() if callback_data == BotCallbackText.DOWNLOAD_CHAT_FILTER else kb.filter_date_range_button()
+                )
+            elif callback_data in (BotCallbackText.FILTER_START_DATE, BotCallbackText.FILTER_END_DATE):
+                dtype = None
+                p_s_d = ''
+                if callback_data == BotCallbackText.FILTER_START_DATE:
+                    dtype = CalenderKeyboard.START_TIME_BUTTON
+                    p_s_d = '起始'
+                elif callback_data == BotCallbackText.FILTER_END_DATE:
+                    dtype = CalenderKeyboard.END_TIME_BUTTON
+                    p_s_d = '结束'
+                await callback_query.message.edit_text(
+                    text=f'📅选择{p_s_d}日期:\n{callback_query.message.text}'
+                )
+                await kb.calendar_keyboard(dtype=dtype)
+            elif callback_data.startswith(('cal_last_', 'cal_next_')):
+                parts = callback_data.split('_')
+                dtype = None
+                if 'start' in callback_data:
+                    dtype = CalenderKeyboard.START_TIME_BUTTON
+                elif 'end' in callback_data:
+                    dtype = CalenderKeyboard.END_TIME_BUTTON
+                await kb.calendar_keyboard(year=int(parts[-2]), month=int(parts[-1]), dtype=dtype)
+            elif callback_data.startswith('cal_select_'):
+                parts = callback_data.split('_')
+                date = parts[-1]
+                p_s_d = ''
+                _time = ''
+                timestamp = datetime.datetime.timestamp(datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S'))
+                if callback_data.startswith('cal_select_start_'):
+                    self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range'][
+                        'start_date'] = timestamp
+                    _time = datetime.datetime.fromtimestamp(timestamp)
+                    p_s_d = '起始'
+                elif callback_data.startswith('cal_select_end_'):
+                    self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range'][
+                        'end_date'] = timestamp
+                    _time = datetime.datetime.fromtimestamp(timestamp)
+                    p_s_d = '结束'
+                await callback_query.message.edit_text(
+                    text=f'📅选择{p_s_d}日期:\n'
+                         f'⏮️当前选择的起始日期为:{_get_update_time()[0]}\n'
+                         f'⏭️当前选择的结束日期为:{_get_update_time()[1]}',
+                    reply_markup=callback_query.message.reply_markup
+                )
 
     async def forward(
             self,
@@ -1286,6 +1388,31 @@ class TelegramRestrictedMediaDownloader(Bot):
                 link, file_name = None, None
             self.pb.progress.remove_task(task_id=task_id)
         return link, file_name
+
+    async def download_chat(
+            self,
+            chat_id: str
+    ):
+        download_chat_filter: Union[dict, None] = None
+        for i in self.download_chat_filter:
+            if chat_id == i:
+                download_chat_filter = self.download_chat_filter.get(chat_id)
+        if not download_chat_filter:
+            return None
+        if not isinstance(download_chat_filter, dict):
+            return None
+        chat_id: Union[str, int] = int(chat_id) if chat_id.startswith('-') else chat_id
+        date_filter = download_chat_filter.get('date_range')
+        start_date = date_filter.get('start_date')
+        end_date = date_filter.get('end_date')
+        links: list = []
+        async for message in self.app.client.get_chat_history(
+                chat_id=chat_id
+        ):
+            if start_date < datetime.datetime.timestamp(message.date) < end_date:
+                links.append(message.link)
+        for link in links:
+            await self.create_download_task(link=link, single_link=True)
 
     @DownloadTask.on_create_task
     async def create_download_task(
