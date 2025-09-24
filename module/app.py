@@ -300,18 +300,15 @@ class DownloadFileName:
             elif 'image' in _mime_type:
                 return self.get_photo_filename()
             elif _mime_type:
-                extension = get_extension(
-                    file_id=document_obj.file_id,
-                    mime_type=_mime_type,
-                    dot=False
-                )
-                if not extension:
-                    raise Exception('Unknown mime type.')
                 media_object = getattr(self.message, self.download_type)
                 return '{} - {}.{}'.format(
                     getattr(self.message, 'id', '0'),
                     getattr(media_object, 'file_unique_id', 'None'),
-                    extension
+                    get_extension(
+                        file_id=document_obj.file_id,
+                        mime_type=_mime_type,
+                        dot=False
+                    )
                 )
         except (AttributeError, Exception) as e:
             log.info(f'无法找到的该文档文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')
