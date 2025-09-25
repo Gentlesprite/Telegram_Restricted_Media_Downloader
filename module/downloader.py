@@ -49,7 +49,7 @@ from module import (
     SLEEP_THRESHOLD
 )
 from module.filter import Filter
-from module.app import Application, MetaData
+from module.app import Application
 from module.bot import Bot, KeyboardButton, CallbackData
 from module.enums import (
     DownloadStatus,
@@ -73,7 +73,7 @@ from module.path_tool import (
     safe_replace
 )
 from module.task import DownloadTask
-from module.stdio import ProgressBar, Base64Image
+from module.stdio import ProgressBar, Base64Image, MetaData
 from module.uploader import TelegramUploader
 from module.util import (
     parse_link,

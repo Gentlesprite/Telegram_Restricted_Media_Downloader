@@ -10,7 +10,7 @@ import mimetypes
 import subprocess
 
 from functools import wraps
-from typing import Dict, Union
+from typing import Union
 
 import pyrogram
 
@@ -24,7 +24,7 @@ from module import (
 )
 from module.language import _t
 from module.config import UserConfig
-from module.stdio import StatisticalTable, MetaData
+from module.stdio import StatisticalTable
 from module.client import TelegramRestrictedMediaDownloaderClient
 from module.enums import (
     DownloadType,
@@ -32,7 +32,6 @@ from module.enums import (
     KeyWord
 )
 from module.path_tool import (
-    split_path,
     validate_title,
     truncate_filename,
     get_extension
