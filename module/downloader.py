@@ -1217,6 +1217,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         sever_file_size=sever_file_size,
                         temp_file_path=temp_file_path,
                         link=link,
+                        message=message,
                         file_name=file_name,
                         retry_count=retry_count,
                         file_id=file_id,
@@ -1262,6 +1263,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             sever_file_size,
                             temp_file_path,
                             link,
+                            message,
                             file_name,
                             retry_count,
                             file_id,
@@ -1343,6 +1345,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             sever_file_size,
             temp_file_path,
             link,
+            message,
             file_name,
             retry_count,
             file_id,
@@ -1392,7 +1395,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if retry_count < self.app.max_download_retries:
                     retry_count += 1
                     task = self.loop.create_task(
-                        self.create_download_task(message_ids=link, retry={'id': file_id, 'count': retry_count}))
+                        self.create_download_task(
+                            message_ids=link if isinstance(link, str) else message,
+                            retry={'id': file_id, 'count': retry_count})
+                    )
                     task.add_done_callback(
                         partial(
                             self.__retry_call,
@@ -1453,23 +1459,23 @@ class TelegramRestrictedMediaDownloader(Bot):
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
         try:
-            if isinstance(message_ids, str):
+            if isinstance(message_ids, pyrogram.types.Message):
+                chat_id = message_ids.chat.id
+                meta: dict = {
+                    'link_type': LinkType.SINGLE,
+                    'chat_id': chat_id,
+                    'message': message_ids,
+                    'member_num': 1
+                }
+                link = message_ids.link if message_ids.link else message_ids.id
+            else:
                 meta: dict = await get_message_by_link(
                     client=self.app.client,
                     link=message_ids,
                     single_link=single_link
                 )
                 link = message_ids
-            elif isinstance(message_ids, pyrogram.types.Message):
-                meta: dict = {
-                    'link_type': LinkType.SINGLE,
-                    'chat_id': message_ids.chat.id,
-                    'message': message_ids,
-                    'member_num': 1
-                }
-                link = message_ids.link if message_ids.link else message_ids.id
-            else:
-                raise MsgIdInvalid
+
             link_type, chat_id, message, member_num = meta.values()
             DownloadTask.set(link, 'link_type', link_type)
             DownloadTask.set(link, 'member_num', member_num)
