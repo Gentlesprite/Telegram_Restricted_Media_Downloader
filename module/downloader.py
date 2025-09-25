@@ -10,7 +10,7 @@ import datetime
 
 from functools import partial
 from sqlite3 import OperationalError
-from typing import Union, Callable, Optional
+from typing import Union, Callable, Optional, Dict
 
 import pyrogram
 from pyrogram.enums.parse_mode import ParseMode
@@ -59,7 +59,8 @@ from module.enums import (
     BotButton,
     BotMessage,
     DownloadType,
-    CalenderKeyboard
+    CalenderKeyboard,
+    SaveDirectoryPrefix
 )
 from module.language import _t
 from module.path_tool import (
@@ -98,6 +99,27 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.pb = ProgressBar()
         self.uploader: Union[TelegramUploader, None] = None
         self.cd: Union[CallbackData, None] = None
+
+    def env_save_directory(
+            self,
+            message: pyrogram.types.Message
+    ) -> str:
+        save_directory = self.app.save_directory
+        for placeholder in SaveDirectoryPrefix():
+            if placeholder in save_directory:
+                if placeholder == SaveDirectoryPrefix.CHAT_ID:
+                    save_directory = save_directory.replace(
+                        placeholder,
+                        str(getattr(getattr(message, 'chat'), 'id', 'UNKNOWN_CHAT_ID'))
+                    )
+                if placeholder == SaveDirectoryPrefix.MIME_TYPE:
+                    for dtype in DownloadType():
+                        if getattr(message, dtype, None):
+                            save_directory = save_directory.replace(
+                                placeholder,
+                                dtype
+                            )
+        return save_directory
 
     async def get_download_link_from_bot(
             self,
@@ -1171,6 +1193,24 @@ class TelegramRestrictedMediaDownloader(Bot):
                 f'"{temp_path}"下载完成,更改文件名:[{temp_path}]({get_file_size(temp_path)}) -> [{file_name}]({compare_size})')
         return file_name
 
+    def get_media_meta(self, message: pyrogram.types.Message, dtype) -> Dict[str, Union[int, str]]:
+        """获取媒体元数据。"""
+        file_id: int = getattr(message, 'id')
+        temp_file_path: str = self.app.get_temp_file_path(message, dtype)
+        _sever_meta = getattr(message, dtype)
+        sever_file_size: int = getattr(_sever_meta, 'file_size')
+        file_name: str = split_path(temp_file_path).get('file_name')
+        save_directory: str = os.path.join(self.env_save_directory(message), file_name)
+        format_file_size: str = MetaData.suitable_units_display(sever_file_size)
+        return {
+            'file_id': file_id,
+            'temp_file_path': temp_file_path,
+            'sever_file_size': sever_file_size,
+            'file_name': file_name,
+            'save_directory': save_directory,
+            'format_file_size': format_file_size
+        }
+
     async def __add_task(
             self,
             chat_id: Union[str, int],
@@ -1205,7 +1245,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     await self.event.wait()
                     self.event.clear()
                 file_id, temp_file_path, sever_file_size, file_name, save_directory, format_file_size = \
-                    self.app.get_media_meta(
+                    self.get_media_meta(
                         message=message,
                         dtype=valid_dtype).values()
                 retry['id'] = file_id
@@ -1370,7 +1410,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if self.uploader:
                     self.uploader.download_upload(
                         with_upload=with_upload,
-                        file_path=os.path.join(self.app.save_directory, file_name)
+                        file_path=os.path.join(self.env_save_directory(message), file_name)
                     )
         else:
             self.app.current_task_num -= 1
@@ -1379,7 +1419,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             if self.__check_download_finish(
                     sever_file_size=sever_file_size,
                     temp_file_path=temp_file_path,
-                    save_directory=self.app.save_directory,
+                    save_directory=self.env_save_directory(message),
                     with_move=True
             ):
                 MetaData.print_current_task_num(
@@ -1389,7 +1429,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if self.uploader:
                     self.uploader.download_upload(
                         with_upload=with_upload,
-                        file_path=os.path.join(self.app.save_directory, file_name)
+                        file_path=os.path.join(self.env_save_directory(message), file_name)
                     )
             else:
                 if retry_count < self.app.max_download_retries:

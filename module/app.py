@@ -68,26 +68,9 @@ class Application(UserConfig, StatisticalTable):
         """处理关机逻辑。"""
         self.shutdown_task(second=second) if self.config.get('is_shutdown') else None
 
-    def get_media_meta(self, message: pyrogram.types.Message, dtype) -> Dict[str, Union[int, str]]:
-        """获取媒体元数据。"""
-        file_id: int = getattr(message, 'id')
-        temp_file_path: str = self.__get_temp_file_path(message, dtype)
-        _sever_meta = getattr(message, dtype)
-        sever_file_size: int = getattr(_sever_meta, 'file_size')
-        file_name: str = split_path(temp_file_path).get('file_name')
-        save_directory: str = os.path.join(self.save_directory, file_name)
-        format_file_size: str = MetaData.suitable_units_display(sever_file_size)
-        return {
-            'file_id': file_id,
-            'temp_file_path': temp_file_path,
-            'sever_file_size': sever_file_size,
-            'file_name': file_name,
-            'save_directory': save_directory,
-            'format_file_size': format_file_size
-        }
-
-    def __get_temp_file_path(
-            self, message: pyrogram.types.Message,
+    def get_temp_file_path(
+            self,
+            message: pyrogram.types.Message,
             dtype: str
     ) -> str:
         """获取下载文件时的临时保存路径。"""

@@ -61,6 +61,16 @@ class CalenderKeyboard(StrEnum):
     END_TIME_BUTTON: str = 'end time button'
 
 
+class SaveDirectoryPrefix:
+    CHAT_ID: str = '%CHAT_ID%'
+    MIME_TYPE: str = '%MIME_TYPE%'
+
+    def __iter__(self):
+        for key, value in vars(self.__class__).items():
+            if not key.startswith('_') and not callable(value):  # 排除特殊方法和属性。
+                yield value
+
+
 class KeyWord:
     LINK: str = 'link'
     LINK_TYPE: str = 'link type'
@@ -403,6 +413,10 @@ class Validator:
 
     @staticmethod
     def is_valid_save_directory(save_directory: str) -> bool:
+        for placeholder in SaveDirectoryPrefix():
+            if placeholder in save_directory:
+                save_directory = save_directory.replace(placeholder, '')
+        save_directory = os.path.normpath(save_directory)
         if not os.path.exists(save_directory):
             while True:
                 try:
