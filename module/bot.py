@@ -272,6 +272,7 @@ class Bot:
                     'end_date': None
                 }
         }
+        log.info(f'"{BotCallbackText.DOWNLOAD_CHAT_ID}"已添加至{self.download_chat_filter}。')
         await client.send_message(
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),

@@ -502,6 +502,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             def _remove_chat_id(_chat_id):
                 if _chat_id in self.download_chat_filter:
                     self.download_chat_filter.pop(_chat_id)
+                    log.info(f'"{_chat_id}"已从{self.download_chat_filter}中移除。')
 
             async def _verification_time(_start_time, _end_time) -> bool:
                 if isinstance(_start_time, datetime.datetime) and isinstance(_end_time, datetime.datetime):
@@ -567,7 +568,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     dtype = CalenderKeyboard.START_TIME_BUTTON
                 elif 'end' in callback_data:
                     dtype = CalenderKeyboard.END_TIME_BUTTON
-                await kb.calendar_keyboard(year=int(parts[-2]), month=int(parts[-1]), dtype=dtype)
+                year = int(parts[-2])
+                month = int(parts[-1])
+                await kb.calendar_keyboard(year=year, month=month, dtype=dtype)
+                log.info(f'日期切换为{year}年,{month}月。')
             elif callback_data.startswith('cal_select_'):
                 async def _set_time(_dtype, _timestamp) -> bool:
                     _last_timestamp = self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range'][_dtype]
@@ -594,12 +598,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                     p_s_d = '结束'
                 if not await _set_time(_dtype=dtype, _timestamp=timestamp):
                     return None
+                start_time, end_time = _get_update_time()
                 await callback_query.message.edit_text(
                     text=f'📅选择{p_s_d}日期:\n'
-                         f'⏮️当前选择的起始日期为:{_get_update_time()[0]}\n'
-                         f'⏭️当前选择的结束日期为:{_get_update_time()[1]}',
+                         f'⏮️当前选择的起始日期为:{start_time}\n'
+                         f'⏭️当前选择的结束日期为:{end_time}',
                     reply_markup=callback_query.message.reply_markup
                 )
+                log.info(f'日期设置,起始日期:{start_time},结束日期:{end_time}。')
 
     async def forward(
             self,
