@@ -1315,7 +1315,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             else:
                 _error = '不支持或被忽略的类型(已取消)。'
                 try:
-                    _, __, ___, file_name, ____, format_file_size = self.app.get_media_meta(
+                    _, __, ___, file_name, ____, format_file_size = self.get_media_meta(
                         message=message,
                         dtype=valid_dtype
                     ).values()
