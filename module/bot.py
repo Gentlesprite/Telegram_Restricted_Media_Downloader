@@ -358,6 +358,7 @@ class Bot:
             f'📲 {BotCommandText.with_description(BotCommandText.LISTEN_FORWARD)}\n'
             f'🔍 {BotCommandText.with_description(BotCommandText.LISTEN_INFO)}\n'
             f'📤 {BotCommandText.with_description(BotCommandText.UPLOAD)}\n'
+            f'💬 {BotCommandText.with_description(BotCommandText.DOWNLOAD_CHAT)}\n'
         )
         if not all([client, message]):
             return {
