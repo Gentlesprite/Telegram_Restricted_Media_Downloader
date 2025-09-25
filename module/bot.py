@@ -270,6 +270,15 @@ class Bot:
                 {
                     'start_date': None,
                     'end_date': None
+                },
+            'download_type':
+                {
+                    'video': True,
+                    'photo': True,
+                    'document': True,
+                    'audio': True,
+                    'voice': True,
+                    'animation': True
                 }
         }
         log.info(f'"{BotCallbackText.DOWNLOAD_CHAT_ID}"已添加至{self.download_chat_filter}。')
@@ -1097,6 +1106,65 @@ class KeyboardButton:
             )
         )
 
+    async def toggle_download_chat_type_filter_button(
+            self,
+            download_chat_filter: dict
+    ):
+        await self.callback_query.message.edit_reply_markup(
+            InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.VIDEO_ON if
+                            download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                                'video'] else BotButton.VIDEO_OFF,
+                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.PHOTO_ON if
+                            download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                                'photo'] else BotButton.PHOTO_OFF,
+                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.AUDIO_ON if
+                            download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                                'audio'] else BotButton.AUDIO_OFF,
+                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.VOICE_ON if
+                            download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                                'voice'] else BotButton.VOICE_OFF,
+                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.ANIMATION_ON if
+                            download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                                'animation'] else BotButton.ANIMATION_OFF,
+                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.DOCUMENT_ON if
+                            download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                                'document'] else BotButton.DOCUMENT_OFF,
+                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.RETURN,
+                            callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
+                        )
+                    ]
+                ]
+            )
+        )
+
     async def toggle_table_button(
             self,
             config: dict,
@@ -1213,7 +1281,11 @@ class KeyboardButton:
                     InlineKeyboardButton(
                         text=BotButton.DATE_RANGE_SETTING,
                         callback_data=BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER
-                    )
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.DOWNLOAD_DTYPE_SETTING,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER
+                    ),
                 ],
                 [
                     InlineKeyboardButton(

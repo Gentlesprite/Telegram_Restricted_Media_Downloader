@@ -154,7 +154,12 @@ class TelegramRestrictedMediaDownloader(Bot):
         if links is None:
             return None
         for link in links:
-            task: dict = await self.create_download_task(message_ids=link, retry=None, with_upload=with_upload)
+            task: dict = await self.create_download_task(
+                message_ids=link,
+                retry=None,
+                with_upload=with_upload,
+                diy_download_type=[_ for _ in DownloadType()] if with_upload else None
+            )
             invalid_link.add(link) if task.get('status') == DownloadStatus.FAILURE else self.bot_task_link.add(link)
         right_link -= invalid_link
         await self.safe_edit_message(
@@ -437,7 +442,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 BotCallbackText.TOGGLE_FORWARD_DOCUMENT,
                 BotCallbackText.TOGGLE_FORWARD_TEXT
         ):
-            def _toggle_button(_param: str):
+            def _toggle_forward_dtype_button(_param: str):
                 param: bool = self.gc.get_nesting_config(
                     default_nesting=self.gc.default_forward_type_nesting,
                     param='forward_type',
@@ -451,19 +456,19 @@ class TelegramRestrictedMediaDownloader(Bot):
 
             try:
                 if callback_data == BotCallbackText.TOGGLE_FORWARD_VIDEO:
-                    _toggle_button('video')
+                    _toggle_forward_dtype_button('video')
                 elif callback_data == BotCallbackText.TOGGLE_FORWARD_PHOTO:
-                    _toggle_button('photo')
+                    _toggle_forward_dtype_button('photo')
                 elif callback_data == BotCallbackText.TOGGLE_FORWARD_AUDIO:
-                    _toggle_button('audio')
+                    _toggle_forward_dtype_button('audio')
                 elif callback_data == BotCallbackText.TOGGLE_FORWARD_VOICE:
-                    _toggle_button('voice')
+                    _toggle_forward_dtype_button('voice')
                 elif callback_data == BotCallbackText.TOGGLE_FORWARD_ANIMATION:
-                    _toggle_button('animation')
+                    _toggle_forward_dtype_button('animation')
                 elif callback_data == BotCallbackText.TOGGLE_FORWARD_DOCUMENT:
-                    _toggle_button('document')
+                    _toggle_forward_dtype_button('document')
                 elif callback_data == BotCallbackText.TOGGLE_FORWARD_TEXT:
-                    _toggle_button('text')
+                    _toggle_forward_dtype_button('text')
                 self.gc.save_config(self.gc.config)
                 await kb.toggle_forward_setting_button(self.gc.config)
             except Exception as e:
@@ -505,7 +510,14 @@ class TelegramRestrictedMediaDownloader(Bot):
             log.info(f'{p}当前的监听转发信息:{self.listen_forward_chat}')
         elif callback_data in (
                 BotCallbackText.DOWNLOAD_CHAT_FILTER,  # 主页面。
-                BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER,  # 设置下载日期范围设置页面。
+                BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER,  # 下载日期范围设置页面。
+                BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER,  # 下载类型设置页面。
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT,
                 BotCallbackText.DOWNLOAD_CHAT_ID,  # 执行任务。
                 BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL,  # 取消任务。
                 BotCallbackText.FILTER_START_DATE,  # 设置下载起始日期。
@@ -628,6 +640,40 @@ class TelegramRestrictedMediaDownloader(Bot):
                     reply_markup=callback_query.message.reply_markup
                 )
                 log.info(f'日期设置,起始日期:{start_time},结束日期:{end_time}。')
+            elif callback_data in (
+                    BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER,
+                    BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO,
+                    BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO,
+                    BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO,
+                    BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE,
+                    BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION,
+                    BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT
+            ):
+                def _toggle_dtype_filter_button(_param: str):
+                    param: bool = self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][_param]
+                    self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][_param] = not param
+                    f_s = '禁用' if param else '启用'
+                    f_p = f'已{f_s}"{_param}"类型用于/download_chat命令的下载。'
+                    log.info(f_p)
+
+                try:
+                    if callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO:
+                        _toggle_dtype_filter_button('video')
+                    elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO:
+                        _toggle_dtype_filter_button('photo')
+                    elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO:
+                        _toggle_dtype_filter_button('audio')
+                    elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE:
+                        _toggle_dtype_filter_button('voice')
+                    elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION:
+                        _toggle_dtype_filter_button('animation')
+                    elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT:
+                        _toggle_dtype_filter_button('document')
+                    await kb.toggle_download_chat_type_filter_button(self.download_chat_filter)
+                except Exception as e:
+                    await callback_query.message.reply_text(
+                        '下载类型设置失败\n(具体原因请前往终端查看报错信息)')
+                    log.error(f'下载类型设置失败,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
 
     async def forward(
             self,
@@ -1489,15 +1535,20 @@ class TelegramRestrictedMediaDownloader(Bot):
         date_filter = download_chat_filter.get('date_range')
         start_date = date_filter.get('start_date')
         end_date = date_filter.get('end_date')
+        download_type: dict = download_chat_filter.get('download_type')
         links: list = []
         async for message in self.app.client.get_chat_history(
                 chat_id=chat_id,
                 reverse=True
         ):
-            if _filter.date_filter(message, start_date, end_date):
+            if _filter.date_range(message, start_date, end_date) and _filter.dtype(message, download_type):
                 links.append(message.link if message.link else message)
         for link in links:
-            await self.create_download_task(message_ids=link, single_link=True)
+            await self.create_download_task(
+                message_ids=link,
+                single_link=True,
+                diy_download_type=[_ for _ in DownloadType()]
+            )
 
     @DownloadTask.on_create_task
     async def create_download_task(

@@ -11,10 +11,10 @@ import pyrogram
 
 class Filter:
     @staticmethod
-    def date_filter(
+    def date_range(
             message: pyrogram.types.Message,
             start_date: Optional[float],
-            end_date: Optional[float],
+            end_date: Optional[float]
     ) -> bool:
         if start_date and end_date:
             return start_date <= datetime.datetime.timestamp(message.date) <= end_date
@@ -23,3 +23,17 @@ class Filter:
         elif end_date:
             return datetime.datetime.timestamp(message.date) <= end_date
         return True
+
+    @staticmethod
+    def dtype(
+            message: pyrogram.types.Message,
+            download_type: dict
+    ) -> bool:
+        table: list = []
+        for dtype, status in download_type.items():
+            if getattr(message, dtype) and status:
+                table.append(True)
+            table.append(False)
+        if True in table:
+            return True
+        return False
