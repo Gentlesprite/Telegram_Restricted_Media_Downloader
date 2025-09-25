@@ -993,14 +993,18 @@ class KeyboardButton:
                             callback_data=BotCallbackText.SHUTDOWN
                         ),
                         InlineKeyboardButton(
-                            text=BotButton.UPLOAD_SETTING,
-                            callback_data=BotCallbackText.UPLOAD_SETTING
+                            text=BotButton.FORWARD_SETTING,
+                            callback_data=BotCallbackText.FORWARD_SETTING
                         )
                     ],
                     [
                         InlineKeyboardButton(
-                            text=BotButton.FORWARD_SETTING,
-                            callback_data=BotCallbackText.FORWARD_SETTING
+                            text=BotButton.DOWNLOAD_SETTING,
+                            callback_data=BotCallbackText.DOWNLOAD_SETTING
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.UPLOAD_SETTING,
+                            callback_data=BotCallbackText.UPLOAD_SETTING
                         )
                     ],
                     [
@@ -1034,6 +1038,59 @@ class KeyboardButton:
                             text=BotButton.CLOSE_UPLOAD_DOWNLOAD_DELETE if global_config.get('upload').get(
                                 'delete') else BotButton.OPEN_UPLOAD_DOWNLOAD_DELETE,
                             callback_data=BotCallbackText.UPLOAD_DOWNLOAD_DELETE
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.RETURN,
+                            callback_data=BotCallbackText.SETTING
+                        )
+                    ]
+                ]
+            )
+        )
+
+    async def toggle_download_setting_button(
+            self,
+            user_config: dict
+    ):
+        await self.callback_query.message.edit_reply_markup(
+            InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.VIDEO_ON if 'video' in user_config.get(
+                                'download_type') else BotButton.VIDEO_OFF,
+                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VIDEO
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.PHOTO_ON if 'photo' in user_config.get(
+                                'download_type') else BotButton.PHOTO_OFF,
+                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_PHOTO
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.AUDIO_ON if 'audio' in user_config.get(
+                                'download_type') else BotButton.AUDIO_OFF,
+                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_AUDIO
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.VOICE_ON if 'voice' in user_config.get(
+                                'download_type') else BotButton.VOICE_OFF,
+                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VOICE
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.ANIMATION_ON if 'animation' in user_config.get(
+                                'download_type') else BotButton.ANIMATION_OFF,
+                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_ANIMATION
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.DOCUMENT_ON if 'document' in user_config.get(
+                                'download_type') else BotButton.DOCUMENT_OFF,
+                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_DOCUMENT
                         )
                     ],
                     [

@@ -332,6 +332,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             await kb.toggle_setting_button(global_config=self.gc.config, user_config=self.app.config)
         elif callback_data == BotCallbackText.EXPORT_TABLE:
             await kb.toggle_table_button(config=self.gc.config)
+        elif callback_data == BotCallbackText.DOWNLOAD_SETTING:
+            await kb.toggle_download_setting_button(user_config=self.app.config)
         elif callback_data == BotCallbackText.UPLOAD_SETTING:
             await kb.toggle_upload_setting_button(global_config=self.gc.config)
         elif callback_data == BotCallbackText.FORWARD_SETTING:
@@ -434,6 +436,46 @@ class TelegramRestrictedMediaDownloader(Bot):
                     '上传设置失败\n(具体原因请前往终端查看报错信息)')
                 log.error(f'上传设置失败,{_t(KeyWord.REASON)}:"{e}"')
         elif callback_data in (
+                BotCallbackText.TOGGLE_DOWNLOAD_VIDEO,
+                BotCallbackText.TOGGLE_DOWNLOAD_PHOTO,
+                BotCallbackText.TOGGLE_DOWNLOAD_AUDIO,
+                BotCallbackText.TOGGLE_DOWNLOAD_VOICE,
+                BotCallbackText.TOGGLE_DOWNLOAD_ANIMATION,
+                BotCallbackText.TOGGLE_DOWNLOAD_DOCUMENT
+        ):
+            def _toggle_download_type_button(_param: str):
+                if _param in self.app.download_type:
+                    f_s = '禁用'
+                    self.app.download_type.remove(_param)
+                else:
+                    f_s = '启用'
+                    self.app.download_type.append(_param)
+
+                f_p = f'已{f_s}"{_param}"类型的下载。'
+                console.log(f_p, style='#FF4689')
+                log.info(f_p)
+
+            try:
+                if callback_data == BotCallbackText.TOGGLE_DOWNLOAD_VIDEO:
+                    _toggle_download_type_button('video')
+                elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_PHOTO:
+                    _toggle_download_type_button('photo')
+                elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_AUDIO:
+                    _toggle_download_type_button('audio')
+                elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_VOICE:
+                    _toggle_download_type_button('voice')
+                elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_ANIMATION:
+                    _toggle_download_type_button('animation')
+                elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_DOCUMENT:
+                    _toggle_download_type_button('document')
+                self.app.config['download_type'] = self.app.download_type
+                self.app.save_config(self.app.config)
+                await kb.toggle_download_setting_button(self.app.config)
+            except Exception as e:
+                await callback_query.message.reply_text(
+                    '下载类型设置失败\n(具体原因请前往终端查看报错信息)')
+                log.error(f'下载类型设置失败,{_t(KeyWord.REASON)}:"{e}"')
+        elif callback_data in (
                 BotCallbackText.TOGGLE_FORWARD_VIDEO,
                 BotCallbackText.TOGGLE_FORWARD_PHOTO,
                 BotCallbackText.TOGGLE_FORWARD_AUDIO,
@@ -442,7 +484,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 BotCallbackText.TOGGLE_FORWARD_DOCUMENT,
                 BotCallbackText.TOGGLE_FORWARD_TEXT
         ):
-            def _toggle_forward_dtype_button(_param: str):
+            def _toggle_forward_type_button(_param: str):
                 param: bool = self.gc.get_nesting_config(
                     default_nesting=self.gc.default_forward_type_nesting,
                     param='forward_type',
@@ -456,19 +498,19 @@ class TelegramRestrictedMediaDownloader(Bot):
 
             try:
                 if callback_data == BotCallbackText.TOGGLE_FORWARD_VIDEO:
-                    _toggle_forward_dtype_button('video')
+                    _toggle_forward_type_button('video')
                 elif callback_data == BotCallbackText.TOGGLE_FORWARD_PHOTO:
-                    _toggle_forward_dtype_button('photo')
+                    _toggle_forward_type_button('photo')
                 elif callback_data == BotCallbackText.TOGGLE_FORWARD_AUDIO:
-                    _toggle_forward_dtype_button('audio')
+                    _toggle_forward_type_button('audio')
                 elif callback_data == BotCallbackText.TOGGLE_FORWARD_VOICE:
-                    _toggle_forward_dtype_button('voice')
+                    _toggle_forward_type_button('voice')
                 elif callback_data == BotCallbackText.TOGGLE_FORWARD_ANIMATION:
-                    _toggle_forward_dtype_button('animation')
+                    _toggle_forward_type_button('animation')
                 elif callback_data == BotCallbackText.TOGGLE_FORWARD_DOCUMENT:
-                    _toggle_forward_dtype_button('document')
+                    _toggle_forward_type_button('document')
                 elif callback_data == BotCallbackText.TOGGLE_FORWARD_TEXT:
-                    _toggle_forward_dtype_button('text')
+                    _toggle_forward_type_button('text')
                 self.gc.save_config(self.gc.config)
                 await kb.toggle_forward_setting_button(self.gc.config)
             except Exception as e:
