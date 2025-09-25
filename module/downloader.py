@@ -1218,7 +1218,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             link: str,
             message: Union[pyrogram.types.Message, list],
             retry: dict,
-            with_upload: Union[dict, None] = None
+            with_upload: Union[dict, None] = None,
+            diy_download_type: Optional[list] = None
     ) -> None:
         retry_count = retry.get('count')
         retry_id = retry.get('id')
@@ -1233,7 +1234,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         else:
             _task = None
             valid_dtype: str = next((_ for _ in DownloadType() if getattr(message, _, None)), None)  # 判断该链接是否为有支持的类型。
-            if valid_dtype in self.app.download_type:
+            download_type: list = diy_download_type if diy_download_type else self.app.download_type
+            if valid_dtype in download_type:
                 # 如果是匹配到的消息类型就创建任务。
                 console.log(
                     f'{_t(KeyWord.DOWNLOAD_TASK)}'
@@ -1264,6 +1266,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         format_file_size=format_file_size,
                         task_id=None,
                         with_upload=with_upload,
+                        diy_download_type=diy_download_type,
                         _future=save_directory
                     )
                 else:
@@ -1309,7 +1312,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                             file_id,
                             format_file_size,
                             task_id,
-                            with_upload
+                            with_upload,
+                            diy_download_type
                         )
                     )
             else:
@@ -1393,6 +1397,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             format_file_size,
             task_id,
             with_upload,
+            diy_download_type,
             _future
     ):
         if task_id is None:
@@ -1439,7 +1444,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     task = self.loop.create_task(
                         self.create_download_task(
                             message_ids=link if isinstance(link, str) else message,
-                            retry={'id': file_id, 'count': retry_count})
+                            retry={'id': file_id, 'count': retry_count},
+                            with_upload=with_upload,
+                            diy_download_type=diy_download_type
+                        )
                     )
                     task.add_done_callback(
                         partial(
@@ -1497,7 +1505,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             message_ids: Union[pyrogram.types.Message, str],
             retry: Union[dict, None] = None,
             single_link: bool = False,
-            with_upload: Union[dict, None] = None
+            with_upload: Union[dict, None] = None,
+            diy_download_type: Optional[list] = None
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
         try:
@@ -1521,7 +1530,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             link_type, chat_id, message, member_num = meta.values()
             DownloadTask.set(link, 'link_type', link_type)
             DownloadTask.set(link, 'member_num', member_num)
-            await self.__add_task(chat_id, link_type, link, message, retry, with_upload)
+            await self.__add_task(chat_id, link_type, link, message, retry, with_upload, diy_download_type)
             return {
                 'chat_id': chat_id,
                 'member_num': member_num,
