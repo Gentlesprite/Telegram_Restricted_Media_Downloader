@@ -174,6 +174,7 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
    | `/listen_forward`  | `/listen_forward https://t.me/A https://t.me/B`              | **实时**监听**频道A**的**最新消息**(任意消息)转发至**频道B**。但当**频道A**为**私密频道**时候无法转发。 |
    | `/listen_info`     | 向机器人发送`/listen_info`即可。                             | 查看当前已经创建的监听信息。                                 |
    | `/upload`          | `/upload` `本地文件` `目标频道`                              | 上传**本地的文件**到**指定频道**。                           |
+   | `/download_chat`   | `/download_chat 频道链接`                                    | 下载**指定频道**并支持**通过内联键盘自定义内容过滤**。       |
 
 6. `/help`命令使用教程，如下图所示：
 
@@ -346,7 +347,7 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
    - 支持上传文件夹（当指定路径为文件夹时并且版本需≥v1.7.1）。
    - _当指定的路径为**文件夹**时，将会上传指定文件夹下**所有**的文件。_
 - 上传文件语法：
-    
+  
     ```bash
    /upload 本地文件(夹) 目标频道
    ```
@@ -375,6 +376,22 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
     ```
     /upload /home/username/files https://t.me/test
     ```
+
+16. `/download_chat`命令使用教程：
+
+- `/download_chat`下载指定频道。
+   
+   - 与`/download`不同的是：`/download_chat`支持通过机器人发送的内联键盘进行自定义内容过滤。
+   - 使用该命令后，你**需要通过操作机器人回复中的内联键盘**，来设置过滤器、执行任务或取消任务。
+   - 需要注意的是，在上一个`/download_chat`命令任务未执行或取消前，无法发起新的`/download_chat`命令来创建下载任务。
+   - 此外，`/download_chat`在满足用户通过内联键盘设置的所有过滤要求的前提下，会同时遵循配置文件中的下载类型规则。
+   - 目前该功能支持按日期范围筛选要下载的内容。
+- 下载指定频道语法：
+  
+    ```bash
+   /download_chat 频道链接
+   ```
+- 发送命令后，设置过滤器为可选操作，但必须**手动点击**"执行任务"或"取消任务"以继续或终止流程，否则该命令将**始终处于等待状态，并阻塞新的`/download_chat`命令。**
 
 ## 2.3.配置文件说明:
 
@@ -409,8 +426,37 @@ proxy: # 代理部分,如不使用请全部填null注意冒号后面有空格,�
   port: 10808 # 代理ip的端口。支持的参数:0~65535。
   username: null # 代理的账号,没有就填null。
   password: null # 代理的密码,没有就填null。
-save_directory: F:\directory\media\where\you\save # 下载的媒体保存的目录(不支持网络路径)。
+save_directory: F:\directory\media\where\you\save # 下载的媒体保存的目录(支持通配符，不支持网络路径)。
 ```
+
+### 自版本`≥v1.7.4`起，`save_directory`将支持通配符。
+
+#### 通配符允许用户动态生成存储路径。系统会在下载时自动将通配符替换为对应的实际值，实现按规则自动分类存储。
+
+- 目前`save_directory`支持的通配符如下表所示：
+    
+    | 通配符        | 意义                               |
+    | ------------- | ---------------------------------- |
+    | `%CHAT_ID%`   | 以实际`频道ID`作为指定路径填充。   |
+    | `%MIME_TYPE%` | 以实际`文件类型`作为指定路径填充。 |
+
+- 用法示例1：
+
+  ```bash
+  F:\directory\media\%CHAT_ID%
+  ```
+
+- 用法示例2：
+
+  ```bash
+  F:\directory\media\%MIME_TYPE%
+  ```
+
+- 用法示例3：
+
+  ```bash
+  F:\directory\media\%CHAT_ID%\%MIME_TYPE%
+  ```
 
 ## 全局配置文件
 

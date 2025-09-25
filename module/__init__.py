@@ -69,7 +69,7 @@ SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
 __version__ = '1.7.4'
 __license__ = 'MIT License'
-__update_date__ = '2025/09/25 14:29:18'
+__update_date__ = '2025/09/25 16:29:30'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/Gentlesprite>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
@@ -169,6 +169,6 @@ proxy: # 代理部分,如不使用请全部填null注意冒号后面有空格,�
   port: 10808 # 代理ip的端口。支持的参数:0~65535。
   username: null # 代理的账号,没有就填null。
   password: null # 代理的密码,没有就填null。
-save_directory: F:\directory\media\where\you\save # 下载的媒体保存的目录(不支持网络路径)。
+save_directory: F:\directory\media\where\you\save # 下载的媒体保存的目录(支持通配符,不支持网络路径)。
 ```
 '''
