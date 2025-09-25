@@ -6,7 +6,6 @@
 import os
 import time
 import datetime
-import mimetypes
 import subprocess
 
 from functools import wraps
@@ -44,7 +43,7 @@ class Application(UserConfig, StatisticalTable):
         UserConfig.__init__(self)
         StatisticalTable.__init__(self)
         self.client = self.build_client()
-        self.__get_download_type()
+        self.check_download_type()
         self.current_task_num: int = 0
 
     def build_client(self) -> pyrogram.Client:
@@ -96,90 +95,93 @@ class Application(UserConfig, StatisticalTable):
             file_name: str = dt.get_photo_filename()
         elif dtype == DownloadType.DOCUMENT:
             file_name: str = dt.get_document_filename()
+        elif dtype in (DownloadType.AUDIO, DownloadType.VOICE, DownloadType.ANIMATION):
+            file_name: str = dt.get_filename()
         else:
             file_id = getattr(message, 'id', '0')
             time_format = '%Y-%m-%d_%H-%M-%S'
             file_name: str = f'{file_id} - {datetime.datetime.now().strftime(time_format)}.unknown'
         return truncate_filename(splice_chat_id(file_name))
 
-    def __on_media_record(func):
-        """统计媒体下载情况(数量)的装饰器。"""
+    def on_record(func):
 
         @wraps(func)
         def wrapper(self, *args):
             res = func(self, *args)
             download_type = res
-            file_name, download_status = args
-            if download_type == DownloadType.PHOTO:
-                if download_status == DownloadStatus.SUCCESS:
-                    self.success_photo.add(file_name)
-                elif download_status == DownloadStatus.FAILURE:
-                    self.failure_photo.add(file_name)
-                elif download_status == DownloadStatus.SKIP:
-                    self.skip_photo.add(file_name)
-                elif download_status == DownloadStatus.DOWNLOADING:
-                    self.current_task_num += 1
-            elif download_type == DownloadType.VIDEO:
-                if download_status == DownloadStatus.SUCCESS:
-                    self.success_video.add(file_name)
-                elif download_status == DownloadStatus.FAILURE:
-                    self.failure_video.add(file_name)
-                elif download_status == DownloadStatus.SKIP:
-                    self.skip_video.add(file_name)
-                elif download_status == DownloadStatus.DOWNLOADING:
-                    self.current_task_num += 1
-            elif download_type == DownloadType.DOCUMENT:
-                if download_status == DownloadStatus.SUCCESS:
-                    self.success_document.add(file_name)
-                elif download_status == DownloadStatus.FAILURE:
-                    self.failure_document.add(file_name)
-                elif download_status == DownloadStatus.SKIP:
-                    self.skip_document.add(file_name)
-                elif download_status == DownloadStatus.DOWNLOADING:
-                    self.current_task_num += 1
-            # v1.2.9 修复失败时重新下载时会抛出RuntimeError的问题。
-            if self.failure_video and self.success_video:
-                self.failure_video -= self.success_video  # 直接使用集合的差集操作。
-            if self.failure_photo and self.success_photo:
-                self.failure_photo -= self.success_photo
-            if self.failure_document and self.success_document:
-                self.failure_document -= self.success_document
+            _, file_name, download_status = args
+            self.update_download_status(download_type, download_status, file_name)
             return res
 
         return wrapper
 
-    @__on_media_record
-    def guess_file_type(self, *args) -> str:
-        """预测文件类型。"""
-        file_name: str = args[0]
-        download_type: str = ''
-        file_type, _ = mimetypes.guess_type(file_name)
-        if file_type is not None:
-            file_main_type: str = file_type.split('/')[0]
-            if file_main_type == 'image':
-                download_type = DownloadType.PHOTO
-            elif file_main_type == 'video':
-                download_type = DownloadType.VIDEO
-            else:
-                download_type = DownloadType.DOCUMENT
+    def update_download_status(
+            self,
+            download_type: str,
+            download_status: str,
+            file_name: str
+    ):
+        type_to_success = {
+            DownloadType.PHOTO: self.success_photo,
+            DownloadType.VIDEO: self.success_video,
+            DownloadType.DOCUMENT: self.success_document,
+            DownloadType.AUDIO: self.success_audio,
+            DownloadType.VOICE: self.success_voice,
+            DownloadType.ANIMATION: self.success_animation
+        }
 
-        return download_type
+        type_to_failure = {
+            DownloadType.PHOTO: self.failure_photo,
+            DownloadType.VIDEO: self.failure_video,
+            DownloadType.DOCUMENT: self.failure_document,
+            DownloadType.AUDIO: self.failure_audio,
+            DownloadType.VOICE: self.failure_voice,
+            DownloadType.ANIMATION: self.failure_animation
+        }
 
-    def __get_download_type(self) -> None:
-        """获取需要下载的文件类型,在不存在时将设置为所有已支持的下载类型。"""
-        if self.download_type is not None and (
-                DownloadType.VIDEO in self.download_type or DownloadType.PHOTO in self.download_type or DownloadType.DOCUMENT in self.download_type):
-            self.record_dtype.update(self.download_type)  # v1.2.4 修复特定情况结束后不显示表格问题。
+        type_to_skip = {
+            DownloadType.PHOTO: self.skip_photo,
+            DownloadType.VIDEO: self.skip_video,
+            DownloadType.DOCUMENT: self.skip_document,
+            DownloadType.AUDIO: self.skip_audio,
+            DownloadType.VOICE: self.skip_voice,
+            DownloadType.ANIMATION: self.skip_animation
+        }
+
+        if download_status == DownloadStatus.SUCCESS:
+            type_to_success[download_type].add(file_name)
+        elif download_status == DownloadStatus.FAILURE:
+            type_to_failure[download_type].add(file_name)
+        elif download_status == DownloadStatus.SKIP:
+            type_to_skip[download_type].add(file_name)
+        elif download_status == DownloadStatus.DOWNLOADING:
+            self.current_task_num += 1
+        failure_set = type_to_failure[download_type]
+        success_set = type_to_success[download_type]
+        if failure_set and success_set:
+            failure_set -= success_set
+
+    @on_record
+    def get_file_type(self, *args) -> str:
+        message, file_name, download_type = args
+        for i in DownloadType():
+            if getattr(message, i):
+                download_type = i
+        return download_type if download_type else 'unknown_type'
+
+    def check_download_type(self) -> None:
+        for dtype in self.download_type:
+            if dtype not in DownloadType():
+                self.download_type.remove(dtype)
+                p = f'"{dtype}"不是支持的下载类型,已移除。'
+                console.log(p, style='#FF4689')
+                log.info(p)
+        if self.download_type:
             return None
-        self.download_type: list = [_ for _ in DownloadType()]
-        self.record_dtype: set = {
-            DownloadType.VIDEO,
-            DownloadType.PHOTO,
-            DownloadType.DOCUMENT
-        }  # v1.2.4 修复此处报错问题v1.2.3此处有致命错误。
-        console.log('未找到任何支持的下载类型,已设置为[#f08a5d]「默认」[/#f08a5d]所有已支持的下载类型。')
-        self.config['download_type'] = list(set(self.download_type))
+        self.download_type = [_ for _ in DownloadType()]
+        self.config['download_type'] = self.download_type
         self.save_config(config=self.config)
+        console.log('未找到任何支持的下载类型,已设置为[#f08a5d]「默认」[/#f08a5d]所有已支持的下载类型。')
 
     def shutdown_task(self, second: int) -> None:
         """下载完成后自动关机的功能。"""
@@ -297,3 +299,19 @@ class DownloadFileName:
             file_id = getattr(self.message, 'id', '0')
             time_format = '%Y-%m-%d_%H-%M-%S'
             return f'{file_id} - {datetime.datetime.now().strftime(time_format)}.unknown'
+
+    def get_filename(self):
+        try:
+            media_obj = getattr(self.message, self.download_type)
+            _mime_type = getattr(media_obj, 'mime_type')
+            return '{} - {}.{}'.format(
+                getattr(self.message, 'id', '0'),
+                getattr(media_obj, 'file_unique_id', 'None'),
+                get_extension(
+                    file_id=media_obj.file_id,
+                    mime_type=_mime_type,
+                    dot=False
+                )
+            )
+        except Exception as e:
+            log.info(f'无法找到的该{_t(self.download_type)}文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')

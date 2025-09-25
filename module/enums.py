@@ -35,6 +35,9 @@ class DownloadType:
     VIDEO: str = 'video'
     PHOTO: str = 'photo'
     DOCUMENT: str = 'document'
+    AUDIO: str = 'audio'
+    VOICE: str = 'voice'
+    ANIMATION: str = 'animation'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():

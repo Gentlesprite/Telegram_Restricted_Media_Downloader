@@ -48,9 +48,9 @@ from module.enums import (
 
 class StatisticalTable:
     def __init__(self):
-        self.skip_video, self.skip_photo, self.skip_document = set(), set(), set()
-        self.success_video, self.success_photo, self.success_document = set(), set(), set()
-        self.failure_video, self.failure_photo, self.failure_document = set(), set(), set()
+        self.skip_video, self.skip_photo, self.skip_document, self.skip_audio, self.skip_voice, self.skip_animation = set(), set(), set(), set(), set(), set()
+        self.success_video, self.success_photo, self.success_document, self.success_audio, self.success_voice, self.success_animation = set(), set(), set(), set(), set(), set()
+        self.failure_video, self.failure_photo, self.failure_document, self.failure_audio, self.failure_voice, self.failure_animation = set(), set(), set(), set(), set(), set()
 
     def print_count_table(
             self,
@@ -73,17 +73,33 @@ class StatisticalTable:
         success_document: int = len(self.success_document)
         failure_document: int = len(self.failure_document)
         skip_document: int = len(self.skip_document)
+        success_audio: int = len(self.success_audio)
+        failure_audio: int = len(self.failure_audio)
+        skip_audio: int = len(self.skip_audio)
+        success_voice: int = len(self.success_voice)
+        failure_voice: int = len(self.failure_voice)
+        skip_voice: int = len(self.skip_voice)
+        success_animation: int = len(self.success_animation)
+        failure_animation: int = len(self.failure_animation)
+        skip_animation: int = len(self.skip_animation)
         total_video: int = sum([success_video, failure_video, skip_video])
         total_photo: int = sum([success_photo, failure_photo, skip_photo])
         total_document: int = sum([success_document, failure_document, skip_document])
+        total_audio: int = sum([success_audio, failure_audio, skip_audio])
+        total_voice: int = sum([success_voice, failure_voice, skip_voice])
+        total_animation: int = sum([success_animation, failure_animation, skip_animation])
         table_data = [
             [_t(DownloadType.VIDEO), success_video, failure_video, skip_video, total_video],
             [_t(DownloadType.PHOTO), success_photo, failure_photo, skip_photo, total_photo],
             [_t(DownloadType.DOCUMENT), success_document, failure_document, skip_document, total_document],
-            ['合计', sum([success_video, success_photo, success_document]),
-             sum([failure_video, failure_photo, failure_document]),
-             sum([skip_video, skip_photo, skip_document]),
-             sum([total_video, total_photo, total_document])]
+            [_t(DownloadType.AUDIO), success_audio, failure_audio, skip_audio, total_audio],
+            [_t(DownloadType.VOICE), success_voice, failure_voice, skip_voice, total_voice],
+            [_t(DownloadType.ANIMATION), success_animation, failure_animation, skip_animation, total_animation],
+            ['合计',
+             sum([success_video, success_photo, success_document, success_audio, success_voice, success_animation]),
+             sum([failure_video, failure_photo, failure_document, failure_audio, failure_voice, failure_animation]),
+             sum([skip_video, skip_photo, skip_document, skip_audio, skip_voice, skip_animation]),
+             sum([total_video, total_photo, total_document, total_audio, total_voice, total_animation])]
         ]
         if len(table_data) < 3:
             log.error(f'无法输出计数表格,{_t(KeyWord.REASON)}:"表格数据非法"')
@@ -249,6 +265,15 @@ class StatisticalTable:
                  ],
                 [_t(DownloadType.DOCUMENT),
                  ProcessConfig.get_dtype(_dtype).get('document', False)
+                 ],
+                [_t(DownloadType.AUDIO),
+                 ProcessConfig.get_dtype(_dtype).get('audio', False)
+                 ],
+                [_t(DownloadType.VOICE),
+                 ProcessConfig.get_dtype(_dtype).get('voice', False)
+                 ],
+                [_t(DownloadType.ANIMATION),
+                 ProcessConfig.get_dtype(_dtype).get('animation', False)
                  ],
             ]
             download_type_table = PanelTable(title='下载类型', header=('类型', '是否下载'), data=data)

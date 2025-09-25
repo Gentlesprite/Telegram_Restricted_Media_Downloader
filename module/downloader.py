@@ -1271,7 +1271,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'{_t(KeyWord.DOWNLOAD_TASK)}'
                         f'{_t(KeyWord.FILE)}:"{file_name}",'
                         f'{_t(KeyWord.SIZE)}:{format_file_size},'
-                        f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.DOWNLOADING))},'
+                        f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.DOWNLOADING))},'
                         f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.DOWNLOADING)}。'
                     )
                     task_id = self.pb.progress.add_task(
@@ -1324,10 +1324,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'{_t(KeyWord.DOWNLOAD_TASK)}'
                             f'{_t(KeyWord.FILE)}:"{file_name}",'
                             f'{_t(KeyWord.SIZE)}:{format_file_size},'
-                            f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.SKIP))},'
+                            f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.SKIP))},'
                             f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。'
                         )
-                        self.app.guess_file_type(file_name, DownloadStatus.SKIP)
                         DownloadTask.set_error(link=link, key=file_name, value=_error.replace('。', ''))
                     else:
                         raise Exception('不支持或被忽略的类型。')
@@ -1342,7 +1341,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.queue.put_nowait(_task) if _task else None
 
     def __check_download_finish(
-            self, sever_file_size: int,
+            self,
+            message: pyrogram.types.Message,
+            sever_file_size: int,
             temp_file_path: str,
             save_directory: str,
             with_move: bool = True
@@ -1365,7 +1366,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 f'{_t(KeyWord.DOWNLOAD_TASK)}'
                 f'{_t(KeyWord.FILE)}:"{file_path}",'
                 f'{_t(KeyWord.SIZE)}:{format_local_size},'
-                f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(temp_file_path, DownloadStatus.SUCCESS))},'
+                f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, temp_file_path, DownloadStatus.SUCCESS))},'
                 f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SUCCESS)}。',
             )
             return True
@@ -1374,7 +1375,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             f'{_t(KeyWord.FILE)}:"{file_path}",'
             f'{_t(KeyWord.ERROR_SIZE)}:{format_local_size},'
             f'{_t(KeyWord.ACTUAL_SIZE)}:{format_sever_size},'
-            f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(temp_file_path, DownloadStatus.FAILURE))},'
+            f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, temp_file_path, DownloadStatus.FAILURE))},'
             f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
         )
         return False
@@ -1404,7 +1405,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'{_t(KeyWord.DOWNLOAD_TASK)}'
                     f'{_t(KeyWord.FILE)}:"{file_name}",'
                     f'{_t(KeyWord.SIZE)}:{format_file_size},'
-                    f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.SKIP))},'
+                    f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.SKIP))},'
                     f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。', style='#e6db74'
                 )
                 if self.uploader:
@@ -1417,6 +1418,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.event.set()  # v1.3.4 修复重试下载被阻塞的问题。
             self.queue.task_done()
             if self.__check_download_finish(
+                    message=message,
                     sever_file_size=sever_file_size,
                     temp_file_path=temp_file_path,
                     save_directory=self.env_save_directory(message),
@@ -1452,7 +1454,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'{_t(KeyWord.DOWNLOAD_TASK)}'
                         f'{_t(KeyWord.FILE)}:"{file_name}",'
                         f'{_t(KeyWord.SIZE)}:{format_file_size},'
-                        f'{_t(KeyWord.TYPE)}:{_t(self.app.guess_file_type(file_name, DownloadStatus.FAILURE))},'
+                        f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.FAILURE))},'
                         f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}'
                         f'{_error}'
                     )
