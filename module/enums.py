@@ -855,7 +855,7 @@ class GetStdioParams:
         while True:
             download_type: Union[str, list] = console.input(
                 f'输入需要下载的「媒体类型」(以空格分隔可多选)。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」'
-                f'格式 - 「video photo document」{default_prompt}:').strip()
+                f'格式 - 「video photo document audio voice animation」{default_prompt}:').strip()
             if download_type == '' and last_record is not None:
                 download_type = last_record
             if download_type == '':

@@ -148,10 +148,13 @@ api_hash: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # 申请的api_hash。
 api_id: 'xxxxxxxx' # 申请的api_id。
 # bot_token(选填)如果不填,就不能使用机器人功能。可前往https://t.me/BotFather免费申请。
 bot_token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
-download_type: # 需要下载的类型。支持的参数:video,photo,document。
-- document
+download_type: # 需要下载的类型。支持的参数:video,photo,document,audio,voice,animation。
 - video
 - photo
+- document
+- audio
+- voice
+- animation
 is_shutdown: true # 下载完成后是否自动关机。支持的参数:true,false。
 links: D:\path\where\your\link\files\save\content.txt # 链接地址写法如下:
 # 新建txt文本,一个链接为一行,将路径填入即可请不要加引号,在软件运行前就准备好。

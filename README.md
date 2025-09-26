@@ -234,6 +234,8 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 > [!NOTE]
 > 消息能否转发，在于频道是否开启了`限制保存内容`功能。  
 > 如果**无法转发**，**机器人**会在**聊天框**提供一个**下载按钮**与**下载后上传按钮(`≥v1.6.7`)**。  
+> 自版本`≥v1.7.5`起：  
+> 为确保"受限转发"功能顺利完成，在**下载后上传**过程中，将**忽略配置文件中设置的下载类型限制**，仅遵循`[上传设置]`中的类型过滤规则。  
 > 自版本`≥v1.6.9`起：  
 > `/forward`将支持过滤转发类型。  
 > 可通过`[帮助页面]`->`[设置]`->`[转发设置]`进行修改。
@@ -292,9 +294,11 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 > [!NOTE]
 > 自版本`≥v1.6.7`起：  
-> 当检测到"受限转发"时,自动采用"下载后上传"的方式(默认**开启**)。  
+> 当检测到"受限转发"时，自动采用"下载后上传"的方式(默认**开启**)。  
 > 当**下载并完成上传**后，可选择**是否删除本地文件**(默认**关闭**)。  
 > 并且可通过`[帮助页面]`->`[设置]`->`[上传设置]`进行修改。  
+> 自版本`≥v1.7.5`起：  
+> 为确保"受限转发"功能顺利完成，在**下载后上传**过程中，将**忽略配置文件中设置的下载类型限制**，仅遵循`[上传设置]`中的类型过滤规则。  
 > 自版本`≥v1.6.9`起：  
 > `/listen_forward`将支持过滤转发类型。  
 > 可通过`[帮助页面]`->`[设置]`->`[转发设置]`进行修改。
@@ -382,10 +386,10 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 - `/download_chat`下载指定频道。
    
    - 与`/download`不同的是：`/download_chat`支持通过机器人发送的内联键盘进行自定义内容过滤。
-   - 使用该命令后，你**需要通过操作机器人回复中的内联键盘**，来设置过滤器、执行任务或取消任务。
+   - 目前该功能支持按日期范围、文件类型来过滤要下载的内容。
+   - 使用该命令后，**需要通过操作机器人回复中的内联键盘**，来设置过滤器、执行任务或取消任务。
    - 需要注意的是，在上一个`/download_chat`命令任务未执行或取消前，无法发起新的`/download_chat`命令来创建下载任务。
-   - 此外，`/download_chat`在满足用户通过内联键盘设置的所有过滤要求的前提下，会同时遵循配置文件中的下载类型规则。
-   - 目前该功能支持按日期范围筛选要下载的内容。
+   - 自版本`≥v1.7.5`起，`/download_chat`命令创建的下载任务过滤条件将完全遵循用户在内联键盘中的设置，意味着该不会遵循配置文件中的任何规则（例如配置文件中的下载文件类型设置）。
 - 下载指定频道语法：
   
     ```bash
@@ -405,10 +409,13 @@ api_hash: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # 申请的api_hash。
 api_id: 'xxxxxxxx' # 申请的api_id。
 # bot_token(选填)如果不填,就不能使用机器人功能。可前往https://t.me/BotFather免费申请。
 bot_token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
-download_type: # 需要下载的类型。支持的参数:video,photo,document。
-- document
+download_type: # 需要下载的类型。支持的参数:video,photo,document,audio,voice,animation。
 - video
 - photo
+- document
+- audio
+- voice
+- animation
 is_shutdown: true # 下载完成后是否自动关机。支持的参数:true,false。
 links: D:\path\where\your\link\files\save\content.txt # 链接地址写法如下:
 # 新建txt文本,一个链接为一行,将路径填入即可请不要加引号,在软件运行前就准备好。
