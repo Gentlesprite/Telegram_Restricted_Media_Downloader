@@ -569,7 +569,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     'time_dec_',
                     'set_time_',
                     'set_specific_time',
-                    'time_step_'
+                    'time_step'
             )  # 切换月份,选择日期。
         ):
             chat_id = BotCallbackText.DOWNLOAD_CHAT_ID
@@ -640,7 +640,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     BotCallbackText.DOWNLOAD_CHAT_FILTER,
                     BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER
             ):
-
+                if callback_data == BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER:
+                    start_time, end_time = _get_update_time()
+                    if not await _verification_time(start_time, end_time):
+                        return None
                 # 返回或点击。
                 await callback_query.message.edit_text(
                     text=_filter_prompt(),
@@ -674,16 +677,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     log.info(f'日期切换为{year}年,{month}月。')
 
             elif callback_data.startswith(('set_time_', 'set_specific_time_')):
-                async def _set_time(_date_type, _timestamp) -> bool:
-                    _last_timestamp = self.download_chat_filter[chat_id]['date_range'][_date_type]
-                    self.download_chat_filter[chat_id]['date_range'][_date_type] = _timestamp
-                    _start_time, _end_time = _get_update_time()
-                    if not await _verification_time(_start_time, _end_time):
-                        self.download_chat_filter[chat_id]['date_range'][
-                            _date_type] = _last_timestamp
-                        return False
-                    return True
-
                 parts = callback_data.split('_')
                 date = parts[-1]
                 dtype = parts[-2]
@@ -696,14 +689,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                 elif 'end' in callback_data:
                     date_type = 'end_date'
                     p_s_d = '结束'
-                if not await _set_time(_date_type=date_type, _timestamp=timestamp):
-                    return None
-                start_time, end_time = _get_update_time()
+                self.download_chat_filter[chat_id]['date_range'][date_type] = timestamp
                 await callback_query.message.edit_text(
                     text=f'📅选择{p_s_d}日期:\n{_filter_prompt()}',
                     reply_markup=kb.time_keyboard(dtype, date)
                 )
-                log.info(f'日期设置,起始日期:{start_time},结束日期:{end_time}。')
+                log.info(f'日期设置,起始日期:{_get_update_time()[0]},结束日期:{_get_update_time()[1]}。')
             elif callback_data in (
                     BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER,
                     BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO,
