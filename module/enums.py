@@ -1172,4 +1172,4 @@ class BotButton:
     DATE_RANGE_SETTING: str = '📅设置日期范围'
     SELECT_START_DATE: str = '⏮️选择起始日期'
     SELECT_END_DATE: str = '⏭️选择结束日期'
-    DOWNLOAD_DTYPE_SETTING: str = '🎨下载类型设置'
+    DOWNLOAD_DTYPE_SETTING: str = '📝下载类型设置'

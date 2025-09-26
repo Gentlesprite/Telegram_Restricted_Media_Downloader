@@ -44,6 +44,7 @@ from module.util import (
 )
 from module.enums import (
     CalenderKeyboard,
+    DownloadType,
     BotCommandText,
     BotMessage,
     BotCallbackText,
@@ -282,11 +283,14 @@ class Bot:
                 }
         }
         log.info(f'"{BotCallbackText.DOWNLOAD_CHAT_ID}"已添加至{self.download_chat_filter}。')
+        format_dtype = ','.join([_t(_) for _ in DownloadType()])
         await client.send_message(
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
-            text=f'⏮️当前选择的起始日期为:未定义\n'
-                 f'⏭️当前选择的结束日期为:未定义',
+            text=f'💬下载频道:`{chat_id}`\n'
+                 f'⏮️当前选择的起始日期为:未定义\n'
+                 f'⏭️当前选择的结束日期为:未定义\n'
+                 f'📝当前选择的下载类型为:{format_dtype}',
             reply_markup=KeyboardButton.download_chat_filter_button(),
             link_preview_options=LINK_PREVIEW_OPTIONS
         )
@@ -1059,36 +1063,36 @@ class KeyboardButton:
                 [
                     [
                         InlineKeyboardButton(
-                            text=BotButton.VIDEO_ON if 'video' in user_config.get(
+                            text=BotButton.VIDEO_ON if DownloadType.VIDEO in user_config.get(
                                 'download_type') else BotButton.VIDEO_OFF,
                             callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VIDEO
                         ),
                         InlineKeyboardButton(
-                            text=BotButton.PHOTO_ON if 'photo' in user_config.get(
+                            text=BotButton.PHOTO_ON if DownloadType.PHOTO in user_config.get(
                                 'download_type') else BotButton.PHOTO_OFF,
                             callback_data=BotCallbackText.TOGGLE_DOWNLOAD_PHOTO
                         )
                     ],
                     [
                         InlineKeyboardButton(
-                            text=BotButton.AUDIO_ON if 'audio' in user_config.get(
+                            text=BotButton.AUDIO_ON if DownloadType.AUDIO in user_config.get(
                                 'download_type') else BotButton.AUDIO_OFF,
                             callback_data=BotCallbackText.TOGGLE_DOWNLOAD_AUDIO
                         ),
                         InlineKeyboardButton(
-                            text=BotButton.VOICE_ON if 'voice' in user_config.get(
+                            text=BotButton.VOICE_ON if DownloadType.VOICE in user_config.get(
                                 'download_type') else BotButton.VOICE_OFF,
                             callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VOICE
                         )
                     ],
                     [
                         InlineKeyboardButton(
-                            text=BotButton.ANIMATION_ON if 'animation' in user_config.get(
+                            text=BotButton.ANIMATION_ON if DownloadType.ANIMATION in user_config.get(
                                 'download_type') else BotButton.ANIMATION_OFF,
                             callback_data=BotCallbackText.TOGGLE_DOWNLOAD_ANIMATION
                         ),
                         InlineKeyboardButton(
-                            text=BotButton.DOCUMENT_ON if 'document' in user_config.get(
+                            text=BotButton.DOCUMENT_ON if DownloadType.DOCUMENT in user_config.get(
                                 'download_type') else BotButton.DOCUMENT_OFF,
                             callback_data=BotCallbackText.TOGGLE_DOWNLOAD_DOCUMENT
                         )
@@ -1163,63 +1167,61 @@ class KeyboardButton:
             )
         )
 
-    async def toggle_download_chat_type_filter_button(
-            self,
+    @staticmethod
+    def toggle_download_chat_type_filter_button(
             download_chat_filter: dict
     ):
-        await self.callback_query.message.edit_reply_markup(
-            InlineKeyboardMarkup(
+        return InlineKeyboardMarkup(
+            [
                 [
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.VIDEO_ON if
-                            download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
-                                'video'] else BotButton.VIDEO_OFF,
-                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.PHOTO_ON if
-                            download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
-                                'photo'] else BotButton.PHOTO_OFF,
-                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.AUDIO_ON if
-                            download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
-                                'audio'] else BotButton.AUDIO_OFF,
-                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.VOICE_ON if
-                            download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
-                                'voice'] else BotButton.VOICE_OFF,
-                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.ANIMATION_ON if
-                            download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
-                                'animation'] else BotButton.ANIMATION_OFF,
-                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.DOCUMENT_ON if
-                            download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
-                                'document'] else BotButton.DOCUMENT_OFF,
-                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.RETURN,
-                            callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
-                        )
-                    ]
+                    InlineKeyboardButton(
+                        text=BotButton.VIDEO_ON if
+                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                            DownloadType.VIDEO] else BotButton.VIDEO_OFF,
+                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.PHOTO_ON if
+                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                            DownloadType.PHOTO] else BotButton.PHOTO_OFF,
+                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.AUDIO_ON if
+                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                            DownloadType.AUDIO] else BotButton.AUDIO_OFF,
+                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.VOICE_ON if
+                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                            DownloadType.VOICE] else BotButton.VOICE_OFF,
+                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.ANIMATION_ON if
+                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                            DownloadType.ANIMATION] else BotButton.ANIMATION_OFF,
+                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.DOCUMENT_ON if
+                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                            DownloadType.DOCUMENT] else BotButton.DOCUMENT_OFF,
+                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.RETURN,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
+                    )
                 ]
-            )
+            ]
         )
 
     async def toggle_table_button(

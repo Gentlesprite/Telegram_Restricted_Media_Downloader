@@ -566,18 +566,30 @@ class TelegramRestrictedMediaDownloader(Bot):
         ) or callback_data.startswith(
             ('cal_last_', 'cal_next_', 'cal_select_')  # 切换月份,选择日期。
         ):
+            chat_id = BotCallbackText.DOWNLOAD_CHAT_ID
+
             def _get_update_time():
-                _start_timestamp = self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range'][
+                _start_timestamp = self.download_chat_filter[chat_id]['date_range'][
                     'start_date']
-                _end_timestamp = self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range']['end_date']
+                _end_timestamp = self.download_chat_filter[chat_id]['date_range']['end_date']
                 _start_time = datetime.datetime.fromtimestamp(_start_timestamp) if _start_timestamp else '未定义'
                 _end_time = datetime.datetime.fromtimestamp(_end_timestamp) if _end_timestamp else '未定义'
                 return _start_time, _end_time
+
+            def _get_format_dtype():
+                _download_type = []
+                for _dtype, _status in self.download_chat_filter[chat_id]['download_type'].items():
+                    if _status:
+                        _download_type.append(_t(_dtype))
+                return ','.join(_download_type)
 
             def _remove_chat_id(_chat_id):
                 if _chat_id in self.download_chat_filter:
                     self.download_chat_filter.pop(_chat_id)
                     log.info(f'"{_chat_id}"已从{self.download_chat_filter}中移除。')
+
+            def _filter_prompt():
+                return f'💬下载频道:`{chat_id}`\n⏮️当前选择的起始日期为:{_get_update_time()[0]}\n⏭️当前选择的结束日期为:{_get_update_time()[1]}\n📝当前选择的下载类型为:{_get_format_dtype()}'
 
             async def _verification_time(_start_time, _end_time) -> bool:
                 if isinstance(_start_time, datetime.datetime) and isinstance(_end_time, datetime.datetime):
@@ -587,10 +599,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                                  f'`起始日期({_start_time})`>`结束日期({_end_time})`\n'
                         )
                         return False
+                    elif _start_time == _end_time:
+                        await callback_query.message.reply_text(
+                            text=f'❌❌❌日期设置失败❌❌❌\n'
+                                 f'`起始日期({_start_time})`=`结束日期({_end_time})`\n'
+                        )
+                        return False
                 return True
 
             if callback_data in (BotCallbackText.DOWNLOAD_CHAT_ID, BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL):  # 执行或取消任务。
-                chat_id = BotCallbackText.DOWNLOAD_CHAT_ID
                 BotCallbackText.DOWNLOAD_CHAT_ID = 'download_chat_id'
                 if callback_data == chat_id:
                     await callback_query.message.edit_text(
@@ -607,7 +624,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 elif callback_data == BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL:
                     _remove_chat_id(chat_id)
                     await callback_query.message.edit_text(
-                        text=f'下载频道:`{chat_id}`\n{callback_query.message.text}',
+                        text=_filter_prompt(),
                         reply_markup=kb.single_button(
                             text=BotButton.TASK_CANCEL,
                             callback_data=BotCallbackText.NULL
@@ -617,10 +634,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     BotCallbackText.DOWNLOAD_CHAT_FILTER,
                     BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER
             ):
+
                 # 返回或点击。
                 await callback_query.message.edit_text(
-                    text=f'⏮️当前选择的起始日期为:{_get_update_time()[0]}\n'
-                         f'⏭️当前选择的结束日期为:{_get_update_time()[1]}',
+                    text=_filter_prompt(),
                     reply_markup=kb.download_chat_filter_button() if callback_data == BotCallbackText.DOWNLOAD_CHAT_FILTER else kb.filter_date_range_button()
                 )
             elif callback_data in (BotCallbackText.FILTER_START_DATE, BotCallbackText.FILTER_END_DATE):
@@ -633,7 +650,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     dtype = CalenderKeyboard.END_TIME_BUTTON
                     p_s_d = '结束'
                 await callback_query.message.edit_text(
-                    text=f'📅选择{p_s_d}日期:\n{callback_query.message.text}'
+                    text=f'📅选择{p_s_d}日期:\n{_filter_prompt()}'
                 )
                 await kb.calendar_keyboard(dtype=dtype)
             elif callback_data.startswith(('cal_last_', 'cal_next_')):
@@ -675,9 +692,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     return None
                 start_time, end_time = _get_update_time()
                 await callback_query.message.edit_text(
-                    text=f'📅选择{p_s_d}日期:\n'
-                         f'⏮️当前选择的起始日期为:{start_time}\n'
-                         f'⏭️当前选择的结束日期为:{end_time}',
+                    text=f'📅选择{p_s_d}日期:\n{_filter_prompt()}',
                     reply_markup=callback_query.message.reply_markup
                 )
                 log.info(f'日期设置,起始日期:{start_time},结束日期:{end_time}。')
@@ -691,11 +706,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                     BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT
             ):
                 def _toggle_dtype_filter_button(_param: str):
-                    param: bool = self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][_param]
-                    self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][_param] = not param
+                    _dtype: dict = self.download_chat_filter[chat_id]['download_type']
+                    param: bool = _dtype[_param]
+                    if list(_dtype.values()).count(True) == 1 and param:
+                        raise ValueError
+                    _dtype[_param] = not param
                     f_s = '禁用' if param else '启用'
                     f_p = f'已{f_s}"{_param}"类型用于/download_chat命令的下载。'
-                    log.info(f_p)
+                    log.info(f'{f_p}当前的/download_chat下载类型设置:{self.download_chat_filter[chat_id]['download_type']}')
 
                 try:
                     if callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO:
@@ -710,7 +728,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                         _toggle_dtype_filter_button('animation')
                     elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT:
                         _toggle_dtype_filter_button('document')
-                    await kb.toggle_download_chat_type_filter_button(self.download_chat_filter)
+                    await callback_query.message.edit_text(
+                        text=_filter_prompt(),
+                        reply_markup=kb.toggle_download_chat_type_filter_button(self.download_chat_filter)
+
+                    )
+                except ValueError:
+                    await callback_query.message.reply_text('⚠️⚠️⚠️至少需要选择一个下载类型⚠️⚠️⚠️')
                 except Exception as e:
                     await callback_query.message.reply_text(
                         '下载类型设置失败\n(具体原因请前往终端查看报错信息)')
