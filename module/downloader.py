@@ -667,7 +667,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 parts = callback_data.split('_')
                 dtype = parts[-2]
                 current_step = int(parts[-1])
-                step_sequence = [1, 2, 5, 10, 15, 30]
+                step_sequence = [1, 2, 5, 10, 15, 20]
                 current_index = step_sequence.index(current_step)
                 next_index = (current_index + 1) % len(step_sequence)
                 new_step = step_sequence[next_index]
