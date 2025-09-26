@@ -270,7 +270,8 @@ class Bot:
             'date_range':
                 {
                     'start_date': None,
-                    'end_date': None
+                    'end_date': None,
+                    'adjust_step': 1
                 },
             'download_type':
                 {
@@ -1433,7 +1434,11 @@ class KeyboardButton:
         await self.callback_query.message.edit_reply_markup(InlineKeyboardMarkup(keyboard))
 
     @staticmethod
-    def time_keyboard(dtype: Union[str, CalenderKeyboard], date: str):
+    def time_keyboard(
+            dtype: Union[str, CalenderKeyboard],
+            date: str,
+            adjust_step: Optional[int] = 1
+    ):
         dt = datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
         _dtype = dtype if isinstance(dtype, str) else 'start' if dtype == CalenderKeyboard.START_TIME_BUTTON else 'end'
 
@@ -1446,24 +1451,57 @@ class KeyboardButton:
             return new_dt.strftime('%Y-%m-%d %H:%M:%S')
 
         time_keyboard = [
-            [InlineKeyboardButton('步进值:1', callback_data='time_step')],
             [
-                InlineKeyboardButton('◀️', callback_data=f'set_time_{_dtype}_{_get_updated_time('hour', -1)}'),
-                InlineKeyboardButton('时', callback_data=BotCallbackText.NULL),
-                InlineKeyboardButton('▶️', callback_data=f'set_time_{_dtype}_{_get_updated_time('hour', 1)}')
+                InlineKeyboardButton(
+                    text=f'步进值:{adjust_step}',
+                    callback_data=f'adjust_step_{dtype}_{adjust_step}'
+                )
             ],
             [
-                InlineKeyboardButton('◀️', callback_data=f'set_time_{_dtype}_{_get_updated_time('minute', -1)}'),
-                InlineKeyboardButton('分', callback_data=BotCallbackText.NULL),
-                InlineKeyboardButton('▶️', callback_data=f'set_time_{_dtype}_{_get_updated_time('minute', 1)}')
+                InlineKeyboardButton(
+                    text='◀️',
+                    callback_data=f'set_time_{_dtype}_{_get_updated_time('hour', -adjust_step)}'
+                ),
+                InlineKeyboardButton(
+                    text='时', callback_data=BotCallbackText.NULL
+                ),
+                InlineKeyboardButton(
+                    text='▶️',
+                    callback_data=f'set_time_{_dtype}_{_get_updated_time('hour', adjust_step)}'
+                )
             ],
             [
-                InlineKeyboardButton('◀️', callback_data=f'set_time_{_dtype}_{_get_updated_time('second', -1)}'),
-                InlineKeyboardButton('秒', callback_data=BotCallbackText.NULL),
-                InlineKeyboardButton('▶️', callback_data=f'set_time_{_dtype}_{_get_updated_time('second', 1)}')
+                InlineKeyboardButton(
+                    text='◀️',
+                    callback_data=f'set_time_{_dtype}_{_get_updated_time('minute', -adjust_step)}'
+                ),
+                InlineKeyboardButton(
+                    text='分', callback_data=BotCallbackText.NULL
+                ),
+                InlineKeyboardButton(
+                    text='▶️',
+                    callback_data=f'set_time_{_dtype}_{_get_updated_time('minute', adjust_step)}'
+                )
             ],
-            [InlineKeyboardButton(BotButton.CONFIRM_AND_RETURN,
-                                  callback_data=BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER)]
+            [
+                InlineKeyboardButton(
+                    text='◀️',
+                    callback_data=f'set_time_{_dtype}_{_get_updated_time('second', -adjust_step)}'
+                ),
+                InlineKeyboardButton(
+                    text='秒', callback_data=BotCallbackText.NULL
+                ),
+                InlineKeyboardButton(
+                    text='▶️',
+                    callback_data=f'set_time_{_dtype}_{_get_updated_time('second', adjust_step)}'
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=BotButton.CONFIRM_AND_RETURN,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER
+                )
+            ]
         ]
         return InlineKeyboardMarkup(time_keyboard)
 

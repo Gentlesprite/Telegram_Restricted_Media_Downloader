@@ -569,7 +569,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     'time_dec_',
                     'set_time_',
                     'set_specific_time',
-                    'time_step'
+                    'adjust_step'
             )  # 切换月份,选择日期。
         ):
             chat_id = BotCallbackText.DOWNLOAD_CHAT_ID
@@ -662,6 +662,29 @@ class TelegramRestrictedMediaDownloader(Bot):
                     text=f'📅选择{p_s_d}日期:\n{_filter_prompt()}'
                 )
                 await kb.calendar_keyboard(dtype=dtype)
+            elif callback_data.startswith('adjust_step_'):
+                # 获取当前步进值
+                parts = callback_data.split('_')
+                dtype = parts[-2]
+                current_step = int(parts[-1])
+                step_sequence = [1, 2, 5, 10, 15, 30]
+                current_index = step_sequence.index(current_step)
+                next_index = (current_index + 1) % len(step_sequence)
+                new_step = step_sequence[next_index]
+                self.download_chat_filter[chat_id]['date_range']['adjust_step'] = new_step
+                if 'start_date' in self.download_chat_filter[chat_id]['date_range']:
+                    current_date = datetime.datetime.fromtimestamp(
+                        self.download_chat_filter[chat_id]['date_range']['start_date']
+                    ).strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    current_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                await callback_query.message.edit_reply_markup(
+                    reply_markup=kb.time_keyboard(
+                        dtype=dtype,
+                        date=current_date,
+                        adjust_step=new_step
+                    )
+                )
             elif callback_data.startswith(('time_inc_', 'time_dec_')):
                 parts = callback_data.split('_')
                 dtype = None
@@ -692,7 +715,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                 self.download_chat_filter[chat_id]['date_range'][date_type] = timestamp
                 await callback_query.message.edit_text(
                     text=f'📅选择{p_s_d}日期:\n{_filter_prompt()}',
-                    reply_markup=kb.time_keyboard(dtype, date)
+                    reply_markup=kb.time_keyboard(
+                        dtype=dtype,
+                        date=date,
+                        adjust_step=self.download_chat_filter[chat_id]['date_range']['adjust_step']
+                    )
                 )
                 log.info(f'日期设置,起始日期:{_get_update_time()[0]},结束日期:{_get_update_time()[1]}。')
             elif callback_data in (
