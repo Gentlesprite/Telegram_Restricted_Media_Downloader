@@ -157,8 +157,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             task: dict = await self.create_download_task(
                 message_ids=link,
                 retry=None,
-                with_upload=with_upload,
-                diy_download_type=[_ for _ in DownloadType()] if with_upload else None
+                with_upload=with_upload
             )
             invalid_link.add(link) if task.get('status') == DownloadStatus.FAILURE else self.bot_task_link.add(link)
         right_link -= invalid_link
@@ -1315,10 +1314,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             for _message in message:
                 if retry_count != 0:
                     if _message.id == retry_id:
-                        await self.__add_task(chat_id, link_type, link, _message, retry, with_upload)
+                        await self.__add_task(chat_id, link_type, link, _message, retry, with_upload, diy_download_type)
                         break
                 else:
-                    await self.__add_task(chat_id, link_type, link, _message, retry, with_upload)
+                    await self.__add_task(chat_id, link_type, link, _message, retry, with_upload, diy_download_type)
         else:
             _task = None
             valid_dtype: str = next((_ for _ in DownloadType() if getattr(message, _, None)), None)  # 判断该链接是否为有支持的类型。
@@ -1602,6 +1601,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             diy_download_type: Optional[list] = None
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
+        diy_download_type = [_ for _ in DownloadType()] if with_upload else diy_download_type
         try:
             if isinstance(message_ids, pyrogram.types.Message):
                 chat_id = message_ids.chat.id
