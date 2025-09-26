@@ -444,6 +444,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         ):
             def _toggle_download_type_button(_param: str):
                 if _param in self.app.download_type:
+                    if len(self.app.download_type) == 1:
+                        raise ValueError
                     f_s = '禁用'
                     self.app.download_type.remove(_param)
                 else:
@@ -470,6 +472,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 self.app.config['download_type'] = self.app.download_type
                 self.app.save_config(self.app.config)
                 await kb.toggle_download_setting_button(self.app.config)
+            except ValueError:
+                await callback_query.message.reply_text('⚠️⚠️⚠️至少需要选择一个下载类型⚠️⚠️⚠️')
             except Exception as e:
                 await callback_query.message.reply_text(
                     '下载类型设置失败\n(具体原因请前往终端查看报错信息)')
