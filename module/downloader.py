@@ -568,8 +568,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     'time_inc_',
                     'time_dec_',
                     'set_time_',
-                    'set_specific_time',
-                    'adjust_step'
+                    'set_specific_time_',
+                    'adjust_step_'
             )  # 切换月份,选择日期。
         ):
             chat_id = BotCallbackText.DOWNLOAD_CHAT_ID
@@ -672,12 +672,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                 next_index = (current_index + 1) % len(step_sequence)
                 new_step = step_sequence[next_index]
                 self.download_chat_filter[chat_id]['date_range']['adjust_step'] = new_step
-                if 'start_date' in self.download_chat_filter[chat_id]['date_range']:
-                    current_date = datetime.datetime.fromtimestamp(
-                        self.download_chat_filter[chat_id]['date_range']['start_date']
-                    ).strftime('%Y-%m-%d %H:%M:%S')
-                else:
-                    current_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                current_date = datetime.datetime.fromtimestamp(
+                    self.download_chat_filter[chat_id]['date_range'][f'{dtype}_date']
+                ).strftime('%Y-%m-%d %H:%M:%S')
                 await callback_query.message.edit_reply_markup(
                     reply_markup=kb.time_keyboard(
                         dtype=dtype,

@@ -1218,6 +1218,16 @@ class KeyboardButton:
                 ],
                 [
                     InlineKeyboardButton(
+                        text=BotButton.EXECUTE_TASK,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.CANCEL_TASK,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
                         text=BotButton.RETURN,
                         callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
                     )
@@ -1376,6 +1386,16 @@ class KeyboardButton:
                 ],
                 [
                     InlineKeyboardButton(
+                        text=BotButton.EXECUTE_TASK,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.CANCEL_TASK,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
                         text=BotButton.RETURN,
                         callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
                     )
@@ -1427,6 +1447,10 @@ class KeyboardButton:
                 InlineKeyboardButton(
                     text=BotButton.CONFIRM_AND_RETURN,
                     callback_data=BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER
+                ),
+                InlineKeyboardButton(
+                    text=BotButton.CANCEL_TASK,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
                 )
             ]
         )
@@ -1500,9 +1524,14 @@ class KeyboardButton:
                 InlineKeyboardButton(
                     text=BotButton.CONFIRM_AND_RETURN,
                     callback_data=BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER
+                ),
+                InlineKeyboardButton(
+                    text=BotButton.CANCEL_TASK,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
                 )
             ]
         ]
+
         return InlineKeyboardMarkup(time_keyboard)
 
 
