@@ -1384,7 +1384,7 @@ class KeyboardButton:
 
     async def calendar_keyboard(
             self,
-            dtype: CalenderKeyboard,
+            dtype: Union[CalenderKeyboard, str],
             year: Optional[int] = datetime.datetime.now().year,
             month: Optional[int] = datetime.datetime.now().month
     ):
@@ -1400,9 +1400,9 @@ class KeyboardButton:
         else:
             return None
         nav_row = [
-            InlineKeyboardButton('◀️', callback_data=f'cal_last_{_dtype}_{prev_year}_{prev_month}'),
+            InlineKeyboardButton('◀️', callback_data=f'time_dec_month_{_dtype}_{prev_year}_{prev_month}'),
             InlineKeyboardButton(f'{year}-{month:02d}', callback_data=BotCallbackText.NULL),
-            InlineKeyboardButton('▶️', callback_data=f'cal_next_{_dtype}_{next_year}_{next_month}')
+            InlineKeyboardButton('▶️', callback_data=f'time_inc_month_{_dtype}_{next_year}_{next_month}')
         ]
         keyboard.append(nav_row)
 
@@ -1418,7 +1418,7 @@ class KeyboardButton:
                     row.append(InlineKeyboardButton(' ', callback_data=BotCallbackText.NULL))
                 else:
                     date_str = f'{year}-{month:02d}-{day:02d} 00:00:00'
-                    row.append(InlineKeyboardButton(str(day), callback_data=f'cal_select_{_dtype}_{date_str}'))
+                    row.append(InlineKeyboardButton(str(day), callback_data=f'set_specific_time_{_dtype}_{date_str}'))
             keyboard.append(row)
 
         keyboard.append(
@@ -1431,6 +1431,41 @@ class KeyboardButton:
         )
 
         await self.callback_query.message.edit_reply_markup(InlineKeyboardMarkup(keyboard))
+
+    @staticmethod
+    def time_keyboard(dtype: Union[str, CalenderKeyboard], date: str):
+        dt = datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+        _dtype = dtype if isinstance(dtype, str) else 'start' if dtype == CalenderKeyboard.START_TIME_BUTTON else 'end'
+
+        def _get_updated_time(field: str, delta: int) -> str:
+            new_dt = dt.replace(
+                hour=(dt.hour + delta) % 24 if field == 'hour' else dt.hour,
+                minute=(dt.minute + delta) % 60 if field == 'minute' else dt.minute,
+                second=(dt.second + delta) % 60 if field == 'second' else dt.second
+            )
+            return new_dt.strftime('%Y-%m-%d %H:%M:%S')
+
+        time_keyboard = [
+            [InlineKeyboardButton('步进值:1', callback_data='time_step')],
+            [
+                InlineKeyboardButton('◀️', callback_data=f'set_time_{_dtype}_{_get_updated_time('hour', -1)}'),
+                InlineKeyboardButton('时', callback_data=BotCallbackText.NULL),
+                InlineKeyboardButton('▶️', callback_data=f'set_time_{_dtype}_{_get_updated_time('hour', 1)}')
+            ],
+            [
+                InlineKeyboardButton('◀️', callback_data=f'set_time_{_dtype}_{_get_updated_time('minute', -1)}'),
+                InlineKeyboardButton('分', callback_data=BotCallbackText.NULL),
+                InlineKeyboardButton('▶️', callback_data=f'set_time_{_dtype}_{_get_updated_time('minute', 1)}')
+            ],
+            [
+                InlineKeyboardButton('◀️', callback_data=f'set_time_{_dtype}_{_get_updated_time('second', -1)}'),
+                InlineKeyboardButton('秒', callback_data=BotCallbackText.NULL),
+                InlineKeyboardButton('▶️', callback_data=f'set_time_{_dtype}_{_get_updated_time('second', 1)}')
+            ],
+            [InlineKeyboardButton(BotButton.CONFIRM_AND_RETURN,
+                                  callback_data=BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER)]
+        ]
+        return InlineKeyboardMarkup(time_keyboard)
 
 
 class CallbackData:

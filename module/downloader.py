@@ -564,7 +564,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                 BotCallbackText.FILTER_START_DATE,  # 设置下载起始日期。
                 BotCallbackText.FILTER_END_DATE  # 设置下载结束日期。
         ) or callback_data.startswith(
-            ('cal_last_', 'cal_next_', 'cal_select_')  # 切换月份,选择日期。
+            (
+                    'time_inc_',
+                    'time_dec_',
+                    'set_time_',
+                    'set_specific_time',
+                    'time_step_'
+            )  # 切换月份,选择日期。
         ):
             chat_id = BotCallbackText.DOWNLOAD_CHAT_ID
 
@@ -624,7 +630,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 elif callback_data == BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL:
                     _remove_chat_id(chat_id)
                     await callback_query.message.edit_text(
-                        text=_filter_prompt(),
+                        text=callback_query.message.text,
                         reply_markup=kb.single_button(
                             text=BotButton.TASK_CANCEL,
                             callback_data=BotCallbackText.NULL
@@ -653,47 +659,49 @@ class TelegramRestrictedMediaDownloader(Bot):
                     text=f'📅选择{p_s_d}日期:\n{_filter_prompt()}'
                 )
                 await kb.calendar_keyboard(dtype=dtype)
-            elif callback_data.startswith(('cal_last_', 'cal_next_')):
+            elif callback_data.startswith(('time_inc_', 'time_dec_')):
                 parts = callback_data.split('_')
                 dtype = None
                 if 'start' in callback_data:
                     dtype = CalenderKeyboard.START_TIME_BUTTON
                 elif 'end' in callback_data:
                     dtype = CalenderKeyboard.END_TIME_BUTTON
-                year = int(parts[-2])
-                month = int(parts[-1])
-                await kb.calendar_keyboard(year=year, month=month, dtype=dtype)
-                log.info(f'日期切换为{year}年,{month}月。')
-            elif callback_data.startswith('cal_select_'):
-                async def _set_time(_dtype, _timestamp) -> bool:
-                    _last_timestamp = self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range'][_dtype]
-                    self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range'][_dtype] = _timestamp
+
+                if 'month' in callback_data:
+                    year = int(parts[-2])
+                    month = int(parts[-1])
+                    await kb.calendar_keyboard(year=year, month=month, dtype=dtype)
+                    log.info(f'日期切换为{year}年,{month}月。')
+
+            elif callback_data.startswith(('set_time_', 'set_specific_time_')):
+                async def _set_time(_date_type, _timestamp) -> bool:
+                    _last_timestamp = self.download_chat_filter[chat_id]['date_range'][_date_type]
+                    self.download_chat_filter[chat_id]['date_range'][_date_type] = _timestamp
                     _start_time, _end_time = _get_update_time()
                     if not await _verification_time(_start_time, _end_time):
-                        self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['date_range'][
-                            _dtype] = _last_timestamp
+                        self.download_chat_filter[chat_id]['date_range'][
+                            _date_type] = _last_timestamp
                         return False
                     return True
 
                 parts = callback_data.split('_')
                 date = parts[-1]
-                dtype = ''
+                dtype = parts[-2]
+                date_type = ''
                 p_s_d = ''
                 timestamp = datetime.datetime.timestamp(datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S'))
-                if callback_data.startswith('cal_select_start_'):
-                    dtype = 'start_date'
-                    if not await _set_time(_dtype='start_date', _timestamp=timestamp):
-                        return None
+                if 'start' in callback_data:
+                    date_type = 'start_date'
                     p_s_d = '起始'
-                elif callback_data.startswith('cal_select_end_'):
-                    dtype = 'end_date'
+                elif 'end' in callback_data:
+                    date_type = 'end_date'
                     p_s_d = '结束'
-                if not await _set_time(_dtype=dtype, _timestamp=timestamp):
+                if not await _set_time(_date_type=date_type, _timestamp=timestamp):
                     return None
                 start_time, end_time = _get_update_time()
                 await callback_query.message.edit_text(
                     text=f'📅选择{p_s_d}日期:\n{_filter_prompt()}',
-                    reply_markup=callback_query.message.reply_markup
+                    reply_markup=kb.time_keyboard(dtype, date)
                 )
                 log.info(f'日期设置,起始日期:{start_time},结束日期:{end_time}。')
             elif callback_data in (
@@ -713,7 +721,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     _dtype[_param] = not param
                     f_s = '禁用' if param else '启用'
                     f_p = f'已{f_s}"{_param}"类型用于/download_chat命令的下载。'
-                    log.info(f'{f_p}当前的/download_chat下载类型设置:{self.download_chat_filter[chat_id]['download_type']}')
+                    log.info(
+                        f'{f_p}当前的/download_chat下载类型设置:{self.download_chat_filter[chat_id]['download_type']}')
 
                 try:
                     if callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO:
