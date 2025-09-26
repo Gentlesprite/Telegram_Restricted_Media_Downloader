@@ -488,13 +488,16 @@ class TelegramRestrictedMediaDownloader(Bot):
                 BotCallbackText.TOGGLE_FORWARD_TEXT
         ):
             def _toggle_forward_type_button(_param: str):
-                param: bool = self.gc.get_nesting_config(
+                _forward_type: dict = self.gc.config.get('forward_type', self.gc.default_forward_type_nesting)
+                _status: bool = self.gc.get_nesting_config(
                     default_nesting=self.gc.default_forward_type_nesting,
                     param='forward_type',
                     nesting_param=_param
                 )
-                self.gc.config.get('forward_type', self.gc.default_forward_type_nesting)[_param] = not param
-                f_s = '禁用' if param else '启用'
+                if list(_forward_type.values()).count(True) == 1 and _status:
+                    raise ValueError
+                _forward_type[_param] = not _status
+                f_s = '禁用' if _status else '启用'
                 f_p = f'已{f_s}"{_param}"类型的转发。'
                 console.log(f_p, style='#FF4689')
                 log.info(f_p)
@@ -516,6 +519,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     _toggle_forward_type_button('text')
                 self.gc.save_config(self.gc.config)
                 await kb.toggle_forward_setting_button(self.gc.config)
+            except ValueError:
+                await callback_query.message.reply_text('⚠️⚠️⚠️至少需要选择一个转发类型⚠️⚠️⚠️')
             except Exception as e:
                 await callback_query.message.reply_text(
                     '转发设置失败\n(具体原因请前往终端查看报错信息)')
@@ -734,11 +739,11 @@ class TelegramRestrictedMediaDownloader(Bot):
             ):
                 def _toggle_dtype_filter_button(_param: str):
                     _dtype: dict = self.download_chat_filter[chat_id]['download_type']
-                    param: bool = _dtype[_param]
-                    if list(_dtype.values()).count(True) == 1 and param:
+                    _status: bool = _dtype[_param]
+                    if list(_dtype.values()).count(True) == 1 and _status:
                         raise ValueError
-                    _dtype[_param] = not param
-                    f_s = '禁用' if param else '启用'
+                    _dtype[_param] = not _status
+                    f_s = '禁用' if _status else '启用'
                     f_p = f'已{f_s}"{_param}"类型用于/download_chat命令的下载。'
                     log.info(
                         f'{f_p}当前的/download_chat下载类型设置:{self.download_chat_filter[chat_id]['download_type']}')
