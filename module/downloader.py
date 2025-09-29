@@ -746,7 +746,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f_s = '禁用' if _status else '启用'
                     f_p = f'已{f_s}"{_param}"类型用于/download_chat命令的下载。'
                     log.info(
-                        f'{f_p}当前的/download_chat下载类型设置:{self.download_chat_filter[chat_id]['download_type']}')
+                        f'{f_p}当前的/download_chat下载类型设置:{_dtype}')
 
                 try:
                     if callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO:
