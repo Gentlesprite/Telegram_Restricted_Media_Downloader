@@ -1465,12 +1465,13 @@ class KeyboardButton:
     ):
         dt = datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
         _dtype = dtype if isinstance(dtype, str) else 'start' if dtype == CalenderKeyboard.START_TIME_BUTTON else 'end'
+        hour, minute, second = 'hour', 'minute', 'second'
 
         def _get_updated_time(field: str, delta: int) -> str:
             new_dt = dt.replace(
-                hour=(dt.hour + delta) % 24 if field == 'hour' else dt.hour,
-                minute=(dt.minute + delta) % 60 if field == 'minute' else dt.minute,
-                second=(dt.second + delta) % 60 if field == 'second' else dt.second
+                hour=(dt.hour + delta) % 24 if field == hour else dt.hour,
+                minute=(dt.minute + delta) % 60 if field == minute else dt.minute,
+                second=(dt.second + delta) % 60 if field == second else dt.second
             )
             return new_dt.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -1484,40 +1485,40 @@ class KeyboardButton:
             [
                 InlineKeyboardButton(
                     text='◀️',
-                    callback_data=f'set_time_{_dtype}_{_get_updated_time('hour', -adjust_step)}'
+                    callback_data=f'set_time_{_dtype}_{_get_updated_time(hour, -adjust_step)}'
                 ),
                 InlineKeyboardButton(
                     text='时', callback_data=BotCallbackText.NULL
                 ),
                 InlineKeyboardButton(
                     text='▶️',
-                    callback_data=f'set_time_{_dtype}_{_get_updated_time('hour', adjust_step)}'
+                    callback_data=f'set_time_{_dtype}_{_get_updated_time(hour, adjust_step)}'
                 )
             ],
             [
                 InlineKeyboardButton(
                     text='◀️',
-                    callback_data=f'set_time_{_dtype}_{_get_updated_time('minute', -adjust_step)}'
+                    callback_data=f'set_time_{_dtype}_{_get_updated_time(minute, -adjust_step)}'
                 ),
                 InlineKeyboardButton(
                     text='分', callback_data=BotCallbackText.NULL
                 ),
                 InlineKeyboardButton(
                     text='▶️',
-                    callback_data=f'set_time_{_dtype}_{_get_updated_time('minute', adjust_step)}'
+                    callback_data=f'set_time_{_dtype}_{_get_updated_time(minute, adjust_step)}'
                 )
             ],
             [
                 InlineKeyboardButton(
                     text='◀️',
-                    callback_data=f'set_time_{_dtype}_{_get_updated_time('second', -adjust_step)}'
+                    callback_data=f'set_time_{_dtype}_{_get_updated_time(second, -adjust_step)}'
                 ),
                 InlineKeyboardButton(
                     text='秒', callback_data=BotCallbackText.NULL
                 ),
                 InlineKeyboardButton(
                     text='▶️',
-                    callback_data=f'set_time_{_dtype}_{_get_updated_time('second', adjust_step)}'
+                    callback_data=f'set_time_{_dtype}_{_get_updated_time(second, adjust_step)}'
                 )
             ],
             [
