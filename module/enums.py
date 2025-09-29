@@ -6,7 +6,6 @@
 import os
 import sys
 import ipaddress
-from enum import StrEnum
 
 from typing import Union, Optional
 from dataclasses import dataclass
@@ -59,7 +58,7 @@ class UploadStatus:
     FAILURE = 'failure'
 
 
-class CalenderKeyboard(StrEnum):
+class CalenderKeyboard:
     START_TIME_BUTTON: str = 'start time button'
     END_TIME_BUTTON: str = 'end time button'
 

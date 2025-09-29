@@ -1459,7 +1459,7 @@ class KeyboardButton:
 
     @staticmethod
     def time_keyboard(
-            dtype: Union[str, CalenderKeyboard],
+            dtype: Union[CalenderKeyboard, str],
             date: str,
             adjust_step: Optional[int] = 1
     ):
