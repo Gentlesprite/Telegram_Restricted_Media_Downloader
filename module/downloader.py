@@ -81,7 +81,8 @@ from module.util import (
     get_message_by_link,
     get_chat_with_notify,
     safe_message,
-    truncate_display_filename
+    truncate_display_filename,
+    Solution
 )
 
 
@@ -1857,7 +1858,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     api_id=self.app.api_id,
                     bot_token=self.app.bot_token,
                     workdir=self.app.work_directory,
-                    proxy=self.app.enable_proxy,
+                    proxy=self.app.proxy if self.app.enable_proxy else None,
                     sleep_threshold=SLEEP_THRESHOLD
                 )
             )
@@ -1907,42 +1908,25 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             MetaData.print_meta()
             self.app.print_config_table(
-                enable_proxy=self.app.enable_proxy,
                 links=self.app.links,
                 download_type=self.app.download_type,
                 proxy=self.app.proxy
             )
             self.loop.run_until_complete(self.__download_media_from_links())
         except KeyError as e:
+            record_error: bool = True
             if str(e) == '0':
                 log.error('「网络」或「代理问题」,在确保当前网络连接正常情况下检查:\n「VPN」是否可用,「软件代理」是否配置正确。')
-                console.print(
-                    '[#79FCD4]解决方法[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\n'
-                    '[link=https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#问题14-error-运行出错原因0-keyerror-0]'
-                    'https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#问题14-error-运行出错原因0-keyerror-0[/link]'
-                    '\n[#FCFF79]若[/#FCFF79][#FF4689]无法[/#FF4689][#FF7979]访问[/#FF7979][#79FCD4],[/#79FCD4]'
-                    '[#FCFF79]可[/#FCFF79][#d4fc79]查阅[/#d4fc79]'
-                    '[#FC79A5]软件压缩包所提供的[/#FC79A5][#79E2FC]"使用手册"[/#79E2FC]'
-                    '[#79FCD4]文件夹下的[/#79FCD4][#FFB579]"常见问题及解决方案汇总.pdf"[/#FFB579]'
-                    '[#79FCB5]中的[/#79FCB5][#D479FC]【问题14】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6]。[/#FC79A6]'
-                )
+                console.print(Solution.PROXY_NOT_CONFIGURED)
                 raise SystemExit(0)
             log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
         except pyrogram.errors.BadMsgNotification as e:
+            record_error: bool = True
             if str(e) in (str(pyrogram.errors.BadMsgNotification(16)), str(pyrogram.errors.BadMsgNotification(17))):
-                console.print(
-                    '[#FCFF79]检测到[/#FCFF79][#FF7979]系统时间[/#FF7979][#FC79A5]未同步[/#FC79A5][#79E2FC],[/#79E2FC]'
-                    '[#79FCD4]解决方法[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\n'
-                    'https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/issues/5#issuecomment-2580677184'
-                    '\n[#FCFF79]若[/#FCFF79][#FF4689]无法[/#FF4689][#FF7979]访问[/#FF7979][#79FCD4],[/#79FCD4]'
-                    '[#FCFF79]可[/#FCFF79][#d4fc79]查阅[/#d4fc79]'
-                    '[#FC79A5]软件压缩包所提供的[/#FC79A5][#79E2FC]"使用手册"[/#79E2FC]'
-                    '[#79FCD4]文件夹下的[/#79FCD4][#FFB579]"常见问题及解决方案汇总.pdf"[/#FFB579]'
-                    '[#79FCB5]中的[/#79FCB5][#D479FC]【问题4】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6],[/#FC79A6]'
-                    '[#79FCD4]并[/#79FCD4][#79FCB5]重启软件[/#79FCB5]。')
+                console.print(Solution.SYSTEM_TIME_NOT_SYNCHRONIZED)
                 raise SystemExit(0)
             log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
-        except (SessionRevoked, AuthKeyUnregistered, SessionExpired, Unauthorized, ConnectionError) as e:
+        except (SessionRevoked, AuthKeyUnregistered, SessionExpired, Unauthorized) as e:
             log.error(f'登录时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
             record_error: bool = True
@@ -1950,6 +1934,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                 log.warning('账号已失效,已删除旧会话文件,请重启软件。')
             else:
                 log.error('账号已失效,请手动删除软件目录下的sessions文件夹后重启软件。')
+        except (ConnectionError, TimeoutError) as e:
+            record_error: bool = True
+            if not self.app.enable_proxy:
+                log.error(f'网络连接失败,请尝试配置代理,{_t(KeyWord.REASON)}:"{e}"')
+                console.print(Solution.PROXY_NOT_CONFIGURED)
+            else:
+                log.error(f'网络连接失败,请检查VPN是否可用,{_t(KeyWord.REASON)}:"{e}"')
         except AttributeError as e:
             record_error: bool = True
             log.error(f'登录超时,请重新打开软件尝试登录,{_t(KeyWord.REASON)}:"{e}"')

@@ -194,7 +194,7 @@ class UserConfig(BaseConfig):
         self.max_upload_task: int = (self.config.get('max_tasks') or {}).get('upload', 3) or 3
         self.max_upload_retries: int = (self.config.get('max_retries') or {}).get('upload', 3) or 3
         self.proxy: dict = self.config.get('proxy', {})
-        self.enable_proxy: Union[dict, None] = self.proxy if self.proxy.get('enable_proxy') else None
+        self.enable_proxy: bool = self.proxy.get('enable_proxy', False)
         self.save_directory: str = self.config.get('save_directory')
 
     def get_last_history_record(self) -> None:

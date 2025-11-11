@@ -54,7 +54,7 @@ class Application(UserConfig, StatisticalTable):
             name=SOFTWARE_FULL_NAME.replace(' ', ''),
             api_id=self.api_id,
             api_hash=self.api_hash,
-            proxy=self.enable_proxy,
+            proxy=self.proxy if self.enable_proxy else None,
             workdir=self.work_directory,
             max_concurrent_transmissions=self.max_download_task,
             sleep_threshold=SLEEP_THRESHOLD,

@@ -211,10 +211,10 @@ class StatisticalTable:
             return None
 
     @staticmethod
-    def print_config_table(enable_proxy: Union[dict, None], links: str, download_type: list, proxy: dict) -> None:
+    def print_config_table(links: str, download_type: list, proxy: dict) -> None:
         """打印用户所填写配置文件的表格。"""
         try:
-            if enable_proxy:
+            if proxy.get('enable_proxy', False):
                 console.log(
                     GradientColor.gen_gradient_text(
                         text='当前正在使用代理!',
