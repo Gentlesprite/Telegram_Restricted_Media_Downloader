@@ -241,18 +241,55 @@ def get_mime_from_extension(file_path: str) -> str:
 
 
 def extract_full_extension(filename: Union[str, None]):
+    """
+    提取完整的文件扩展名，支持多段扩展名。
+    """
+    if not filename or not isinstance(filename, str):
+        return None
+
+    filename = filename.strip()
     if not filename:
         return None
 
-    multi_ext_pattern = re.compile(
-        r'\.(7z|rar|zip|tar)(\.(gz|bz2|xz|\d{3,}))+$',
-        re.IGNORECASE
-    )
+    multi_ext_patterns = [
+        r'\.(7z|rar|zip|r\d+|z\d+|s\d+|t\d+)\.\d+$',  # 压缩文件分卷格式。
+        r'\.(tar|zip|7z|rar)(\.(gz|bz2|xz|zip|7z|rar))+$',  # 多段压缩格式
+        r'\.(tar\.(gz|bz2|xz)|[a-z0-9]+\.\d+)$'  # 常见的多段扩展名
+    ]
 
-    match = multi_ext_pattern.search(filename)
-    if match:
-        full_ext = match.group(0).lstrip('.')
-        return full_ext
+    for pattern in multi_ext_patterns:
+        match = re.search(pattern, filename, re.IGNORECASE)
+        if match:
+            full_ext = match.group(0).lstrip('.')
+            return full_ext
 
-    base_ext = os.path.splitext(filename)[-1].lstrip('.')
-    return base_ext if base_ext else None
+    # 普通文件,返回最后一个扩展名。
+    base_ext = os.path.splitext(filename)[-1]
+    if base_ext:
+        return base_ext.lstrip('.')
+
+    return None
+
+
+def is_compressed_file(filename: Union[str, None]) -> bool:
+    """
+    判断是否为压缩包文件。
+    """
+    if not filename:
+        return False
+
+    # 压缩文件扩展名模式。
+    compressed_patterns = [
+        # 单扩展名压缩格式。
+        r'\.(7z|rar|zip|tar|gz|bz2|xz|arj|cab|lzh|lzma|tgz|tbz2|txz|z|Z)$',
+        # 多段扩展名压缩格式。
+        r'\.(tar\.(gz|bz2|xz)|7z\.\d+|rar\.\d+|zip\.\d+)$',
+        # 旧格式分卷。
+        r'\.(r\d+|z\d+|s\d+|t\d+)$'
+    ]
+
+    for pattern in compressed_patterns:
+        if re.search(pattern, filename, re.IGNORECASE):
+            return True
+
+    return False

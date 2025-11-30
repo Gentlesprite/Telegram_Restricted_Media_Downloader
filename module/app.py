@@ -4,7 +4,6 @@
 # Time:2024/7/25 12:32
 # File:app.py
 import os
-import re
 import time
 import datetime
 import subprocess
@@ -35,7 +34,8 @@ from module.path_tool import (
     validate_title,
     truncate_filename,
     get_extension,
-    extract_full_extension
+    extract_full_extension,
+    is_compressed_file
 )
 
 
@@ -286,6 +286,11 @@ class DownloadFileName:
             elif 'image' in _mime_type:
                 return self.get_photo_filename()
             elif _mime_type:
+                origin_filename = getattr(document_obj, 'file_name', None)
+                if origin_filename and is_compressed_file(origin_filename):
+                    log.warning(
+                        f'检测到压缩文件"{origin_filename}",为确保完整性(如分卷)已保留原始文件名,如遇命名冲突请手动处理。')
+                    return origin_filename
                 return self.get_filename()
 
         except (AttributeError, Exception) as e:
