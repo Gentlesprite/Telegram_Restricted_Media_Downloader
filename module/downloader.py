@@ -82,7 +82,7 @@ from module.util import (
     get_chat_with_notify,
     safe_message,
     truncate_display_filename,
-    Solution
+    Issues
 )
 
 
@@ -1917,13 +1917,13 @@ class TelegramRestrictedMediaDownloader(Bot):
             record_error: bool = True
             if str(e) == '0':
                 log.error('「网络」或「代理问题」,在确保当前网络连接正常情况下检查:\n「VPN」是否可用,「软件代理」是否配置正确。')
-                console.print(Solution.PROXY_NOT_CONFIGURED)
+                console.print(Issues.PROXY_NOT_CONFIGURED)
                 raise SystemExit(0)
             log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
         except pyrogram.errors.BadMsgNotification as e:
             record_error: bool = True
             if str(e) in (str(pyrogram.errors.BadMsgNotification(16)), str(pyrogram.errors.BadMsgNotification(17))):
-                console.print(Solution.SYSTEM_TIME_NOT_SYNCHRONIZED)
+                console.print(Issues.SYSTEM_TIME_NOT_SYNCHRONIZED)
                 raise SystemExit(0)
             log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
         except (SessionRevoked, AuthKeyUnregistered, SessionExpired, Unauthorized) as e:
@@ -1938,7 +1938,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             record_error: bool = True
             if not self.app.enable_proxy:
                 log.error(f'网络连接失败,请尝试配置代理,{_t(KeyWord.REASON)}:"{e}"')
-                console.print(Solution.PROXY_NOT_CONFIGURED)
+                console.print(Issues.PROXY_NOT_CONFIGURED)
             else:
                 log.error(f'网络连接失败,请检查VPN是否可用,{_t(KeyWord.REASON)}:"{e}"')
         except AttributeError as e:
