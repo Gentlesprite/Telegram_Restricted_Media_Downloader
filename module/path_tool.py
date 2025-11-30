@@ -12,7 +12,7 @@ import mimetypes
 import unicodedata
 
 from io import BytesIO
-from typing import Optional
+from typing import Optional, Union
 
 from pyrogram.file_id import (
     FILE_REFERENCE_FLAG,
@@ -240,3 +240,19 @@ def get_mime_from_extension(file_path: str) -> str:
     return Extension.ALL_REVERSE.get(ext, 'application/octet-stream')
 
 
+def extract_full_extension(filename: Union[str, None]):
+    if not filename:
+        return None
+
+    multi_ext_pattern = re.compile(
+        r'\.(7z|rar|zip|tar)(\.(gz|bz2|xz|\d{3,}))+$',
+        re.IGNORECASE
+    )
+
+    match = multi_ext_pattern.search(filename)
+    if match:
+        full_ext = match.group(0).lstrip('.')
+        return full_ext
+
+    base_ext = os.path.splitext(filename)[-1].lstrip('.')
+    return base_ext if base_ext else None

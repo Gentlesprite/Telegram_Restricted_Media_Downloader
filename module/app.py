@@ -4,6 +4,7 @@
 # Time:2024/7/25 12:32
 # File:app.py
 import os
+import re
 import time
 import datetime
 import subprocess
@@ -33,7 +34,8 @@ from module.enums import (
 from module.path_tool import (
     validate_title,
     truncate_filename,
-    get_extension
+    get_extension,
+    extract_full_extension
 )
 
 
@@ -298,15 +300,17 @@ class DownloadFileName:
             media_obj = getattr(self.message, self.download_type)
             _mime_type = getattr(media_obj, 'mime_type')
             _origin_file_name = getattr(media_obj, 'file_name', None)
+
             if _origin_file_name:
-                _o_ext: str = os.path.splitext(_origin_file_name)[-1]
-                origin_extension = _o_ext.lstrip('.') if _o_ext else None
+                origin_extension = extract_full_extension(_origin_file_name)
+
             if not origin_extension:
                 origin_extension = get_extension(
                     file_id=media_obj.file_id,
                     mime_type=_mime_type,
                     dot=False
                 )
+
             return '{} - {}.{}'.format(
                 getattr(self.message, 'id', '0'),
                 getattr(media_obj, 'file_unique_id', 'None'),
