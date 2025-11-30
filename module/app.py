@@ -297,7 +297,7 @@ class DownloadFileName:
             origin_extension = None
             media_obj = getattr(self.message, self.download_type)
             _mime_type = getattr(media_obj, 'mime_type')
-            _origin_file_name = getattr(media_obj, 'file_name')
+            _origin_file_name = getattr(media_obj, 'file_name', None)
             if _origin_file_name:
                 _o_ext: str = os.path.splitext(_origin_file_name)[-1]
                 origin_extension = _o_ext.lstrip('.') if _o_ext else None
