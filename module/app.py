@@ -284,7 +284,13 @@ class DownloadFileName:
             elif 'image' in _mime_type:
                 return self.get_photo_filename()
             elif _mime_type:
-                return self.get_filename()
+                _file_name = self.get_filename()
+                if _file_name.endswith('.bin'):
+                    origin_file_name = self.get_origin_extension(document_obj, _file_name)
+                    if origin_file_name:
+                        return origin_file_name
+                return _file_name
+
         except (AttributeError, Exception) as e:
             log.info(f'无法找到的该文档文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')
             file_id = getattr(self.message, 'id', '0')
@@ -306,3 +312,11 @@ class DownloadFileName:
             )
         except Exception as e:
             log.info(f'无法找到的该{_t(self.download_type)}文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')
+
+    @staticmethod
+    def get_origin_extension(obj, filename: str) -> Union[str, None]:
+        o_file_name = getattr(obj, 'file_name')
+        if o_file_name:
+            if '.' in o_file_name:
+                o_ext = os.path.splitext(o_file_name)[-1]
+                return filename.replace('.bin', o_ext)
