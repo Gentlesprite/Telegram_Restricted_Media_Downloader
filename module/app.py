@@ -284,12 +284,7 @@ class DownloadFileName:
             elif 'image' in _mime_type:
                 return self.get_photo_filename()
             elif _mime_type:
-                _file_name = self.get_filename()
-                if _file_name.endswith('.bin'):
-                    origin_file_name = self.get_origin_extension(document_obj, _file_name)
-                    if origin_file_name:
-                        return origin_file_name
-                return _file_name
+                return self.get_filename()
 
         except (AttributeError, Exception) as e:
             log.info(f'无法找到的该文档文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')
@@ -299,24 +294,23 @@ class DownloadFileName:
 
     def get_filename(self):
         try:
+            origin_extension = None
             media_obj = getattr(self.message, self.download_type)
             _mime_type = getattr(media_obj, 'mime_type')
-            return '{} - {}.{}'.format(
-                getattr(self.message, 'id', '0'),
-                getattr(media_obj, 'file_unique_id', 'None'),
-                get_extension(
+            _origin_file_name = getattr(media_obj, 'file_name')
+            if _origin_file_name:
+                _o_ext: str = os.path.splitext(_origin_file_name)[-1]
+                origin_extension = _o_ext.lstrip('.') if _o_ext else None
+            if not origin_extension:
+                origin_extension = get_extension(
                     file_id=media_obj.file_id,
                     mime_type=_mime_type,
                     dot=False
                 )
+            return '{} - {}.{}'.format(
+                getattr(self.message, 'id', '0'),
+                getattr(media_obj, 'file_unique_id', 'None'),
+                origin_extension
             )
         except Exception as e:
             log.info(f'无法找到的该{_t(self.download_type)}文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')
-
-    @staticmethod
-    def get_origin_extension(obj, filename: str) -> Union[str, None]:
-        o_file_name = getattr(obj, 'file_name')
-        if o_file_name:
-            if '.' in o_file_name:
-                o_ext = os.path.splitext(o_file_name)[-1]
-                return filename.replace('.bin', o_ext)
