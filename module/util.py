@@ -9,6 +9,7 @@ import re
 from typing import Tuple, List, Union
 
 import pyrogram
+from pyrogram import utils
 from pyrogram.errors.exceptions.bad_request_400 import (
     MsgIdInvalid,
     UsernameNotOccupied
@@ -17,7 +18,6 @@ from pyrogram.types.messages_and_media import ReplyParameters
 from urllib.parse import parse_qs, urlparse
 from rich.text import Text
 
-from module import utils
 from module.enums import (
     Link,
     LinkType,
@@ -264,7 +264,7 @@ def format_chat_link(link: str, topic: bool = False) -> str:
         else:  # 对于普通类型。
             if len_parts >= 5:
                 # 5个部分时,保留前4个部分(去掉最后一个)。
-                result = '/'.join(parts[:4])  # https://t.me/coustomer/144 -> https://t.me/coustomer
+                result = '/'.join(parts[:4])  # https://t.me/customer/144 -> https://t.me/customer
     else:  # 话题格式化。
         if parts[3] == 'c' and len_parts >= 5:  # 对于/c/类型。
             if len_parts >= 7:
@@ -272,7 +272,7 @@ def format_chat_link(link: str, topic: bool = False) -> str:
                 result = '/'.join(parts[:6])  # https://t.me/c/2495197831/100/200 -> https://t.me/c/2495197831/100
         elif len_parts >= 6:
             # 6个部分时,保留前5个部分(去掉最后一个)。
-            result = '/'.join(parts[:5])  # https://t.me/coustomer/5/1 -> https://t.me/coustomer/5
+            result = '/'.join(parts[:5])  # https://t.me/customer/5/1 -> https://t.me/customer/5
 
     return result if result else link
 

@@ -10,22 +10,10 @@ import platform
 from logging.handlers import RotatingFileHandler
 
 import yaml
-from pyrogram import utils
 from pyrogram.session import Session
 from pyrogram.types.messages_and_media import LinkPreviewOptions
 from rich.console import Console
 from rich.logging import RichHandler
-
-
-# v1.1.2 解决链接若附带/c字段即私密频道无法下载的问题,是由于pyrogram的问题:https://github.com/pyrogram/pyrogram/issues/1314
-def get_peer_type_new(peer_id: int) -> str:
-    peer_id_str = str(peer_id)
-    if not peer_id_str.startswith('-'):
-        return 'user'
-    elif peer_id_str.startswith('-100'):
-        return 'channel'
-    else:
-        return 'chat'
 
 
 def read_input_history(history_path: str, max_record_len: int, **kwargs) -> None:
@@ -61,15 +49,14 @@ class CustomDumper(yaml.Dumper):
 
 LOG_TIME_FORMAT = '[%Y-%m-%d %H:%M:%S]'
 console = Console(log_path=False, log_time_format=LOG_TIME_FORMAT)
-utils.get_peer_type = get_peer_type_new
 MAX_FILE_REFERENCE_TIME = 600
 Session.WAIT_TIMEOUT = 100
 Session.START_TIMEOUT = 60
 SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
-__version__ = '1.7.7'
+__version__ = '1.7.8'
 __license__ = 'MIT License'
-__update_date__ = '2025/12/01 09:42:11'
+__update_date__ = '2025/12/02 12:02:22'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/Gentlesprite>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
