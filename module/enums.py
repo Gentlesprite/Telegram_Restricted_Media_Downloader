@@ -404,9 +404,10 @@ class Validator:
     @staticmethod
     def is_valid_bot_token(bot_token: str, valid_format: str = ':') -> bool:
         if valid_format in bot_token:
-            return True
-        else:
-            return False
+            p = bot_token.split(valid_format)
+            if len(p) == 2 and all(p):
+                return True
+        return False
 
     @staticmethod
     def is_valid_links_file(file_path: str, valid_format: str = '.txt') -> bool:
