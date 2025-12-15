@@ -774,8 +774,8 @@ class Bot:
             self,
             text
     ):
-        if all([self.last_client, self.last_message]):
-            if self.gc.get_config(BotCallbackText.NOTICE):
+        if self.gc.get_config(BotCallbackText.NOTICE):
+            if all([self.last_client, self.last_message]):
                 await self.last_client.send_message(
                     chat_id=self.last_message.from_user.id,
                     text=text,
