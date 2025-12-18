@@ -166,6 +166,7 @@ class Bot:
         else:
             link: list = text.split()
             link.remove('/download') if '/download' in link else None
+            link = [_.rstrip('/') for _ in link]
             if (
                     safe_index(link, 0, '').startswith('https://t.me/') and
                     not safe_index(link, 1, 'https://t.me/').startswith('https://t.me/') and
