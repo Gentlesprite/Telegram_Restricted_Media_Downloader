@@ -272,7 +272,7 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 - ### 注销监听下载：
 
-    #### _再次发送与之前创建监听的命令一样的，即可得到机器人发送给用户的一个内联键盘，点击确认即可。_
+    #### _再次向机器人发送创建监听时的命令，机器人将会提供给用户一个用于注销监听的内联键盘，点击确认即可。_
 
     ```bash
     /listen_download https://t.me/A
@@ -331,7 +331,7 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 - ### 注销监听转发：
 
-    #### _再次发送与之前创建监听的命令一样的，即可得到机器人发送给用户的一个内联键盘，点击确认即可。_
+    #### _再次向机器人发送创建监听时的命令，机器人将会提供给用户一个用于注销监听的内联键盘，点击确认即可。_
 
     ```bash
     /listen_forward https://t.me/A https://t.me/B
@@ -384,7 +384,7 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 16. `/download_chat`命令使用教程：
 
 - `/download_chat`下载指定频道。
-   
+  
    - 与`/download`不同的是：`/download_chat`支持通过机器人发送的内联键盘进行自定义内容过滤。
    - 目前该功能支持按日期范围、文件类型来过滤要下载的内容。
    - 使用该命令后，**需要通过操作机器人回复中的内联键盘**，来设置过滤器、执行任务或取消任务。
@@ -441,7 +441,7 @@ save_directory: F:\directory\media\where\you\save # 下载的媒体保存的目�
 #### 通配符允许用户动态生成存储路径。系统会在下载时自动将通配符替换为对应的实际值，实现按规则自动分类存储。
 
 - 目前`save_directory`支持的通配符如下表所示：
-    
+  
     | 通配符        | 意义                               |
     | ------------- | ---------------------------------- |
     | `%CHAT_ID%`   | 以实际`频道ID`作为指定路径填充。   |
