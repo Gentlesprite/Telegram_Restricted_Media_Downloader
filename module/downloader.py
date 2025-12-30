@@ -969,15 +969,26 @@ class TelegramRestrictedMediaDownloader(Bot):
                         last_message_id=last_message.id,
                         text=safe_message(BotMessage.INVALID)
                     )
+                    invalid_chat = await format_chat_link(
+                        link=origin_link,
+                        client=self.app.client,
+                        topic=origin_chat.is_forum
+                    )
+                    invalid_chat = invalid_chat if invalid_chat else 'Your Saved Messages'
                     for i in invalid_id:
                         last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
                             client=client,
                             message=message,
                             last_message_id=last_message.id,
                             text=safe_message(
-                                f'{last_message.text}\n{format_chat_link(origin_link, topic=origin_chat.is_forum)}/{i}'
+                                f'{last_message.text}\n{invalid_chat}/{i}'
                             )
                         )
+                direct_url: str = await format_chat_link(
+                    link=target_link,
+                    client=self.app.client,
+                    topic=target_chat.is_forum
+                )
                 last_message = await self.safe_edit_message(
                     client=client,
                     message=message,
@@ -989,11 +1000,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                             [
                                 InlineKeyboardButton(
                                     BotButton.CLICK_VIEW,
-                                    url=format_chat_link(target_link, topic=target_chat.is_forum)
+                                    url=direct_url
                                 )
                             ]
                         ]
-                    )
+                    ) if direct_url else None
                 )
         except AttributeError as e:
             log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')

@@ -14,17 +14,18 @@
     <img src="https://img.shields.io/badge/Python-3.13.2-blue.svg?color=00B16A" alt="Python 3.13.2"/>
   </a>
   <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.15-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.15"/>
+    <img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.17-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.17"/>
   </a>
   <a style="text-decoration:none">
     <img src="https://img.shields.io/badge/Platform-Windows & Linux%20-blue?color=00B16A" alt="Platform Windows & Linux"/>
   </a>
 </p>
 
+
 > [!NOTE]
 > 由于本项目**提供**的Linux版本可能对较早版本的Linux系统兼容性较差。  
 > 若**无法运行的**Linux用户请**阅读**:[_"3.0.在生产环境中运行(对于Linux用户)"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7-1)。  
-> 如果你**遇到任何问题**，请先**阅读**:[_"常见问题及解决方案汇总"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
+> 如果你**遇到任何问题**，请先仔细**阅读**:[_"常见问题及解决方案汇总"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
 > **没有找到解决方案**再进群或私聊提问。
 
 
@@ -244,15 +245,54 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
     ```bash
     /forward 频道A 频道B 起始ID 结束ID
     ```
+
 - 实例：
+
+    - 该实例代表转发`https://t.me/test`**频道**中从`消息ID=1`到`结束ID=500`的消息到 `https://t.me/test2` **频道**。
+
     ```bash
     /forward https://t.me/test https://t.me/test2 1 500
     ```
-- 代表转发 `https://t.me/test` 频道中从`消息ID=1`到`结束ID=500`的消息到 `https://t.me/test2` 频道。
-   - 若需转发至个人的收藏夹，请使用 `https://t.me/用户名` (用户名就是个人账户信息里@后面那一串)。
-- 在个人信息中查看到用户名为@developer。
-   - 此时使用`/forward https://t.me/test https://t.me/developer 1 500`命令。
-   - 代表转发 `https://t.me/test` 频道中从`消息ID=1`到结束`ID=500`的消息到**个人收藏夹**。
+
+- 转发至个人收藏夹（任选一种命令即可）：
+
+    - 方式1，使用me或self指向个人收藏夹（任选一种命令即可）：
+
+      ```bash
+      /forward https://t.me/test me 1 500
+      ```
+
+      ```bash
+      /forward https://t.me/test self 1 500
+      ```
+
+    - 方式2，使用 `https://t.me/用户名` ：
+
+      - 用户名即指个人账户信息里@后面那一串，需用户提前手动自己设置，否则无法使用该方式。
+      - 例如通过查询个人信息，得知当前设置的用户名为`@developer`，此时指向个人的链接即为`https://t.me/developer`。
+
+      ```bash
+      /forward https://t.me/test https://t.me/developer 1 500
+      ```
+
+    - 无论使用方式1或方式2，都代表转发 `https://t.me/test`  **频道 **中从`消息ID=1`到结束`ID=500`的消息到**个人收藏夹**。
+
+- 转发个人收藏夹的内容至任意频道：
+
+   - 方式1：
+
+      ```bash
+      /forward me https://t.me/test 1 500
+      ```
+
+   - 方式2：
+
+      ```bash
+      /forward https://t.me/developer me 1 500
+      ```
+
+   - 无论使用方式1或方式2，都代表转发**个人收藏夹**中从`消息ID=1`到结束`ID=500`的消息到`https://t.me/test` **频道**。
+
 
 11. `/exit`命令使用教程，如下图所示：
 
@@ -390,12 +430,34 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
    - 使用该命令后，**需要通过操作机器人回复中的内联键盘**，来设置过滤器、执行任务或取消任务。
    - 需要注意的是，在上一个`/download_chat`命令任务未执行或取消前，无法发起新的`/download_chat`命令来创建下载任务。
    - 自版本`≥v1.7.5`起，`/download_chat`命令创建的下载任务过滤条件将完全遵循用户在内联键盘中的设置，意味着该不会遵循配置文件中的任何规则（例如配置文件中的下载文件类型设置）。
+   
 - 下载指定频道语法：
   
     ```bash
    /download_chat 频道链接
    ```
+   
 - 发送命令后，设置过滤器为可选操作，但必须**手动点击**"执行任务"或"取消任务"以继续或终止流程，否则该命令将**始终处于等待状态，并阻塞新的`/download_chat`命令。**
+
+- 下载个人收藏夹（任选一种命令即可）:
+
+    - 方式1（任选一种命令即可）：
+
+      ```bash
+      /download_chat me
+      ```
+
+      ```bash
+      /download_chat self
+      ```
+
+    - 方式2：
+
+      - 此处假设用户名已设定，个人信息中查看用户名为@developer。
+
+      ```bash
+      /download_chat https://t.me/developer
+      ```
 
 ## 2.3.配置文件说明:
 

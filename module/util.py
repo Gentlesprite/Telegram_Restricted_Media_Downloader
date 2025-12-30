@@ -250,7 +250,14 @@ def is_allow_upload(file_size: int, is_premium: bool) -> bool:
     return True
 
 
-def format_chat_link(link: str, topic: bool = False) -> str:
+async def format_chat_link(
+        link: str,
+        client: pyrogram.Client,
+        topic: bool = False
+) -> str:
+    if link in ('me', 'self'):
+        chat = await client.get_chat(link)
+        return 'https://t.me/' + chat.username if chat.username else None
     parts: list = link.strip('/').split('/')
     len_parts: int = len(parts)
     result: Union[str, None] = None
