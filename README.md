@@ -175,6 +175,7 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
    | `/listen_forward`  | `/listen_forward https://t.me/A https://t.me/B`              | **实时**监听**频道A**的**最新消息**(任意消息)转发至**频道B**。但当**频道A**为**私密频道**时候无法转发。 |
    | `/listen_info`     | 向机器人发送`/listen_info`即可。                             | 查看当前已经创建的监听信息。                                 |
    | `/upload`          | `/upload` `本地文件` `目标频道`                              | 上传**本地的文件**到**指定频道**。                           |
+   | `/upload_r`        | `/upload_r 本地文件夹 目标频道`                              | **递归**上传文件夹(**包含子文件夹**)到**指定频道**。         |
    | `/download_chat`   | `/download_chat 频道链接`                                    | 下载**指定频道**并支持**通过内联键盘自定义内容过滤**。       |
 
 6. `/help`命令使用教程，如下图所示：
@@ -186,6 +187,9 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
    ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_14.png)
 
 8. `/download`命令使用教程，如下图所示：
+> [!NOTE]
+> 自版本`≥v1.6.3`起：  
+> 已全面支持下载时的断点续传功能（支持所有上传场景），增强了在较差网络环境下的传输稳定性与可靠性。  
 
    - 方式一：
      - ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_15.png)
@@ -386,8 +390,12 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
     ```
 
 15. `/upload`命令使用教程：
+> [!NOTE]
+> 自版本`≥v1.7.9`起：  
+> 已全面支持上传时的断点续传功能（支持所有上传场景），增强了在较差网络环境下的传输稳定性与可靠性。  
 
 - `/upload`用于上传本地的文件到指定频道。
+   
    - 支持上传文件夹（当指定路径为文件夹时并且版本需≥v1.7.1）。
    - _当指定的路径为**文件夹**时，将会上传指定文件夹下**所有**的文件。_
 - 上传文件语法：
@@ -420,6 +428,28 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
     ```
     /upload /home/username/files https://t.me/test
     ```
+
+16. `/upload_r`命令使用教程：
+
+    - `/upload_r`命令是`/upload`命令的扩展版本，专为**批量文件上传**场景设计，支持递归处理目录结构，与`/upload`不同的是：
+
+      - `/upload_r`命令接收**文件夹路径**作为其第二个参数，自动**遍历该目录**及其**所有子目录**中的文件。
+
+        ```bash
+        /uploadr C:\files https://t.me/test
+        ```
+
+      - 当**第二个参数**为**文件路径**时，自动切换为 `/upload`的单文件上传模式。
+
+        ```bash
+        /uploadr C:\files\video.mp4 https://t.me/test
+        ```
+
+        ```bash
+        /upload C:\files\video.mp4 https://t.me/test
+        ```
+
+        _以上两个命令在功能上完全等效，系统会自动识别文件类型并采用相应的上传策略。_
 
 16. `/download_chat`命令使用教程：
 
