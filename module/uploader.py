@@ -21,6 +21,7 @@ from typing import (
 
 import pyrogram
 from pyrogram import raw, utils
+from pyrogram.errors.exceptions import FilePartMissing
 from pymediainfo import MediaInfo
 
 from module import console, log
@@ -287,6 +288,22 @@ class TelegramUploader:
             file_path: str,
             with_delete: bool = False
     ):
+        def _retry(_e):
+            console.log(
+                f'{_t(KeyWord.UPLOAD_TASK)}'
+                f'{_t(KeyWord.RE_UPLOAD)}:"{file_path}",'
+                f'{_t(KeyWord.RETRY_TIMES)}:{retry + 1}/{self.max_retry_count},'
+                f'{_t(KeyWord.REASON)}:"{_e}"'
+            )
+            if retry == self.max_retry_count - 1:
+                return {
+                    'chat_id': chat_id,
+                    'file_name': file_path,
+                    'size': file_size,
+                    'status': UploadStatus.FAILURE,
+                    'error_msg': str(_e)
+                }
+
         target_meta: Union[dict, None] = await parse_link(
             client=self.client,
             link=link
@@ -348,21 +365,15 @@ class TelegramUploader:
                     'status': UploadStatus.SUCCESS,
                     'error_msg': None
                 }
+            except FilePartMissing as e:
+                missing_part = getattr(e, 'value')
+                if isinstance(missing_part, int):
+                    fp = upload_manager.file_part
+                    if missing_part in fp:
+                        fp.remove(missing_part)
+                _retry(e)
             except Exception as e:
-                console.log(
-                    f'{_t(KeyWord.UPLOAD_TASK)}'
-                    f'{_t(KeyWord.RE_UPLOAD)}:"{file_path}",'
-                    f'{_t(KeyWord.RETRY_TIMES)}:{retry + 1}/{self.max_retry_count},'
-                    f'{_t(KeyWord.REASON)}:"{e}"'
-                )
-                if retry == self.max_retry_count - 1:
-                    return {
-                        'chat_id': chat_id,
-                        'file_name': file_path,
-                        'size': file_size,
-                        'status': UploadStatus.FAILURE,
-                        'error_msg': str(e)
-                    }
+                _retry(e)
 
     async def __add_task(
             self,
