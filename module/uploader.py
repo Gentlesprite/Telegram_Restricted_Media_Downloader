@@ -329,6 +329,7 @@ class TelegramUploader:
         )
 
         retry = 0
+        file_part_retry = 0
         while retry < self.max_retry_count:
             try:
                 resume_prompt = ''
@@ -360,6 +361,15 @@ class TelegramUploader:
                 fp = upload_manager.file_part
                 if missing_part in fp:
                     fp.remove(missing_part)
+                file_part_retry += 1
+                if file_part_retry >= upload_manager.file_total_parts:
+                    return {
+                        'chat_id': chat_id,
+                        'file_name': file_path,
+                        'size': file_size,
+                        'status': UploadStatus.FAILURE,
+                        'error_msg': f'缺失分片重传次数大于分片总数{upload_manager.file_total_parts},可能存在网络问题。'
+                    }
                 continue
             except ChatAdminRequired as e:
                 return {
