@@ -21,7 +21,10 @@ from typing import (
 
 import pyrogram
 from pyrogram import raw, utils
-from pyrogram.errors.exceptions import FilePartMissing
+from pyrogram.errors.exceptions import (
+    FilePartMissing,
+    ChatAdminRequired
+)
 from pymediainfo import MediaInfo
 
 from module import console, log
@@ -377,6 +380,14 @@ class TelegramUploader:
                     return result
                 # 否则继续下一次重试循环。
                 continue
+            except ChatAdminRequired as e:
+                return {
+                    'chat_id': chat_id,
+                    'file_name': file_path,
+                    'size': file_size,
+                    'status': UploadStatus.FAILURE,
+                    'error_msg': str(e)
+                }
             except Exception as e:
                 result = _retry(e, retry)
                 if result:
