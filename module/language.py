@@ -44,7 +44,8 @@ translations: dict = {
     'download and upload task': ['「📥📤下载后上传任务」'],
     'forward success': ['转发成功'],
     'forward failure': ['转发失败'],
-    'skip forward': ['跳过转发']
+    'skip forward': ['跳过转发'],
+    'upload file part': ['[上传缺失分片]']
 }
 
 

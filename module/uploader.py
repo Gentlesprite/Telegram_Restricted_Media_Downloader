@@ -102,7 +102,7 @@ class UploadManager:
             try:
                 _json = json.load(f)
             except Exception as e:
-                log.info(f'UploadManager的json内容可能为空,即将重新生成,原因:"{e}"')
+                log.info(f'UploadManager的json内容可能为空,即将重新生成,{_t(KeyWord.REASON)}:"{e}"')
                 safe_delete(self.upload_manager_path)
                 self.save_json()
         self.file_path = _json.get('file_path', self.file_path)
@@ -190,7 +190,11 @@ class TelegramUploader:
                         await self.loop.run_in_executor(self.client.executor, func)
 
             except Exception as e:
-                log.error(f'上传分片"{part_index}"失败,原因:"{e}"')
+                log.error(
+                    f'{_t(KeyWord.UPLOAD_FILE_PART)}:{part_index},'
+                    f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.FAILURE)},'
+                    f'{_t(KeyWord.REASON)}:"{e}"'
+                )
                 raise  # 重新抛出异常,由重试机制处理。
 
         # 检查是否所有分片都上传完成。
@@ -357,7 +361,10 @@ class TelegramUploader:
                 }
             except FilePartMissing as e:
                 missing_part = getattr(e, 'value')
-                console.log(f'[上传缺失分片]:{missing_part}')
+                console.log(
+                    f'{_t(KeyWord.UPLOAD_FILE_PART)}:{missing_part},'
+                    f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.UPLOADING)}。'
+                )
                 fp = upload_manager.file_part
                 if missing_part in fp:
                     fp.remove(missing_part)
@@ -368,7 +375,7 @@ class TelegramUploader:
                         'file_name': file_path,
                         'size': file_size,
                         'status': UploadStatus.FAILURE,
-                        'error_msg': f'缺失分片重传次数大于分片总数{upload_manager.file_total_parts},可能存在网络问题。'
+                        'error_msg': f'缺失分片重传次数大于分片总数{upload_manager.file_total_parts},可能存在网络问题'
                     }
                 continue
             except ChatAdminRequired as e:

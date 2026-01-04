@@ -98,7 +98,7 @@ class KeyWord:
     FORWARD_SUCCESS: str = 'forward success'
     FORWARD_FAILURE: str = 'forward failure'
     FORWARD_SKIP: str = 'skip forward'
-
+    UPLOAD_FILE_PART: str = 'upload file part'
 
 class Extension:
     PHOTO = {
