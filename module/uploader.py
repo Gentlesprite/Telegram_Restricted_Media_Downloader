@@ -67,7 +67,7 @@ class UploadManager:
         self.upload_manager_path: str = os.path.join(
             UploadManager.DIRECTORY_NAME,
             self.chat_id,
-            f'{self.file_name}.json'
+            f'{self.file_size} - {self.file_name}.json'
         )
         self.file_total_parts = int(math.ceil(file_size / UploadManager.PART_SIZE))
         os.makedirs(os.path.dirname(self.upload_manager_path), exist_ok=True)
@@ -329,9 +329,9 @@ class TelegramUploader:
                         os.path.join(
                             UploadManager.DIRECTORY_NAME,
                             chat_id,
-                            f'{os.path.basename(file_path)}.json'
+                            f'{file_size} - {os.path.basename(file_path)}.json'
                         )
-                ):
+                ) and upload_manager.file_part:
                     resume_prompt = f'{_t(KeyWord.RESUME)}:"{os.path.basename(file_path)},"'
                 console.log(
                     f'{_t(KeyWord.UPLOAD_TASK)}'
@@ -429,7 +429,13 @@ class TelegramUploader:
         more = ''
         self.current_task_num -= 1
         self.pb.progress.remove_task(task_id=task_id)
-        if not safe_delete(os.path.join(UploadManager.DIRECTORY_NAME, chat_id, f'{os.path.basename(file_path)}.json')):
+        if not safe_delete(
+                os.path.join(
+                    UploadManager.DIRECTORY_NAME,
+                    chat_id,
+                    f'{local_file_size} - {os.path.basename(file_path)}.json'
+                )
+        ):
             log.warning(f'无法删除上传缓存管理文件"{os.path.basename(file_path)}.json"。')
         else:
             log.info(f'成功删除上传缓存管理文件"{os.path.basename(file_path)}.json"。')
