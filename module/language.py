@@ -33,7 +33,7 @@ translations: dict = {
     'message id': ['[消息ID]'],
     'type': ['[类型]'],
     're-download': ['[重新下载]'],
-    're-upload': ['重新上传'],
+    're-upload': ['[重新上传]'],
     'retry times': ['[重试次数]'],
     'current download task': ['[当前下载任务数]'],
     'current upload task': ['[当前上传任务数]'],
