@@ -291,23 +291,6 @@ class TelegramUploader:
             file_path: str,
             with_delete: bool = False
     ):
-        def _retry(_e, retry_count):
-            console.log(
-                f'{_t(KeyWord.UPLOAD_TASK)}'
-                f'{_t(KeyWord.RE_UPLOAD)}:"{file_path}",'
-                f'{_t(KeyWord.RETRY_TIMES)}:{retry_count + 1}/{self.max_retry_count},'
-                f'{_t(KeyWord.REASON)}:"{_e}"'
-            )
-            if retry_count == self.max_retry_count - 1:
-                return {
-                    'chat_id': chat_id,
-                    'file_name': file_path,
-                    'size': file_size,
-                    'status': UploadStatus.FAILURE,
-                    'error_msg': str(_e)
-                }
-            return None  # 返回None表示继续重试。
-
         target_meta: Union[dict, None] = await parse_link(
             client=self.client,
             link=link
@@ -372,14 +355,10 @@ class TelegramUploader:
             except FilePartMissing as e:
                 missing_part = getattr(e, 'value')
                 if isinstance(missing_part, int):
+                    console.log(f'[上传缺失分片]:{missing_part}')
                     fp = upload_manager.file_part
                     if missing_part in fp:
                         fp.remove(missing_part)
-                result = _retry(e, retry)
-                if result:  # 如果是最后一次重试失败,返回失败结果。
-                    return result
-                # 否则继续下一次重试循环。
-                continue
             except ChatAdminRequired as e:
                 return {
                     'chat_id': chat_id,
@@ -389,10 +368,20 @@ class TelegramUploader:
                     'error_msg': str(e)
                 }
             except Exception as e:
-                result = _retry(e, retry)
-                if result:
-                    return result
-                continue
+                console.log(
+                    f'{_t(KeyWord.UPLOAD_TASK)}'
+                    f'{_t(KeyWord.RE_UPLOAD)}:"{file_path}",'
+                    f'{_t(KeyWord.RETRY_TIMES)}:{retry + 1}/{self.max_retry_count},'
+                    f'{_t(KeyWord.REASON)}:"{e}"'
+                )
+                if retry == self.max_retry_count - 1:
+                    return {
+                        'chat_id': chat_id,
+                        'file_name': file_path,
+                        'size': file_size,
+                        'status': UploadStatus.FAILURE,
+                        'error_msg': str(e)
+                    }
 
     async def __add_task(
             self,
