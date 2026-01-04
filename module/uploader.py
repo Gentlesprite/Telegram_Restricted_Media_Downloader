@@ -288,14 +288,14 @@ class TelegramUploader:
             file_path: str,
             with_delete: bool = False
     ):
-        def _retry(_e):
+        def _retry(_e, retry_count):
             console.log(
                 f'{_t(KeyWord.UPLOAD_TASK)}'
                 f'{_t(KeyWord.RE_UPLOAD)}:"{file_path}",'
-                f'{_t(KeyWord.RETRY_TIMES)}:{retry + 1}/{self.max_retry_count},'
+                f'{_t(KeyWord.RETRY_TIMES)}:{retry_count + 1}/{self.max_retry_count},'
                 f'{_t(KeyWord.REASON)}:"{_e}"'
             )
-            if retry == self.max_retry_count - 1:
+            if retry_count == self.max_retry_count - 1:
                 return {
                     'chat_id': chat_id,
                     'file_name': file_path,
@@ -303,6 +303,7 @@ class TelegramUploader:
                     'status': UploadStatus.FAILURE,
                     'error_msg': str(_e)
                 }
+            return None  # 返回None表示继续重试。
 
         target_meta: Union[dict, None] = await parse_link(
             client=self.client,
@@ -371,9 +372,16 @@ class TelegramUploader:
                     fp = upload_manager.file_part
                     if missing_part in fp:
                         fp.remove(missing_part)
-                _retry(e)
+                result = _retry(e, retry)
+                if result:  # 如果是最后一次重试失败,返回失败结果。
+                    return result
+                # 否则继续下一次重试循环。
+                continue
             except Exception as e:
-                _retry(e)
+                result = _retry(e, retry)
+                if result:
+                    return result
+                continue
 
     async def __add_task(
             self,
@@ -432,6 +440,14 @@ class TelegramUploader:
             with_delete,
             _future
     ):
+        try:
+            _ = _future.result()
+        except Exception as e:
+            self.current_task_num -= 1
+            self.pb.progress.remove_task(task_id=task_id)
+            self.event.set()
+            log.info(e)
+            return
         more = ''
         self.current_task_num -= 1
         self.pb.progress.remove_task(task_id=task_id)
