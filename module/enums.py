@@ -1043,6 +1043,7 @@ class BotCommandText:
         'listen_forward', '实时监听该链接的最新消息(任意消息)进行转发。\n`/listen_forward 监听频道 转发频道`')
     LISTEN_INFO: tuple = ('listen_info', '查看当前已经创建的监听信息。')
     UPLOAD: tuple = ('upload', '上传本地的文件到指定频道。`/upload 本地文件 目标频道`')
+    UPLOAD_R: tuple = ('upload_r', '递归上传文件夹(包含子文件夹)到指定频道。`/upload_r 本地文件夹 目标频道`')
     DOWNLOAD_CHAT: tuple = ('download_chat', '下载指定频道并支持通过内联键盘自定义内容过滤。`/download_chat 频道链接`')
 
     @staticmethod

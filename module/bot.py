@@ -65,10 +65,12 @@ class Bot:
         BotCommand(BotCommandText.LISTEN_FORWARD[0], BotCommandText.LISTEN_FORWARD[1].replace('`', '')),
         BotCommand(BotCommandText.LISTEN_INFO[0], BotCommandText.LISTEN_INFO[1]),
         BotCommand(BotCommandText.UPLOAD[0], BotCommandText.UPLOAD[1].replace('`', '')),
+        BotCommand(BotCommandText.UPLOAD_R[0], BotCommandText.UPLOAD_R[1].replace('`', '')),
         BotCommand(BotCommandText.DOWNLOAD_CHAT[0], BotCommandText.DOWNLOAD_CHAT[1].replace('`', ''))
     ]
 
     def __init__(self):
+        self.application = None
         self.user: Union[pyrogram.Client, None] = None
         self.bot: Union[pyrogram.Client, None] = None
         self.is_bot_running: bool = False
@@ -491,17 +493,21 @@ class Bot:
             save_directory: str = None
     ):
         text: str = message.text
-        if text == '/upload':
+        if text == '/upload' or text == '/upload_r':
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❓❓❓请提供参数❓❓❓语法:\n`/upload 本地文件 目标频道`',
+                text='❓❓❓请提供参数❓❓❓语法:\n`/upload 本地文件 目标频道`或`/upload_r 本地文件夹 目标频道`',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
             return None
 
         if text.startswith('/upload '):
             remaining_text = text[len('/upload '):].strip()
+            command = '/upload'
+        elif text.startswith('/upload_r '):
+            remaining_text = text[len('/upload_r '):].strip()
+            command = '/upload_r'
         else:
             return None
 
@@ -512,7 +518,20 @@ class Bot:
             target_link = parts[1]  # URL 部分
             if os.path.isdir(file_path):
                 upload_folder = []
-                for file_name in os.listdir(file_path):
+                if command == '/upload_r':
+                    if not os.path.isdir(file_path):
+                        await client.send_message(
+                            chat_id=message.from_user.id,
+                            reply_parameters=ReplyParameters(message_id=message.id),
+                            text='❌❌❌命令错误❌❌❌\n当命令为`/upload_r`时,命令的第二个参数必须为文件夹而非文件。语法:\n`/upload_r 本地文件夹 目标频道`',
+                            link_preview_options=LINK_PREVIEW_OPTIONS
+                        )
+                        return None
+                    upload_files = [os.path.join(root, filename) for root, dirs, files in os.walk(file_path) for
+                                    filename in files]
+                else:
+                    upload_files = os.listdir(file_path)
+                for file_name in upload_files:
                     new_message = copy.copy(message)
                     new_message.text = f'/upload {os.path.join(file_path, file_name)} {target_link}'
                     upload_folder.append(
@@ -785,11 +804,13 @@ class Bot:
 
     async def start_bot(
             self,
+            application,
             user_client_obj: pyrogram.Client,
             bot_client_obj: pyrogram.Client,
     ) -> str:
         """启动机器人。"""
         try:
+            self.application = application
             self.bot = bot_client_obj
             self.user = user_client_obj
             root = await self.user.get_me()
@@ -824,6 +845,12 @@ class Bot:
                 MessageHandler(
                     self.get_upload_link_from_bot,
                     filters=pyrogram.filters.command(['upload']) & pyrogram.filters.user(self.root)
+                )
+            )
+            self.bot.add_handler(
+                MessageHandler(
+                    self.get_upload_link_from_bot,
+                    filters=pyrogram.filters.command(['upload_r']) & pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(

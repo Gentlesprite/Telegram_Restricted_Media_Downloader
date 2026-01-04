@@ -1862,6 +1862,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.pb.progress.start()  # v1.1.8修复登录输入手机号不显示文本问题。
         if self.app.bot_token is not None:
             result = await self.start_bot(
+                self.app,
                 self.app.client,
                 pyrogram.Client(
                     name=self.BOT_NAME,
