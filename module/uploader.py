@@ -327,7 +327,9 @@ class TelegramUploader:
             file_id=self.client.rnd_id(),
             file_part=[]
         )
-        for retry in range(self.max_retry_count):
+
+        retry = 0
+        while retry < self.max_retry_count:
             try:
                 resume_prompt = ''
                 if retry != 0 or upload_manager.file_part:
@@ -358,6 +360,7 @@ class TelegramUploader:
                 fp = upload_manager.file_part
                 if missing_part in fp:
                     fp.remove(missing_part)
+                continue
             except ChatAdminRequired as e:
                 return {
                     'chat_id': chat_id,
@@ -373,7 +376,8 @@ class TelegramUploader:
                     f'{_t(KeyWord.RETRY_TIMES)}:{retry + 1}/{self.max_retry_count},'
                     f'{_t(KeyWord.REASON)}:"{e}"'
                 )
-                if retry == self.max_retry_count - 1:
+                retry += 1  # 只有非FilePartMissing异常才递增重试计数。
+                if retry == self.max_retry_count:
                     return {
                         'chat_id': chat_id,
                         'file_name': file_path,
