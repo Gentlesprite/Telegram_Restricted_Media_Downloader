@@ -354,11 +354,10 @@ class TelegramUploader:
                 }
             except FilePartMissing as e:
                 missing_part = getattr(e, 'value')
-                if isinstance(missing_part, int):
-                    console.log(f'[上传缺失分片]:{missing_part}')
-                    fp = upload_manager.file_part
-                    if missing_part in fp:
-                        fp.remove(missing_part)
+                console.log(f'[上传缺失分片]:{missing_part}')
+                fp = upload_manager.file_part
+                if missing_part in fp:
+                    fp.remove(missing_part)
             except ChatAdminRequired as e:
                 return {
                     'chat_id': chat_id,
