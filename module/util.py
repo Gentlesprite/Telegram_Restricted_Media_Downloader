@@ -228,7 +228,6 @@ async def get_chat_with_notify(
         error_msg: Union[str] = None,
         bot_client: Union[pyrogram.Client] = None,
         bot_message: Union[pyrogram.types.Message] = None
-
 ) -> Union[pyrogram.types.Chat, None]:
     try:
         chat = await user_client.get_chat(chat_id)

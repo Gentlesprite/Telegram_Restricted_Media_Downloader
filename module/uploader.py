@@ -32,7 +32,8 @@ from module.path_tool import get_mime_from_extension
 
 from module.path_tool import (
     split_path,
-    safe_delete
+    safe_delete,
+    truncate_filename
 )
 from module.enums import (
     KeyWord,
@@ -67,7 +68,7 @@ class UploadManager:
         self.upload_manager_path: str = os.path.join(
             UploadManager.DIRECTORY_NAME,
             self.chat_id,
-            f'{self.file_size} - {self.file_name}.json'
+            f'{truncate_filename(f"{self.file_size} - {self.file_name}")}.json'
         )
         self.file_total_parts = int(math.ceil(file_size / UploadManager.PART_SIZE))
         os.makedirs(os.path.dirname(self.upload_manager_path), exist_ok=True)
@@ -325,13 +326,7 @@ class TelegramUploader:
         for retry in range(self.max_retry_count):
             try:
                 resume_prompt = ''
-                if retry != 0 or os.path.exists(
-                        os.path.join(
-                            UploadManager.DIRECTORY_NAME,
-                            chat_id,
-                            f'{file_size} - {os.path.basename(file_path)}.json'
-                        )
-                ) and upload_manager.file_part:
+                if retry != 0 or upload_manager.file_part:
                     resume_prompt = f'{_t(KeyWord.RESUME)}:"{os.path.basename(file_path)},"'
                 console.log(
                     f'{_t(KeyWord.UPLOAD_TASK)}'
@@ -433,12 +428,12 @@ class TelegramUploader:
                 os.path.join(
                     UploadManager.DIRECTORY_NAME,
                     chat_id,
-                    f'{local_file_size} - {os.path.basename(file_path)}.json'
+                    f'{truncate_filename(f"{local_file_size} - {os.path.basename(file_path)}")}.json'
                 )
         ):
-            log.warning(f'无法删除上传缓存管理文件"{os.path.basename(file_path)}.json"。')
+            log.warning(f'无法删除"{os.path.basename(file_path)}"的上传缓存管理文件。')
         else:
-            log.info(f'成功删除上传缓存管理文件"{os.path.basename(file_path)}.json"。')
+            log.info(f'成功删除"{os.path.basename(file_path)}"的上传缓存管理文件。')
         asyncio.create_task(self.notify(f'"{file_path}"已上传完成。')) if isinstance(self.notify, Callable) else None
         self.event.set()
         if with_delete:
