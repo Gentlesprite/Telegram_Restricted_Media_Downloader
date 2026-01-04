@@ -520,14 +520,6 @@ class Bot:
             if os.path.isdir(file_path):
                 upload_folder = []
                 if command == '/upload_r':
-                    if not os.path.isdir(file_path):
-                        await client.send_message(
-                            chat_id=message.from_user.id,
-                            reply_parameters=ReplyParameters(message_id=message.id),
-                            text='❌❌❌命令错误❌❌❌\n当命令为`/upload_r`时,命令的第二个参数必须为文件夹而非文件。语法:\n`/upload_r 本地文件夹 目标频道`',
-                            link_preview_options=LINK_PREVIEW_OPTIONS
-                        )
-                        return None
                     upload_files = [os.path.join(root, filename) for root, dirs, files in os.walk(file_path) for
                                     filename in files]
                 else:
