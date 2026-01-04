@@ -68,7 +68,7 @@ class UploadManager:
         self.file_part: list = file_part
         self.upload_manager_path: str = os.path.join(
             UploadManager.DIRECTORY_NAME,
-            self.chat_id,
+            str(self.chat_id),
             f'{truncate_filename(f"{self.file_size} - {self.file_name}")}.json'
         )
         self.file_total_parts = int(math.ceil(file_size / UploadManager.PART_SIZE))
@@ -454,7 +454,7 @@ class TelegramUploader:
         if not safe_delete(
                 os.path.join(
                     UploadManager.DIRECTORY_NAME,
-                    chat_id,
+                    str(chat_id),
                     f'{truncate_filename(f"{local_file_size} - {os.path.basename(file_path)}")}.json'
                 )
         ):
