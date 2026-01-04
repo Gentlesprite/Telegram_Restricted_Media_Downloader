@@ -1443,7 +1443,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         self.resume_download(
                             message=message,
                             file_name=temp_file_path,
-                            progress=self.pb.bar,
+                            progress=self.pb.download,
                             progress_args=(
                                 sever_file_size,
                                 self.pb.progress,

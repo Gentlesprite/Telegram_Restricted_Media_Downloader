@@ -4,15 +4,19 @@
 # Time:2025/9/6 23:00
 # File:uploader.py
 import os
+import sys
+import json
+import math
+import hashlib
 import asyncio
+import inspect
 
 from functools import partial
 from typing import (
     Dict,
     Union,
     Optional,
-    Callable,
-    BinaryIO
+    Callable
 )
 
 import pyrogram
@@ -42,6 +46,79 @@ from module.util import (
 )
 
 
+class UploadManager:
+    DIRECTORY_NAME: str = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'temp')
+    PART_SIZE: int = 512 * 1024
+
+    def __init__(
+            self,
+            chat_id: Union[str, int],
+            file_path: str,
+            file_id: int,
+            file_size: int,
+            file_part: list
+    ):
+        self.chat_id: Union[str, int] = chat_id
+        self.file_path: str = file_path
+        self.file_name: str = os.path.basename(file_path)
+        self.file_id: int = file_id
+        self.file_size: int = file_size
+        self.file_part: list = file_part
+        self.upload_manager_path: str = os.path.join(
+            UploadManager.DIRECTORY_NAME,
+            self.chat_id,
+            f'{self.file_name}.json'
+        )
+        self.file_total_parts = int(math.ceil(file_size / UploadManager.PART_SIZE))
+        os.makedirs(os.path.dirname(self.upload_manager_path), exist_ok=True)
+        self.load_json()
+
+    def save_json(self):
+        with open(file=self.upload_manager_path, mode='w', encoding='UTF-8') as f:
+            json.dump(
+                obj={
+                    'file_path': self.file_path,
+                    'file_id': self.file_id,
+                    'file_size': self.file_size,
+                    'file_part': self.file_part,
+                    'file_total_parts': self.file_total_parts
+                },
+                fp=f,
+                ensure_ascii=False,
+                indent=4
+            )
+
+    def load_json(self):
+        if not os.path.exists(self.upload_manager_path):
+            self.save_json()
+            return
+        with open(file=self.upload_manager_path, mode='r', encoding='UTF-8') as f:
+            _json: dict = {}
+            try:
+                _json = json.load(f)
+            except Exception as e:
+                log.info(f'UploadManager的json内容可能为空,即将重新生成,原因:"{e}"')
+                safe_delete(self.upload_manager_path)
+                self.save_json()
+        self.file_path = _json.get('file_path', self.file_path)
+        self.file_id = _json.get('file_id', self.file_id)
+        self.file_size = _json.get('file_size', self.file_size)
+        self.file_part = _json.get('file_part', self.file_part)
+        self.file_total_parts = _json.get('file_total_parts', self.file_total_parts)
+
+    def update_file_part(self, file_part: set):
+        if file_part not in self.file_part:
+            self.file_part.append(file_part)
+            self.save_json()
+
+    def get_missing_parts(self) -> list:
+        """获取缺失的分片索引。"""
+        all_parts = set(range(self.file_total_parts))
+        uploaded_parts = set(self.file_part)
+        missing_parts = sorted(list(all_parts - uploaded_parts))
+        return missing_parts
+
+
 class TelegramUploader:
     def __init__(
             self,
@@ -63,22 +140,78 @@ class TelegramUploader:
         self.is_premium: bool = is_premium
         self.notify: Callable = notify
 
-    async def send_media(
+    async def resume_upload(
             self,
-            chat_id: Union[int, str],
-            path: Union[str, BinaryIO],
-            file_id: int = None,
-            file_part: int = 0,
+            upload_manager: UploadManager,
             progress: Callable = None,
             progress_args: tuple = ()
     ):
-        file = await self.client.save_file(
-            path=path,
-            file_id=file_id,
-            file_part=file_part,
-            progress=progress,
-            progress_args=progress_args
-        )
+        missing_parts = upload_manager.get_missing_parts()
+        chat_id = upload_manager.chat_id
+        path = upload_manager.file_path
+        file_id = upload_manager.file_id
+        file_size: int = upload_manager.file_size
+        file_total_parts: int = upload_manager.file_total_parts
+        if not missing_parts:
+            # 所有分片都已上传,准备发送消息。
+            log.info(f'所有分片已上传完成,正在发送消息...')
+        else:
+            log.info(f'需要上传的分片:{len(missing_parts)}/{file_total_parts}')
+        # 上传缺失的分片。
+        for part_index in missing_parts:
+            try:
+                # 上传单个分片。
+                part_size = 512 * 1024
+                await self.client.save_file(
+                    path=path,
+                    file_id=file_id,
+                    file_part=part_index
+                )
+                # 更新上传记录。
+                upload_manager.update_file_part(part_index)
+                # 调用进度回调。
+                if progress:
+                    current_size = min((part_index + 1) * part_size, file_size)
+                    func = partial(
+                        progress,
+                        current_size,
+                        file_size,
+                        *progress_args
+                    )
+
+                    if inspect.iscoroutinefunction(progress):
+                        await func()
+                    else:
+                        await self.loop.run_in_executor(self.client.executor, func)
+
+            except Exception as e:
+                log.error(f'上传分片"{part_index}"失败,原因:"{e}"')
+                raise  # 重新抛出异常,由重试机制处理。
+
+        # 检查是否所有分片都上传完成。
+        if len(upload_manager.file_part) != file_total_parts:
+            raise Exception(f'分片上传不完整:{len(upload_manager.file_part)}/{file_total_parts}')
+
+        is_big = file_size > 10 * 1024 * 1024
+        if is_big:
+            file = raw.types.InputFileBig(
+                id=upload_manager.file_id,
+                parts=upload_manager.file_total_parts,
+                name=os.path.basename(path)
+            )
+        else:
+            md5_hash = hashlib.md5()
+            with open(path, 'rb') as f:
+                for chunk in iter(lambda: f.read(8192), b''):
+                    md5_hash.update(chunk)
+            md5_sum = ''.join([hex(i)[2:].zfill(2) for i in md5_hash.digest()])
+
+            file = raw.types.InputFile(
+                id=upload_manager.file_id,
+                parts=upload_manager.file_total_parts,
+                name=os.path.basename(path),
+                md5_checksum=md5_sum
+            )
 
         file_path: Union[str, None] = getattr(file, 'name', '')
         if not file_path:
@@ -182,18 +315,34 @@ class TelegramUploader:
                 'status': UploadStatus.FAILURE,
                 'error_msg': '上传文件大小为0'
             }
+        upload_manager = UploadManager(
+            chat_id=chat_id,
+            file_path=file_path,
+            file_size=file_size,
+            file_id=self.client.rnd_id(),
+            file_part=[]
+        )
         for retry in range(self.max_retry_count):
             try:
+                resume_prompt = ''
+                if retry != 0 or os.path.exists(
+                        os.path.join(
+                            UploadManager.DIRECTORY_NAME,
+                            chat_id,
+                            f'{os.path.basename(file_path)}.json'
+                        )
+                ):
+                    resume_prompt = f'{_t(KeyWord.RESUME)}:"{os.path.basename(file_path)},"'
                 console.log(
                     f'{_t(KeyWord.UPLOAD_TASK)}'
+                    f'{resume_prompt}'
                     f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'
                     f'{_t(KeyWord.FILE)}:"{file_path}",'
                     f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(file_size)},'
                     f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.UPLOADING)}。'
                 )
                 await self.__add_task(
-                    chat_id=chat_id,
-                    file_path=file_path,
+                    upload_manager=upload_manager,
                     size=file_size,
                     with_delete=with_delete
                 )
@@ -222,11 +371,12 @@ class TelegramUploader:
 
     async def __add_task(
             self,
-            chat_id: Union[str, int],
-            file_path: str,
+            upload_manager: UploadManager,
             size: int,
             with_delete: bool = False
     ):
+        chat_id = upload_manager.chat_id
+        file_path = upload_manager.file_path
         while self.current_task_num >= self.max_upload_task:  # v1.0.7 增加下载任务数限制。
             await self.event.wait()
             self.event.clear()
@@ -238,13 +388,13 @@ class TelegramUploader:
             total=size
         )
         _task = self.loop.create_task(
-            self.send_media(
-                chat_id=chat_id,
-                path=file_path,
-                progress=self.pb.bar,
+            self.resume_upload(
+                upload_manager=upload_manager,
+                progress=self.pb.upload,
                 progress_args=(
                     self.pb.progress,
-                    task_id
+                    task_id,
+                    upload_manager
                 )
             )
         )
@@ -279,6 +429,10 @@ class TelegramUploader:
         more = ''
         self.current_task_num -= 1
         self.pb.progress.remove_task(task_id=task_id)
+        if not safe_delete(os.path.join(UploadManager.DIRECTORY_NAME, chat_id, f'{os.path.basename(file_path)}.json')):
+            log.warning(f'无法删除上传缓存管理文件"{os.path.basename(file_path)}.json"。')
+        else:
+            log.info(f'成功删除上传缓存管理文件"{os.path.basename(file_path)}.json"。')
         asyncio.create_task(self.notify(f'"{file_path}"已上传完成。')) if isinstance(self.notify, Callable) else None
         self.event.set()
         if with_delete:

@@ -483,7 +483,19 @@ class ProgressBar:
         )
 
     @staticmethod
-    def bar(current, total, progress, task_id) -> None:
+    def download(current, total, progress, task_id) -> None:
+        progress.update(
+            task_id,
+            completed=current,
+            info=f'{MetaData.suitable_units_display(current)}/{MetaData.suitable_units_display(total)}',
+            total=total
+        )
+
+    @staticmethod
+    def upload(current, total, progress, task_id, upload_manager) -> None:
+        upload_manager.update_file_part(
+            file_part=current // (512 * 1024)
+        )
         progress.update(
             task_id,
             completed=current,
