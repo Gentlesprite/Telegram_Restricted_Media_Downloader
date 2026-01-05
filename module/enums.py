@@ -100,6 +100,7 @@ class KeyWord:
     FORWARD_SKIP: str = 'skip forward'
     UPLOAD_FILE_PART: str = 'upload file part'
 
+
 class Extension:
     PHOTO = {
         'image/avif': 'avif',
@@ -280,6 +281,23 @@ class GradientColor:
         '#3af5c3',
         '#39f7cd',
         '#38f9d7'
+    ]
+    RED_GRADIENT_15 = [
+        '#ff0000',
+        '#ff0011',
+        '#ff0021',
+        '#ff0032',
+        '#ff0043',
+        '#ff0053',
+        '#ff0064',
+        '#ff0075',
+        '#ff0085',
+        '#ff0096',
+        '#ff1a9e',
+        '#ff33a6',
+        '#ff4db0',
+        '#ff66b8',
+        '#ff80c2'
     ]
 
     @staticmethod
