@@ -249,14 +249,28 @@ class UploadTask:
         self.file_part = _json.get('file_part', self.file_part)
         self.file_total_parts = _json.get('file_total_parts', self.file_total_parts)
 
-    def update_file_part(self, file_part: set):
-        if file_part not in self.file_part:
+    def update_file_part(self, file_part: int):
+        if file_part not in self.file_part and file_part < self.file_total_parts:
             self.file_part.append(file_part)
             self.save_json()
 
     def get_missing_parts(self) -> list:
         """获取缺失的分片索引。"""
+        valid_parts = []
+        for part in self.file_part:
+            if isinstance(part, int) and 0 <= part < self.file_total_parts and part not in valid_parts:
+                valid_parts.append(part)
+            else:
+                log.info(f'过滤无效分片索引:{part}(有效范围:0-{self.file_total_parts - 1})。')
+
+        if len(valid_parts) != len(self.file_part):
+            self.file_part = valid_parts
+            self.save_json()
+            log.info(f'清理后的分片索引:{valid_parts}。')
+
         all_parts = set(range(self.file_total_parts))
-        uploaded_parts = set(self.file_part)
+        uploaded_parts = set(valid_parts)
         missing_parts = sorted(list(all_parts - uploaded_parts))
+
+        log.info(f'总需分片:{all_parts},已上传:{uploaded_parts},缺失:{missing_parts}。')
         return missing_parts

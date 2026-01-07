@@ -353,7 +353,8 @@ class StatisticalTable:
                 PanelTable(
                     title='上传任务统计',
                     header=header,
-                    data=table_data
+                    data=table_data,
+                    show_lines=True
                 ).print_meta()
 
             return True
