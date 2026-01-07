@@ -277,15 +277,14 @@ class StatisticalTable:
         success_tasks = len([t for t in tasks if t.status == UploadStatus.SUCCESS])
         failure_tasks = len([t for t in tasks if t.status == UploadStatus.FAILURE])
         uploading_tasks = len([t for t in tasks if t.status == UploadStatus.UPLOADING])
-        idle_tasks = len([t for t in tasks if t.status == UploadStatus.IDLE])
         delete_tasks = len([t for t in tasks if getattr(t, 'with_delete', False)])
 
-        # 添加汇总行
+        # 添加汇总行。
         summary_row = [
             '汇总统计',
             f'总计:{total_tasks}个文件',
             f'成功:{success_tasks}个',
-            MetaData.suitable_units_display(total_size),
+            f'总大小:{MetaData.suitable_units_display(total_size)}',
             f'上传中:{uploading_tasks}个',
             f'失败:{failure_tasks}个',
             f'自动删除:{delete_tasks}个'
@@ -296,7 +295,7 @@ class StatisticalTable:
         # 详细的汇总信息行。
         detailed_summary = [
             '详细统计',
-            f'等待:{idle_tasks}个',
+            '',
             '',
             f'平均大小:{MetaData.suitable_units_display(total_size / total_tasks if total_tasks > 0 else 0)}',
             f'成功率:{success_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0.0%',
@@ -336,12 +335,10 @@ class StatisticalTable:
                                      f'{failure_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0%'])
                     writer.writerow(['上传中任务', uploading_tasks,
                                      f'{uploading_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0%'])
-                    writer.writerow(['等待任务', idle_tasks,
-                                     f'{idle_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0%'])
                     writer.writerow(['自动删除', delete_tasks,
                                      f'{delete_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0%'])
-                    writer.writerow(['总文件大小', MetaData.suitable_units_display(total_size), '-'])
-                    writer.writerow(['平均文件大小', MetaData.suitable_units_display(
+                    writer.writerow(['总大小', MetaData.suitable_units_display(total_size), '-'])
+                    writer.writerow(['平均大小', MetaData.suitable_units_display(
                         total_size / total_tasks if total_tasks > 0 else 0), '-'])
 
                 log.info(f'上传任务统计表已导出:{os.path.join(export_directory, filename)}')
