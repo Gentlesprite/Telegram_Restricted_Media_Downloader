@@ -570,7 +570,8 @@ class GlobalConfig(BaseConfig):
         'console_log_level': logging.getLevelName(CONSOLE_LOG_LEVEL),
         'export_table': {
             'link': False,
-            'count': False
+            'count': False,
+            'upload': False
         },
         'upload':
             {

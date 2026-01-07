@@ -72,7 +72,7 @@ from module.path_tool import (
     move_to_save_directory,
     safe_replace
 )
-from module.task import DownloadTask
+from module.task import DownloadTask, UploadTask
 from module.stdio import ProgressBar, Base64Image, MetaData
 from module.uploader import TelegramUploader
 from module.util import (
@@ -338,7 +338,11 @@ class TelegramRestrictedMediaDownloader(Bot):
             await kb.toggle_upload_setting_button(global_config=self.gc.config)
         elif callback_data == BotCallbackText.FORWARD_SETTING:
             await kb.toggle_forward_setting_button(global_config=self.gc.config)
-        elif callback_data in (BotCallbackText.LINK_TABLE, BotCallbackText.COUNT_TABLE):
+        elif callback_data in (
+                BotCallbackText.LINK_TABLE,
+                BotCallbackText.COUNT_TABLE,
+                BotCallbackText.UPLOAD_TABLE
+        ):
             _prompt_string: str = ''
             _false_text: str = ''
             _choice: str = ''
@@ -353,6 +357,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _false_text: str = '😵😵😵当前没有任何下载。'
                 _choice: str = BotCallbackText.EXPORT_COUNT_TABLE
                 res: Union[bool, None] = self.app.print_count_table()
+            elif callback_data == BotCallbackText.UPLOAD_TABLE:
+                _prompt_string: str = '上传统计表'
+                _false_text: str = '😵😵😵当前没有任何上传。'
+                _choice: str = BotCallbackText.EXPORT_UPLOAD_TABLE
+                res: Union[bool, None] = self.app.print_upload_table(UploadTask.TASKS)
             if res:
                 await callback_query.message.edit_text(f'👌👌👌`{_prompt_string}`已发送至您的「终端」请注意查收。')
                 await kb.choice_export_table_button(choice=_choice)
@@ -363,11 +372,22 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await callback_query.message.edit_text(
                     f'😵‍💫😵‍💫😵‍💫`{_prompt_string}`打印失败。\n(具体原因请前往终端查看报错信息)')
             await kb.back_table_button()
-        elif callback_data in (BotCallbackText.TOGGLE_LINK_TABLE, BotCallbackText.TOGGLE_COUNT_TABLE):
+        elif callback_data in (
+                BotCallbackText.TOGGLE_LINK_TABLE,
+                BotCallbackText.TOGGLE_COUNT_TABLE,
+                BotCallbackText.TOGGLE_UPLOAD_TABLE
+        ):
             async def _toggle_button(_table_type):
                 export_config: dict = self.gc.config.get('export_table')
                 export_config[_table_type] = not export_config.get(_table_type)
-                t_t: str = '链接统计表' if _table_type == 'link' else '计数统计表'
+                if _table_type == 'link':
+                    t_t = '链接统计表'
+                elif _table_type == 'count':
+                    t_t = '计数统计表'
+                elif _table_type == 'upload':
+                    t_t = '上传统计表'
+                else:
+                    t_t = '统计表'
                 s_t: str = '启用' if export_config.get(_table_type) else '禁用'
                 t_p: str = f'退出后导出{t_t}已{s_t}。'
                 console.log(t_p, style='#FF4689')
@@ -382,11 +402,19 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await _toggle_button('link')
             elif callback_data == BotCallbackText.TOGGLE_COUNT_TABLE:
                 await _toggle_button('count')
-        elif callback_data in (BotCallbackText.EXPORT_LINK_TABLE, BotCallbackText.EXPORT_COUNT_TABLE):
+            elif callback_data == BotCallbackText.TOGGLE_UPLOAD_TABLE:
+                await _toggle_button('upload')
+        elif callback_data in (
+                BotCallbackText.EXPORT_LINK_TABLE,
+                BotCallbackText.EXPORT_COUNT_TABLE,
+                BotCallbackText.EXPORT_UPLOAD_TABLE
+        ):
             _prompt_string: str = ''
+            _folder: str = ''
             res: Union[bool, None] = False
             if callback_data == BotCallbackText.EXPORT_LINK_TABLE:
                 _prompt_string: str = '链接统计表'
+                _folder: str = 'DownloadRecordForm'
                 res: Union[bool, None] = self.app.print_link_table(
                     link_info=DownloadTask.LINK_INFO,
                     export=True,
@@ -394,13 +422,22 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
             elif callback_data == BotCallbackText.EXPORT_COUNT_TABLE:
                 _prompt_string: str = '计数统计表'
+                _folder: str = 'DownloadRecordForm'
                 res: Union[bool, None] = self.app.print_count_table(
+                    export=True,
+                    only_export=True
+                )
+            elif callback_data == BotCallbackText.EXPORT_UPLOAD_TABLE:
+                _prompt_string: str = '上传统计表'
+                _folder: str = 'UploadRecordForm'
+                res: Union[bool, None] = self.app.print_upload_table(
+                    upload_tasks=UploadTask.TASKS,
                     export=True,
                     only_export=True
                 )
             if res:
                 await callback_query.message.edit_text(
-                    f'✅✅✅`{_prompt_string}`已发送至您的「终端」并已「导出」为表格请注意查收。\n(请查看软件目录下`DownloadRecordForm`文件夹)')
+                    f'✅✅✅`{_prompt_string}`已发送至您的「终端」并已「导出」为表格请注意查收。\n(请查看软件目录下`{_folder}`文件夹)')
             elif res is False:
                 await callback_query.message.edit_text('😵😵😵没有链接需要统计。')
             else:
@@ -1975,6 +2012,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
                 self.app.print_count_table(
                     export=self.gc.get_config('export_table').get('count')
+                )
+                self.app.print_upload_table(
+                    upload_tasks=UploadTask.TASKS,
+                    export=self.gc.get_config('export_table').get('upload')
                 )
                 MetaData.pay()
                 self.app.process_shutdown(60) if len(self.running_log) == 2 else None  # v1.2.8如果并未打开客户端执行任何下载,则不执行关机。

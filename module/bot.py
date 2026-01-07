@@ -418,12 +418,17 @@ class Bot:
                 [
                     InlineKeyboardButton(
                         BotButton.LINK_TABLE,
-                        url='https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases',
                         callback_data=BotCallbackText.LINK_TABLE
                     ),
                     InlineKeyboardButton(
-                        BotButton.COUNT_TABLE, url='https://t.me/RestrictedMediaDownloader',
+                        BotButton.COUNT_TABLE,
                         callback_data=BotCallbackText.COUNT_TABLE
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        BotButton.UPLOAD_TABLE,
+                        callback_data=BotCallbackText.UPLOAD_TABLE
                     )
                 ],
                 [
@@ -988,12 +993,19 @@ class KeyboardButton:
             self,
             choice: Union[BotCallbackText, str]
     ) -> None:
+        export_callback_data: str = ''
+        if choice == BotCallbackText.EXPORT_LINK_TABLE:
+            export_callback_data = BotCallbackText.EXPORT_LINK_TABLE
+        elif choice == BotCallbackText.EXPORT_COUNT_TABLE:
+            export_callback_data = BotCallbackText.EXPORT_COUNT_TABLE
+        elif choice == BotCallbackText.EXPORT_UPLOAD_TABLE:
+            export_callback_data = BotCallbackText.EXPORT_UPLOAD_TABLE
         await self.callback_query.message.edit_reply_markup(InlineKeyboardMarkup(
             [
                 [
                     InlineKeyboardButton(
                         text=BotButton.EXPORT_TABLE,
-                        callback_data=BotCallbackText.EXPORT_LINK_TABLE if choice == BotCallbackText.EXPORT_LINK_TABLE else BotCallbackText.EXPORT_COUNT_TABLE
+                        callback_data=export_callback_data
                     ),
                     InlineKeyboardButton(
                         text=BotButton.RESELECT,
@@ -1296,6 +1308,13 @@ class KeyboardButton:
                         ],
                         [
                             InlineKeyboardButton(
+                                text=BotButton.CLOSE_UPLOAD_TABLE if config.get(
+                                    'export_table').get('upload') else BotButton.OPEN_UPLOAD_TABLE,
+                                callback_data=BotCallbackText.TOGGLE_UPLOAD_TABLE
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
                                 text=BotButton.RETURN,
                                 callback_data=BotCallbackText.SETTING
                             )
@@ -1307,7 +1326,14 @@ class KeyboardButton:
             pass
         except Exception as _e:
             if choice:
-                prompt: str = '链接' if choice == 'link' else '计数'
+                if choice == 'link':
+                    prompt: str = '链接'
+                elif choice == 'count':
+                    prompt: str = '计数'
+                elif choice == 'upload':
+                    prompt: str = '上传'
+                else:
+                    prompt: str = ''
                 await self.callback_query.message.reply_text(
                     f'设置启用或禁用导出{prompt}统计表失败\n(具体原因请前往终端查看报错信息)'
                 )

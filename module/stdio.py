@@ -7,6 +7,7 @@ import os
 import sys
 import csv
 import base64
+import math
 import datetime
 
 from io import BytesIO
@@ -25,6 +26,7 @@ from rich.progress import (
     TransferSpeedColumn,
     SpinnerColumn
 )
+from enum import Enum
 
 from module import (
     log,
@@ -39,6 +41,7 @@ from module.language import _t
 from module.util import get_terminal_width
 from module.enums import (
     DownloadType,
+    UploadStatus,
     KeyWord,
     GradientColor,
     ProcessConfig,
@@ -110,6 +113,7 @@ class StatisticalTable:
                 if isinstance(count, int):
                     check_count += count
         if check_count == 0:
+            log.info(f'无法生成计数统计表,{_t(KeyWord.REASON)}:"没有任何下载"')
             return False
 
         if export:
@@ -179,6 +183,7 @@ class StatisticalTable:
                 data.append([index, link, file_names, complete_rate, error_info])
 
             if not data:
+                log.info(f'无法生成下载链接统计表,{_t(KeyWord.REASON)}:"没有任何下载"')
                 return False
             if export:
                 try:
@@ -208,6 +213,157 @@ class StatisticalTable:
             return True
         except Exception as e:
             log.error(f'打印下载链接统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
+            return None
+
+    @staticmethod
+    def print_upload_table(
+            upload_tasks: set,
+            export: bool = False,
+            only_export: bool = False,
+            export_directory: str = os.path.join(
+                os.path.dirname(os.path.abspath(sys.argv[0])),
+                'UploadRecordForm',
+                'Normal'
+            )
+    ):
+        """打印统计的上传信息的表格。"""
+        tasks = list(upload_tasks)
+        if not tasks:
+            log.warning(f'没有上传任务数据。')
+            return False
+        header: tuple = (
+            '频道',
+            '文件路径',
+            '文件ID',
+            '文件大小',
+            '状态',
+            '文件分块',
+            '上传后自动删除'
+        )
+        table_data = []
+        for task in tasks:
+            uploaded_parts = len(set(task.file_part))
+            total_parts = getattr(task, 'file_total_parts', 0)
+            if total_parts == 0:
+                # 计算总分块数。
+                part_size = getattr(task, 'PART_SIZE', 512 * 1024)
+                total_parts = int(math.ceil(task.file_size / part_size))
+            file_part_display = f'{uploaded_parts}/{total_parts}'
+            if isinstance(task.status, Enum):
+                status_display = _t(str(task.status.value))
+            else:
+                status_display = _t(str(task.status))
+                # 获取是否自动删除。
+            delete_display = '是' if getattr(task, 'with_delete', False) else '否'
+
+            # 构建一行数据
+            row = [
+                str(task.chat_id) if task.chat_id else "未知",
+                task.file_path,
+                str(task.file_id),
+                MetaData.suitable_units_display(task.file_size),
+                status_display,
+                file_part_display,
+                delete_display
+            ]
+            table_data.append(row)
+
+        # 检查数据有效性。
+        if len(table_data) < 1:
+            log.info(f'无法生成上传统计表,{_t(KeyWord.REASON)}:"没有任何上传"')
+            return False
+
+        total_tasks = len(tasks)
+        total_size = sum(task.file_size for task in tasks)
+        success_tasks = len([t for t in tasks if t.status == UploadStatus.SUCCESS])
+        failure_tasks = len([t for t in tasks if t.status == UploadStatus.FAILURE])
+        uploading_tasks = len([t for t in tasks if t.status == UploadStatus.UPLOADING])
+        idle_tasks = len([t for t in tasks if t.status == UploadStatus.IDLE])
+        delete_tasks = len([t for t in tasks if getattr(t, 'with_delete', False)])
+
+        # 添加汇总行
+        summary_row = [
+            '汇总统计',
+            f'总计:{total_tasks}个文件',
+            f'成功:{success_tasks}个',
+            MetaData.suitable_units_display(total_size),
+            f'上传中:{uploading_tasks}个',
+            f'失败:{failure_tasks}个',
+            f'自动删除:{delete_tasks}个'
+        ]
+        table_data.append([])  # 空行分隔。
+        table_data.append(summary_row)
+
+        # 详细的汇总信息行。
+        detailed_summary = [
+            '详细统计',
+            f'等待:{idle_tasks}个',
+            '',
+            f'平均大小:{MetaData.suitable_units_display(total_size / total_tasks if total_tasks > 0 else 0)}',
+            f'成功率:{success_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0.0%',
+            f'失败率:{failure_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0.0%',
+            f'删除率:{delete_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0.0%'
+        ]
+        table_data.append(detailed_summary)
+
+        if export:
+            try:
+                os.makedirs(export_directory, exist_ok=True)
+                timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+                filename = f'{timestamp}_上传任务统计表.csv'
+
+                with open(
+                        file=os.path.join(export_directory, filename),
+                        mode='w',
+                        newline='',
+                        encoding='utf-8-sig'
+                ) as f:
+                    writer = csv.writer(f)
+                    # 写入原始表头。
+                    writer.writerow(header)
+                    # 写入数据行(不包含汇总行，因为格式不匹配)。
+                    for row in table_data[:-3]:  # 不写入最后的空行和汇总行。
+                        if row:  # 跳过空行
+                            writer.writerow(row)
+
+                    # 在CSV中添加汇总信息。
+                    writer.writerow([])  # 空行。
+                    writer.writerow(['=== 汇总统计信息 ==='])
+                    writer.writerow(['统计项', '数量/大小', '百分比'])
+                    writer.writerow(['总任务数', total_tasks, '100%'])
+                    writer.writerow(['成功任务', success_tasks,
+                                     f'{success_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0%'])
+                    writer.writerow(['失败任务', failure_tasks,
+                                     f'{failure_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0%'])
+                    writer.writerow(['上传中任务', uploading_tasks,
+                                     f'{uploading_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0%'])
+                    writer.writerow(['等待任务', idle_tasks,
+                                     f'{idle_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0%'])
+                    writer.writerow(['自动删除', delete_tasks,
+                                     f'{delete_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0%'])
+                    writer.writerow(['总文件大小', MetaData.suitable_units_display(total_size), '-'])
+                    writer.writerow(['平均文件大小', MetaData.suitable_units_display(
+                        total_size / total_tasks if total_tasks > 0 else 0), '-'])
+
+                log.info(f'上传任务统计表已导出:{os.path.join(export_directory, filename)}')
+
+            except Exception as e:
+                log.error(f'导出上传任务统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
+                if only_export:
+                    return None
+
+        try:
+            if only_export is False:
+                PanelTable(
+                    title='上传任务统计',
+                    header=header,
+                    data=table_data
+                ).print_meta()
+
+            return True
+
+        except Exception as e:
+            log.error(f'打印上传任务统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
             return None
 
     @staticmethod

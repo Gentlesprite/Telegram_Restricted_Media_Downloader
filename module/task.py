@@ -129,6 +129,8 @@ class DownloadTask:
 class UploadTask:
     DIRECTORY_NAME: str = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'temp')
     PART_SIZE: int = 512 * 1024
+    TASKS = set()
+    TASK_COUNTER = 0
 
     def __init__(
             self,
@@ -141,6 +143,9 @@ class UploadTask:
             error_msg: Union[str, None] = None,
             with_delete: bool = False
     ):
+        UploadTask.TASKS.add(self)
+        UploadTask.TASK_COUNTER += 1
+        self.task_id = UploadTask.TASK_COUNTER
         self.chat_id: Union[str, int, None] = chat_id
         self.file_path: str = file_path
         self.file_name: str = os.path.basename(file_path)
