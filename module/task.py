@@ -145,7 +145,6 @@ class UploadTask:
     ):
         UploadTask.TASKS.add(self)
         UploadTask.TASK_COUNTER += 1
-        self.task_id = UploadTask.TASK_COUNTER
         self.chat_id: Union[str, int, None] = chat_id
         self.file_path: str = file_path
         self.file_name: str = os.path.basename(file_path)
@@ -208,6 +207,14 @@ class UploadTask:
 
             else:
                 super().__setattr__(name, value)
+
+    @property
+    def complete_task(self) -> int:
+        complete = []
+        for task in UploadTask.TASKS:
+            if task.status == UploadStatus.SUCCESS:
+                complete.append(task)
+        return len(complete)
 
     def save_json(self):
         with open(file=self.upload_manager_path, mode='w', encoding='UTF-8') as f:

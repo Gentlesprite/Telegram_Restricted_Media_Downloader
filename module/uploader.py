@@ -319,7 +319,9 @@ class TelegramUploader:
             self.current_task_num += 1
             MetaData.print_current_task_num(
                 prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
-                num=self.current_task_num
+                num=self.current_task_num,
+                complete=upload_task.complete_task,
+                total=upload_task.TASK_COUNTER
             )
             await _task
 
@@ -359,7 +361,9 @@ class TelegramUploader:
         upload_task.status = UploadStatus.SUCCESS
         MetaData.print_current_task_num(
             prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
-            num=self.current_task_num
+            num=self.current_task_num,
+            complete=upload_task.complete_task,
+            total=upload_task.TASK_COUNTER
         )
 
     def download_upload(self, with_upload: dict, file_path: str):

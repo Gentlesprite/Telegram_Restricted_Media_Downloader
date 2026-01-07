@@ -1491,7 +1491,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     MetaData.print_current_task_num(
                         prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
-                        num=self.app.current_task_num
+                        num=self.app.current_task_num,
+                        complete=len(DownloadTask.COMPLETE_LINK),
+                        total=len(DownloadTask.LINK_INFO)
                     )
                     _task.add_done_callback(
                         partial(
@@ -1624,7 +1626,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             ):
                 MetaData.print_current_task_num(
                     prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
-                    num=self.app.current_task_num
+                    num=self.app.current_task_num,
+                    complete=len(DownloadTask.COMPLETE_LINK),
+                    total=len(DownloadTask.LINK_INFO)
                 )
                 if self.uploader:
                     self.uploader.download_upload(
