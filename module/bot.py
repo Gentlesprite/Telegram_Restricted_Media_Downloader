@@ -35,6 +35,7 @@ from module import (
 )
 from module.language import _t
 from module.stdio import MetaData
+from module.task import UploadTask
 from module.config import GlobalConfig
 from module.util import (
     parse_link,
@@ -44,6 +45,7 @@ from module.util import (
 )
 from module.enums import (
     CalenderKeyboard,
+    UploadStatus,
     DownloadType,
     BotCommandText,
     BotMessage,
@@ -327,8 +329,8 @@ class Bot:
                 last_bot_messages.append(last_bot_message)
         return last_bot_messages[-1]
 
-    @staticmethod
     async def help(
+            self,
             client: Union[pyrogram.Client, None] = None,
             message: Union[pyrogram.types.Message, None] = None
     ) -> Union[None, dict]:  # client与message都为None时,返回keyboard与text。
@@ -578,8 +580,15 @@ class Bot:
             # 验证目标链接格式
             if target_link.startswith('https://t.me/'):
                 return {
-                    'file_path': file_path,
-                    'target_link': target_link
+                    'target_link': target_link,
+                    'upload_task': UploadTask(
+                        chat_id=None,
+                        file_path=file_path,
+                        file_id=self.user.rnd_id(),
+                        file_size=os.path.getsize(file_path),
+                        file_part=[],
+                        status=UploadStatus.IDLE
+                    )
                 }
         await self.help(client, message)
         await client.send_message(

@@ -183,12 +183,12 @@ class TelegramRestrictedMediaDownloader(Bot):
         link_meta: Union[dict, None] = await super().get_upload_link_from_bot(client, message)
         if link_meta is None:
             return None
-        file_path: str = link_meta.get('file_path')
         target_link: str = link_meta.get('target_link')
+        upload_task = link_meta.get('upload_task')
         try:
             await self.uploader.create_upload_task(
                 link=target_link,
-                file_path=file_path
+                upload_task=upload_task
             )
         except ValueError:
             await client.send_message(

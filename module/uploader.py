@@ -4,9 +4,6 @@
 # Time:2025/9/6 23:00
 # File:uploader.py
 import os
-import sys
-import json
-import math
 import hashlib
 import asyncio
 import inspect
@@ -51,79 +48,6 @@ from module.util import (
 )
 
 
-class UploadManager:
-    DIRECTORY_NAME: str = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'temp')
-    PART_SIZE: int = 512 * 1024
-
-    def __init__(
-            self,
-            chat_id: Union[str, int],
-            file_path: str,
-            file_id: int,
-            file_size: int,
-            file_part: list
-    ):
-        self.chat_id: Union[str, int] = chat_id
-        self.file_path: str = file_path
-        self.file_name: str = os.path.basename(file_path)
-        self.file_id: int = file_id
-        self.file_size: int = file_size
-        self.file_part: list = file_part
-        self.upload_manager_path: str = os.path.join(
-            UploadManager.DIRECTORY_NAME,
-            str(self.chat_id),
-            f'{truncate_filename(f"{self.file_size} - {self.file_name}")}.json'
-        )
-        self.file_total_parts = int(math.ceil(file_size / UploadManager.PART_SIZE))
-        os.makedirs(os.path.dirname(self.upload_manager_path), exist_ok=True)
-        self.load_json()
-
-    def save_json(self):
-        with open(file=self.upload_manager_path, mode='w', encoding='UTF-8') as f:
-            json.dump(
-                obj={
-                    'file_path': self.file_path,
-                    'file_id': self.file_id,
-                    'file_size': self.file_size,
-                    'file_part': self.file_part,
-                    'file_total_parts': self.file_total_parts
-                },
-                fp=f,
-                ensure_ascii=False,
-                indent=4
-            )
-
-    def load_json(self):
-        if not os.path.exists(self.upload_manager_path):
-            self.save_json()
-            return
-        with open(file=self.upload_manager_path, mode='r', encoding='UTF-8') as f:
-            _json: dict = {}
-            try:
-                _json = json.load(f)
-            except Exception as e:
-                log.info(f'UploadManager的json内容可能为空,即将重新生成,{_t(KeyWord.REASON)}:"{e}"')
-                safe_delete(self.upload_manager_path)
-                self.save_json()
-        self.file_path = _json.get('file_path', self.file_path)
-        self.file_id = _json.get('file_id', self.file_id)
-        self.file_size = _json.get('file_size', self.file_size)
-        self.file_part = _json.get('file_part', self.file_part)
-        self.file_total_parts = _json.get('file_total_parts', self.file_total_parts)
-
-    def update_file_part(self, file_part: set):
-        if file_part not in self.file_part:
-            self.file_part.append(file_part)
-            self.save_json()
-
-    def get_missing_parts(self) -> list:
-        """获取缺失的分片索引。"""
-        all_parts = set(range(self.file_total_parts))
-        uploaded_parts = set(self.file_part)
-        missing_parts = sorted(list(all_parts - uploaded_parts))
-        return missing_parts
-
-
 class TelegramUploader:
     def __init__(
             self,
@@ -147,16 +71,16 @@ class TelegramUploader:
 
     async def resume_upload(
             self,
-            upload_manager: UploadManager,
+            upload_task: UploadTask,
             progress: Callable = None,
             progress_args: tuple = ()
     ):
-        missing_parts = upload_manager.get_missing_parts()
-        chat_id = upload_manager.chat_id
-        path = upload_manager.file_path
-        file_id = upload_manager.file_id
-        file_size: int = upload_manager.file_size
-        file_total_parts: int = upload_manager.file_total_parts
+        missing_parts = upload_task.get_missing_parts()
+        chat_id = upload_task.chat_id
+        path = upload_task.file_path
+        file_id = upload_task.file_id
+        file_size: int = upload_task.file_size
+        file_total_parts: int = upload_task.file_total_parts
         if not missing_parts:
             # 所有分片都已上传,准备发送消息。
             log.info(f'所有分片已上传完成,正在发送消息...')
@@ -173,7 +97,7 @@ class TelegramUploader:
                     file_part=part_index
                 )
                 # 更新上传记录。
-                upload_manager.update_file_part(part_index)
+                upload_task.update_file_part(part_index)
                 # 调用进度回调。
                 if progress:
                     current_size = min((part_index + 1) * part_size, file_size)
@@ -198,14 +122,14 @@ class TelegramUploader:
                 raise  # 重新抛出异常,由重试机制处理。
 
         # 检查是否所有分片都上传完成。
-        if len(upload_manager.file_part) != file_total_parts:
-            raise Exception(f'分片上传不完整:{len(upload_manager.file_part)}/{file_total_parts}')
+        if len(upload_task.file_part) != file_total_parts:
+            raise Exception(f'分片上传不完整:{len(upload_task.file_part)}/{file_total_parts}')
 
         is_big = file_size > 10 * 1024 * 1024
         if is_big:
             file = raw.types.InputFileBig(
-                id=upload_manager.file_id,
-                parts=upload_manager.file_total_parts,
+                id=file_id,
+                parts=file_total_parts,
                 name=os.path.basename(path)
             )
         else:
@@ -216,8 +140,8 @@ class TelegramUploader:
             md5_sum = ''.join([hex(i)[2:].zfill(2) for i in md5_hash.digest()])
 
             file = raw.types.InputFile(
-                id=upload_manager.file_id,
-                parts=upload_manager.file_total_parts,
+                id=file_id,
+                parts=file_total_parts,
                 name=os.path.basename(path),
                 md5_checksum=md5_sum
             )
@@ -288,13 +212,12 @@ class TelegramUploader:
         except Exception as e:
             log.error(f'获取视频元数据失败,{_t(KeyWord.REASON)}:"{e}"')
 
-    @UploadTask.on_create_task
     async def create_upload_task(
             self,
             link: str,
-            file_path: str,
-            with_delete: bool = False
-    ):
+            upload_task: UploadTask
+    ) -> UploadTask:
+        file_path = upload_task.file_path
         target_meta: Union[dict, None] = await parse_link(
             client=self.client,
             link=link
@@ -307,85 +230,44 @@ class TelegramUploader:
         if not target_chat:
             raise ValueError
         file_size: int = os.path.getsize(file_path)
-        UploadTask(chat_id=chat_id, file_path=file_path, size=file_size, error_msg=None)
+        upload_task.chat_id = chat_id
         if not is_allow_upload(file_size, self.is_premium):
-            return {
-                'chat_id': chat_id,
-                'file_name': file_path,
-                'size': file_size,
-                'status': UploadStatus.FAILURE,
-                'error_msg': '上传大小超过限制(普通用户2000MiB,会员用户4000MiB)'
-            }
+            upload_task.error_msg = '上传大小超过限制(普通用户2000MiB,会员用户4000MiB)'
+            upload_task.status = UploadStatus.FAILURE
+            return upload_task
         elif file_size == 0:
-            return {
-                'chat_id': chat_id,
-                'file_name': file_path,
-                'size': file_size,
-                'status': UploadStatus.FAILURE,
-                'error_msg': '上传文件大小为0'
-            }
-        upload_manager = UploadManager(
-            chat_id=chat_id,
-            file_path=file_path,
-            file_size=file_size,
-            file_id=self.client.rnd_id(),
-            file_part=[]
-        )
+            upload_task.error_msg = '上传文件大小为0'
+            upload_task.status = UploadStatus.FAILURE
+            return upload_task
 
         retry = 0
         file_part_retry = 0
         while retry < self.max_retry_count:
             try:
-                resume_prompt = ''
-                if retry != 0 or upload_manager.file_part:
-                    resume_prompt = f'{_t(KeyWord.RESUME)}:"{os.path.basename(file_path)},"'
-                console.log(
-                    f'{_t(KeyWord.UPLOAD_TASK)}'
-                    f'{resume_prompt}'
-                    f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'
-                    f'{_t(KeyWord.FILE)}:"{file_path}",'
-                    f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(file_size)},'
-                    f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.UPLOADING)}。'
-                )
+                if retry != 0 or upload_task.file_part:
+                    console.log(f'{_t(KeyWord.RESUME)}:"{file_path}"。')
+                upload_task.status = UploadStatus.UPLOADING
                 await self.__add_task(
-                    upload_manager=upload_manager,
-                    size=file_size,
-                    with_delete=with_delete
+                    upload_task=upload_task
                 )
-                return {
-                    'chat_id': chat_id,
-                    'file_name': file_path,
-                    'size': file_size,
-                    'status': UploadStatus.SUCCESS,
-                    'error_msg': None
-                }
+                return upload_task
             except FilePartMissing as e:
                 missing_part = getattr(e, 'value')
                 console.log(
                     f'{_t(KeyWord.UPLOAD_FILE_PART)}:{missing_part},'
                     f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.UPLOADING)}。'
                 )
-                fp = upload_manager.file_part
+                fp = upload_task.file_part
                 if missing_part in fp:
                     fp.remove(missing_part)
                 file_part_retry += 1
-                if file_part_retry >= upload_manager.file_total_parts:
-                    return {
-                        'chat_id': chat_id,
-                        'file_name': file_path,
-                        'size': file_size,
-                        'status': UploadStatus.FAILURE,
-                        'error_msg': f'缺失分片重传次数大于分片总数{upload_manager.file_total_parts},可能存在网络问题'
-                    }
+                if file_part_retry >= upload_task.file_total_parts:
+                    upload_task.error_msg = f'缺失分片重传次数大于分片总数{upload_task.file_total_parts},可能存在网络问题'
+                    upload_task.status = UploadStatus.FAILURE
                 continue
             except ChatAdminRequired as e:
-                return {
-                    'chat_id': chat_id,
-                    'file_name': file_path,
-                    'size': file_size,
-                    'status': UploadStatus.FAILURE,
-                    'error_msg': str(e)
-                }
+                upload_task.error_msg = str(e)
+                upload_task.status = UploadStatus.FAILURE
             except Exception as e:
                 console.log(
                     f'{_t(KeyWord.UPLOAD_TASK)}'
@@ -395,51 +277,41 @@ class TelegramUploader:
                 )
                 retry += 1  # 只有非FilePartMissing异常才递增重试计数。
                 if retry == self.max_retry_count:
-                    return {
-                        'chat_id': chat_id,
-                        'file_name': file_path,
-                        'size': file_size,
-                        'status': UploadStatus.FAILURE,
-                        'error_msg': str(e)
-                    }
+                    upload_task.error_msg = str(e)
+                    upload_task.status = UploadStatus.FAILURE
 
     async def __add_task(
             self,
-            upload_manager: UploadManager,
-            size: int,
-            with_delete: bool = False
+            upload_task: UploadTask
     ):
-        chat_id = upload_manager.chat_id
-        file_path = upload_manager.file_path
+        file_path = upload_task.file_path
+        file_size = upload_task.file_size
         while self.current_task_num >= self.max_upload_task:  # v1.0.7 增加下载任务数限制。
             await self.event.wait()
             self.event.clear()
-        format_file_size: str = MetaData.suitable_units_display(size)
+        format_file_size: str = MetaData.suitable_units_display(file_size)
         task_id = self.pb.progress.add_task(
             description='📤',
             filename=truncate_display_filename(split_path(file_path).get('file_name')),
             info=f'0.00B/{format_file_size}',
-            total=size
+            total=file_size
         )
         _task = self.loop.create_task(
             self.resume_upload(
-                upload_manager=upload_manager,
+                upload_task=upload_task,
                 progress=self.pb.upload,
                 progress_args=(
                     self.pb.progress,
                     task_id,
-                    upload_manager
+                    upload_task
                 )
             )
         )
         _task.add_done_callback(
             partial(
                 self.upload_complete_callback,
-                chat_id,
-                size,
-                file_path,
-                task_id,
-                with_delete
+                upload_task,
+                task_id
             )
         )
 
@@ -453,11 +325,8 @@ class TelegramUploader:
 
     def upload_complete_callback(
             self,
-            chat_id,
-            local_file_size,
-            file_path,
+            upload_task,
             task_id,
-            with_delete,
             _future
     ):
         try:
@@ -468,14 +337,17 @@ class TelegramUploader:
             self.event.set()
             log.info(e)
             return
-        more = ''
+        chat_id: Union[str, int] = upload_task.chat_id
+        file_size: int = upload_task.file_size
+        file_path: str = upload_task.file_path
+        with_delete: bool = upload_task.with_delete
         self.current_task_num -= 1
         self.pb.progress.remove_task(task_id=task_id)
         if not safe_delete(
                 os.path.join(
-                    UploadManager.DIRECTORY_NAME,
+                    UploadTask.DIRECTORY_NAME,
                     str(chat_id),
-                    f'{truncate_filename(f"{local_file_size} - {os.path.basename(file_path)}")}.json'
+                    f'{truncate_filename(f"{file_size} - {os.path.basename(file_path)}")}.json'
                 )
         ):
             log.warning(f'无法删除"{os.path.basename(file_path)}"的上传缓存管理文件。')
@@ -483,16 +355,8 @@ class TelegramUploader:
             log.info(f'成功删除"{os.path.basename(file_path)}"的上传缓存管理文件。')
         asyncio.create_task(self.notify(f'"{file_path}"已上传完成。')) if isinstance(self.notify, Callable) else None
         self.event.set()
-        if with_delete:
-            safe_delete(file_path)
-            more = '(本地文件已删除)'
-        console.log(
-            f'{_t(KeyWord.UPLOAD_TASK)}'
-            f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'
-            f'{_t(KeyWord.FILE)}:"{file_path}",'
-            f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(local_file_size)},'
-            f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.SUCCESS)}{more}。',
-        )
+        safe_delete(file_path) if with_delete else None
+        upload_task.status = UploadStatus.SUCCESS
         MetaData.print_current_task_num(
             prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
             num=self.current_task_num
@@ -503,7 +367,14 @@ class TelegramUploader:
             asyncio.create_task(
                 self.create_upload_task(
                     link=with_upload.get('link'),
-                    file_path=file_path,
-                    with_delete=with_upload.get('with_delete')
+                    upload_task=UploadTask(
+                        chat_id=None,
+                        file_path=file_path,
+                        file_id=self.client.rnd_id(),
+                        file_size=os.path.getsize(file_path),
+                        file_part=[],
+                        status=UploadStatus.IDLE,
+                        with_delete=with_upload.get('with_delete')
+                    )
                 )
             )

@@ -15,6 +15,7 @@ translations: dict = {
     'voice': ['语音'],
     'animation': ['GIF'],
     'media': ['媒体'],
+    'idle': ['空闲'],
     'downloading': ['下载中'],
     'uploading': ['上传中'],
     'success': ['成功'],

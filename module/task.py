@@ -4,6 +4,9 @@
 # Time:2025/2/27 17:38
 # File:task.py
 import os
+import sys
+import json
+import math
 import asyncio
 
 from functools import wraps
@@ -14,6 +17,10 @@ import pyrogram
 from module import console, log
 from module.language import _t
 from module.stdio import MetaData
+from module.path_tool import (
+    safe_delete,
+    truncate_filename
+)
 from module.enums import (
     DownloadStatus,
     UploadStatus,
@@ -120,50 +127,124 @@ class DownloadTask:
 
 
 class UploadTask:
-    CHAT_ID_INFO: dict = {}
+    DIRECTORY_NAME: str = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'temp')
+    PART_SIZE: int = 512 * 1024
 
     def __init__(
             self,
-            chat_id: Union[str, int],
+            chat_id: Union[str, int, None],
             file_path: str,
-            size: Union[str, int],
-            error_msg: Union[str, None]
+            file_id: int,
+            file_size: int,
+            file_part: Union[list],
+            status: UploadStatus,
+            error_msg: Union[str, None] = None,
+            with_delete: bool = False
     ):
-        if chat_id not in UploadTask.CHAT_ID_INFO:
-            UploadTask.CHAT_ID_INFO[chat_id] = {}
+        self.chat_id: Union[str, int, None] = chat_id
+        self.file_path: str = file_path
+        self.file_name: str = os.path.basename(file_path)
+        self.file_id: int = file_id
+        self.file_size: int = file_size
+        self.file_part: list = file_part
+        self.status: UploadStatus = status
+        self.error_msg: Union[str, None] = error_msg
+        self.with_delete: bool = with_delete
+        self.file_total_parts = int(math.ceil(file_size / UploadTask.PART_SIZE))
 
-        if file_path not in UploadTask.CHAT_ID_INFO[chat_id]:
-            UploadTask.CHAT_ID_INFO[chat_id][file_path] = {}
+    def __setattr__(self, name, value):
+        if name.startswith('_'):
+            super().__setattr__(name, value)
+        else:
+            if hasattr(self, name):
+                old_value = getattr(self, name)
+                if old_value != value:
+                    super().__setattr__(name, value)
+                    if name == 'status':
+                        if value == UploadStatus.IDLE:
+                            pass
+                        elif value == UploadStatus.UPLOADING:
+                            console.log(
+                                f'{_t(KeyWord.UPLOAD_TASK)}'
+                                f'{_t(KeyWord.CHANNEL)}:"{self.chat_id}",'
+                                f'{_t(KeyWord.FILE)}:"{self.file_path}",'
+                                f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(self.file_size)},'
+                                f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.UPLOADING)}。'
+                            )
+                        elif value == UploadStatus.SUCCESS:
+                            more = ''
+                            if self.with_delete:
+                                more = '(本地文件已删除)'
+                            console.log(
+                                f'{_t(KeyWord.UPLOAD_TASK)}'
+                                f'{_t(KeyWord.CHANNEL)}:"{self.chat_id}",'
+                                f'{_t(KeyWord.FILE)}:"{self.file_path}",'
+                                f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(self.file_size)},'
+                                f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.SUCCESS)}{more}。',
+                            )
+                        elif value == UploadStatus.FAILURE:
+                            log.warning(
+                                f'{_t(KeyWord.UPLOAD_TASK)}'
+                                f'{_t(KeyWord.CHANNEL)}:"{self.chat_id}",'
+                                f'{_t(KeyWord.FILE)}:"{self.file_path}",'
+                                f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(self.file_size)},'
+                                f'{_t(KeyWord.REASON)}:"{self.error_msg}",'
+                                f'{_t(KeyWord.STATUS)}:{_t(str(value))}。'
+                            )
+                    elif name == 'chat_id':
+                        if value:
+                            self.upload_manager_path: str = os.path.join(
+                                UploadTask.DIRECTORY_NAME,
+                                str(self.chat_id),
+                                f'{truncate_filename(f"{self.file_size} - {self.file_name}")}.json'
+                            )
+                        os.makedirs(os.path.dirname(self.upload_manager_path), exist_ok=True)
+                        self.load_json()
 
-        UploadTask.CHAT_ID_INFO.get(chat_id)[file_path] = {
-            'size': size,
-            'error_msg': error_msg
-        }
+            else:
+                super().__setattr__(name, value)
 
-    def on_create_task(func):
-        @wraps(func)
-        async def wrapper(self, *args, **kwargs):
-            res: dict = await func(self, *args, **kwargs)
-            chat_id, file_path, size, status, e_code = res.values()
-            if status == UploadStatus.FAILURE:
-                UploadTask.set_error_msg(chat_id=chat_id, file_path=file_path, value=e_code)
-                log.warning(
-                    f'{_t(KeyWord.UPLOAD_TASK)}'
-                    f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'
-                    f'{_t(KeyWord.FILE)}:"{file_path}",'
-                    f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(size)},'
-                    f'{_t(KeyWord.REASON)}:"{e_code}",'
-                    f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
-                )
-            return res
+    def save_json(self):
+        with open(file=self.upload_manager_path, mode='w', encoding='UTF-8') as f:
+            json.dump(
+                obj={
+                    'file_path': self.file_path,
+                    'file_id': self.file_id,
+                    'file_size': self.file_size,
+                    'file_part': self.file_part,
+                    'file_total_parts': self.file_total_parts
+                },
+                fp=f,
+                ensure_ascii=False,
+                indent=4
+            )
 
-        return wrapper
+    def load_json(self):
+        if not os.path.exists(self.upload_manager_path):
+            self.save_json()
+            return
+        with open(file=self.upload_manager_path, mode='r', encoding='UTF-8') as f:
+            _json: dict = {}
+            try:
+                _json = json.load(f)
+            except Exception as e:
+                log.info(f'UploadManager的json内容可能为空,即将重新生成,{_t(KeyWord.REASON)}:"{e}"')
+                safe_delete(self.upload_manager_path)
+                self.save_json()
+        self.file_path = _json.get('file_path', self.file_path)
+        self.file_id = _json.get('file_id', self.file_id)
+        self.file_size = _json.get('file_size', self.file_size)
+        self.file_part = _json.get('file_part', self.file_part)
+        self.file_total_parts = _json.get('file_total_parts', self.file_total_parts)
 
-    @staticmethod
-    def set_error_msg(chat_id: Union[str, int], file_path: str, value: str):
-        meta: dict = UploadTask.CHAT_ID_INFO.get(chat_id)
-        file_meta: dict = meta.get(
-            file_path,
-            {'size': os.path.getsize(file_path) if os.path.isfile(file_path) else 0, 'error_msg': value}
-        )
-        file_meta['error_msg'] = value
+    def update_file_part(self, file_part: set):
+        if file_part not in self.file_part:
+            self.file_part.append(file_part)
+            self.save_json()
+
+    def get_missing_parts(self) -> list:
+        """获取缺失的分片索引。"""
+        all_parts = set(range(self.file_total_parts))
+        uploaded_parts = set(self.file_part)
+        missing_parts = sorted(list(all_parts - uploaded_parts))
+        return missing_parts
