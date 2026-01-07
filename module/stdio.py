@@ -54,6 +54,7 @@ class StatisticalTable:
         self.skip_video, self.skip_photo, self.skip_document, self.skip_audio, self.skip_voice, self.skip_animation = set(), set(), set(), set(), set(), set()
         self.success_video, self.success_photo, self.success_document, self.success_audio, self.success_voice, self.success_animation = set(), set(), set(), set(), set(), set()
         self.failure_video, self.failure_photo, self.failure_document, self.failure_audio, self.failure_voice, self.failure_animation = set(), set(), set(), set(), set(), set()
+        self.total_skip = sum([len(self.skip_video), len(self.skip_photo), len(self.skip_document), len(self.skip_audio), len(self.skip_voice), len(self.skip_animation)])
 
     def print_count_table(
             self,
@@ -229,7 +230,7 @@ class StatisticalTable:
         """打印统计的上传信息的表格。"""
         tasks = list(upload_tasks)
         if not tasks:
-            log.warning(f'没有上传任务数据。')
+            log.info(f'无法生成上传统计表,{_t(KeyWord.REASON)}:"没有任何上传"')
             return False
         header: tuple = (
             '频道',
@@ -270,7 +271,6 @@ class StatisticalTable:
 
         # 检查数据有效性。
         if len(table_data) < 1:
-            log.info(f'无法生成上传统计表,{_t(KeyWord.REASON)}:"没有任何上传"')
             return False
 
         total_tasks = len(tasks)

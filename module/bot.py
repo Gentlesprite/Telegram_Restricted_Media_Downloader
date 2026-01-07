@@ -329,8 +329,8 @@ class Bot:
                 last_bot_messages.append(last_bot_message)
         return last_bot_messages[-1]
 
+    @staticmethod
     async def help(
-            self,
             client: Union[pyrogram.Client, None] = None,
             message: Union[pyrogram.types.Message, None] = None
     ) -> Union[None, dict]:  # client与message都为None时,返回keyboard与text。

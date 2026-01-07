@@ -22,6 +22,8 @@ from pyrogram.errors.exceptions import (
     FilePartMissing,
     ChatAdminRequired
 )
+from pyrogram.errors.exceptions.bad_request_400 import ChannelPrivate as ChannelPrivate_400
+from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate as ChannelPrivate_406
 from pymediainfo import MediaInfo
 
 from module import console, log
@@ -265,7 +267,7 @@ class TelegramUploader:
                     upload_task.error_msg = f'缺失分片重传次数大于分片总数{upload_task.file_total_parts},可能存在网络问题'
                     upload_task.status = UploadStatus.FAILURE
                 continue
-            except ChatAdminRequired as e:
+            except (ChatAdminRequired, ChannelPrivate_400, ChannelPrivate_406) as e:
                 upload_task.error_msg = str(e)
                 upload_task.status = UploadStatus.FAILURE
             except Exception as e:
