@@ -216,7 +216,7 @@ class TelegramUploader:
             self,
             link: str,
             upload_task: UploadTask
-    ) -> UploadTask:
+    ) -> None:
         file_path = upload_task.file_path
         target_meta: Union[dict, None] = await parse_link(
             client=self.client,
@@ -234,11 +234,11 @@ class TelegramUploader:
         if not is_allow_upload(file_size, self.is_premium):
             upload_task.error_msg = '上传大小超过限制(普通用户2000MiB,会员用户4000MiB)'
             upload_task.status = UploadStatus.FAILURE
-            return upload_task
+            return None
         elif file_size == 0:
             upload_task.error_msg = '上传文件大小为0'
             upload_task.status = UploadStatus.FAILURE
-            return upload_task
+            return None
 
         retry = 0
         file_part_retry = 0
@@ -250,7 +250,7 @@ class TelegramUploader:
                 await self.__add_task(
                     upload_task=upload_task
                 )
-                return upload_task
+                return None
             except FilePartMissing as e:
                 missing_part = getattr(e, 'value')
                 console.log(
