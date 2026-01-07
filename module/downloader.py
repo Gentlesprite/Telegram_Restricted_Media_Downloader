@@ -185,6 +185,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             return None
         target_link: str = link_meta.get('target_link')
         upload_task = link_meta.get('upload_task')
+        upload_task.with_delete = self.gc.upload_delete
         try:
             await self.uploader.create_upload_task(
                 link=target_link,
@@ -306,7 +307,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     with_upload={
                         'link': target_link,
                         'file_name': None,
-                        'with_delete': False
+                        'with_delete': self.gc.upload_delete
                     }
                 )
             await kb.task_assign_button()
@@ -969,14 +970,32 @@ class TelegramRestrictedMediaDownloader(Bot):
                     channel = '@' + origin_chat.username if isinstance(
                         getattr(origin_chat, 'username'),
                         str) else ''
+                    if not self.gc.download_upload:
+                        await client.send_message(
+                            chat_id=message.from_user.id,
+                            text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{origin_link}`\n{channel}存在内容保护限制。',
+                            parse_mode=ParseMode.MARKDOWN,
+                            reply_parameters=ReplyParameters(message_id=message.id),
+                            reply_markup=KeyboardButton.restrict_forward_button()
+                        )
+                        return None
                     await client.send_message(
                         chat_id=message.from_user.id,
-                        text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{origin_link}`\n{channel}存在内容保护限制。',
+                        text=f'`{origin_link}`\n{channel}存在内容保护限制(已自动使用下载后上传)。',
                         parse_mode=ParseMode.MARKDOWN,
-                        reply_parameters=ReplyParameters(message_id=message.id),
-                        reply_markup=KeyboardButton.restrict_forward_button()
+                        reply_parameters=ReplyParameters(message_id=message.id)
                     )
-                    return None
+                    self.last_message.text = f'/download {origin_link} {start_id} {end_id}'
+                    await self.get_download_link_from_bot(
+                        client=self.last_client,
+                        message=self.last_message,
+                        with_upload={
+                            'link': target_link,
+                            'file_name': None,
+                            'with_delete': self.gc.upload_delete
+                        }
+                    )
+                    break
                 except Exception as e:
                     log.warning(
                         f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{i.id}"'
@@ -1936,7 +1955,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 self.cd = CallbackData()
                 if self.gc.upload_delete:
                     console.log(
-                        f'在使用监听转发(/listen_forward)时:\n'
+                        f'在使用转发(/forward)、监听转发(/listen_forward)、上传(/upload)、递归上传(/upload_r)时:\n'
                         f'当检测到"受限转发"时,自动采用"下载后上传"的方式,并在完成后删除本地文件。\n'
                         f'如需关闭,前往机器人[帮助页面]->[设置]->[上传设置]进行修改。\n',
                         style='#FF4689'
