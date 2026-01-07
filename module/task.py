@@ -183,7 +183,7 @@ class UploadTask:
                                 f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.SUCCESS)}{more}。',
                             )
                         elif value == UploadStatus.FAILURE:
-                            log.warning(
+                            log.error(
                                 f'{_t(KeyWord.UPLOAD_TASK)}'
                                 f'{_t(KeyWord.CHANNEL)}:"{self.chat_id}",'
                                 f'{_t(KeyWord.FILE)}:"{self.file_path}",'
