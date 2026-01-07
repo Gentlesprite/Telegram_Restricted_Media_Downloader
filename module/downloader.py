@@ -1510,9 +1510,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     MetaData.print_current_task_num(
                         prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
-                        num=self.app.current_task_num,
-                        complete=len(DownloadTask.COMPLETE_LINK),
-                        total=len(DownloadTask.LINK_INFO)
+                        num=self.app.current_task_num
                     )
                     _task.add_done_callback(
                         partial(
@@ -1628,12 +1626,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。', style='#e6db74'
                 )
                 DownloadTask.COMPLETE_LINK.add(link)
-                MetaData.print_current_task_num(
-                    prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
-                    num=self.app.current_task_num,
-                    complete=len(DownloadTask.COMPLETE_LINK),
-                    total=len(DownloadTask.LINK_INFO)
-                )
                 if self.uploader:
                     self.uploader.download_upload(
                         with_upload=with_upload,
@@ -1652,9 +1644,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             ):
                 MetaData.print_current_task_num(
                     prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
-                    num=self.app.current_task_num,
-                    complete=len(DownloadTask.COMPLETE_LINK),
-                    total=len(DownloadTask.LINK_INFO)
+                    num=self.app.current_task_num
                 )
                 if self.uploader:
                     self.uploader.download_upload(
