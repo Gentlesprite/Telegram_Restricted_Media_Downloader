@@ -54,7 +54,6 @@ class StatisticalTable:
         self.skip_video, self.skip_photo, self.skip_document, self.skip_audio, self.skip_voice, self.skip_animation = set(), set(), set(), set(), set(), set()
         self.success_video, self.success_photo, self.success_document, self.success_audio, self.success_voice, self.success_animation = set(), set(), set(), set(), set(), set()
         self.failure_video, self.failure_photo, self.failure_document, self.failure_audio, self.failure_voice, self.failure_animation = set(), set(), set(), set(), set(), set()
-        self.total_skip = sum([len(self.skip_video), len(self.skip_photo), len(self.skip_document), len(self.skip_audio), len(self.skip_voice), len(self.skip_animation)])
 
     def print_count_table(
             self,
