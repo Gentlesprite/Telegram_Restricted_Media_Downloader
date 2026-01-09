@@ -54,9 +54,9 @@ Session.WAIT_TIMEOUT = 100
 Session.START_TIMEOUT = 60
 SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
-__version__ = '1.8.1'
+__version__ = '1.8.2'
 __license__ = 'MIT License'
-__update_date__ = '2026/01/07 19:16:09'
+__update_date__ = '2026/01/09 15:31:11'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/Gentlesprite>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
@@ -128,20 +128,17 @@ log.info(f'终端日志等级:"{logging.getLevelName(CONSOLE_LOG_LEVEL)}"。')
 CustomDumper.add_representer(type(None), CustomDumper.represent_none)
 README = r'''
 ```yaml
-# 这里只是介绍每个参数的含义,软件会详细地引导配置参数。
-# 如果是按照软件的提示填,选看。如果是手动打开config.yaml修改配置,请仔细阅读下面内容。
-# 手动填写时请注意冒号是英文冒号,冒号加一个空格。
 api_hash: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # 申请的api_hash。
 api_id: 'xxxxxxxx' # 申请的api_id。
 # bot_token(选填)如果不填,就不能使用机器人功能。可前往https://t.me/BotFather免费申请。
 bot_token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 download_type: # 需要下载的类型。支持的参数:video,photo,document,audio,voice,animation。
-- video
-- photo
-- document
-- audio
-- voice
-- animation
+- video # 视频。
+- photo # 图片。
+- document # 文档。
+- audio # 音频。
+- voice # 语音。
+- animation # GIF。
 is_shutdown: true # 下载完成后是否自动关机。支持的参数:true,false。
 links: D:\path\where\your\link\files\save\content.txt # 链接地址写法如下:
 # 新建txt文本,一个链接为一行,将路径填入即可请不要加引号,在软件运行前就准备好。

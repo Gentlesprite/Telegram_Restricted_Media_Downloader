@@ -46,25 +46,36 @@ Telegram交流群:[点击加入](https://t.me/+6KKA-buFaixmNTE1)
 
 # 1.0.下载地址:
 
-蓝奏云:[点击跳转下载](https://wwgr.lanzn.com/b0fopovuf) 密码:ceze
-
-Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases)
+|      平台      |                           下载地址                           |    备注    |
+| :------------: | :----------------------------------------------------------: | :--------: |
+|     蓝奏云     |         [点击跳转](https://wwgr.lanzn.com/b0fopovuf)         | 密码:ceze  |
+|     Github     | [点击跳转](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases) |  &ndash;   |
+|    Gitcode     | [点击跳转](https://gitcode.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases) |  &ndash;   |
+|     Gitee      | [点击跳转](https://gitee.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases) | 仅发布源码 |
+| Telegram交流群 |          [点击加入](https://t.me/+6KKA-buFaixmNTE1)          |   群文件   |
 
 ## 1.1.(选看)推荐终端:
+<details>
+<summary><strong>点击展开</strong></summary>
 
 1. _对于Windows11用户_，`Windows Terminal`默认**已经安装好**，可**跳过**下载的步骤，直接前往第3步。(将`Windows Terminal`设为**默认终端**)
 
 2. _对于Windows10用户_，推荐使用`Windows Terminal`作为**默认终端**，仅作为推荐安装，无论安装与否**不会影响本软件的使用**，`Windows Terminal`能提供更出色的显示、交互、体验效果，以及避免出现**文字显示**乱码。
 
-   Windows Terminal 微软商店:[点击跳转下载](https://apps.microsoft.com/detail/9n0dx20hk701?launch=true&mode=full&hl=zh-cn&gl=cn&ocid=bingwebsearch)
+   `Windows Terminal`下载地址如下表:
 
-   Windows Terminal Github:[点击跳转下载](https://github.com/microsoft/terminal/releases)
+   |   平台   |                           下载地址                           |
+   | :------: | :----------------------------------------------------------: |
+   | 微软商店 | [点击跳转](https://apps.microsoft.com/detail/9n0dx20hk701?launch=true&mode=full&hl=zh-cn&gl=cn&ocid=bingwebsearch) |
+   |  Github  |  [点击跳转](https://github.com/microsoft/terminal/releases)  |
 
 3. 下载完成完成后`win+r`输入`wt`回车打开，然后将`Windows Terminal`设为**默认终端**再启动软件，教程如下:
 
    ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/1_1_1.png)
 
    ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/1_1_2.png)
+
+</details>
 
 # 2.0.快速开始:
 
@@ -102,6 +113,10 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 > 故可以将软件部署在服务器上，无论是Windows还是Linux平台。  
 > Windows平台可直接使用[releases](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases)里发布的二进制文件放在服务器运行。  
 > Linux平台的部署教程请**阅读**:[_"3.0.在生产环境中运行(对于Linux用户)"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7)。
+
+
+<details>
+<summary><strong>点击展开</strong></summary>
 
 ### 	2.2.1.申请教程:
 
@@ -172,7 +187,7 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 5. 目前机器人支持的命令用法及解释如下表所示：
 
    | 命令               | 用法                                                         | 解释                                                         |
-   | ------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+   | :----------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
    | `/help`            | 向机器人发送发送`/help`即可。                                | 展示**可用**命令。                                           |
    | `/download`        | `/download 链接1 链接2 链接3 链接n`或`/download 频道链接 1 100` | 分配**新的**下载任务，两种方式可选(**指定链接下载**和**范围下载**，具体使用方法请见下方说明)。 |
    | `/table`           | 向机器人发送`/table`即可。                                   | 在**终端**输出**当前**下载情况的**统计信息**。               |
@@ -194,9 +209,9 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
    ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_14.png)
 
 8. `/download`命令使用教程，如下图所示：
-> [!NOTE]
-> 自版本`≥v1.6.3`起：  
-> 已全面支持下载时的断点续传功能（支持所有上传场景），增强了在较差网络环境下的传输稳定性与可靠性。  
+	> **⚠️ 注意：**  
+	> 自版本`≥v1.6.3`起：  
+	> 已全面支持下载时的断点续传功能（支持所有上传场景），增强了在较差网络环境下的传输稳定性与可靠性。  
 
    - 方式一：
      - ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_2_15.png)
@@ -243,14 +258,14 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
    
 10. `/forward`命令使用教程：
 
-> [!NOTE]
-> 消息能否转发，在于频道是否开启了`限制保存内容`功能。  
-> 如果**无法转发**，**机器人**会在**聊天框**提供一个**下载按钮**与**下载后上传按钮(`≥v1.6.7`)**。  
-> 自版本`≥v1.7.5`起：  
-> 为确保"受限转发"功能顺利完成，在**下载后上传**过程中，将**忽略配置文件中设置的下载类型限制**，仅遵循`[上传设置]`中的类型过滤规则。  
-> 自版本`≥v1.6.9`起：  
-> `/forward`将支持过滤转发类型。  
-> 可通过`[帮助页面]`->`[设置]`->`[转发设置]`进行修改。
+	> **⚠️ 注意：**  
+	> 消息能否转发，在于频道是否开启了`限制保存内容`功能。  
+	> 如果**无法转发**，**机器人**会在**聊天框**提供一个**下载按钮**与**下载后上传按钮(`≥v1.6.7`)**。  
+	> 自版本`≥v1.7.5`起：  
+	> 为确保"受限转发"功能顺利完成，在**下载后上传**过程中，将**忽略配置文件中设置的下载类型限制**，仅遵循`[上传设置]`中的类型过滤规则。  
+	> 自版本`≥v1.6.9`起：  
+	> `/forward`将支持过滤转发类型。  
+	> 可通过`[帮助页面]`->`[设置]`->`[转发设置]`进行修改。
 
 - 转发消息语法：
     ```bash
@@ -343,16 +358,16 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
 
 13. `/listen_forward`命令使用教程：
 
-> [!NOTE]
-> 自版本`≥v1.6.7`起：  
-> 当检测到"受限转发"时，自动采用"下载后上传"的方式(默认**开启**)。  
-> 当**下载并完成上传**后，可选择**是否删除本地文件**(默认**关闭**)。  
-> 并且可通过`[帮助页面]`->`[设置]`->`[上传设置]`进行修改。  
-> 自版本`≥v1.7.5`起：  
-> 为确保"受限转发"功能顺利完成，在**下载后上传**过程中，将**忽略配置文件中设置的下载类型限制**，仅遵循`[上传设置]`中的类型过滤规则。  
-> 自版本`≥v1.6.9`起：  
-> `/listen_forward`将支持过滤转发类型。  
-> 可通过`[帮助页面]`->`[设置]`->`[转发设置]`进行修改。
+	> **⚠️ 注意：**  
+	> 自版本`≥v1.6.7`起：  
+	> 当检测到"受限转发"时，自动采用"下载后上传"的方式(默认**开启**)。  
+	> 当**下载并完成上传**后，可选择**是否删除本地文件**(默认**关闭**)。  
+	> 并且可通过`[帮助页面]`->`[设置]`->`[上传设置]`进行修改。  
+	> 自版本`≥v1.7.5`起：  
+	> 为确保"受限转发"功能顺利完成，在**下载后上传**过程中，将**忽略配置文件中设置的下载类型限制**，仅遵循`[上传设置]`中的类型过滤规则。  
+	> 自版本`≥v1.6.9`起：  
+	> `/listen_forward`将支持过滤转发类型。  
+	> 可通过`[帮助页面]`->`[设置]`->`[转发设置]`进行修改。
 
 - `/listen_forward`监听转发用于，实时监听该链接的最新消息。
    - 与`/forward`命令一样，消息能否转发，在于频道是否开启了`限制保存内容`功能。
@@ -397,9 +412,9 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
     ```
 
 15. `/upload`命令使用教程：
-> [!NOTE]
-> 自版本`≥v1.7.9`起：  
-> 已全面支持上传时的断点续传功能（支持所有上传场景），增强了在较差网络环境下的传输稳定性与可靠性。  
+	> **⚠️ 注意：**  
+	> 自版本`≥v1.7.9`起：  
+	> 已全面支持上传时的断点续传功能（支持所有上传场景），增强了在较差网络环境下的传输稳定性与可靠性。  
 
 - `/upload`用于上传本地的文件到指定频道。
   
@@ -495,26 +510,30 @@ Github:[点击跳转下载](https://github.com/Gentlesprite/Telegram_Restricted_
       ```bash
       /download_chat https://t.me/developer
       ```
+</details>
 
 ## 2.3.配置文件说明:
 
-## 用户配置文件
+### 用户配置文件:
+
+> [!NOTE]
+> 用户配置文件通常无需自行配置，此处旨在介绍全局配置文件中各参数的含义。  
+> 用户配置文件会在软件启动时自动在软件目录下生成`config.yaml`文件，并详细地引导用户配置参数。  
+> **手动编辑**`config.yaml`对配置进行修改时，请仔细阅读下面内容理解各参数含义。  
+> 需注意配置文件使用的引号、冒号均为半角，冒号后需有一个空格。  
 
 ```yaml
-# 这里只是介绍每个参数的含义,软件会详细地引导配置参数。
-# 如果是按照软件的提示填,选看。如果是手动打开config.yaml修改配置,请仔细阅读下面内容。
-# 手动填写时请注意冒号是英文冒号,冒号加一个空格。
 api_hash: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # 申请的api_hash。
 api_id: 'xxxxxxxx' # 申请的api_id。
 # bot_token(选填)如果不填,就不能使用机器人功能。可前往https://t.me/BotFather免费申请。
 bot_token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 download_type: # 需要下载的类型。支持的参数:video,photo,document,audio,voice,animation。
-- video
-- photo
-- document
-- audio
-- voice
-- animation
+- video # 视频。
+- photo # 图片。
+- document # 文档。
+- audio # 音频。
+- voice # 语音。
+- animation # GIF。
 is_shutdown: true # 下载完成后是否自动关机。支持的参数:true,false。
 links: D:\path\where\your\link\files\save\content.txt # 链接地址写法如下:
 # 新建txt文本,一个链接为一行,将路径填入即可请不要加引号,在软件运行前就准备好。
@@ -541,9 +560,9 @@ save_directory: F:\directory\media\where\you\save # 下载的媒体保存的目�
 
 - 目前`save_directory`支持的通配符如下表所示：
   
-    | 通配符        | 意义                               |
-    | ------------- | ---------------------------------- |
-    | `%CHAT_ID%`   | 以实际`频道ID`作为指定路径填充。   |
+    |    通配符     |                意义                |
+    | :-----------: | :--------------------------------: |
+    |  `%CHAT_ID%`  |  以实际`频道ID`作为指定路径填充。  |
     | `%MIME_TYPE%` | 以实际`文件类型`作为指定路径填充。 |
 
 - 用法示例1：
@@ -564,13 +583,13 @@ save_directory: F:\directory\media\where\you\save # 下载的媒体保存的目�
   F:\directory\media\%CHAT_ID%\%MIME_TYPE%
   ```
 
-## 全局配置文件
+### 全局配置文件:
+
+> [!NOTE]
+> 全局配置文件通常无需自行配置，此处旨在介绍全局配置文件中各参数的含义。  
+> 部分参数支持通过机器人设置进行修改。
 
 ```yaml
-# 全局配置文件无需自行配置,这里只是介绍每个参数的含义。
-# Windows存放路径:%APPDATA%/TRMD
-# Linux存放路径:~/.config/TRMD
-# 部分参数可以通过机器人设置修改。
 console_log_level: WARNING # 在终端显示的最低日志类型。
 export_table:
   count: false # 控制运行结束时是否导出下载计数统计表。
@@ -590,7 +609,19 @@ upload:
   download_upload: true # 控制/listen_forward命令遇到受限内容时,是否下载后上传到指定的转发频道。
 ```
 
+### 全局配置文件存放路径:
+#### 对于Windows用户：
+  ```bash
+  %APPDATA%/TRMD/.CONFIG.yaml
+  ```
+#### 对于Linux用户:
+  ```bash
+  ~/.config/TRMD/.CONFIG.yaml
+  ```
+
 ## 2.4.**使用注意事项:**
+<details>
+<summary><strong>点击展开</strong></summary>
 
 1. 链接获取方法：对想要保存的媒体文件点击**鼠标右键**然后选择**复制消息直链**如下图所示：
 
@@ -638,25 +669,25 @@ upload:
 
    `Telegram`字段解释如下表所示：
 
-   | 字段                                | 解释                                          |
-   | ----------------------------------- | --------------------------------------------- |
-   | `?comment`                          | **评论区**的链接。                            |
-   | `?single`                           | **单独**的链接。                              |
-   | `?single&comment`                   | **评论区**中**单独**的链接。                  |
-   | `/c`                                | **私密**频道的链接。                          |
-   | `https://t.me/TEST/111/666`         | 频道`TEST`**话题**`111`的链接。               |
-   | `https://t.me/c/1111111111/333/666` | **私密**频道`1111111111`**话题**`333`的链接。 |
+	|                字段                 |                     解释                      |
+	| :---------------------------------: | :-------------------------------------------: |
+	|             `?comment`              |              **评论区**的链接。               |
+	|              `?single`              |               **单独**的链接。                |
+	|          `?single&comment`          |         **评论区**中**单独**的链接。          |
+	|                `/c`                 |             **私密**频道的链接。              |
+	|     `https://t.me/TEST/111/666`     |        频道`TEST`**话题**`111`的链接。        |
+	| `https://t.me/c/1111111111/333/666` | **私密**频道`1111111111`**话题**`333`的链接。 |
 
    ### 链接解释说明:
 
    `Telegram`链接组成如下表所示:
 
-   | 频道类型     | 链接组成                                          |
-   | ------------ | ------------------------------------------------- |
-   | 正常频道     | `https://t.me/频道名/消息ID`                      |
-   | 私密频道     | `https://t.me/c/频道名(10位纯数字)/消息ID`        |
-   | 话题频道     | `https://t.me/频道名/话题ID/消息ID`               |
-   | 私密话题频道 | `https://t.me/c/频道名(10位纯数字)/话题ID/消息ID` |
+	|   频道类型   |                     链接组成                      |
+	| :----------: | :-----------------------------------------------: |
+	|   正常频道   |           `https://t.me/频道名/消息ID`            |
+	|   私密频道   |    `https://t.me/c/频道名(10位纯数字)/消息ID`     |
+	|   话题频道   |        `https://t.me/频道名/话题ID/消息ID`        |
+	| 私密话题频道 | `https://t.me/c/频道名(10位纯数字)/话题ID/消息ID` |
 
    `Telegram`链接所有链接格式如下表所示:
 
@@ -664,34 +695,34 @@ upload:
 
    "媒体"指的是**视频**和**图片**。
 
-   | 链接                                       | 实际频道名 | 消息ID | 解释                                           |
-   |------------------------------------------| ------ |------|----------------------------------------------|
-   | `https://t.me/TEST/111`                  | `TEST` | `111` | 下载该链接的**所有媒体**。                       |
-   | `https://t.me/TEST/111?single`           | `TEST` | `111` | 下载该链接的**对应的一个媒体**。                       |
-   | `https://t.me/TEST/111?comment=666`      | `TEST` | `111` | 下载该链接的**视频图片**的同时，下载该链接下方的**评论区**的**对应的一个媒体。** |
-   | `https://t.me/TEST/111?single&comment=666` | `TEST` | `111` | 下载该链接下方的**评论区**的**对应的一个媒体。** |
-   | `https://t.me/c/1111111111/666`          | `-1001111111111` | `666` | 下载该**私密频道**链接的**所有**媒体。 |
-   | `https://t.me/TEST/111/666` | `TEST` | `666` | 下载该**话题**链接的**所有**媒体。 |
-   | `https://t.me/c/1111111111/333/666` | `-1001111111111` | `666` | 下载该**私密话题**链接的所有媒体。 |
+	| 链接                                       | 实际频道名 | 消息ID | 解释                                           |
+	|:----------------------------------------:| :----: |:----:|:--------------------------------------------:|
+	| `https://t.me/TEST/111`                  | `TEST` | `111` | 下载该链接的**所有媒体**。                       |
+	| `https://t.me/TEST/111?single`           | `TEST` | `111` | 下载该链接的**对应的一个媒体**。                       |
+	| `https://t.me/TEST/111?comment=666`      | `TEST` | `111` | 下载该链接的**视频图片**的同时，下载该链接下方的**评论区**的**对应的一个媒体。** |
+	| `https://t.me/TEST/111?single&comment=666` | `TEST` | `111` | 下载该链接下方的**评论区**的**对应的一个媒体。** |
+	| `https://t.me/c/1111111111/666`          | `-1001111111111` | `666` | 下载该**私密频道**链接的**所有**媒体。 |
+	| `https://t.me/TEST/111/666` | `TEST` | `666` | 下载该**话题**链接的**所有**媒体。 |
+	| `https://t.me/c/1111111111/333/666` | `-1001111111111` | `666` | 下载该**私密话题**链接的所有媒体。 |
 
    ### 评论区链接的下载行为规则的说明:
 
-   1. **标准链接（无`?comment`参数）:**
+   - **标准链接（无`?comment`参数）:**
       - 仅下载**消息正文内容**（即频道/群组中直接发布的原始消息）。
       - **不包含评论区内容**，即使原消息存在评论，也不会被纳入下载任务。
-   2. **带`?comment`参数的链接:**
+   - **带`?comment`参数的链接:**
       - 下载**消息正文 + 关联的全部评论区内容**（完整会话结构）。
       - 若原消息**无评论区**（如频道消息或评论功能关闭），则**仅下载消息正文内容**，与无参数版本行为一致。
 
 
-   非下载评论区的**推荐**写法如下表所示:
+   - 非下载评论区的**推荐**写法如下表所示:
 
-   | 频道类型     | 链接                              |
-   | ------------ | --------------------------------- |
-   | 正常频道     | https://t.me/xxx/111              |
-   | 私密频道     | https://t.me/c/xxxxxxxxxx/111     |
-   | 话题频道     | https://t.me/xxx/xxx/111          |
-   | 私密话题频道 | https://t.me/c/xxxxxxxxxx/xxx/111 |
+	|   频道类型   |               链接                |
+	| :----------: | :-------------------------------: |
+	|   正常频道   |       https://t.me/xxx/111        |
+	|   私密频道   |   https://t.me/c/xxxxxxxxxx/111   |
+	|   话题频道   |     https://t.me/xxx/xxx/111      |
+	| 私密话题频道 | https://t.me/c/xxxxxxxxxx/xxx/111 |
 
    ### 关于 `?single` 及 `?single&comment` 参数的下载行为说明（v1.5.8+）:
 
@@ -717,24 +748,26 @@ upload:
 
    #### **最佳实践建议:**
 
-   1. **单一文件提取:**
+   - **单一文件提取:**
       当消息包含多个媒体文件时，使用标准链接附加`?single`参数可精准获取首个文件：
    
       ```
       https://t.me/c/123456789/123?single
       ```
    
-   2. **评论区单文件获取:**
+   - **评论区单文件获取:**
       需从评论区单独下载文件时，应采用复合参数格式：
    
       ```
       https://t.me/c/123456789/123?single&comment=xx
       ```
    
-   3. **参数互斥原则:**
+   - **参数互斥原则:**
    
       - 避免同时提交同一消息的完整版和单文件版链接。
       - 单文件模式与评论区下载模式（`?comment`）不可混用。
+      </details>
+
 ## 2.5.**软件更新教程**:
 
 ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/2_5_1.png)
