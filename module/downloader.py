@@ -14,6 +14,7 @@ from typing import Union, Callable, Optional, Dict
 
 import pyrogram
 from pyrogram.enums.parse_mode import ParseMode
+from pyrogram.errors import BadMsgNotification
 from pyrogram.errors.exceptions.bad_request_400 import (
     MsgIdInvalid,
     UsernameInvalid,
@@ -1989,9 +1990,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                 console.print(Issues.PROXY_NOT_CONFIGURED)
                 raise SystemExit(0)
             log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
-        except pyrogram.errors.BadMsgNotification as e:
+        except BadMsgNotification as e:
             record_error: bool = True
-            if str(e) in (str(pyrogram.errors.BadMsgNotification(16)), str(pyrogram.errors.BadMsgNotification(17))):
+            if str(e) in (str(BadMsgNotification(16)), str(BadMsgNotification(17))):
                 console.print(Issues.SYSTEM_TIME_NOT_SYNCHRONIZED)
                 raise SystemExit(0)
             log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')

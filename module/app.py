@@ -14,7 +14,6 @@ from typing import Union
 import pyrogram
 
 from module import (
-    Session,
     SLEEP_THRESHOLD,
     console,
     log,
@@ -24,7 +23,10 @@ from module import (
 from module.language import _t
 from module.config import UserConfig
 from module.stdio import StatisticalTable
-from module.client import TelegramRestrictedMediaDownloaderClient
+from module.client import (
+    TelegramRestrictedMediaDownloaderClient,
+    TelegramRestrictedMediaDownloaderSession
+)
 from module.enums import (
     DownloadType,
     DownloadStatus,
@@ -51,7 +53,9 @@ class Application(UserConfig, StatisticalTable):
     def build_client(self) -> pyrogram.Client:
         """用填写的配置文件,构造pyrogram客户端。"""
         os.makedirs(self.work_directory, exist_ok=True)
-        Session.WAIT_TIMEOUT = min(Session.WAIT_TIMEOUT + self.max_download_task ** 2, MAX_FILE_REFERENCE_TIME)
+        TelegramRestrictedMediaDownloaderSession.WAIT_TIMEOUT = min(
+            TelegramRestrictedMediaDownloaderSession.WAIT_TIMEOUT + self.max_download_task ** 2,
+            MAX_FILE_REFERENCE_TIME)
         return TelegramRestrictedMediaDownloaderClient(
             name=SOFTWARE_FULL_NAME.replace(' ', ''),
             api_id=self.api_id,

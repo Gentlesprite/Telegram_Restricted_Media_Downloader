@@ -11,6 +11,18 @@ import pyrogram
 from pyrogram.qrlogin import QRLogin
 from pyrogram import raw, types, utils
 from pyrogram.errors.exceptions import PhoneNumberInvalid
+from pyrogram.raw.core import TLObject
+from pyrogram.session.session import Result
+from pyrogram.session import (
+    Auth,
+    Session
+)
+from pyrogram.crypto import mtproto
+from pyrogram.errors import (
+    AuthBytesInvalid,
+    BadMsgNotification,
+    RPCError
+)
 
 from module import (
     console,
@@ -314,6 +326,102 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 if current >= total:
                     return
 
+    async def get_session(
+            self,
+            dc_id: Optional[int] = None,
+            is_media: Optional[bool] = False,
+            is_cdn: Optional[bool] = False,
+            business_connection_id: Optional[str] = None,
+            export_authorization: Optional[bool] = True,
+            server_address: Optional[str] = None,
+            port: Optional[int] = None,
+            temporary: Optional[bool] = False
+    ) -> "Session":
+        if not dc_id:
+            dc_id = await self.storage.dc_id()
+
+        if business_connection_id:
+            dc_id = self.business_connections.get(business_connection_id)
+
+            if dc_id is None:
+                connection = await self.session.invoke(
+                    raw.functions.account.GetBotBusinessConnection(
+                        connection_id=business_connection_id
+                    )
+                )
+
+                dc_id = self.business_connections[business_connection_id] = connection.updates[0].connection.dc_id
+
+        is_current_dc = await self.storage.dc_id() == dc_id
+
+        if not temporary and is_current_dc and not is_media:
+            return self.session
+
+        sessions = self.media_sessions if is_media else self.sessions
+
+        if not temporary and sessions.get(dc_id):
+            return sessions[dc_id]
+
+        if not server_address or not port:
+            dc_option = await self.get_dc_option(dc_id, is_media=is_media, ipv6=self.ipv6, is_cdn=is_cdn)
+
+            server_address = server_address or dc_option.ip_address
+            port = port or dc_option.port
+
+        if is_media:
+            auth_key = (await self.get_session(dc_id)).auth_key
+        else:
+            if not is_current_dc:
+                auth_key = await Auth(
+                    self,
+                    dc_id,
+                    server_address,
+                    port,
+                    await self.storage.test_mode()
+                ).create()
+            else:
+                auth_key = await self.storage.auth_key()
+
+        session = TelegramRestrictedMediaDownloaderSession(
+            self,
+            dc_id,
+            server_address,
+            port,
+            auth_key,
+            await self.storage.test_mode(),
+            is_media=is_media
+        )
+
+        if not temporary:
+            sessions[dc_id] = session
+
+        await session.start()
+
+        if not is_current_dc and export_authorization:
+            for _ in range(3):
+                exported_auth = await self.invoke(
+                    raw.functions.auth.ExportAuthorization(
+                        dc_id=dc_id
+                    )
+                )
+
+                try:
+                    await session.invoke(
+                        raw.functions.auth.ImportAuthorization(
+                            id=exported_auth.id,
+                            bytes=exported_auth.bytes
+                        )
+                    )
+                except AuthBytesInvalid:
+                    continue
+                else:
+                    break
+            else:
+                await session.stop()
+                raise AuthBytesInvalid
+
+        return session
+
 
 async def get_chunk(
         *,
@@ -350,3 +458,76 @@ async def get_chunk(
         messages.reverse()
 
     return messages
+
+
+class TelegramRestrictedMediaDownloaderSession(Session):
+    WAIT_TIMEOUT = 100
+    START_TIMEOUT = 60
+
+    async def send(
+            self,
+            data: TLObject,
+            wait_response: bool = True,
+            timeout: float = Session.WAIT_TIMEOUT
+    ):
+        message = await self.msg_factory.create(data)
+        msg_id = message.msg_id
+        timeout = TelegramRestrictedMediaDownloaderSession.WAIT_TIMEOUT
+
+        if wait_response:
+            self.results[msg_id] = Result()
+
+        log.debug('Sent: %s', message)
+
+        payload = await self.client.loop.run_in_executor(
+            self.connection.protocol.crypto_executor,
+            mtproto.pack,
+            message,
+            self.salt,
+            self.session_id,
+            self.auth_key,
+            self.auth_key_id
+        )
+
+        try:
+            await self.connection.send(payload)
+        except OSError as e:
+            self.results.pop(msg_id, None)
+            raise e
+
+        if wait_response:
+            try:
+                await asyncio.wait_for(self.results[msg_id].event.wait(), timeout)
+            except asyncio.TimeoutError:
+                pass
+
+            result = self.results.pop(msg_id).value
+
+            if result is None:
+                raise TimeoutError('Request timed out')
+
+            if isinstance(result, raw.types.RpcError):
+                if isinstance(
+                        data, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)
+                ):
+                    data = data.query
+
+                RPCError.raise_it(result, type(data))
+
+            if isinstance(result, raw.types.BadMsgNotification):
+                e_code: int = result.error_code
+
+                if e_code in (16, 17):
+                    log.exception(
+                        '%s: %s', BadMsgNotification.__name__, BadMsgNotification(e_code)
+                    )
+                    raise BadMsgNotification(e_code)
+
+                log.warning(
+                    '%s: %s', BadMsgNotification.__name__, BadMsgNotification(e_code)
+                )
+            if isinstance(result, raw.types.BadServerSalt):
+                self.salt = result.new_server_salt
+                return await self.send(data, wait_response, timeout)
+
+            return result
