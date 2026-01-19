@@ -518,7 +518,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                 e_code: int = result.error_code
 
                 if e_code in (16, 17):
-                    log.exception(
+                    log.error(
                         '%s: %s', BadMsgNotification.__name__, BadMsgNotification(e_code)
                     )
                     raise BadMsgNotification(e_code)
