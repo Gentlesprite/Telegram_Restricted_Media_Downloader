@@ -48,7 +48,6 @@ class CustomDumper(yaml.Dumper):
 
 LOG_TIME_FORMAT = '[%Y-%m-%d %H:%M:%S]'
 console = Console(log_path=False, log_time_format=LOG_TIME_FORMAT)
-MAX_FILE_REFERENCE_TIME = 600
 SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
 __version__ = '1.8.2'

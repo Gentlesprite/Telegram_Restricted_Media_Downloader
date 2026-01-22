@@ -465,8 +465,8 @@ async def get_chunk(
 
 
 class TelegramRestrictedMediaDownloaderSession(Session):
-    WAIT_TIMEOUT = 100
-    START_TIMEOUT = 60
+    WAIT_TIMEOUT = 20
+    START_TIMEOUT = 10
     MAX_RETRIES = 15
 
     async def invoke(
