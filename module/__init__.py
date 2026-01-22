@@ -10,7 +10,6 @@ import platform
 from logging.handlers import RotatingFileHandler
 
 import yaml
-from pyrogram.session import Session
 from pyrogram.types.messages_and_media import LinkPreviewOptions
 from rich.console import Console
 from rich.logging import RichHandler
@@ -54,7 +53,7 @@ SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
 __version__ = '1.8.2'
 __license__ = 'MIT License'
-__update_date__ = '2026/01/09 15:31:11'
+__update_date__ = '2026/01/22 23:41:28'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/Gentlesprite>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'

@@ -19,6 +19,10 @@ from pyrogram.session import (
 )
 from pyrogram.crypto import mtproto
 from pyrogram.errors import (
+    FloodPremiumWait,
+    FloodWait,
+    InternalServerError,
+    ServiceUnavailable,
     AuthBytesInvalid,
     BadMsgNotification,
     RPCError
@@ -463,6 +467,56 @@ async def get_chunk(
 class TelegramRestrictedMediaDownloaderSession(Session):
     WAIT_TIMEOUT = 100
     START_TIMEOUT = 60
+    MAX_RETRIES = 15
+
+    async def invoke(
+            self,
+            query: TLObject,
+            retries: int = MAX_RETRIES,
+            timeout: float = WAIT_TIMEOUT,
+            sleep_threshold: float = Session.SLEEP_THRESHOLD,
+            retry_delay: float = Session.RETRY_DELAY
+    ):
+        try:
+            await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
+        except asyncio.TimeoutError:
+            pass
+
+        if isinstance(
+                query, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)
+        ):
+            inner_query = query.query
+        else:
+            inner_query = query
+
+        query_name = '.'.join(inner_query.QUALNAME.split('.')[1:])
+
+        for attempt in range(1, retries + 1):
+            try:
+                return await self.send(query, timeout=timeout)
+            except (FloodWait, FloodPremiumWait) as e:
+                amount = e.value
+
+                if amount > sleep_threshold >= 0:
+                    raise
+                log.info(
+                    '[%s] Waiting for %s seconds before continuing (required by "%s")',
+                    self.client.name,
+                    amount,
+                    query_name,
+                )
+                console.log(f'[{self.client.name}]请求频繁,"{query_name}"要求等待{amount}秒后继续运行。')
+
+                await asyncio.sleep(amount)
+            except (OSError, InternalServerError, ServiceUnavailable) as e:
+                log.info(
+                    '[%s] Retrying "%s" due to: %s', attempt, query_name, str(e) or repr(e)
+                )
+                console.log(f'[{attempt}/{retries}]尝试重连,重新调用"{query_name}",{_t(KeyWord.REASON)}:"{str(e) or repr(e)}"')
+
+                await asyncio.sleep(retry_delay)
+
+        raise TimeoutError(f'经{retries}次尝试后仍无法调用"{query_name}"。')
 
     async def send(
             self,
