@@ -522,11 +522,10 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             self,
             data: TLObject,
             wait_response: bool = True,
-            timeout: float = Session.WAIT_TIMEOUT
+            timeout: float = WAIT_TIMEOUT
     ):
         message = await self.msg_factory.create(data)
         msg_id = message.msg_id
-        timeout = TelegramRestrictedMediaDownloaderSession.WAIT_TIMEOUT
 
         if wait_response:
             self.results[msg_id] = Result()
