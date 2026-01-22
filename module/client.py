@@ -516,7 +516,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
 
                 await asyncio.sleep(retry_delay)
 
-        raise TimeoutError(f'经{retries}次尝试后仍无法调用"{query_name}"。')
+        raise TimeoutError(f'经{retries}次尝试后仍无法调用"{query_name}"')
 
     async def send(
             self,
