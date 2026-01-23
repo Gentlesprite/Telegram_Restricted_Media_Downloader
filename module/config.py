@@ -21,6 +21,7 @@ from module import (
     PLATFORM
 )
 from module.language import _t
+from module.parser import TelegramRestrictedMediaDownloaderArgumentParser
 from module.path_tool import (
     gen_backup_config,
     safe_delete
@@ -166,7 +167,9 @@ class UserConfig(BaseConfig):
 
     def __init__(self):
         super().__init__()
-        self.config_path: str = UserConfig.PATH
+        self.parse_args = TelegramRestrictedMediaDownloaderArgumentParser(add_help=False).parse_args()
+        self.config_path: str = self.parse_args.config_path if os.path.isfile(
+            self.parse_args.config_path) and self.parse_args.config_path.endswith('.yaml') else UserConfig.PATH
         self.platform: str = PLATFORM
         self.history_timestamp: dict = {}
         self.input_link: list = []

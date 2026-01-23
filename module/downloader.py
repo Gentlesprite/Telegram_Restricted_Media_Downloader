@@ -1976,6 +1976,7 @@ class TelegramRestrictedMediaDownloader(Bot):
     def run(self) -> None:
         record_error: bool = False
         try:
+            MetaData.print_helper()
             MetaData.print_meta()
             self.app.print_config_table(
                 links=self.app.links,

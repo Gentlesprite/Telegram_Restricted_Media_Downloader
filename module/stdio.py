@@ -556,8 +556,16 @@ class MetaData:
             style='bold',
             highlight=False
         )
+        MetaData.print_about()
+        MetaData.print_disclaimer()
+
+    @staticmethod
+    def print_about():
         console.print(f'[bold]{SOFTWARE_FULL_NAME} v{__version__}[/bold],\n[i]{__copyright__}[/i]')
         console.print(f'Licensed under the terms of the {__license__}.', end='\n')
+
+    @staticmethod
+    def print_disclaimer():
         console.print(GradientColor.gen_gradient_text(
             '\t所有使用本软件的行为及其后果均由使用者自行承担全部法律责任，开发者不对任何使用行为及其后果负责。',
             gradient_color=GradientColor.RED_GRADIENT_15)
