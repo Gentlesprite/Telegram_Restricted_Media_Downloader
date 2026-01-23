@@ -24,7 +24,7 @@
 
 > [!NOTE]
 > 由于本项目**提供**的Linux版本可能对较早版本的Linux系统兼容性较差。  
-> 若**无法运行的**Linux用户请**阅读**:[_"3.0.在生产环境中运行(对于Linux用户)"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7-1)。  
+> 若**无法运行的**Linux用户请**阅读**:[_"3.0.在生产环境中运行(对于Linux用户)"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7-2)。  
 > 如果你**遇到任何问题**，请先仔细**阅读**:[_"常见问题及解决方案汇总"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
 > **没有找到解决方案**再进群或私聊提问。
 
@@ -869,7 +869,104 @@ _由于新版本可能使用了**新的依赖**，使用`git pull`拉取后，�
 pip3 install -r requirements.txt
 ```
 
-# 4.0.通过编译后运行:
+# 4.0.运行前设置命令行参数:
+
+> [!NOTE]
+> 自版本`≥v1.8.3`起：  
+> 用户可在**运行前**通过**命令行参数**对**软件运行配置**进行**更多自定义设置**。    
+
+_**设置命令行运行参数**需先在**软件目录**打开**终端**，或**任意位置**打开终端**进入软件目录**（**经常**使用建议**配置环境变量**）。_
+
+**目前支持的**命令行参数用法及解释如下表所示：
+
+| 短参数 | 长参数          | 解释                                |
+| :----: | :-------------: | :---------------------------------: |
+| `-h`   | `--help`        | 帮助                                |
+| `-cp`  | `--config_path` | 设置用户配置文件`config.yaml`的路径 |
+
+_**长参数与短参数最终结果一致。**_
+
+1. `-h`、`--help`参数用法：
+
+   该参数用于获取使用帮助。
+
+   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+
+     ```bash
+     python3 main.py -h
+     ```
+
+     ```bash
+     python3 main.py --help
+     ```
+
+   - 对于Windows用户:
+
+     ```bash
+     TRMD.exe -h
+     ```
+
+     ```bash
+     TRMD.exe --help
+     ```
+
+   - 对于Linux用户:
+
+     ```bash
+     ./TRMD -h
+     ```
+     
+     ```bash
+     ./TRMD --help
+     ```
+
+2. `-cp`、`--config_path`参数用法：
+
+   | 注意事项                                                     |
+   | ------------------------------------------------------------ |
+   | 1._**该参数用于设置用户配置文件`config.yaml`的路径。**_      |
+   | 2._**旨在解决多用户场景下，为避免重复部署软件本体而设计的配置分离方案。**_ |
+   | 3._该参数需指定一个**符合**["2.3.配置文件说明(用户配置文件)"](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E7%94%A8%E6%88%B7%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)格式的文件路径。_ |
+   | 4._当指定的**文件路径无效**时，将使用软件**默认**设置。_     |
+   | 5._参数指定的文件路径的后缀名需为`.yaml`。_                  |
+
+   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+
+     以`Linux`系统为例（`Winodws`系统同理），此处假设用户所需`config.yaml`文件位于`/home/username/files/example.yaml`。
+
+     ```bash
+     python3 main.py -cp /home/username/files/example.yaml
+     ```
+
+     ```bash
+     python3 main.py --config_path /home/username/files/example.yaml
+     ```
+
+   - 对于Windows用户:
+
+     此处假设用户所需`config.yaml`文件位于`C:\files\example.yaml`。
+
+     ```bash
+     TRMD.exe -cp C:\files\example.yaml
+     ```
+
+     ```bash
+     TRMD.exe --config_path C:\files\example.yaml
+     ```
+
+   - 对于Linux用户:
+
+      此处假设用户所需config.yaml文件位于`/home/username/files/example.yaml`。
+
+      ```bash
+      ./TRMD -cp /home/username/files/example.yaml
+      ```
+
+      ```bash
+      ./TRMD --config_path /home/username/files/example.yaml
+      ```
+
+# 5.0.通过编译后运行:
 
 _**推荐**使用`Python==3.13.2`作为该项目环境(避免使用其他`Python`版本导致编译过程中或编译完成后出现报错)。_
 
@@ -881,12 +978,12 @@ _**推荐**使用`Python==3.13.2`作为该项目环境(避免使用其他`Python
 python build.py
 ```
 
-# 5.0.联系作者:
+# 6.0.联系作者:
 
   Telegram:[@Gentlesprite](https://t.me/Gentlesprite)
 
   邮箱:Gentlesprites@outlook.com
 
-# 6.0.支持作者:
+# 7.0.支持作者:
 
 ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/pay.png)
