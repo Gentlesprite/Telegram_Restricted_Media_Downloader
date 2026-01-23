@@ -6,8 +6,9 @@
 import os
 import sys
 import csv
-import base64
 import math
+import base64
+import random
 import datetime
 
 from io import BytesIO
@@ -547,7 +548,7 @@ class MetaData:
     def print_meta():
         console.print(
             GradientColor.gen_gradient_text(
-                text=Banner.C,
+                text=random.Random().choice([Banner.TRMD, Banner.C]),
                 gradient_color=GradientColor.generate_gradient(
                     start_color='#fa709a',
                     end_color='#fee140',
