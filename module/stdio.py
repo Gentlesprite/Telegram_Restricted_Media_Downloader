@@ -373,7 +373,7 @@ class StatisticalTable:
                 proxy_key: list = []
                 proxy_value: list = []
                 for i in app.proxy.items():
-                    if i[0] not in ['username', 'password']:
+                    if i[0] not in ['enable_proxy', 'username', 'password']:
                         key, value = i
                         proxy_key.append(key)
                         proxy_value.append(value)
@@ -453,7 +453,7 @@ class StatisticalTable:
                 ['用户配置文件', app.config_path],
                 ['会话目录', app.work_directory],
                 ['缓存目录', app.temp_directory],
-                ['使用系统代理', '是' if app.enable_proxy else '否']
+                ['使用系统代理', app.enable_proxy]
             ],
             show_lines=True
         ).print_meta()
