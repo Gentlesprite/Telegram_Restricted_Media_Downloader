@@ -1979,8 +1979,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             MetaData.print_helper()
             MetaData.print_meta()
-            self.app.print_config_table(self.app)
             self.app.print_env_table(self.app)
+            self.app.print_config_table(self.app)
             self.loop.run_until_complete(self.__download_media_from_links())
         except KeyError as e:
             record_error: bool = True
