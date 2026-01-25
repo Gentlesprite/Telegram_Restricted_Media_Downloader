@@ -27,6 +27,7 @@ from pyrogram.errors import (
     BadMsgNotification,
     RPCError
 )
+from pyrogram.types import User
 
 from module import (
     console,
@@ -465,17 +466,19 @@ async def get_chunk(
 
 
 class TelegramRestrictedMediaDownloaderSession(Session):
-    WAIT_TIMEOUT = 20
     START_TIMEOUT = 10
+    WAIT_TIMEOUT = 20
+    SLEEP_THRESHOLD = 10
     MAX_RETRIES = 15
+    RETRY_DELAY = 1
 
     async def invoke(
             self,
             query: TLObject,
             retries: int = MAX_RETRIES,
             timeout: float = WAIT_TIMEOUT,
-            sleep_threshold: float = Session.SLEEP_THRESHOLD,
-            retry_delay: float = Session.RETRY_DELAY
+            sleep_threshold: float = SLEEP_THRESHOLD,
+            retry_delay: float = RETRY_DELAY
     ):
         try:
             await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
