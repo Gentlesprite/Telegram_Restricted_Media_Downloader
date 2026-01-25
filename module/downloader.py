@@ -1957,7 +1957,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         links: Union[set, None] = self.__process_links(link=self.app.links)
         # 将初始任务添加到队列中。
         [await self.loop.create_task(self.create_download_task(message_ids=link, retry=None)) for link in
-         links] if sorted(links) else None
+         links] if links else None
         # 处理队列中的任务与机器人事件。
         while not self.queue.empty() or self.is_bot_running:
             result = await self.queue.get()
