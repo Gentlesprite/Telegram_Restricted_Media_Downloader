@@ -26,7 +26,7 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             help='帮助'
         )
         self.add_argument(
-            '-cp', '--config_path',
+            '-c', '--config',
             type=str,
             required=False,
             default='',
