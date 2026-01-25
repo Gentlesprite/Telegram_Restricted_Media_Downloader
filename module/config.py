@@ -168,8 +168,8 @@ class UserConfig(BaseConfig):
     def __init__(self):
         super().__init__()
         self.parse_args = TelegramRestrictedMediaDownloaderArgumentParser(add_help=False).parse_args()
-        self.config_path: str = self.parse_args.config_path if os.path.isfile(
-            self.parse_args.config_path) and self.parse_args.config_path.endswith('.yaml') else UserConfig.PATH
+        self.config_path: str = self.parse_args.config if os.path.isfile(
+            self.parse_args.config) and self.parse_args.config.endswith('.yaml') else UserConfig.PATH
         self.platform: str = PLATFORM
         self.history_timestamp: dict = {}
         self.input_link: list = []
