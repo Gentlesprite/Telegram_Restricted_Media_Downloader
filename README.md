@@ -869,20 +869,25 @@ _由于新版本可能使用了**新的依赖**，使用`git pull`拉取后，�
 pip3 install -r requirements.txt
 ```
 
-# 4.0.运行前设置命令行参数:
+# 4.0.(高阶用法)运行前设置命令行参数:
 
 > [!NOTE]
 > 自版本`≥v1.8.3`起：  
 > 用户可在**运行前**通过**命令行参数**对**软件运行配置**进行**更多自定义设置**。    
 
+<details>
+<summary><strong>点击展开</strong></summary>
+
 _**设置命令行运行参数**需先在**软件目录**打开**终端**，或**任意位置**打开终端**进入软件目录**（**经常**使用建议**配置环境变量**）。_
 
 **目前支持的**命令行参数用法及解释如下表所示：
 
-| 短参数 | 长参数          | 解释                                |
-| :----: | :-------------: | :---------------------------------: |
-| `-h`   | `--help`        | 帮助                                |
-| `-cp`  | `--config_path` | 设置用户配置文件`config.yaml`的路径 |
+| 短参数 |     长参数      |          解释          |
+| :----: | :-------------: | :--------------------: |
+|  `-h`  |    `--help`     |          帮助          |
+| `-cp`  | `--config_path` | 设置用户配置文件的路径 |
+|  `-s`  |   `--session`   |   设置会话文件的路径   |
+|  `-t`  |    `--temp`     |   设置运行缓存的路径   |
 
 _**长参数与短参数最终结果一致。**_
 
@@ -922,17 +927,16 @@ _**长参数与短参数最终结果一致。**_
 
 2. `-cp`、`--config_path`参数用法：
 
-   | 注意事项                                                     |
+   | 使用须知                                                     |
    | ------------------------------------------------------------ |
-   | 1._**该参数用于设置用户配置文件`config.yaml`的路径。**_      |
-   | 2._**旨在解决多用户场景下，为避免重复部署软件本体而设计的配置分离方案。**_ |
-   | 3._该参数需指定一个**符合**["2.3.配置文件说明(用户配置文件)"](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E7%94%A8%E6%88%B7%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)格式的文件路径。_ |
-   | 4._当指定的**文件路径无效**时，将使用软件**默认**设置。_     |
-   | 5._参数指定的文件路径的后缀名需为`.yaml`。_                  |
+   | _1.该参数用于设置用户配置文件的路径。_                       |
+   | _2.**该参数旨在解决多个实例（多开）场景下，避免重复部署软件本体而设计的配置分离方案。**_ |
+   | _3.该参数需指定一个**符合**["2.3.配置文件说明(用户配置文件)"](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E7%94%A8%E6%88%B7%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)格式规范的文件，**并且后缀名需为`.yaml`**。_ |
+   | _4.当指定的**文件路径无效**时，将使用软件**默认**设置。      |
 
    - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
 
-     以`Linux`系统为例（`Winodws`系统同理），此处假设用户所需`config.yaml`文件位于`/home/username/files/example.yaml`。
+     以`Linux`系统为例（`Winodws`系统同理），此处假设用户配置文件位于`/home/username/files/example.yaml`。
 
      ```bash
      python3 main.py -cp /home/username/files/example.yaml
@@ -944,7 +948,7 @@ _**长参数与短参数最终结果一致。**_
 
    - 对于Windows用户:
 
-     此处假设用户所需`config.yaml`文件位于`C:\files\example.yaml`。
+     此处假设用户配置文件位于`C:\files\example.yaml`。
 
      ```bash
      TRMD.exe -cp C:\files\example.yaml
@@ -956,7 +960,7 @@ _**长参数与短参数最终结果一致。**_
 
    - 对于Linux用户:
 
-      此处假设用户所需config.yaml文件位于`/home/username/files/example.yaml`。
+      此处假设用户配置文件位于`/home/username/files/example.yaml`。
 
       ```bash
       ./TRMD -cp /home/username/files/example.yaml
@@ -966,11 +970,103 @@ _**长参数与短参数最终结果一致。**_
       ./TRMD --config_path /home/username/files/example.yaml
       ```
 
+3. `-s`、`--session`参数用法：
+
+   | 使用须知                                                     |
+   | ------------------------------------------------------------ |
+   | _1.该参数用于设置会话文件的路径。_                           |
+   | _2.软件会在用户登录成功时后，默认在运行目录下生成 `session`文件夹，用于保存当前账号信息，以便后续快速登录。_ |
+   | _2.**该参数旨在**解决多账号登录场景下需**手动重命名**会话文件的问题，使用该参数用户可通过**直接**指定不同路径，选择对应账号进行登录。_ |
+   | _3.该参数需指定一个**文件夹**，可包含已有的 `.session`文件，指定为空文件夹或不存在时，登录后将在**该路径自动生成**会话文件。_ |
+
+   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+
+     以`Linux`系统为例（`Winodws`系统同理），此处假设会话文件位于`/home/username/files/session`。
+
+     ```bash
+     python3 main.py -s /home/username/files/session
+     ```
+
+     ```
+     python3 main.py --session /home/username/session
+     ```
+
+   - 对于Windows用户:
+
+     此处假设会话文件位于`C:\files\session`。
+
+     ```bash
+     TRMD.exe -s C:\files\session
+     ```
+
+     ```bash
+     TRMD.exe --session C:\files\session
+     ```
+
+   - 对于Linux用户:
+
+     此处假设会话文件位于`/home/username/files/session`。
+
+     ```bash
+     ./TRMD -s /home/username/files/session
+     ```
+
+     ```bash
+     ./TRMD --session /home/username/files/session
+     ```
+
+4. `-t`、`--temp`参数用法：
+
+   | 使用须知                                                     |
+   | ------------------------------------------------------------ |
+   | _1.该参数用于设置运行缓存的路径。_                           |
+   | _2.缓存即软件运行过程中，记录**下载和上传**信息的**存储中转站**。_ |
+   | _3.**断点续传**的实现同样离不开缓存机制的设计，用户可**根据实际需求自定义缓存存放的路径**。_ |
+   | _4.该参数需指定一个**文件夹**，指定为空文件夹或不存在时，运行时将在**该路径自动生成**生成缓存文件。_ |
+
+   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+
+     以`Linux`系统为例（`Winodws`系统同理），此处假设缓存文件位于`/home/username/files/temp`。
+
+     ```bash
+     python3 main.py -t /home/username/files/temp
+     ```
+
+     ```bash
+     python3 main.py --temp /home/username/temp
+     ```
+
+   - 对于Windows用户:
+
+     此处假设缓存文件位于`C:\files\temp`。
+
+     ```bash
+     TRMD.exe -t C:\files\temp
+     ```
+
+     ```bash
+     TRMD.exe --temp C:\files\temp
+     ```
+
+   - 对于Linux用户:
+
+     此处假设缓存文件位于`/home/username/files/temp`。
+
+     ```bash
+     ./TRMD -t /home/username/files/temp
+     ```
+
+     ```bash
+     ./TRMD --temp /home/username/files/temp
+     ```
+</details>
+
+
 # 5.0.通过编译后运行:
 
 _**推荐**使用`Python==3.13.2`作为该项目环境(避免使用其他`Python`版本导致编译过程中或编译完成后出现报错)。_
 
-- 同"在生产环境中运行"**前置步骤一致**。
+- 同"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)**前置步骤一致**。
 
 - 然后执行编译代码(建议使用**虚拟环境**，**避免**添加不必要的库，从而**减小**输出的文件大小)。
 

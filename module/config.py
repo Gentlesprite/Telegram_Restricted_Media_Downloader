@@ -177,8 +177,8 @@ class UserConfig(BaseConfig):
         self.difference_timestamp: dict = {}
         self.download_type: list = []
         self.record_dtype: set = set()
-        self.work_directory: str = UserConfig.WORK_DIRECTORY
-        self.temp_directory: str = UserConfig.TEMP_DIRECTORY
+        self.work_directory: str = self.parse_args.session or UserConfig.WORK_DIRECTORY
+        self.temp_directory: str = self.parse_args.temp or UserConfig.TEMP_DIRECTORY
         self.record_flag: bool = False
         self.modified: bool = False
         self.get_last_history_record()

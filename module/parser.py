@@ -30,7 +30,21 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             type=str,
             required=False,
             default='',
-            help='设置用户配置文件config.yaml的路径'
+            help='设置用户配置文件的路径'
+        )
+        self.add_argument(
+            '-s', '--session',
+            type=str,
+            required=False,
+            default='',
+            help='设置会话文件的路径'
+        )
+        self.add_argument(
+            '-t', '--temp',
+            type=str,
+            required=False,
+            default='',
+            help='设置运行缓存的路径'
         )
 
     def print_help(self, file=None):
