@@ -1245,7 +1245,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             await self.create_download_task(message_ids=message.link, single_link=True)
         except Exception as e:
-            log.exception(f'监听下载出现错误,{_t(KeyWord.REASON)}:{e}')
+            log.exception(f'监听下载出现错误,{_t(KeyWord.REASON)}:"{e}"')
 
     def check_type(self, message: pyrogram.types.Message):
         for dtype, is_forward in self.gc.forward_type.items():
@@ -1343,7 +1343,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             log.error(
                 f'监听转发出现错误,{_t(KeyWord.REASON)}:{e}频道性质可能发生改变,包括但不限于(频道解散、频道名改变、频道类型改变、该账户没有在目标频道上传的权限、该账号被当前频道移除)。')
         except Exception as e:
-            log.exception(f'监听转发出现错误,{_t(KeyWord.REASON)}:{e}')
+            log.exception(f'监听转发出现错误,{_t(KeyWord.REASON)}:"{e}"')
 
     async def resume_download(
             self,
@@ -1979,11 +1979,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             MetaData.print_helper()
             MetaData.print_meta()
-            self.app.print_config_table(
-                links=self.app.links,
-                download_type=self.app.download_type,
-                proxy=self.app.proxy
-            )
+            self.app.print_config_table(self.app)
+            self.app.print_env_table(self.app)
             self.loop.run_until_complete(self.__download_media_from_links())
         except KeyError as e:
             record_error: bool = True

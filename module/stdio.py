@@ -28,6 +28,7 @@ from rich.progress import (
     SpinnerColumn
 )
 from enum import Enum
+from pyrogram import __version__ as pyrogram_version
 
 from module import (
     log,
@@ -365,51 +366,43 @@ class StatisticalTable:
             return None
 
     @staticmethod
-    def print_config_table(links: str, download_type: list, proxy: dict) -> None:
+    def print_config_table(app) -> None:
         """打印用户所填写配置文件的表格。"""
         try:
-            if proxy.get('enable_proxy', False):
-                console.log(
-                    GradientColor.gen_gradient_text(
-                        text='当前正在使用代理!',
-                        gradient_color=GradientColor.GREEN2BLUE_10
-                    )
-                )
+            if app.enable_proxy:
                 proxy_key: list = []
                 proxy_value: list = []
-                for i in proxy.items():
+                for i in app.proxy.items():
                     if i[0] not in ['username', 'password']:
                         key, value = i
                         proxy_key.append(key)
                         proxy_value.append(value)
                 proxy_table = PanelTable(title='代理配置', header=tuple(proxy_key), data=[proxy_value])
                 proxy_table.print_meta()
-            else:
-                console.log(GradientColor.gen_gradient_text(
-                    text='当前没有使用代理!',
-                    gradient_color=GradientColor.NEW_LIFE)
-                )
         except Exception as e:
             log.error(f'打印代理配置表时出错,{_t(KeyWord.REASON)}:"{e}"')
         try:
             # 展示链接内容表格。
-            with open(file=links, mode='r', encoding='UTF-8') as _:
+            with open(file=app.links, mode='r', encoding='UTF-8') as _:
                 res: list = [content.strip() for content in _.readlines() if content.strip()]
             if res:
                 format_res: list = []
                 for i in enumerate(res, start=1):
                     format_res.append(list(i))
-                link_table = PanelTable(title='链接内容', header=('编号', '链接'),
-                                        data=format_res)
+                link_table = PanelTable(
+                    title='链接内容',
+                    header=('编号', '链接'),
+                    data=format_res
+                )
                 link_table.print_meta()
         except FileNotFoundError:
             log.warning('无法读取媒体链接文件,可能已被删除。')
         except (PermissionError, AttributeError) as e:  # v1.1.3 用户错误填写路径提示。
-            log.error(f'读取"{links}"时出错,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(f'读取"{app.links}"时出错,{_t(KeyWord.REASON)}:"{e}"')
         except Exception as e:
             log.error(f'打印链接内容统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
         try:
-            _dtype: list = download_type.copy()  # 浅拷贝赋值给_dtype,避免传入函数后改变原数据。
+            _dtype: list = app.download_type.copy()  # 浅拷贝赋值给_dtype,避免传入函数后改变原数据。
             data: list = [
                 [_t(DownloadType.VIDEO),
                  ProcessConfig.get_dtype(_dtype).get('video', False)
@@ -434,6 +427,36 @@ class StatisticalTable:
             download_type_table.print_meta()
         except Exception as e:
             log.error(f'打印下载类型统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
+
+    @staticmethod
+    def print_env_table(app):
+        log.info(
+            {
+                'platform': app.platform,
+                'python_version': sys.version.split()[0],
+                'TRMD_version': __version__,
+                'pyrogram_version': pyrogram_version,
+                'user_config_path': app.config_path,
+                'session_directory': app.work_directory,
+                'temp_directory': app.temp_directory,
+                'enable_proxy': app.enable_proxy
+            }
+        )
+        PanelTable(
+            title='运行环境',
+            header=('名称', '值'),
+            data=[
+                ['平台', app.platform],
+                ['Python版本', sys.version.split()[0]],
+                ['TRMD版本', __version__],
+                ['Pyrogram版本', pyrogram_version],
+                ['用户配置文件', app.config_path],
+                ['会话目录', app.work_directory],
+                ['缓存目录', app.temp_directory],
+                ['使用系统代理', '是' if app.enable_proxy else '否']
+            ],
+            show_lines=True
+        ).print_meta()
 
 
 class PanelTable:
