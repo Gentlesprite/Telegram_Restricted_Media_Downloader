@@ -84,6 +84,7 @@ if __name__ == '__main__':
         build_command += f'--output-filename="{SOFTWARE_SHORT_NAME}{extension}" --copyright="{copy_right}" --msvc=latest '
         build_command += f'--include-data-file="{media_info_lib_path}"={media_info_lib_filename} '
         build_command += f'--remove-output '
+        build_command += f'--no-deployment-flag=self-execution '
         build_command += f'--script-name={main}'
         build(build_command)
     except KeyboardInterrupt:
