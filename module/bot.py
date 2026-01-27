@@ -541,7 +541,7 @@ class Bot:
                     upload_files = [os.path.join(root, filename) for root, dirs, files in os.walk(file_path) for
                                     filename in files]
                 else:
-                    upload_files = os.listdir(file_path)
+                    upload_files = [entry.name for entry in os.scandir(file_path) if entry.is_file()]
                 for file_name in upload_files:
                     new_message = copy.copy(message)
                     new_message.text = f'/upload {os.path.join(file_path, file_name)} {target_link}'
