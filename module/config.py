@@ -24,7 +24,8 @@ from module.language import _t
 from module.parser import PARSE_ARGS
 from module.path_tool import (
     gen_backup_config,
-    safe_delete
+    safe_delete,
+    safe_scan_directory_file
 )
 from module.enums import (
     KeyWord,
@@ -203,7 +204,7 @@ class UserConfig(BaseConfig):
         """获取最近一次保存的历史配置文件。"""
         # 首先判断是否存在目录文件。
         try:
-            res: list = [entry.name for entry in os.scandir(UserConfig.ABSOLUTE_BACKUP_DIRECTORY) if entry.is_file()]
+            res: list = safe_scan_directory_file(UserConfig.ABSOLUTE_BACKUP_DIRECTORY)
         except FileNotFoundError:
             return
         except Exception as e:

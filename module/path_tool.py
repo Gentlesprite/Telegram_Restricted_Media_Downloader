@@ -12,7 +12,7 @@ import mimetypes
 import unicodedata
 
 from io import BytesIO
-from typing import Optional, Union
+from typing import Optional, Union, Callable, List
 
 from pyrogram.file_id import (
     FILE_REFERENCE_FLAG,
@@ -111,6 +111,14 @@ def safe_delete(file_p_d: str) -> bool:
         return False
     except Exception as _:
         return False
+
+
+def safe_scan_directory_file(
+        directory: str
+) -> List[str]:
+    """扫描目录下的文件并返回文件名的列表。"""
+    with os.scandir(directory) as entries:
+        return [entry.name for entry in entries if entry.is_file()]
 
 
 def safe_replace(origin_file: str, overwrite_file: str) -> dict:

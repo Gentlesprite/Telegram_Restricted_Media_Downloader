@@ -37,6 +37,7 @@ from module.language import _t
 from module.stdio import MetaData
 from module.task import UploadTask
 from module.config import GlobalConfig
+from module.path_tool import safe_scan_directory_file
 from module.util import (
     parse_link,
     safe_index,
@@ -541,7 +542,7 @@ class Bot:
                     upload_files = [os.path.join(root, filename) for root, dirs, files in os.walk(file_path) for
                                     filename in files]
                 else:
-                    upload_files = [entry.name for entry in os.scandir(file_path) if entry.is_file()]
+                    upload_files = safe_scan_directory_file(file_path)
                 for file_name in upload_files:
                     new_message = copy.copy(message)
                     new_message.text = f'/upload {os.path.join(file_path, file_name)} {target_link}'
