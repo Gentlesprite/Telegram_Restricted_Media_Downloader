@@ -831,12 +831,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                 console.log(
                     f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{message_id}"'
                     f' -> '
-                    f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}"'
+                    f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
                     f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SKIP)}。'
                 )
                 await asyncio.create_task(
                     self.done_notice(
-                        f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{message_id} ➡️ "{target_chat_id}"该类型已过滤,跳过转发。'
+                        f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{message_id}'
+                        f' ➡️ '
+                        f'"{target_chat_id}",{_t(KeyWord.FORWARD_SKIP)}(该类型已过滤)。'
                     )
                 )
                 return None
@@ -859,12 +861,14 @@ class TelegramRestrictedMediaDownloader(Bot):
             console.log(
                 f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{p_message_id}"'
                 f' -> '
-                f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}"'
+                f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
                 f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
             )
             await asyncio.create_task(
                 self.done_notice(
-                    f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{p_message_id} ➡️ "{target_chat_id}"转发完成。'
+                    f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{p_message_id}'
+                    f' ➡️ '
+                    f'"{target_chat_id}",{_t(KeyWord.FORWARD_SUCCESS)}。'
                 )
             )
         except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
@@ -1018,7 +1022,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'{_t(KeyWord.REASON)}:"{e}"')
                     await asyncio.create_task(
                         self.done_notice(
-                            f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{i.id} ➡️ "{target_chat_id}",{_t(KeyWord.FORWARD_FAILURE)}。\n(具体原因请前往终端查看报错信息)'
+                            f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{i.id}'
+                            f' ➡️ '
+                            f'"{target_chat_id}",{_t(KeyWord.FORWARD_FAILURE)}。'
+                            f'\n(具体原因请前往终端查看报错信息)'
                         )
                     )
             else:
