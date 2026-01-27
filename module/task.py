@@ -104,7 +104,7 @@ class DownloadTask:
                 )
                 DownloadTask.LINK_INFO.get(link)['error_msg'] = {}
                 DownloadTask.COMPLETE_LINK.add(link)
-                asyncio.create_task(self.done_notice(f'"{link}"已下载完成。'))
+                asyncio.create_task(self.done_notice(f'"{link}"下载完成。'))
             return res
 
         return wrapper

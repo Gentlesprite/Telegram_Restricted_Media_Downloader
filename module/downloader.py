@@ -864,7 +864,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
             await asyncio.create_task(
                 self.done_notice(
-                    f'"{target_chat_id},{_t(KeyWord.MESSAGE_ID)}:{p_message_id}" ➡️ "{origin_chat_id}"已转发完成。'
+                    f'"{target_chat_id},{_t(KeyWord.MESSAGE_ID)}:{p_message_id}" ➡️ "{origin_chat_id}"转发完成。'
                 )
             )
         except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
