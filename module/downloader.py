@@ -829,14 +829,14 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             if not self.check_type(message):
                 console.log(
-                    f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{message_id}"'
+                    f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}"'
                     f' -> '
-                    f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",'
+                    f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{message_id}"'
                     f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SKIP)}。'
                 )
                 await asyncio.create_task(
                     self.done_notice(
-                        f'"{target_chat_id},{_t(KeyWord.MESSAGE_ID)}:{message_id}" ➡️ "{origin_chat_id}"类型已过滤,跳过转发。'
+                        f'"{origin_chat_id}" ➡️ "{target_chat_id},{_t(KeyWord.MESSAGE_ID)}:{message_id}"类型已过滤,跳过转发。'
                     )
                 )
                 return None
@@ -857,14 +857,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
             p_message_id = ','.join(map(str, media_group)) if media_group else message_id
             console.log(
-                f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{p_message_id}"'
+                f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}"'
                 f' -> '
-                f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",'
+                f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{p_message_id}"'
                 f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
             )
             await asyncio.create_task(
                 self.done_notice(
-                    f'"{target_chat_id},{_t(KeyWord.MESSAGE_ID)}:{p_message_id}" ➡️ "{origin_chat_id}"转发完成。'
+                    f'"{origin_chat_id}" ➡️ "{target_chat_id},{_t(KeyWord.MESSAGE_ID)}:{p_message_id}"转发完成。'
                 )
             )
         except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
