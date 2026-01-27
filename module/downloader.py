@@ -820,8 +820,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             client: pyrogram.Client,
             message: pyrogram.types.Message,
             message_id: int,
-            origin_chat_id: int,
-            target_chat_id: int,
+            origin_chat_id: Union[str, int],
+            target_chat_id: Union[str, int],
             target_link: str,
             download_upload: Optional[bool] = False,
             media_group: Optional[list] = None
@@ -829,14 +829,14 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             if not self.check_type(message):
                 console.log(
-                    f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}"'
+                    f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{message_id}"'
                     f' -> '
-                    f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{message_id}"'
+                    f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}"'
                     f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SKIP)}。'
                 )
                 await asyncio.create_task(
                     self.done_notice(
-                        f'"{origin_chat_id}" ➡️ "{target_chat_id},{_t(KeyWord.MESSAGE_ID)}:{message_id}"类型已过滤,跳过转发。'
+                        f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{message_id} ➡️ "{target_chat_id}"该类型已过滤,跳过转发。'
                     )
                 )
                 return None
@@ -857,14 +857,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
             p_message_id = ','.join(map(str, media_group)) if media_group else message_id
             console.log(
-                f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}"'
+                f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{p_message_id}"'
                 f' -> '
-                f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{p_message_id}"'
+                f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}"'
                 f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
             )
             await asyncio.create_task(
                 self.done_notice(
-                    f'"{origin_chat_id}" ➡️ "{target_chat_id},{_t(KeyWord.MESSAGE_ID)}:{p_message_id}"转发完成。'
+                    f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{p_message_id} ➡️ "{target_chat_id}"转发完成。'
                 )
             )
         except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
@@ -923,18 +923,20 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
             if not all([origin_meta, target_meta]):
                 raise Exception('Invalid origin_link or target_link.')
+            origin_chat_id = origin_meta.get('chat_id')
+            target_chat_id = target_meta.get('chat_id')
             origin_chat: Union[pyrogram.types.Chat, None] = await get_chat_with_notify(
                 user_client=self.app.client,
                 bot_client=client,
                 bot_message=message,
-                chat_id=origin_meta.get('chat_id'),
+                chat_id=origin_chat_id,
                 error_msg=f'⬇️⬇️⬇️原始频道不存在⬇️⬇️⬇️\n{origin_link}'
             )
             target_chat: Union[pyrogram.types.Chat, None] = await get_chat_with_notify(
                 user_client=self.app.client,
                 bot_client=client,
                 bot_message=message,
-                chat_id=target_meta.get('chat_id'),
+                chat_id=target_chat_id,
                 error_msg=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
             )
             if not all([origin_chat, target_chat]):
@@ -947,8 +949,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     reply_parameters=ReplyParameters(message_id=message.id),
                 )
                 return None
-            origin_chat_id = origin_chat.id
-            target_chat_id = target_chat.id
             record_id: list = []
             last_message = await client.send_message(
                 chat_id=message.from_user.id,
@@ -1016,6 +1016,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
                         f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_FAILURE)},'
                         f'{_t(KeyWord.REASON)}:"{e}"')
+                    await asyncio.create_task(
+                        self.done_notice(
+                            f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{i.id} ➡️ "{target_chat_id}",{_t(KeyWord.FORWARD_FAILURE)}。\n(具体原因请前往终端查看报错信息)'
+                        )
+                    )
             else:
                 if isinstance(last_message, str):
                     log.warning('消息过长编辑频繁,暂时无法通过机器人显示通知。')
