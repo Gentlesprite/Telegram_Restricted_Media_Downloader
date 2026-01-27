@@ -41,7 +41,8 @@ from module.util import (
     parse_link,
     safe_index,
     safe_message,
-    is_allow_upload
+    is_allow_upload,
+    is_valid_link
 )
 from module.enums import (
     CalenderKeyboard,
@@ -498,7 +499,8 @@ class Bot:
             client: pyrogram.Client,
             message: pyrogram.types.Message,
             delete: bool = False,
-            save_directory: str = None
+            save_directory: str = None,
+            recursion: bool = False
     ):
         text: str = message.text
         if text == '/upload' or text == '/upload_r':
@@ -522,8 +524,17 @@ class Bot:
         parts = remaining_text.rsplit(maxsplit=1)
 
         if len(parts) == 2:
-            file_path = parts[0]  # 文件名部分（可能包含空格）
-            target_link = parts[1]  # URL 部分
+            file_path = parts[0]  # 文件名部分（可能包含空格）。
+            target_link = parts[1]  # URL部分。
+            if not recursion:
+                if not await is_valid_link(
+                        link=target_link,
+                        user_client=self.user,
+                        bot_client=self.bot,
+                        bot_message=self.last_message,
+                        error_msg=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
+                ):
+                    return None
             if os.path.isdir(file_path):
                 upload_folder = []
                 if command == '/upload_r':
@@ -539,7 +550,8 @@ class Bot:
                             client=client,
                             message=new_message,
                             delete=delete,
-                            save_directory=save_directory
+                            save_directory=save_directory,
+                            recursion=True
                         )
                     )
                 sem = asyncio.Semaphore(self.application.max_upload_task)
@@ -582,8 +594,7 @@ class Bot:
                 )
 
             log.info(f'上传文件:"{file_path}",上传频道:"{target_link}"。')
-            # 验证目标链接格式
-            if target_link.startswith('https://t.me/'):
+            if target_link.startswith('https://t.me/') or target_link in ('me', 'self'):  # 验证目标链接格式。
                 return {
                     'target_link': target_link,
                     'upload_task': UploadTask(
@@ -595,14 +606,15 @@ class Bot:
                         status=UploadStatus.IDLE
                     )
                 }
-        await self.help(client, message)
-        await client.send_message(
-            chat_id=message.from_user.id,
-            reply_parameters=ReplyParameters(message_id=message.id),
-            text='❌❌❌命令错误❌❌❌\n请查看帮助后重试。',
-            link_preview_options=LINK_PREVIEW_OPTIONS
-        )
-        return None
+        if not recursion:
+            await self.help(client, message)
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text='❌❌❌命令错误❌❌❌\n请查看帮助后重试。',
+                link_preview_options=LINK_PREVIEW_OPTIONS
+            )
+            return None
 
     async def exit(
             self,

@@ -6,7 +6,7 @@
 import os
 import re
 
-from typing import Tuple, List, Union
+from typing import Tuple, List, Union, Callable
 
 import pyrogram
 from pyrogram import utils
@@ -240,6 +240,31 @@ async def get_chat_with_notify(
                 text=error_msg if error_msg else ''
             )
         return None
+
+
+async def is_valid_link(
+        link: Union[int, str],
+        user_client: pyrogram.Client,
+        bot_client: Union[pyrogram.Client] = None,
+        bot_message: Union[pyrogram.types.Message] = None,
+        error_msg: Union[str] = None
+) -> bool:
+    m = await parse_link(
+        client=user_client,
+        link=link
+    )
+    try:
+        if await get_chat_with_notify(
+                user_client=user_client,
+                chat_id=m.get('chat_id'),
+                bot_client=bot_client,
+                bot_message=bot_message,
+                error_msg=error_msg if error_msg else ''
+        ):
+            return True
+    except Exception:
+        return False
+    return False
 
 
 def is_allow_upload(file_size: int, is_premium: bool) -> bool:

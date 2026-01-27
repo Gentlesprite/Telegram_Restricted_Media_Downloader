@@ -179,7 +179,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             client: pyrogram.Client,
             message: pyrogram.types.Message,
             delete: bool = False,
-            save_directory: str = None
+            save_directory: str = None,
+            recursion: bool = False
     ):
         link_meta: Union[dict, None] = await super().get_upload_link_from_bot(client, message)
         if link_meta is None:
@@ -193,11 +194,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                 upload_task=upload_task
             )
         except ValueError:
-            await client.send_message(
-                chat_id=message.from_user.id,
-                reply_parameters=ReplyParameters(message_id=message.id),
-                text=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
-            )
+            if not recursion:
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
+                    text=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
+                )
 
     @staticmethod
     async def __send_pay_qr(
