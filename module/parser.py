@@ -60,3 +60,6 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
         )
         MetaData.print_about()
         super().print_help(file)
+
+
+PARSE_ARGS = TelegramRestrictedMediaDownloaderArgumentParser(add_help=False).parse_args()

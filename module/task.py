@@ -17,6 +17,7 @@ import pyrogram
 from module import console, log
 from module.language import _t
 from module.stdio import MetaData
+from module.parser import PARSE_ARGS
 from module.path_tool import (
     safe_delete,
     truncate_filename
@@ -127,7 +128,7 @@ class DownloadTask:
 
 
 class UploadTask:
-    DIRECTORY_NAME: str = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'temp')
+    DIRECTORY_NAME: str = PARSE_ARGS.temp or os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'temp')
     PART_SIZE: int = 512 * 1024
     TASKS: set = set()
     TASK_COUNTER: int = 0

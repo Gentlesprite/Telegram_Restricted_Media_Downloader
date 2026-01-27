@@ -21,7 +21,7 @@ from module import (
     PLATFORM
 )
 from module.language import _t
-from module.parser import TelegramRestrictedMediaDownloaderArgumentParser
+from module.parser import PARSE_ARGS
 from module.path_tool import (
     gen_backup_config,
     safe_delete
@@ -167,9 +167,8 @@ class UserConfig(BaseConfig):
 
     def __init__(self):
         super().__init__()
-        self.parse_args = TelegramRestrictedMediaDownloaderArgumentParser(add_help=False).parse_args()
-        self.config_path: str = self.parse_args.config if os.path.isfile(
-            self.parse_args.config) and self.parse_args.config.endswith('.yaml') else UserConfig.PATH
+        self.config_path: str = PARSE_ARGS.config if os.path.isfile(
+            PARSE_ARGS.config) and PARSE_ARGS.config.endswith('.yaml') else UserConfig.PATH
         self.platform: str = PLATFORM
         self.history_timestamp: dict = {}
         self.input_link: list = []
@@ -177,8 +176,8 @@ class UserConfig(BaseConfig):
         self.difference_timestamp: dict = {}
         self.download_type: list = []
         self.record_dtype: set = set()
-        self.work_directory: str = self.parse_args.session or UserConfig.WORK_DIRECTORY
-        self.temp_directory: str = self.parse_args.temp or UserConfig.TEMP_DIRECTORY
+        self.work_directory: str = PARSE_ARGS.session or UserConfig.WORK_DIRECTORY
+        self.temp_directory: str = PARSE_ARGS.temp or UserConfig.TEMP_DIRECTORY
         self.record_flag: bool = False
         self.modified: bool = False
         self.get_last_history_record()
@@ -204,7 +203,7 @@ class UserConfig(BaseConfig):
         """获取最近一次保存的历史配置文件。"""
         # 首先判断是否存在目录文件。
         try:
-            res: list = os.listdir(UserConfig.ABSOLUTE_BACKUP_DIRECTORY)
+            res: list = [entry.name for entry in os.scandir(UserConfig.ABSOLUTE_BACKUP_DIRECTORY) if entry.is_file()]
         except FileNotFoundError:
             return
         except Exception as e:
