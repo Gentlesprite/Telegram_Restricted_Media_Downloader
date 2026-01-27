@@ -825,7 +825,7 @@ class Bot:
             if all([self.last_client, self.last_message]):
                 await self.last_client.send_message(
                     chat_id=self.last_message.from_user.id,
-                    text=text,
+                    text=f'📢通知:\n{text}',
                     link_preview_options=LINK_PREVIEW_OPTIONS
                 )
 

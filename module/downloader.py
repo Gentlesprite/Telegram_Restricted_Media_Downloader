@@ -834,6 +834,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",'
                     f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SKIP)}。'
                 )
+                await asyncio.create_task(
+                    self.done_notice(
+                        f'"{target_chat_id},{_t(KeyWord.MESSAGE_ID)}:{message_id}" ➡️ "{origin_chat_id}"类型已过滤,跳过转发。'
+                    )
+                )
                 return None
             if media_group:
                 await self.app.client.copy_media_group(
@@ -856,6 +861,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                 f' -> '
                 f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",'
                 f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
+            )
+            await asyncio.create_task(
+                self.done_notice(
+                    f'"{target_chat_id},{_t(KeyWord.MESSAGE_ID)}:{p_message_id}" ➡️ "{origin_chat_id}"已转发完成。'
+                )
             )
         except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
             if not download_upload:
