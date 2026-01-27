@@ -6,7 +6,7 @@
 import os
 import re
 
-from typing import Tuple, List, Union, Callable
+from typing import Tuple, List, Union, Optional
 
 import pyrogram
 from pyrogram import utils
@@ -225,14 +225,14 @@ async def __is_group(message) -> Tuple[Union[bool, None], Union[list, None]]:
 async def get_chat_with_notify(
         user_client: pyrogram.Client,
         chat_id: Union[int, str],
-        error_msg: Union[str] = None,
-        bot_client: Union[pyrogram.Client] = None,
-        bot_message: Union[pyrogram.types.Message] = None
+        error_msg: Optional[str] = None,
+        bot_client: Optional[pyrogram.Client] = None,
+        bot_message: Optional[pyrogram.types.Message] = None
 ) -> Union[pyrogram.types.Chat, None]:
     try:
         chat = await user_client.get_chat(chat_id)
         return chat
-    except UsernameNotOccupied:
+    except Exception:
         if all([bot_client, bot_message]):
             await bot_client.send_message(
                 chat_id=bot_message.from_user.id,
@@ -253,17 +253,14 @@ async def is_valid_link(
         client=user_client,
         link=link
     )
-    try:
-        if await get_chat_with_notify(
-                user_client=user_client,
-                chat_id=m.get('chat_id'),
-                bot_client=bot_client,
-                bot_message=bot_message,
-                error_msg=error_msg if error_msg else ''
-        ):
-            return True
-    except Exception:
-        return False
+    if await get_chat_with_notify(
+            user_client=user_client,
+            chat_id=m.get('chat_id'),
+            bot_client=bot_client,
+            bot_message=bot_message,
+            error_msg=error_msg if error_msg else ''
+    ):
+        return True
     return False
 
 
