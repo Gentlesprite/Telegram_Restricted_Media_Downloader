@@ -270,6 +270,7 @@ class TelegramUploader:
             except (ChatAdminRequired, ChannelPrivate_400, ChannelPrivate_406) as e:
                 upload_task.error_msg = str(e)
                 upload_task.status = UploadStatus.FAILURE
+                return None
             except Exception as e:
                 console.log(
                     f'{_t(KeyWord.UPLOAD_TASK)}'
