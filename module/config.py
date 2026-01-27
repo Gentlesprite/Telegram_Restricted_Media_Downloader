@@ -192,7 +192,7 @@ class UserConfig(BaseConfig):
         self.download_type: list = self.config.get('download_type')
         self.is_shutdown: bool = self.config.get('is_shutdown')
         self.links: str = self.config.get('links')
-        self.max_download_task: int = self.config.get('max_tasks', {'download': 5}).get('download')
+        self.max_download_task: int = self.config.get('max_tasks', {'download': 3}).get('download')
         self.max_download_retries: int = self.config.get('max_retries', {'download': 5}).get('download')
         self.max_upload_task: int = (self.config.get('max_tasks') or {}).get('upload', 3) or 3
         self.max_upload_retries: int = (self.config.get('max_retries') or {}).get('upload', 3) or 3
@@ -385,7 +385,7 @@ class UserConfig(BaseConfig):
             _bot_token: Union[str, None] = pre_load_config.get('bot_token')
             _links: Union[str, None] = pre_load_config.get('links')
             _save_directory: Union[str, None] = pre_load_config.get('save_directory')
-            _max_download_task: Union[int, None] = pre_load_config.get('max_tasks', {'download': 5}).get('download')
+            _max_download_task: Union[int, None] = pre_load_config.get('max_tasks', {'download': 3}).get('download')
             _max_download_retries: Union[int, None] = pre_load_config.get('max_retries', {'download': 5}).get(
                 'download')
             _download_type: Union[list, None] = pre_load_config.get('download_type')
@@ -441,7 +441,7 @@ class UserConfig(BaseConfig):
                     pre_load_config['save_directory'] = save_directory
             if not _max_download_task or self.re_config:
                 max_download_task, record_flag = gsp.get_max_download_task(
-                    last_record=self.last_record.get('max_tasks', {'download': 5}).get('download')).values()
+                    last_record=self.last_record.get('max_tasks', {'download': 3}).get('download')).values()
                 if record_flag:
                     self.record_flag = record_flag
                     pre_load_config.get('max_tasks')['download'] = max_download_task

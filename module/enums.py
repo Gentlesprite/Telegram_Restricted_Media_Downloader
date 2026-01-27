@@ -823,7 +823,7 @@ class GetStdioParams:
     @staticmethod
     def get_max_download_task(last_record) -> dict:
         # 输入最大下载任务数,确保是一个整数且不超过特定限制。
-        default_prompt: str = '(默认5)' if last_record is None else ''
+        default_prompt: str = '(默认3)' if last_record is None else ''
         while True:
             try:
                 max_download_task = console.input(
@@ -832,7 +832,7 @@ class GetStdioParams:
                 if max_download_task == '' and last_record is not None:
                     max_download_task = last_record
                 if max_download_task == '':
-                    max_download_task = 5
+                    max_download_task = 3
                 if Validator.is_valid_number(max_download_task):
                     console.print(f'已设置「max_download_task」为:「{max_download_task}」',
                                   style=ProcessConfig.stdio_style('max_download_task'))
