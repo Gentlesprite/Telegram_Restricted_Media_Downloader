@@ -60,13 +60,14 @@ class TelegramUploader:
         self.app = download_object.app
         self.client: pyrogram.Client = self.app.client
         self.loop: asyncio.AbstractEventLoop = download_object.loop
-        self.queue: asyncio.Queue = download_object.queue
         self.event: asyncio.Event = asyncio.Event()
         self.pb: ProgressBar = download_object.pb
         self.is_premium: bool = self.client.me.is_premium
         self.current_task_num: int = 0
         self.max_upload_task: int = self.app.max_upload_task
         self.max_upload_retries: int = self.app.max_upload_retries
+        self.is_bot_running = download_object.is_bot_running
+        self.upload_queue: asyncio.Queue = asyncio.Queue()
         UploadTask.NOTIFY = download_object.done_notice
 
     async def resume_upload(
@@ -158,6 +159,20 @@ class TelegramUploader:
                 file=file,
                 spoiler=False
             )
+            media = await self.client.invoke(
+                raw.functions.messages.UploadMedia(
+                    peer=await self.client.resolve_peer(chat_id),
+                    media=media
+                )
+            )
+            media = raw.types.InputMediaPhoto(
+                id=raw.types.InputPhoto(
+                    id=media.photo.id,
+                    access_hash=media.photo.access_hash,
+                    file_reference=media.photo.file_reference
+                ),
+                spoiler=False
+            )
         else:
             attributes = [raw.types.DocumentAttributeFilename(file_name=file_name)]
             if file_path.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
@@ -181,21 +196,77 @@ class TelegramUploader:
                 force_file=False,  # 不要强制作为文件发送。
                 thumb=None  # 缩略图。
             )
-        peer = await self.client.resolve_peer(chat_id)
-        r = await self.client.invoke(
-            raw.functions.messages.SendMedia(
-                peer=peer,
-                media=media,
-                random_id=self.client.rnd_id(),
-                **await utils.parse_text_entities(
-                    self.client,
-                    text='',
-                    parse_mode=None,
-                    entities=None
+            media = await self.client.invoke(
+                raw.functions.messages.UploadMedia(
+                    peer=await self.client.resolve_peer(chat_id),
+                    media=media
                 )
             )
-        )
-        return await utils.parse_messages(self.client, r)
+            media = raw.types.InputMediaDocument(
+                id=raw.types.InputDocument(
+                    id=media.document.id,
+                    access_hash=media.document.access_hash,
+                    file_reference=media.document.file_reference
+                )
+            )
+        self.upload_queue.put_nowait((media, upload_task))
+
+    async def send_media_worker(self):
+        # 在函数内部使用本地缓存。
+        media_group_cache = {}  # chat_id -> []
+
+        while self.is_bot_running:
+            media, upload_task = await self.upload_queue.get()
+
+            # 通过media_group_count判断是否是媒体组。
+            if upload_task.media_group_count and upload_task.media_group_count > 1:
+                chat_id = upload_task.chat_id
+
+                if chat_id not in media_group_cache:
+                    media_group_cache[chat_id] = []
+
+                # 添加到缓存。
+                media_group_cache[chat_id].append(
+                    raw.types.InputSingleMedia(
+                        media=media,
+                        random_id=self.client.rnd_id(),
+                        **await utils.parse_text_entities(
+                            self.client,
+                            text='',
+                            parse_mode=None,
+                            entities=None
+                        )
+                    )
+                )
+
+                # 检查是否收集完成。
+                if len(media_group_cache[chat_id]) == upload_task.media_group_count:
+                    # 发送媒体组。
+                    await self.client.invoke(
+                        raw.functions.messages.SendMultiMedia(
+                            peer=await self.client.resolve_peer(chat_id),
+                            multi_media=media_group_cache[chat_id]
+                        ),
+                        sleep_threshold=60
+                    )
+
+                    # 清理缓存。
+                    del media_group_cache[chat_id]
+
+            else:
+                await self.client.invoke(
+                    raw.functions.messages.SendMedia(
+                        peer=await self.client.resolve_peer(upload_task.chat_id),
+                        media=media,
+                        random_id=self.client.rnd_id(),
+                        **await utils.parse_text_entities(
+                            self.client,
+                            text='',
+                            parse_mode=None,
+                            entities=None
+                        )
+                    )
+                )
 
     @staticmethod
     def get_video_info(video_path: str) -> Dict[str, int]:
@@ -374,7 +445,8 @@ class TelegramUploader:
                         file_size=os.path.getsize(file_path),
                         file_part=[],
                         status=UploadStatus.IDLE,
-                        with_delete=with_upload.get('with_delete')
+                        with_delete=with_upload.get('with_delete'),
+                        media_group_count=with_upload.get('media_group_count')
                     )
                 )
             )

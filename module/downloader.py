@@ -310,7 +310,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     with_upload={
                         'link': target_link,
                         'file_name': None,
-                        'with_delete': self.gc.upload_delete
+                        'with_delete': self.gc.upload_delete,
+                        'media_group_count': end_id - start_id + 1
                     }
                 )
             await kb.task_assign_button()
@@ -894,7 +895,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 with_upload={
                     'link': target_link,
                     'file_name': None,
-                    'with_delete': self.gc.upload_delete
+                    'with_delete': self.gc.upload_delete,
+                    'media_group_count': len(media_group)
                 }
             )
             p = f'{_t(KeyWord.DOWNLOAD_AND_UPLOAD_TASK)}{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.LINK)}:"{link}"。'
@@ -1009,7 +1011,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         with_upload={
                             'link': target_link,
                             'file_name': None,
-                            'with_delete': self.gc.upload_delete
+                            'with_delete': self.gc.upload_delete,
+                            'media_group_count': end_id - start_id + 1
                         }
                     )
                     break
@@ -1960,6 +1963,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             console.log(result, style='#B1DB74' if self.is_bot_running else '#FF4689')
             if self.is_bot_running:
                 self.uploader = TelegramUploader(download_object=self)
+                _ = asyncio.create_task(self.uploader.send_media_worker())
                 self.cd = CallbackData()
                 if self.gc.upload_delete:
                     console.log(
