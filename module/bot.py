@@ -5,7 +5,6 @@
 # File:bot.py
 import os
 import copy
-import asyncio
 import datetime
 import calendar
 from typing import List, Dict, Union, Optional
@@ -537,7 +536,6 @@ class Bot:
                 ):
                     return None
             if os.path.isdir(file_path):
-                upload_folder = []
                 if command == '/upload_r':
                     upload_files = [os.path.join(root, filename) for root, dirs, files in os.walk(file_path) for
                                     filename in files]
@@ -546,24 +544,13 @@ class Bot:
                 for file_name in upload_files:
                     new_message = copy.copy(message)
                     new_message.text = f'/upload {os.path.join(file_path, file_name)} {target_link}'
-                    upload_folder.append(
-                        self.get_upload_link_from_bot(
+                    await self.get_upload_link_from_bot(
                             client=client,
                             message=new_message,
                             delete=delete,
                             save_directory=save_directory,
                             recursion=True
                         )
-                    )
-                sem = asyncio.Semaphore(self.application.max_upload_task)
-
-                async def limited(coro):
-                    async with sem:
-                        return await coro
-
-                limited_tasks = [limited(coro) for coro in upload_folder]
-                for future in asyncio.as_completed(limited_tasks):
-                    await future
                 return None
             if not os.path.isfile(file_path):
                 log.error(f'上传出错,{_t(KeyWord.REASON)}:"{file_path}"不存在。')

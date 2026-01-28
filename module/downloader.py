@@ -10,7 +10,7 @@ import datetime
 
 from functools import partial
 from sqlite3 import OperationalError
-from typing import Union, Callable, Optional, Dict
+from typing import Union, Callable, Optional, Dict, Set
 
 import pyrogram
 from pyrogram.enums.parse_mode import ParseMode
@@ -91,14 +91,14 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     def __init__(self):
         super().__init__()
-        self.loop = asyncio.get_event_loop()
-        self.event = asyncio.Event()
-        self.queue = asyncio.Queue()
-        self.app = Application()
+        self.loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+        self.event: asyncio.Event = asyncio.Event()
+        self.queue: asyncio.Queue = asyncio.Queue()
+        self.app: Application = Application()
         self.is_running: bool = False
-        self.running_log: set = set()
+        self.running_log: Set[bool] = set()
         self.running_log.add(self.is_running)
-        self.pb = ProgressBar()
+        self.pb: ProgressBar = ProgressBar()
         self.uploader: Union[TelegramUploader, None] = None
         self.cd: Union[CallbackData, None] = None
 
@@ -1959,15 +1959,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
             console.log(result, style='#B1DB74' if self.is_bot_running else '#FF4689')
             if self.is_bot_running:
-                self.uploader = TelegramUploader(
-                    client=self.app.client,
-                    loop=self.loop,
-                    is_premium=self.app.client.me.is_premium,
-                    progress=self.pb,
-                    max_upload_task=self.app.max_upload_task,
-                    max_retry_count=self.app.max_upload_retries,
-                    notify=self.done_notice
-                )
+                self.uploader = TelegramUploader(download_object=self)
                 self.cd = CallbackData()
                 if self.gc.upload_delete:
                     console.log(

@@ -29,10 +29,13 @@ from pymediainfo import MediaInfo
 from module import console, log
 from module.language import _t
 
-from module.stdio import MetaData
 from module.task import UploadTask
 from module.path_tool import get_mime_from_extension
 
+from module.stdio import (
+    MetaData,
+    ProgressBar
+)
 from module.path_tool import (
     split_path,
     safe_delete,
@@ -53,23 +56,19 @@ from module.util import (
 class TelegramUploader:
     def __init__(
             self,
-            client: pyrogram.Client,
-            loop,
-            is_premium: bool,
-            progress,
-            max_upload_task: int = 3,
-            max_retry_count: int = 3,
-            notify: Optional[Callable] = None
+            download_object
     ):
-        self.client: pyrogram.Client = client
-        self.loop = loop
-        self.event = asyncio.Event()
-        self.pb = progress
-        self.current_task_num = 0
-        self.max_upload_task = max_upload_task
-        self.max_retry_count = max_retry_count
-        self.is_premium: bool = is_premium
-        UploadTask.NOTIFY = notify
+        self.app = download_object.app
+        self.client: pyrogram.Client = self.app.client
+        self.loop: asyncio.AbstractEventLoop = download_object.loop
+        self.queue: asyncio.Queue = download_object.queue
+        self.event: asyncio.Event = asyncio.Event()
+        self.pb: ProgressBar = download_object.pb
+        self.is_premium: bool = self.client.me.is_premium
+        self.current_task_num: int = 0
+        self.max_upload_task: int = self.app.max_upload_task
+        self.max_upload_retries: int = self.app.max_upload_retries
+        UploadTask.NOTIFY = download_object.done_notice
 
     async def resume_upload(
             self,
@@ -244,7 +243,7 @@ class TelegramUploader:
 
         retry = 0
         file_part_retry = 0
-        while retry < self.max_retry_count:
+        while retry < self.max_upload_retries:
             try:
                 if retry != 0 or upload_task.file_part:
                     console.log(f'{_t(KeyWord.RESUME)}:"{file_path}"。')
@@ -275,11 +274,11 @@ class TelegramUploader:
                 console.log(
                     f'{_t(KeyWord.UPLOAD_TASK)}'
                     f'{_t(KeyWord.RE_UPLOAD)}:"{file_path}",'
-                    f'{_t(KeyWord.RETRY_TIMES)}:{retry + 1}/{self.max_retry_count},'
+                    f'{_t(KeyWord.RETRY_TIMES)}:{retry + 1}/{self.max_upload_retries},'
                     f'{_t(KeyWord.REASON)}:"{e}"'
                 )
                 retry += 1  # 只有非FilePartMissing异常才递增重试计数。
-                if retry == self.max_retry_count:
+                if retry == self.max_upload_retries:
                     upload_task.error_msg = str(e)
                     upload_task.status = UploadStatus.FAILURE
 
@@ -324,7 +323,7 @@ class TelegramUploader:
                 prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
                 num=self.current_task_num
             )
-            await _task
+            self.queue.put_nowait(_task)
 
     def upload_complete_callback(
             self,
