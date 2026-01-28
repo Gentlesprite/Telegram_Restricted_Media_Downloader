@@ -10,10 +10,7 @@ from typing import Tuple, List, Union, Optional
 
 import pyrogram
 from pyrogram import utils
-from pyrogram.errors.exceptions.bad_request_400 import (
-    MsgIdInvalid,
-    UsernameNotOccupied
-)
+from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid
 from pyrogram.types.messages_and_media import ReplyParameters
 from urllib.parse import parse_qs, urlparse
 from rich.text import Text

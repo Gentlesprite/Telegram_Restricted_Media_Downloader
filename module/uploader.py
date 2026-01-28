@@ -12,7 +12,6 @@ from functools import partial
 from typing import (
     Dict,
     Union,
-    Optional,
     Callable
 )
 
@@ -323,7 +322,7 @@ class TelegramUploader:
                 prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
                 num=self.current_task_num
             )
-            self.queue.put_nowait(_task)
+            await _task
 
     def upload_complete_callback(
             self,
