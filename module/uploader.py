@@ -213,44 +213,53 @@ class TelegramUploader:
 
     async def send_media_worker(self):
         # 在函数内部使用本地缓存。
-        media_group_cache = {}  # media_group_id -> []
+        media_group_cache = {}  # media_group_id -> {message_id: media, ...}
 
         while self.is_bot_running:
             media, upload_task = await self.upload_queue.get()
             if upload_task.is_media_group:
-                message_ids = []
                 media_group = await upload_task.get_media_group()
                 media_group_id = media_group[0].media_group_id
-                for message in media_group:
-                    message_ids.append(message.id)
-                if upload_task.message_id in message_ids:
-                    chat_id = upload_task.chat_id
-                    if media_group_id not in media_group_cache:
-                        media_group_cache[media_group_id] = []
-                    media_group_cache[media_group_id].append(
-                        raw.types.InputSingleMedia(
-                            media=media,
-                            random_id=self.client.rnd_id(),
-                            **await utils.parse_text_entities(
-                                self.client,
-                                text='',
-                                parse_mode=None,
-                                entities=None
-                            )
-                        )
+
+                chat_id = upload_task.chat_id
+                message_id = upload_task.message_id
+
+                if media_group_id not in media_group_cache:
+                    # 使用字典来存储，键为message_id，值为InputSingleMedia
+                    media_group_cache[media_group_id] = {}
+
+                # 以message_id为键存储。
+                media_group_cache[media_group_id][message_id] = raw.types.InputSingleMedia(
+                    media=media,
+                    random_id=self.client.rnd_id(),
+                    **await utils.parse_text_entities(
+                        self.client,
+                        text='',
+                        parse_mode=None,
+                        entities=None
                     )
-                    # 检查是否收集完成。
-                    if len(media_group_cache[media_group_id]) == len(media_group):
-                        # 发送媒体组。
-                        await self.client.invoke(
-                            raw.functions.messages.SendMultiMedia(
-                                peer=await self.client.resolve_peer(chat_id),
-                                multi_media=media_group_cache[media_group_id]
-                            ),
-                            sleep_threshold=60
-                        )
-                        # 清理缓存。
-                        del media_group_cache[media_group_id]
+                )
+
+                # 检查是否收集完成。
+                if len(media_group_cache[media_group_id]) == len(media_group):
+                    # 按照原始message_id的顺序排序。
+                    sorted_media_group = []
+                    # 按照media_group中消息的顺序获取message_id。
+                    for message in media_group:
+                        msg_id = message.id
+                        if msg_id in media_group_cache[media_group_id]:
+                            sorted_media_group.append(media_group_cache[media_group_id][msg_id])
+
+                    # 发送按正确顺序排列的媒体组。
+                    await self.client.invoke(
+                        raw.functions.messages.SendMultiMedia(
+                            peer=await self.client.resolve_peer(chat_id),
+                            multi_media=sorted_media_group
+                        ),
+                        sleep_threshold=60
+                    )
+                    # 清理缓存
+                    del media_group_cache[media_group_id]
             else:
                 await self.client.invoke(
                     raw.functions.messages.SendMedia(
