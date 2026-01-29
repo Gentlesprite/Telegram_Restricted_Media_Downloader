@@ -1363,8 +1363,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         origin_chat_id=_listen_chat_id,
                         target_chat_id=_target_chat_id,
                         target_link=target_link,
-                        download_upload=True,
-                        media_group=media_group_ids
+                        download_upload=True
                     )
         except (ValueError, KeyError, UsernameInvalid, ChatWriteForbidden) as e:
             log.error(
