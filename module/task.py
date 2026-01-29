@@ -144,7 +144,9 @@ class UploadTask:
             status: UploadStatus,
             error_msg: Union[str, None] = None,
             with_delete: bool = False,
-            media_group_count: Optional[int] = None
+            media_group: Optional[asyncio.Task] = None,
+            message_id: Optional[int] = None
+
     ):
         UploadTask.TASKS.add(self)
         UploadTask.TASK_COUNTER += 1
@@ -158,7 +160,18 @@ class UploadTask:
         self.error_msg: Union[str, None] = error_msg
         self.with_delete: bool = with_delete
         self.file_total_parts = int(math.ceil(file_size / UploadTask.PART_SIZE))
-        self.media_group_count = media_group_count if media_group_count in range(2, 11) else None
+        self.__media_group: asyncio.Task = media_group
+        self.message_id: Optional[int] = message_id
+
+    @property
+    def is_media_group(self) -> bool:
+        if self.__media_group:
+            return True
+        return False
+
+    async def get_media_group(self) -> pyrogram.types.List:
+        if self.is_media_group:
+            return await self.__media_group
 
     def __setattr__(self, name, value):
         if name.startswith('_'):
@@ -181,8 +194,8 @@ class UploadTask:
                             )
                         elif value == UploadStatus.SUCCESS:
                             more = ''
-                            if self.media_group_count:
-                                more += f'(共[{self.media_group_count}]个媒体,等待所有媒体上传完成以媒体组发送)'
+                            if self.__media_group:
+                                more += f'(等待所有媒体上传完成以媒体组发送)'
                             if self.with_delete:
                                 more += '(本地文件已删除)'
                             console.log(

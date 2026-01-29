@@ -311,8 +311,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     with_upload={
                         'link': target_link,
                         'file_name': None,
-                        'with_delete': self.gc.upload_delete,
-                        'media_group_count': end_id - start_id + 1
+                        'with_delete': self.gc.upload_delete
                     }
                 )
             await kb.task_assign_button()
@@ -829,7 +828,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             media_group: Optional[list] = None
     ):
         try:
-            if not self.check_type(message):
+            if not self.check_type(message):  # TODO 类型过滤可能会导致实际上传比media_group更少，导致无法上传。
                 console.log(
                     f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{message_id}"'
                     f' -> '
@@ -896,8 +895,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 with_upload={
                     'link': target_link,
                     'file_name': None,
-                    'with_delete': self.gc.upload_delete,
-                    'media_group_count': len(media_group)
+                    'with_delete': self.gc.upload_delete
                 }
             )
             p = f'{_t(KeyWord.DOWNLOAD_AND_UPLOAD_TASK)}{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.LINK)}:"{link}"。'
@@ -1012,8 +1010,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         with_upload={
                             'link': target_link,
                             'file_name': None,
-                            'with_delete': self.gc.upload_delete,
-                            'media_group_count': end_id - start_id + 1
+                            'with_delete': self.gc.upload_delete
                         }
                     )
                     break
@@ -1305,6 +1302,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _listen_chat_id = _listen_link_meta.get('chat_id')
                 _target_chat_id = _target_link_meta.get('chat_id')
                 if listen_chat_id == _listen_chat_id:
+                    media_group_ids = None
                     try:
                         media_group_ids = await message.get_media_group()
                         if not media_group_ids:
@@ -1365,7 +1363,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         origin_chat_id=_listen_chat_id,
                         target_chat_id=_target_chat_id,
                         target_link=target_link,
-                        download_upload=True
+                        download_upload=True,
+                        media_group=media_group_ids
                     )
         except (ValueError, KeyError, UsernameInvalid, ChatWriteForbidden) as e:
             log.error(
@@ -1656,6 +1655,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
                 DownloadTask.COMPLETE_LINK.add(link)
                 if self.uploader:
+                    try:
+                        media_group = message.get_media_group()
+                    except ValueError:
+                        media_group = None
+                    with_upload['message_id'] = message.id
+                    with_upload['media_group'] = media_group
                     self.uploader.download_upload(
                         with_upload=with_upload,
                         file_path=os.path.join(self.env_save_directory(message), file_name)
@@ -1675,6 +1680,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                     num=self.app.current_task_num
                 )
                 if self.uploader:
+                    try:
+                        media_group = message.get_media_group()
+                    except ValueError:
+                        media_group = None
+                    with_upload['message_id'] = message.id
+                    with_upload['media_group'] = media_group
                     self.uploader.download_upload(
                         with_upload=with_upload,
                         file_path=os.path.join(self.env_save_directory(message), file_name)
