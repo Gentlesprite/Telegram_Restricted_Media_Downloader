@@ -828,7 +828,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             media_group: Optional[list] = None
     ):
         try:
-            if not self.check_type(message):  # TODO 类型过滤可能会导致实际上传比media_group更少，导致无法上传。
+            if not self.check_type(message):
                 console.log(
                     f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{message_id}"'
                     f' -> '
@@ -851,10 +851,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     disable_notification=True
                 )
             else:
-                await self.app.client.copy_message(
+                await self.app.client.forward_messages(
                     chat_id=target_chat_id,
                     from_chat_id=origin_chat_id,
-                    message_id=message_id,
+                    message_ids=message_id,
                     disable_notification=True,
                     protect_content=False
                 )
@@ -1302,7 +1302,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _listen_chat_id = _listen_link_meta.get('chat_id')
                 _target_chat_id = _target_link_meta.get('chat_id')
                 if listen_chat_id == _listen_chat_id:
-                    media_group_ids = None
                     try:
                         media_group_ids = await message.get_media_group()
                         if not media_group_ids:

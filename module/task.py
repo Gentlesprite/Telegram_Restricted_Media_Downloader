@@ -162,16 +162,7 @@ class UploadTask:
         self.file_total_parts = int(math.ceil(file_size / UploadTask.PART_SIZE))
         self.__media_group: asyncio.Task = media_group
         self.message_id: Optional[int] = message_id
-
-    @property
-    def is_media_group(self) -> bool:
-        if self.__media_group:
-            return True
-        return False
-
-    async def get_media_group(self) -> pyrogram.types.List:
-        if self.is_media_group:
-            return await self.__media_group
+        self.prompt: str = ''
 
     def __setattr__(self, name, value):
         if name.startswith('_'):
@@ -225,9 +216,21 @@ class UploadTask:
                             )
                         os.makedirs(os.path.dirname(self.upload_manager_path), exist_ok=True)
                         self.load_json()
+                    elif name == 'prompt':
+                        self.notice(self.prompt)
 
             else:
                 super().__setattr__(name, value)
+
+    @property
+    def is_media_group(self) -> bool:
+        if self.__media_group:
+            return True
+        return False
+
+    async def get_media_group(self) -> pyrogram.types.List:
+        if self.is_media_group:
+            return await self.__media_group
 
     def notice(self, message: str):
         if isinstance(self.NOTIFY, Callable):

@@ -216,20 +216,105 @@ class TelegramUploader:
         media_group_cache = {}  # media_group_id -> {message_id: media, ...}
 
         while self.is_bot_running:
-            media, upload_task = await self.upload_queue.get()
-            if upload_task.is_media_group:
-                media_group = await upload_task.get_media_group()
-                media_group_id = media_group[0].media_group_id
+            try:
+                media, upload_task = await self.upload_queue.get()
 
-                chat_id = upload_task.chat_id
-                message_id = upload_task.message_id
+                log.info(
+                    f'[Upload Worker]获取到上传任务,'
+                    f'chat_id={upload_task.chat_id}, '
+                    f'is_media_group={upload_task.is_media_group}, '
+                    f'message_id={upload_task.message_id}'
+                )
 
-                if media_group_id not in media_group_cache:
-                    # 使用字典来存储，键为message_id，值为InputSingleMedia
-                    media_group_cache[media_group_id] = {}
+                if upload_task.is_media_group:
+                    try:
+                        media_group = await upload_task.get_media_group()
+                        if not media_group:
+                            log.info(f'[Upload Worker]警告:media_group为空。')
+                            continue
 
-                # 以message_id为键存储。
-                media_group_cache[media_group_id][message_id] = raw.types.InputSingleMedia(
+                        media_group_id = media_group[0].media_group_id
+                        if not media_group_id:
+                            log.info(f'[Upload Worker]警告:media_group_id为空。')
+                            # 如果不是媒体组，则作为单条消息发送。
+                            await self.send_single_media(media, upload_task)
+                            continue
+
+                        chat_id = upload_task.chat_id
+                        message_id = upload_task.message_id
+
+                        if media_group_id not in media_group_cache:
+                            # 使用字典来存储，键为message_id，值为InputSingleMedia。
+                            media_group_cache[media_group_id] = {}
+
+                        # 以message_id为键存储。
+                        media_group_cache[media_group_id][message_id] = raw.types.InputSingleMedia(
+                            media=media,
+                            random_id=self.client.rnd_id(),
+                            **await utils.parse_text_entities(
+                                self.client,
+                                text='',
+                                parse_mode=None,
+                                entities=None
+                            )
+                        )
+                        prompt = f'[{len(media_group_cache[media_group_id])}/{len(media_group)}]等待媒体组"{media_group_id}"上传完成。'
+                        console.log(
+                            f'{_t(KeyWord.UPLOAD_TASK)}{prompt}')
+                        upload_task.prompt = prompt
+                        # TODO 媒体组上传带来的问题：
+                        # TODO 类型过滤、上传失败、文件超过2GB/4GB(Telegram Premium)可能会导致实际上传比通过get_media_group方法所获取的完整media_group更少，导致其余成功项无法上传。
+                        # TODO /forward命令用户自定义消息ID带来的不确定性，可能导致无法上传。
+                        # 检查是否收集完成。
+                        if len(media_group_cache[media_group_id]) == len(media_group):
+                            # 按照原始message_id的顺序排序。
+                            sorted_media_group = []
+                            # 按照media_group中消息的顺序获取message_id。
+                            for message in media_group:
+                                msg_id = message.id
+                                if msg_id in media_group_cache[media_group_id]:
+                                    sorted_media_group.append(media_group_cache[media_group_id][msg_id])
+                                else:
+                                    log.warning(f'[Upload Worker]警告:消息"{msg_id}"不在缓存中。')
+                            log.info(
+                                f'[Upload Worker]上传媒体组"{media_group_id}",包含{len(sorted_media_group)}个媒体。')
+                            # 发送按正确顺序排列的媒体组。
+                            await self.client.invoke(
+                                raw.functions.messages.SendMultiMedia(
+                                    peer=await self.client.resolve_peer(chat_id),
+                                    multi_media=sorted_media_group
+                                ),
+                                sleep_threshold=60
+                            )
+                            prompt = f'媒体组"{media_group_id}"上传完成,包含{len(sorted_media_group)}个媒体。'
+                            console.log(f'{_t(KeyWord.UPLOAD_TASK)}{prompt}')
+                            upload_task.prompt = prompt
+                            # 清理缓存。
+                            del media_group_cache[media_group_id]
+
+                    except Exception as e:
+                        log.info(f'[Upload Worker]处理媒体组时出错,回退到单条发送,{_t(KeyWord.REASON)}:"{e}"')
+                        # 出错时回退到单条发送。
+                        await self.send_single_media(media, upload_task)
+
+                else:
+                    await self.send_single_media(media, upload_task)
+
+            except Exception as e:
+                log.error(f'[Upload Worker]错误,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+            finally:
+                self.upload_queue.task_done()
+
+    async def send_single_media(
+            self,
+            media,
+            upload_task: UploadTask
+    ):
+        """发送单条媒体消息。"""
+        try:
+            await self.client.invoke(
+                raw.functions.messages.SendMedia(
+                    peer=await self.client.resolve_peer(upload_task.chat_id),
                     media=media,
                     random_id=self.client.rnd_id(),
                     **await utils.parse_text_entities(
@@ -239,41 +324,10 @@ class TelegramUploader:
                         entities=None
                     )
                 )
-
-                # 检查是否收集完成。
-                if len(media_group_cache[media_group_id]) == len(media_group):
-                    # 按照原始message_id的顺序排序。
-                    sorted_media_group = []
-                    # 按照media_group中消息的顺序获取message_id。
-                    for message in media_group:
-                        msg_id = message.id
-                        if msg_id in media_group_cache[media_group_id]:
-                            sorted_media_group.append(media_group_cache[media_group_id][msg_id])
-
-                    # 发送按正确顺序排列的媒体组。
-                    await self.client.invoke(
-                        raw.functions.messages.SendMultiMedia(
-                            peer=await self.client.resolve_peer(chat_id),
-                            multi_media=sorted_media_group
-                        ),
-                        sleep_threshold=60
-                    )
-                    # 清理缓存
-                    del media_group_cache[media_group_id]
-            else:
-                await self.client.invoke(
-                    raw.functions.messages.SendMedia(
-                        peer=await self.client.resolve_peer(upload_task.chat_id),
-                        media=media,
-                        random_id=self.client.rnd_id(),
-                        **await utils.parse_text_entities(
-                            self.client,
-                            text='',
-                            parse_mode=None,
-                            entities=None
-                        )
-                    )
-                )
+            )
+            log.info(f'[Upload Worker]单条消息发送完成,{_t(KeyWord.CHANNEL)}:"{upload_task.chat_id}"')
+        except Exception as e:
+            log.error(f'"[Upload Worker]发送单条消息失败,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
 
     @staticmethod
     def get_video_info(video_path: str) -> Dict[str, int]:
