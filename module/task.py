@@ -145,8 +145,8 @@ class UploadTask:
             error_msg: Union[str, None] = None,
             with_delete: bool = False,
             media_group: Optional[asyncio.Task] = None,
-            message_id: Optional[int] = None
-
+            message_id: Optional[int] = None,
+            send_as_media_group: bool = False
     ):
         UploadTask.TASKS.add(self)
         UploadTask.TASK_COUNTER += 1
@@ -162,6 +162,7 @@ class UploadTask:
         self.file_total_parts = int(math.ceil(file_size / UploadTask.PART_SIZE))
         self.__media_group: asyncio.Task = media_group
         self.message_id: Optional[int] = message_id
+        self.send_as_media_group: bool = send_as_media_group
         self.prompt: str = ''
 
     def __setattr__(self, name, value):

@@ -226,7 +226,7 @@ class TelegramUploader:
                     f'message_id={upload_task.message_id}'
                 )
 
-                if upload_task.is_media_group:
+                if upload_task.is_media_group and upload_task.send_as_media_group:
                     try:
                         media_group = await upload_task.get_media_group()
                         if not media_group:
@@ -308,7 +308,7 @@ class TelegramUploader:
     async def send_media(
             self,
             media: raw.types.InputMediaDocument,
-            chat_id: Union[str,int]
+            chat_id: Union[str, int]
     ):
         """发送单条媒体消息。"""
         try:
@@ -508,7 +508,8 @@ class TelegramUploader:
                         status=UploadStatus.IDLE,
                         with_delete=with_upload.get('with_delete'),
                         media_group=with_upload.get('media_group'),
-                        message_id=with_upload.get('message_id')
+                        message_id=with_upload.get('message_id'),
+                        send_as_media_group=with_upload.get('send_as_media_group', False)
                     )
                 )
             )

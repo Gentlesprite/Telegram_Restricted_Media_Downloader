@@ -902,7 +902,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 with_upload={
                     'link': target_link,
                     'file_name': None,
-                    'with_delete': self.gc.upload_delete
+                    'with_delete': self.gc.upload_delete,
+                    'send_as_media_group': True
                 }
             )
             p = f'{_t(KeyWord.DOWNLOAD_AND_UPLOAD_TASK)}{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.LINK)}:"{link}"。'
