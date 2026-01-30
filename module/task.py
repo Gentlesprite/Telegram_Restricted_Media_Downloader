@@ -186,7 +186,7 @@ class UploadTask:
                             )
                         elif value == UploadStatus.SUCCESS:
                             more = ''
-                            if self.__media_group:
+                            if self.send_as_media_group:
                                 more += f'(等待所有媒体上传完成以媒体组发送)'
                             if self.with_delete:
                                 more += '(本地文件已删除)'
