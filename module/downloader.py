@@ -850,6 +850,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                     message_id=message_id,
                     disable_notification=True
                 )
+            if getattr(message, 'text', False):
+                await self.app.client.send_message(
+                    chat_id=target_chat_id,
+                    text=message.text,
+                    disable_notification=True,
+                    protect_content=False
+                )
             else:
                 await self.app.client.forward_messages(
                     chat_id=target_chat_id,
@@ -979,6 +986,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     record_id.append(message_id)
                 except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
+                    # TODO 存在内容保护限制时，文本类型的消息无需下载，而是直接send_message。
                     self.cd.data = {
                         'origin_link': origin_link,
                         'target_link': target_link,
