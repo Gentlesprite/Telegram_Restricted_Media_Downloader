@@ -237,7 +237,7 @@ class TelegramUploader:
                         if not media_group_id:
                             log.info(f'[Upload Worker]警告:media_group_id为空。')
                             # 如果不是媒体组，则作为单条消息发送。
-                            await self.send_single_media(media, upload_task)
+                            await self.send_media(media, upload_task.chat_id)
                             continue
 
                         chat_id = upload_task.chat_id
@@ -295,26 +295,26 @@ class TelegramUploader:
                     except Exception as e:
                         log.info(f'[Upload Worker]处理媒体组时出错,回退到单条发送,{_t(KeyWord.REASON)}:"{e}"')
                         # 出错时回退到单条发送。
-                        await self.send_single_media(media, upload_task)
+                        await self.send_media(media, upload_task.chat_id)
 
                 else:
-                    await self.send_single_media(media, upload_task)
+                    await self.send_media(media, upload_task.chat_id)
 
             except Exception as e:
                 log.error(f'[Upload Worker]错误,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
             finally:
                 self.upload_queue.task_done()
 
-    async def send_single_media(
+    async def send_media(
             self,
-            media,
-            upload_task: UploadTask
+            media: raw.types.InputMediaDocument,
+            chat_id: Union[str,int]
     ):
         """发送单条媒体消息。"""
         try:
             await self.client.invoke(
                 raw.functions.messages.SendMedia(
-                    peer=await self.client.resolve_peer(upload_task.chat_id),
+                    peer=await self.client.resolve_peer(chat_id),
                     media=media,
                     random_id=self.client.rnd_id(),
                     **await utils.parse_text_entities(
@@ -325,7 +325,7 @@ class TelegramUploader:
                     )
                 )
             )
-            log.info(f'[Upload Worker]单条消息发送完成,{_t(KeyWord.CHANNEL)}:"{upload_task.chat_id}"')
+            log.info(f'[Upload Worker]单条消息发送完成,{_t(KeyWord.CHANNEL)}:"{chat_id}"')
         except Exception as e:
             log.error(f'"[Upload Worker]发送单条消息失败,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
 
