@@ -31,7 +31,7 @@ from pyrogram.types import User
 
 from module import (
     console,
-    SOFTWARE_FULL_NAME,
+    SOFTWARE_SHORT_NAME,
     log,
     __version__
 )
@@ -46,8 +46,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             f'Pyrogram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n'
             f'under the terms of the {pyrogram.__license__}.')
         console.print(
-            f'欢迎使用[#b4009e]{SOFTWARE_FULL_NAME}[/#b4009e](版本 {__version__})'
-            f'基于Pyrogram(版本 {pyrogram.__version__})。')
+            f'欢迎使用[#b4009e]{SOFTWARE_SHORT_NAME}[/#b4009e] {__version__} (Pyrogram {pyrogram.__version__})')
         while True:
             try:
                 while True:
@@ -229,8 +228,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 console.print(
                     'Pyrogram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n'
                     f'under the terms of the {pyrogram.__license__}.\n'
-                    f'欢迎使用[#b4009e]{SOFTWARE_FULL_NAME}[/#b4009e](版本 {__version__})'
-                    f'基于Pyrogram(版本 {pyrogram.__version__})。\n'
+                    f'欢迎使用[#b4009e]{SOFTWARE_SHORT_NAME}[/#b4009e] {__version__} (Pyrogram {pyrogram.__version__})\n'
                     '请扫描[#6a2c70]「二维码」[/#6a2c70]登录\n'
                     '[#b83b5e]Settings(设置)[/#b83b5e] -> [#f08a5d]Devices(设备)[/#f08a5d] -> [#f9ed69]Link Desktop Device(关联桌面设备)[/#f9ed69]'
                 )

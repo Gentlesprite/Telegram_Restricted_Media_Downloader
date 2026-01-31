@@ -8,7 +8,9 @@ from argparse import (
     SUPPRESS
 )
 
-from module.stdio import MetaData
+from pyrogram import __version__ as pyrogram_version
+
+from module import __version__
 from module.enums import (
     Banner,
     GradientColor,
@@ -20,10 +22,17 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.add_argument(
+            '-v', '--version',
+            action='version',
+            version=f'TRMD {__version__} (pyrogram {pyrogram_version})',
+            default=SUPPRESS,
+            help='展示版本信息'
+        )
+        self.add_argument(
             '-h', '--help',
             action='help',
             default=SUPPRESS,
-            help='帮助'
+            help='展示帮助'
         )
         self.add_argument(
             '-c', '--config',
@@ -58,7 +67,6 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             style='bold',
             highlight=False
         )
-        MetaData.print_about()
         super().print_help(file)
 
 
