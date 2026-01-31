@@ -14,7 +14,7 @@
     <img src="https://img.shields.io/badge/Python-3.13.2-blue.svg?color=00B16A" alt="Python 3.13.2"/>
   </a>
   <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.17-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.17"/>
+    <img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.18-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.18"/>
   </a>
   <a style="text-decoration:none">
     <img src="https://img.shields.io/badge/Platform-Windows & Linux%20-blue?color=00B16A" alt="Platform Windows & Linux"/>
