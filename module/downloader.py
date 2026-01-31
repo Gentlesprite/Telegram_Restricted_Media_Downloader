@@ -1476,7 +1476,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             link: str,
             message: Union[pyrogram.types.Message, list],
             retry: dict,
-            with_upload: Union[dict, None] = None,
+            with_upload: Optional[dict] = None,
             diy_download_type: Optional[list] = None
     ) -> None:
         retry_count = retry.get('count')
@@ -1673,16 +1673,17 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
                 DownloadTask.COMPLETE_LINK.add(link)
                 if self.uploader:
-                    try:
-                        media_group = message.get_media_group()
-                    except ValueError:
-                        media_group = None
-                    with_upload['message_id'] = message.id
-                    with_upload['media_group'] = media_group
-                    self.uploader.download_upload(
-                        with_upload=with_upload,
-                        file_path=os.path.join(self.env_save_directory(message), file_name)
-                    )
+                    if with_upload and isinstance(with_upload, dict):
+                        try:
+                            media_group = message.get_media_group()
+                        except ValueError:
+                            media_group = None
+                        with_upload['message_id'] = message.id
+                        with_upload['media_group'] = media_group
+                        self.uploader.download_upload(
+                            with_upload=with_upload,
+                            file_path=os.path.join(self.env_save_directory(message), file_name)
+                        )
         else:
             self.app.current_task_num -= 1
             self.event.set()  # v1.3.4 修复重试下载被阻塞的问题。
@@ -1698,16 +1699,17 @@ class TelegramRestrictedMediaDownloader(Bot):
                     num=self.app.current_task_num
                 )
                 if self.uploader:
-                    try:
-                        media_group = message.get_media_group()
-                    except ValueError:
-                        media_group = None
-                    with_upload['message_id'] = message.id
-                    with_upload['media_group'] = media_group
-                    self.uploader.download_upload(
-                        with_upload=with_upload,
-                        file_path=os.path.join(self.env_save_directory(message), file_name)
-                    )
+                    if with_upload and isinstance(with_upload, dict):
+                        try:
+                            media_group = message.get_media_group()
+                        except ValueError:
+                            media_group = None
+                        with_upload['message_id'] = message.id
+                        with_upload['media_group'] = media_group
+                        self.uploader.download_upload(
+                            with_upload=with_upload,
+                            file_path=os.path.join(self.env_save_directory(message), file_name)
+                        )
                 self.queue.task_done()
             else:
                 if retry_count < self.app.max_download_retries:
