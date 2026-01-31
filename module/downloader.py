@@ -851,7 +851,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     message_id=message_id,
                     disable_notification=True
                 )
-            if getattr(message, 'text', False):
+            elif getattr(message, 'text', False):
                 await self.app.client.send_message(
                     chat_id=target_chat_id,
                     text=message.text,
