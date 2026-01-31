@@ -864,7 +864,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     from_chat_id=origin_chat_id,
                     message_ids=message_id,
                     disable_notification=True,
-                    protect_content=False
+                    protect_content=False,
+                    hide_sender_name=True
                 )
             p_message_id = ','.join(map(str, media_group)) if media_group else message_id
             console.log(

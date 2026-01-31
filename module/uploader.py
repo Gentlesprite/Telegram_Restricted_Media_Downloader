@@ -319,7 +319,7 @@ class TelegramUploader:
                 if created_count == collected_count and no_pending:
                     # 所有需要上传的文件都已创建且没有待处理任务，发送已收集的媒体。
                     if media_group_id in media_group_cache:
-                        # 按照原始message_id的顺序排序
+                        # 按照原始message_id的顺序排序。
                         sorted_media_group = []
                         for message in media_group:
                             msg_id = message.id
