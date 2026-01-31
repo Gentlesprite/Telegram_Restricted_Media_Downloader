@@ -315,7 +315,7 @@ class TelegramUploader:
                 collected_count = len(media_group_cache.get(media_group_id, {}))
 
                 log.debug(
-                    f'[Upload Worker]发送媒体组"{media_group_id}"创建的任务数:{created_count},当前是否有任务:{no_pending},媒体组收集的媒体数:{collected_count}。')
+                    f'[Upload Worker]发送媒体组"{media_group_id}"创建的任务数:{created_count},当前是否有任务:{not no_pending},媒体组收集的媒体数:{collected_count}。')
                 if created_count == collected_count and no_pending:
                     # 所有需要上传的文件都已创建且没有待处理任务，发送已收集的媒体。
                     if media_group_id in media_group_cache:
