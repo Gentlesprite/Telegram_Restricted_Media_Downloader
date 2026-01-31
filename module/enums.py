@@ -57,6 +57,7 @@ class UploadStatus:
     UPLOADING = 'uploading'
     SUCCESS = 'success'
     FAILURE = 'failure'
+    SENT = 'sent'
 
 
 class CalenderKeyboard:

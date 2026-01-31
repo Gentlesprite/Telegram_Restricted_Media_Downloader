@@ -20,6 +20,7 @@ translations: dict = {
     'uploading': ['上传中'],
     'success': ['成功'],
     'failure': ['失败'],
+    'sent': ['已发送'],
     'skip': ['跳过'],
     'retry': ['重试'],
     'link': ['[链接]'],

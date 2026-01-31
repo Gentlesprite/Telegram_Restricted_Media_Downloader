@@ -238,7 +238,7 @@ class TelegramUploader:
                         if not media_group_id:
                             log.info(f'[Upload Worker]警告:media_group_id为空。')
                             # 如果不是媒体组，则作为单条消息发送。
-                            await self.send_media(media, upload_task.chat_id)
+                            await self.send_media(media, upload_task)
                             continue
 
                         chat_id = upload_task.chat_id
@@ -284,10 +284,10 @@ class TelegramUploader:
                     except Exception as e:
                         log.info(f'[Upload Worker]处理媒体组时出错,回退到单条发送,{_t(KeyWord.REASON)}:"{e}"')
                         # 出错时回退到单条发送。
-                        await self.send_media(media, upload_task.chat_id)
+                        await self.send_media(media, upload_task)
 
                 else:
-                    await self.send_media(media, upload_task.chat_id)
+                    await self.send_media(media, upload_task)
 
             except Exception as e:
                 log.error(f'[Upload Worker]错误,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
@@ -305,7 +305,7 @@ class TelegramUploader:
     ):
         try:
             while self.is_bot_running:
-                await asyncio.sleep(0.5)  # 每0.5秒检查一次。
+                await asyncio.sleep(1)  # 每1秒检查一次。
 
                 # 检查两个条件：
                 # 1. 所有需要上传的文件都已创建UploadTask（没有文件还在下载中）。
@@ -314,7 +314,8 @@ class TelegramUploader:
                 no_pending = not UploadTask.has_pending_media_group_tasks()
                 collected_count = len(media_group_cache.get(media_group_id, {}))
 
-                log.info(f'[Upload Worker]上传媒体组"{media_group_id}"创建的任务数:{created_count},是否还有任务:{no_pending}正在检查媒体组,收集的媒体数:{collected_count}')
+                log.debug(
+                    f'[Upload Worker]发送媒体组"{media_group_id}"创建的任务数:{created_count},当前是否有任务:{no_pending},媒体组收集的媒体数:{collected_count}。')
                 if created_count == collected_count and no_pending:
                     # 所有需要上传的文件都已创建且没有待处理任务，发送已收集的媒体。
                     if media_group_id in media_group_cache:
@@ -328,7 +329,7 @@ class TelegramUploader:
 
                         if sorted_media_group:
                             log.info(
-                                f'[Upload Worker]上传媒体组"{media_group_id}",包含{len(sorted_media_group)}个媒体（共预期{len(message_ids)}个）。')
+                                f'[Upload Worker]发送媒体组"{media_group_id}",包含{len(sorted_media_group)}个媒体（共预期{len(message_ids)}个）。')
                             try:
                                 await self.client.invoke(
                                     raw.functions.messages.SendMultiMedia(
@@ -339,11 +340,15 @@ class TelegramUploader:
                                 )
                                 prompt = f'[媒体组]:"{media_group_id}"上传完成,包含{len(sorted_media_group)}个媒体。'
                                 console.log(f'{_t(KeyWord.UPLOAD_TASK)}{prompt}')
+                                # 将已发送的媒体组任务状态更新为SENT。
+                                for task in UploadTask.TASKS:
+                                    if task.message_id in message_ids and task.status == UploadStatus.SUCCESS:
+                                        task.status = UploadStatus.SENT
                             except Exception as send_error:
                                 log.error(f'[Upload Worker]发送媒体组失败,{_t(KeyWord.REASON)}:"{send_error}"',
                                           exc_info=True)
                         else:
-                            log.warning(f'[Upload Worker]媒体组"{media_group_id}"没有可发送的媒体。')
+                            log.warning(f'[Upload Worker]发送媒体组"{media_group_id}"没有可发送的媒体。')
 
                     # 清理缓存和轮询任务。
                     if media_group_id in media_group_cache:
@@ -355,13 +360,16 @@ class TelegramUploader:
                     # 还有文件在下载中或还在上传，继续等待。
                     if created_count < len(message_ids):
                         log.debug(
-                            f'[Upload Worker]媒体组"{media_group_id}"已创建{created_count}/{len(message_ids)}个任务，等待下载...')
+                            f'[Upload Worker]发送媒体组"{media_group_id}"已创建{created_count}/{len(message_ids)}个任务，等待下载...')
         except asyncio.CancelledError:
-            log.info(f'[Upload Worker]媒体组"{media_group_id}"轮询任务被取消。')
+            log.info(f'[Upload Worker]发送媒体组"{media_group_id}"轮询任务被取消。')
             if media_group_id in media_group_poll_tasks:
                 del media_group_poll_tasks[media_group_id]
         except Exception as e:
-            log.error(f'[Upload Worker]媒体组"{media_group_id}"轮询任务出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+            log.error(
+                f'[Upload Worker]发送媒体组"{media_group_id}"轮询任务出错,{_t(KeyWord.REASON)}:"{e}"',
+                exc_info=True
+            )
             if media_group_id in media_group_cache:
                 del media_group_cache[media_group_id]
             if media_group_id in media_group_poll_tasks:
@@ -370,10 +378,11 @@ class TelegramUploader:
     async def send_media(
             self,
             media: raw.types.InputMediaDocument,
-            chat_id: Union[str, int]
+            upload_task: UploadTask
     ):
         """发送单条媒体消息。"""
         try:
+            chat_id = upload_task.chat_id
             await self.client.invoke(
                 raw.functions.messages.SendMedia(
                     peer=await self.client.resolve_peer(chat_id),
@@ -387,6 +396,7 @@ class TelegramUploader:
                     )
                 )
             )
+            upload_task.status = UploadStatus.SENT
             log.info(f'[Upload Worker]单条消息发送完成,{_t(KeyWord.CHANNEL)}:"{chat_id}"')
         except Exception as e:
             log.error(f'"[Upload Worker]发送单条消息失败,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)

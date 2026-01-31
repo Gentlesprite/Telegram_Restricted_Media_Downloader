@@ -198,6 +198,8 @@ class UploadTask:
                                 f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.SUCCESS)}{more}。',
                             )
                             self.notice(f'"{self.file_path}" ⬆️ "{self.chat_id}"上传完成。\n{more}')
+                        elif value == UploadStatus.SENT:
+                            pass
                         elif value == UploadStatus.FAILURE:
                             log.error(
                                 f'{_t(KeyWord.UPLOAD_TASK)}'
@@ -303,14 +305,14 @@ class UploadTask:
             message_ids: 需要检查的message_id集合。
 
         Returns:
-            int: 已创建的UploadTask数量。
+            int: 已创建的UploadTask数量(排除已发送的任务)。
         """
         if not message_ids:
             return 0
 
         count = 0
         for task in UploadTask.TASKS:
-            if task.message_id in message_ids:
+            if task.message_id in message_ids and task.status != UploadStatus.SENT:
                 count += 1
 
         return count
