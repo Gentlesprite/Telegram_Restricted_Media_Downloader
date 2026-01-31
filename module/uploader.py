@@ -214,6 +214,7 @@ class TelegramUploader:
     async def send_media_worker(self):
         # 在函数内部使用本地缓存。
         media_group_cache = {}  # media_group_id -> {message_id: media, ...}
+        media_group_poll_tasks = {}  # media_group_id -> polling_task
 
         while self.is_bot_running:
             try:
@@ -258,39 +259,27 @@ class TelegramUploader:
                                 entities=None
                             )
                         )
-                        prompt = f'[{len(media_group_cache[media_group_id])}/{len(media_group)}]等待媒体组"{media_group_id}"上传完成。'
+                        prompt = f'[媒体组]:"{media_group_id}"已收集{len(media_group_cache[media_group_id])}个媒体,等待所有媒体上传完成。'
                         console.log(
                             f'{_t(KeyWord.UPLOAD_TASK)}{prompt}')
                         upload_task.prompt = prompt
-                        # TODO 媒体组上传带来的问题：
-                        # TODO 类型过滤、上传失败、文件超过2GB/4GB(Telegram Premium)可能会导致实际上传比通过get_media_group方法所获取的完整media_group更少，导致其余成功项无法上传。
-                        # TODO /forward命令用户自定义消息ID带来的不确定性，可能导致无法上传。
-                        # 检查是否收集完成。
-                        if len(media_group_cache[media_group_id]) == len(media_group):
-                            # 按照原始message_id的顺序排序。
-                            sorted_media_group = []
-                            # 按照media_group中消息的顺序获取message_id。
-                            for message in media_group:
-                                msg_id = message.id
-                                if msg_id in media_group_cache[media_group_id]:
-                                    sorted_media_group.append(media_group_cache[media_group_id][msg_id])
-                                else:
-                                    log.warning(f'[Upload Worker]警告:消息"{msg_id}"不在缓存中。')
-                            log.info(
-                                f'[Upload Worker]上传媒体组"{media_group_id}",包含{len(sorted_media_group)}个媒体。')
-                            # 发送按正确顺序排列的媒体组。
-                            await self.client.invoke(
-                                raw.functions.messages.SendMultiMedia(
-                                    peer=await self.client.resolve_peer(chat_id),
-                                    multi_media=sorted_media_group
-                                ),
-                                sleep_threshold=60
+
+                        # 如果该媒体组还没有轮询任务，启动一个。
+                        if media_group_id not in media_group_poll_tasks:
+                            # 获取media_group中所有需要上传的message_id。
+                            message_ids = {m.id for m in media_group}
+                            poll_task = asyncio.create_task(
+                                self.send_media_group(
+                                    chat_id=chat_id,
+                                    media_group=media_group,
+                                    media_group_id=media_group_id,
+                                    message_ids=message_ids,
+                                    media_group_cache=media_group_cache,
+                                    media_group_poll_tasks=media_group_poll_tasks)
                             )
-                            prompt = f'媒体组"{media_group_id}"上传完成,包含{len(sorted_media_group)}个媒体。'
-                            console.log(f'{_t(KeyWord.UPLOAD_TASK)}{prompt}')
-                            upload_task.prompt = prompt
-                            # 清理缓存。
-                            del media_group_cache[media_group_id]
+                            media_group_poll_tasks[media_group_id] = poll_task
+                            log.info(
+                                f'[Upload Worker]启动媒体组"{media_group_id}"的轮询任务,预期{len(message_ids)}个文件。')
 
                     except Exception as e:
                         log.info(f'[Upload Worker]处理媒体组时出错,回退到单条发送,{_t(KeyWord.REASON)}:"{e}"')
@@ -304,6 +293,79 @@ class TelegramUploader:
                 log.error(f'[Upload Worker]错误,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
             finally:
                 self.upload_queue.task_done()
+
+    async def send_media_group(
+            self,
+            chat_id: int,
+            media_group: list,
+            media_group_id: int,
+            message_ids: set,
+            media_group_cache: dict,
+            media_group_poll_tasks: dict
+    ):
+        try:
+            while self.is_bot_running:
+                await asyncio.sleep(0.5)  # 每0.5秒检查一次。
+
+                # 检查两个条件：
+                # 1. 所有需要上传的文件都已创建UploadTask（没有文件还在下载中）。
+                # 2. 没有待处理的媒体组任务。
+                created_count = UploadTask.get_media_group_task_count(message_ids)
+                no_pending = not UploadTask.has_pending_media_group_tasks()
+                collected_count = len(media_group_cache.get(media_group_id, {}))
+
+                log.info(f'[Upload Worker]上传媒体组"{media_group_id}"创建的任务数:{created_count},是否还有任务:{no_pending}正在检查媒体组,收集的媒体数:{collected_count}')
+                if created_count == collected_count and no_pending:
+                    # 所有需要上传的文件都已创建且没有待处理任务，发送已收集的媒体。
+                    if media_group_id in media_group_cache:
+                        # 按照原始message_id的顺序排序
+                        sorted_media_group = []
+                        for message in media_group:
+                            msg_id = message.id
+                            # 只发送在message_ids中的（用户选择的范围）。
+                            if msg_id in message_ids and msg_id in media_group_cache[media_group_id]:
+                                sorted_media_group.append(media_group_cache[media_group_id][msg_id])
+
+                        if sorted_media_group:
+                            log.info(
+                                f'[Upload Worker]上传媒体组"{media_group_id}",包含{len(sorted_media_group)}个媒体（共预期{len(message_ids)}个）。')
+                            try:
+                                await self.client.invoke(
+                                    raw.functions.messages.SendMultiMedia(
+                                        peer=await self.client.resolve_peer(chat_id),
+                                        multi_media=sorted_media_group
+                                    ),
+                                    sleep_threshold=60
+                                )
+                                prompt = f'[媒体组]:"{media_group_id}"上传完成,包含{len(sorted_media_group)}个媒体。'
+                                console.log(f'{_t(KeyWord.UPLOAD_TASK)}{prompt}')
+                            except Exception as send_error:
+                                log.error(f'[Upload Worker]发送媒体组失败,{_t(KeyWord.REASON)}:"{send_error}"',
+                                          exc_info=True)
+                        else:
+                            log.warning(f'[Upload Worker]媒体组"{media_group_id}"没有可发送的媒体。')
+
+                    # 清理缓存和轮询任务。
+                    if media_group_id in media_group_cache:
+                        del media_group_cache[media_group_id]
+                    if media_group_id in media_group_poll_tasks:
+                        del media_group_poll_tasks[media_group_id]
+                    break  # 轮询结束。
+                else:
+                    # 还有文件在下载中或还在上传，继续等待。
+                    if created_count < len(message_ids):
+                        log.debug(
+                            f'[Upload Worker]媒体组"{media_group_id}"已创建{created_count}/{len(message_ids)}个任务，等待下载...')
+        except asyncio.CancelledError:
+            log.info(f'[Upload Worker]媒体组"{media_group_id}"轮询任务被取消。')
+            if media_group_id in media_group_poll_tasks:
+                del media_group_poll_tasks[media_group_id]
+        except Exception as e:
+            log.error(f'[Upload Worker]媒体组"{media_group_id}"轮询任务出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+            if media_group_id in media_group_cache:
+                del media_group_cache[media_group_id]
+            if media_group_id in media_group_poll_tasks:
+                del media_group_poll_tasks[media_group_id]
 
     async def send_media(
             self,

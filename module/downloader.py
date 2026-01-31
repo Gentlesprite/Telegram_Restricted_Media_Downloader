@@ -311,7 +311,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     with_upload={
                         'link': target_link,
                         'file_name': None,
-                        'with_delete': self.gc.upload_delete
+                        'with_delete': self.gc.upload_delete,
+                        'send_as_media_group':True
                     }
                 )
             await kb.task_assign_button()
@@ -1019,7 +1020,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         with_upload={
                             'link': target_link,
                             'file_name': None,
-                            'with_delete': self.gc.upload_delete
+                            'with_delete': self.gc.upload_delete,
+                            'send_as_media_group': True
                         }
                     )
                     break

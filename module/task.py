@@ -287,6 +287,34 @@ class UploadTask:
             self.file_part.append(file_part)
             self.save_json()
 
+    @staticmethod
+    def has_pending_media_group_tasks() -> bool:
+        """检查是否还有IDLE或UPLOADING状态且属于媒体组的任务。"""
+        for task in UploadTask.TASKS:
+            if task.status in (UploadStatus.IDLE, UploadStatus.UPLOADING) and task.is_media_group:
+                return True
+        return False
+
+    @staticmethod
+    def get_media_group_task_count(message_ids: set) -> int:
+        """获取指定media_group_id和message_ids列表中已创建的UploadTask数量。
+
+        Args:
+            message_ids: 需要检查的message_id集合。
+
+        Returns:
+            int: 已创建的UploadTask数量。
+        """
+        if not message_ids:
+            return 0
+
+        count = 0
+        for task in UploadTask.TASKS:
+            if task.message_id in message_ids:
+                count += 1
+
+        return count
+
     def get_missing_parts(self) -> list:
         """获取缺失的分片索引。"""
         valid_parts = []
