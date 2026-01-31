@@ -312,7 +312,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         'link': target_link,
                         'file_name': None,
                         'with_delete': self.gc.upload_delete,
-                        'send_as_media_group':True
+                        'send_as_media_group': True
                     }
                 )
             await kb.task_assign_button()
@@ -882,6 +882,14 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
         except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
             if not download_upload:
+                if (
+                        getattr(getattr(message, 'chat', None), 'is_creator', False) or
+                        getattr(getattr(message, 'chat', None), 'is_admin', False)
+                ) and (
+                        getattr(getattr(message, 'from_user', None), 'id', -1) ==
+                        getattr(getattr(client, 'me', None), 'id', None)
+                ):
+                    return None
                 raise
             link = message.link
             if not self.gc.download_upload:
