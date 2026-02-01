@@ -2066,7 +2066,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             record_error: bool = True
             log.error(f'登录超时,请重新打开软件尝试登录,{_t(KeyWord.REASON)}:"{e}"')
         except KeyboardInterrupt:
-            console.log('用户键盘中断。')
+            console.log('⌨️ 用户键盘中断。')
         except OperationalError as e:
             record_error: bool = True
             log.error(
