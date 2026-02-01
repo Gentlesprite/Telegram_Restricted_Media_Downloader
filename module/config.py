@@ -176,7 +176,6 @@ class UserConfig(BaseConfig):
         self.difference_timestamp: dict = {}
         self.download_type: list = []
         self.record_dtype: set = set()
-        self.work_directory: str = PARSE_ARGS.session or UserConfig.WORK_DIRECTORY
         self.temp_directory: str = PARSE_ARGS.temp or UserConfig.TEMP_DIRECTORY
         self.record_flag: bool = False
         self.modified: bool = False
@@ -198,6 +197,7 @@ class UserConfig(BaseConfig):
         self.proxy: dict = self.config.get('proxy', {})
         self.enable_proxy: bool = self.proxy.get('enable_proxy', False)
         self.save_directory: str = self.config.get('save_directory')
+        self.work_directory: str = PARSE_ARGS.session or (self.config.get('session_directory') or UserConfig.WORK_DIRECTORY)
 
     def get_last_history_record(self) -> None:
         """获取最近一次保存的历史配置文件。"""
@@ -540,8 +540,10 @@ class UserConfig(BaseConfig):
                 'upload': 3}
         )['upload'] = (pre_load_config.get('max_retries') or {}).get('upload', 3) or 3
         if not PARSE_ARGS.session:
-            self.work_directory = pre_load_config.get('session_directory', UserConfig.WORK_DIRECTORY)
-        pre_load_config['session_directory'] = self.work_directory
+            session_directory = pre_load_config.get('session_directory', UserConfig.WORK_DIRECTORY) or UserConfig.WORK_DIRECTORY
+            pre_load_config['session_directory'] = session_directory
+        else:
+            pre_load_config['session_directory'] = PARSE_ARGS.session
         self.save_config(pre_load_config)  # v1.3.0 修复不保存配置文件时,配置文件仍然保存的问题。
 
     def save_config(self, config: dict) -> None:
