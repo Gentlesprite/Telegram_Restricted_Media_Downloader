@@ -1995,7 +1995,6 @@ class TelegramRestrictedMediaDownloader(Bot):
             console.log(result, style='#B1DB74' if self.is_bot_running else '#FF4689')
             if self.is_bot_running:
                 self.uploader = TelegramUploader(download_object=self)
-                _ = asyncio.create_task(self.uploader.send_media_worker())
                 self.cd = CallbackData()
                 if self.gc.upload_delete:
                     console.log(
