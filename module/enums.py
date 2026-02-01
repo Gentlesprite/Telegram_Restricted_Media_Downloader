@@ -572,6 +572,10 @@ class ProcessConfig:
             return None
 
     @staticmethod
+    def format_proxy_prompt(proxy: dict) -> str:
+        return proxy.get('scheme', '') + '://' + proxy.get('hostname', '') + ':' + str(proxy.get('port', ''))
+
+    @staticmethod
     def get_unix_proxy() -> Optional[dict]:
         """从环境变量获取 Unix/Linux/macOS 代理设置。"""
         env_vars = ['http_proxy', 'HTTP_PROXY', 'https_proxy', 'HTTPS_PROXY', 'all_proxy', 'ALL_PROXY']
@@ -664,12 +668,7 @@ class ProcessConfig:
             @wraps(func)
             def wrapper(*args, **kwargs) -> Any:
                 # 尝试获取系统代理（跨平台）。
-                system = platform.system()
-                if system == 'Windows':
-                    system_proxy = ProcessConfig.get_windows_proxy()
-                else:
-                    system_proxy = ProcessConfig.get_unix_proxy()
-
+                system_proxy = ProcessConfig.get_windows_proxy() if platform.system() == 'Windows' else ProcessConfig.get_unix_proxy()
                 # 如果成功获取到系统代理并且包含所需的参数。
                 if system_proxy and param_name in system_proxy:
                     question: str = GetStdioParams.UNDEFINED
@@ -677,7 +676,7 @@ class ProcessConfig:
                         while True:
                             try:
                                 question = console.input(
-                                    f'获取到系统代理"{system_proxy}",是否自动填入? - 「y|n」(默认y):').strip().lower()
+                                    f'获取到系统代理"{ProcessConfig.format_proxy_prompt(system_proxy)}",是否自动填入? - 「y|n」(默认y):').strip().lower()
                                 if question in ('y', ''):
                                     ProcessConfig.PROXY_AUTO_FILL = True
                                     break
