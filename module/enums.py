@@ -4,6 +4,7 @@
 # Time:2024/7/2 0:59
 # File:enums.py
 import os
+import re
 import sys
 import ipaddress
 import platform
@@ -523,48 +524,41 @@ class ProcessConfig:
     PROXY_AUTO_FILL = False
 
     @staticmethod
-    def _parse_proxy_url(proxy_url: str) -> Optional[dict]:
+    def __parse_proxy_url(proxy_url: str) -> Optional[dict]:
         """解析代理URL字符串。"""
         try:
             if not proxy_url:
                 return None
 
-            # 去除协议前缀
-            url_lower = proxy_url.lower()
-            scheme = 'http'
-            if url_lower.startswith('http://'):
-                proxy_url = proxy_url[7:]
-                scheme = 'http'
-            elif url_lower.startswith('https://'):
-                proxy_url = proxy_url[8:]
-                scheme = 'https'
-            elif url_lower.startswith('socks4://'):
-                proxy_url = proxy_url[9:]
-                scheme = 'socks4'
-            elif url_lower.startswith('socks4a://'):
-                proxy_url = proxy_url[10:]
-                scheme = 'socks4'
-            elif url_lower.startswith('socks5://'):
-                proxy_url = proxy_url[9:]
-                scheme = 'socks5'
-            elif url_lower.startswith('socks5h://'):
-                proxy_url = proxy_url[10:]
-                scheme = 'socks5'
+            # 正则表达式匹配代理URL，支持以下格式：
+            # - http://username:password@host:port
+            # - https://host:port
+            # - socks4://host:port
+            # - socks5://host:port
+            # - host:port (无协议前缀)
+            pattern = r'^(?:(https?|socks[45][ah]?)://)?(?:[^@]*@)?([^:]+):(\d+)$'
+            match = re.match(pattern, proxy_url.lower())
 
-            if '@' in proxy_url:
-                _, proxy_url = proxy_url.split('@', 1)
-
-            # 解析地址和端口。
-            if ':' in proxy_url:
-                hostname, port = proxy_url.rsplit(':', 1)
-                try:
-                    port = int(port)
-                except ValueError:
-                    return None
-            else:
+            if not match:
                 return None
 
-            # 验证端口号有效性
+            scheme = match.group(1)
+            hostname = match.group(2)
+            port = match.group(3)
+
+            # 如果没有scheme，默认为http。
+            if not scheme:
+                scheme = 'http'
+            # socks4a和socks5h统一为socks4和socks5。
+            elif scheme in ('socks4a', 'socks5h'):
+                scheme = scheme[:-1]
+
+            # 验证端口号有效性。
+            try:
+                port = int(port)
+            except ValueError:
+                return None
+
             if not (0 <= port <= 65535):
                 return None
 
@@ -577,21 +571,21 @@ class ProcessConfig:
             return None
 
     @staticmethod
-    def _get_unix_proxy_from_env() -> Optional[dict]:
+    def get_unix_proxy() -> Optional[dict]:
         """从环境变量获取 Unix/Linux/macOS 代理设置。"""
         env_vars = ['http_proxy', 'HTTP_PROXY', 'https_proxy', 'HTTPS_PROXY', 'all_proxy', 'ALL_PROXY']
 
         for var in env_vars:
             proxy_url = os.environ.get(var)
             if proxy_url:
-                proxy_info = ProcessConfig._parse_proxy_url(proxy_url)
+                proxy_info = ProcessConfig.__parse_proxy_url(proxy_url)
                 if proxy_info:
                     return proxy_info
 
         return None
 
     @staticmethod
-    def _get_windows_proxy_from_registry() -> Optional[dict]:
+    def get_windows_proxy() -> Optional[dict]:
         """从 Windows 注册表获取代理设置。"""
         try:
             import winreg
@@ -607,43 +601,48 @@ class ProcessConfig:
                 if not proxy_server:
                     return None
 
+                # 使用正则表达式解析代理服务器字符串。
+                # 格式可能是: "http=127.0.0.1:7890;https=127.0.0.1:7890;socks=127.0.0.1:1080"。
+                # 或者是: "127.0.0.1:7890"。
                 proxy_info = {}
-                if ';' in proxy_server:
-                    parts = proxy_server.split(';')
-                    for part in parts:
-                        if '=' in part:
-                            proto, addr = part.split('=', 1)
-                            proxy_info[proto.lower().strip()] = addr.strip()
-                else:
-                    proxy_info['http'] = proxy_server
-                    proxy_info['https'] = proxy_server
+                pattern = r'(\w+)=([^;]+)'
+                matches = re.findall(pattern, proxy_server)
 
-                proxy_addr = None
-                if 'http' in proxy_info:
-                    proxy_addr = proxy_info['http']
-                elif 'https' in proxy_info:
-                    proxy_addr = proxy_info['https']
-                elif 'socks' in proxy_info:
-                    proxy_addr = proxy_info['socks']
+                if matches:
+                    for proto, addr in matches:
+                        proxy_info[proto.lower()] = addr
+                else:
+                    # 如果没有协议前缀，则整个字符串就是代理地址。
+                    proxy_info['http'] = proxy_server
+
+                # 优先级：http > https > socks。
+                proxy_addr = proxy_info.get('http') or proxy_info.get('https') or proxy_info.get('socks')
 
                 if not proxy_addr:
                     return None
 
-                if ':' in proxy_addr:
-                    hostname, port = proxy_addr.rsplit(':', 1)
-                    try:
-                        port = int(port)
-                    except ValueError:
-                        return None
-                else:
+                # 使用正则表达式解析地址和端口。
+                addr_pattern = r'^([^:]+):(\d+)$'
+                addr_match = re.match(addr_pattern, proxy_addr)
+
+                if not addr_match:
                     return None
 
+                hostname = addr_match.group(1)
+                try:
+                    port = int(addr_match.group(2))
+                except ValueError:
+                    return None
+
+                # 判断协议类型。
                 scheme = 'http'
-                if 'socks' in proxy_server.lower():
-                    if 'socks5' in proxy_server.lower():
-                        scheme = 'socks5'
-                    else:
-                        scheme = 'socks4'
+                if 'socks5' in proxy_server.lower():
+                    scheme = 'socks5'
+                elif 'socks4' in proxy_server.lower():
+                    scheme = 'socks4'
+                elif 'socks=' in proxy_server.lower():
+                    # 如果只有socks=没有数字，默认socks5
+                    scheme = 'socks5'
 
                 if not (0 <= port <= 65535):
                     return None
@@ -665,11 +664,10 @@ class ProcessConfig:
             def wrapper(*args, **kwargs) -> Any:
                 # 尝试获取系统代理（跨平台）。
                 system = platform.system()
-                system_proxy = None
                 if system == 'Windows':
-                    system_proxy = ProcessConfig._get_windows_proxy_from_registry()
-                elif system in ('Linux', 'Darwin'):
-                    system_proxy = ProcessConfig._get_unix_proxy_from_env()
+                    system_proxy = ProcessConfig.get_windows_proxy()
+                else:
+                    system_proxy = ProcessConfig.get_unix_proxy()
 
                 # 如果成功获取到系统代理并且包含所需的参数。
                 if system_proxy and param_name in system_proxy:
