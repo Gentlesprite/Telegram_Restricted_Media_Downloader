@@ -536,7 +536,8 @@ class ProcessConfig:
             # - socks4://host:port
             # - socks5://host:port
             # - host:port (无协议前缀)
-            pattern = r'^(?:(https?|socks[45][ah]?)://)?(?:[^@]*@)?([^:]+):(\d+)$'
+            # - 支持URL末尾有/的情况，如 http://127.0.0.1:10808/
+            pattern = r'^(?:(https?|socks[45][ah]?)://)?(?:[^@]*@)?([^:]+):(\d+)/+$'
             match = re.match(pattern, proxy_url.lower())
 
             if not match:
