@@ -197,7 +197,8 @@ class UserConfig(BaseConfig):
         self.proxy: dict = self.config.get('proxy', {})
         self.enable_proxy: bool = self.proxy.get('enable_proxy', False)
         self.save_directory: str = self.config.get('save_directory')
-        self.work_directory: str = PARSE_ARGS.session or (self.config.get('session_directory') or UserConfig.WORK_DIRECTORY)
+        self.work_directory: str = PARSE_ARGS.session or (
+                self.config.get('session_directory') or UserConfig.WORK_DIRECTORY)
 
     def get_last_history_record(self) -> None:
         """获取最近一次保存的历史配置文件。"""
@@ -368,6 +369,8 @@ class UserConfig(BaseConfig):
                 re_config: bool = gsp.get_is_re_config().get('is_re_config')
                 if re_config:
                     self.re_config = re_config
+                    # 缓存原有的session_directory，防止重新配置时丢失。
+                    origin_session_directory = pre_load_config.get('session_directory')
                     pre_load_config: dict = UserConfig.TEMPLATE.copy()
                     self.backup_config(backup_config=pre_load_config, error_config=False, force=True)
                     self.get_last_history_record()  # 更新到上次填写的记录。
@@ -376,6 +379,8 @@ class UserConfig(BaseConfig):
                             'is_change_account')
                         if self.is_change_account:
                             pre_load_config['session_directory'] = gsp.get_session_directory().get('session_directory')
+                        else:
+                            pre_load_config['session_directory'] = origin_session_directory
             _api_id: Union[str, None] = pre_load_config.get('api_id')
             _api_hash: Union[str, None] = pre_load_config.get('api_hash')
             _bot_token: Union[str, None] = pre_load_config.get('bot_token')
@@ -540,7 +545,8 @@ class UserConfig(BaseConfig):
                 'upload': 3}
         )['upload'] = (pre_load_config.get('max_retries') or {}).get('upload', 3) or 3
         if not PARSE_ARGS.session:
-            session_directory = pre_load_config.get('session_directory', UserConfig.WORK_DIRECTORY) or UserConfig.WORK_DIRECTORY
+            session_directory = pre_load_config.get('session_directory',
+                                                    UserConfig.WORK_DIRECTORY) or UserConfig.WORK_DIRECTORY
             pre_load_config['session_directory'] = session_directory
         else:
             pre_load_config['session_directory'] = PARSE_ARGS.session
