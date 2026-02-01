@@ -371,10 +371,11 @@ class UserConfig(BaseConfig):
                     pre_load_config: dict = UserConfig.TEMPLATE.copy()
                     self.backup_config(backup_config=pre_load_config, error_config=False, force=True)
                     self.get_last_history_record()  # 更新到上次填写的记录。
-                    self.is_change_account = gsp.get_is_change_account(valid_format='y|n').get(
-                        'is_change_account')
-                    if self.is_change_account:
-                        self.work_directory = gsp.get_session_directory().get('session_directory')
+                    if not PARSE_ARGS.session:
+                        self.is_change_account = gsp.get_is_change_account(valid_format='y|n').get(
+                            'is_change_account')
+                        if self.is_change_account:
+                            pre_load_config['session_directory'] = gsp.get_session_directory().get('session_directory')
             _api_id: Union[str, None] = pre_load_config.get('api_id')
             _api_hash: Union[str, None] = pre_load_config.get('api_hash')
             _bot_token: Union[str, None] = pre_load_config.get('bot_token')
@@ -538,6 +539,8 @@ class UserConfig(BaseConfig):
                 'download': _max_download_retries,
                 'upload': 3}
         )['upload'] = (pre_load_config.get('max_retries') or {}).get('upload', 3) or 3
+        if not PARSE_ARGS.session:
+            self.work_directory = pre_load_config.get('session_directory', UserConfig.WORK_DIRECTORY)
         pre_load_config['session_directory'] = self.work_directory
         self.save_config(pre_load_config)  # v1.3.0 修复不保存配置文件时,配置文件仍然保存的问题。
 
