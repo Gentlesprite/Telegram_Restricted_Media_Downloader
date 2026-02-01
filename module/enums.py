@@ -403,137 +403,6 @@ class Banner:
 
 
 class Validator:
-    @staticmethod
-    def get_windows_system_proxy() -> Optional[dict]:
-        if platform.system() != 'Windows':
-            return None
-
-        try:
-            import winreg
-            # 打开注册表键。
-            with winreg.OpenKey(
-                    winreg.HKEY_CURRENT_USER,
-                    r'Software\Microsoft\Windows\CurrentVersion\Internet Settings'
-            ) as key:
-                # 检查是否启用了代理。
-                proxy_enable, _ = winreg.QueryValueEx(key, 'ProxyEnable')
-                if not proxy_enable:
-                    return None
-
-                # 获取代理服务器地址。
-                proxy_server, _ = winreg.QueryValueEx(key, 'ProxyServer')
-
-                if not proxy_server:
-                    return None
-
-                # 解析代理服务器字符串。
-                # 格式可能是: "http=127.0.0.1:7890;https=127.0.0.1:7890" 或 "127.0.0.1:7890"。
-                proxy_info = {}
-
-                # 检查是否有分号分隔多个代理
-                if ';' in proxy_server:
-                    parts = proxy_server.split(';')
-                    for part in parts:
-                        if '=' in part:
-                            proto, addr = part.split('=', 1)
-                            proxy_info[proto.lower().strip()] = addr.strip()
-                else:
-                    # 单个代理地址，默认为 http/https 通用。
-                    proxy_info['http'] = proxy_server
-                    proxy_info['https'] = proxy_server
-
-                # 尝试从 http 或 https 代理中提取信息。
-                proxy_addr = None
-                if 'http' in proxy_info:
-                    proxy_addr = proxy_info['http']
-                elif 'https' in proxy_info:
-                    proxy_addr = proxy_info['https']
-                elif 'socks' in proxy_info:
-                    proxy_addr = proxy_info['socks']
-
-                if not proxy_addr:
-                    return None
-
-                # 解析地址和端口。
-                if ':' in proxy_addr:
-                    hostname, port = proxy_addr.rsplit(':', 1)
-                    try:
-                        port = int(port)
-                    except ValueError:
-                        return None
-                else:
-                    return None
-
-                # 判断代理类型。
-                scheme = 'http'
-                if 'socks' in proxy_server.lower():
-                    if 'socks5' in proxy_server.lower():
-                        scheme = 'socks5'
-                    else:
-                        scheme = 'socks4'
-
-                # 验证端口号有效性。
-                if not (0 <= port <= 65535):
-                    return None
-
-                return {
-                    'scheme': scheme,
-                    'hostname': hostname,
-                    'port': port
-                }
-
-        except (WindowsError, OSError, ValueError):
-            return None
-
-    @staticmethod
-    def get_system_proxy(param_name: str):
-
-        def decorator(func: Callable) -> Callable:
-            @wraps(func)
-            def wrapper(*args, **kwargs) -> Any:
-                # 尝试获取系统代理。
-                system_proxy = Validator.get_windows_system_proxy()
-
-                # 如果成功获取到系统代理并且包含所需的参数。
-                if system_proxy and param_name in system_proxy:
-
-                    # 提取对应参数的值。
-                    value = system_proxy[param_name]
-                    # 根据参数类型打印相应的提示信息。
-                    if param_name == 'scheme':
-                        console.print(
-                            f'已从系统代理自动获取「scheme」为:「{value}」',
-                            style=ProcessConfig.stdio_style('scheme')
-                        )
-                        return {
-                            'scheme': value,
-                            'record_flag': True
-                        }
-                    elif param_name == 'hostname':
-                        console.print(
-                            f'已从系统代理自动获取「hostname」为:「{value}」',
-                            style=ProcessConfig.stdio_style('hostname')
-                        )
-                        return {
-                            'hostname': value,
-                            'record_flag': True
-                        }
-                    elif param_name == 'port':
-                        console.print(
-                            f'已从系统代理自动获取「port」为:「{value}」',
-                            style=ProcessConfig.stdio_style('port')
-                        )
-                        return {
-                            'port': value,
-                            'record_flag': True
-                        }
-
-                # 如果没有获取到系统代理或参数不完整，执行原函数。
-                return func(*args, **kwargs)
-
-            return wrapper
-
-        return decorator
 
     @staticmethod
     def is_contain_chinese(text: str) -> bool:
@@ -651,6 +520,214 @@ class Validator:
 
 
 class ProcessConfig:
+    PROXY_AUTO_FILL = False
+
+    @staticmethod
+    def _parse_proxy_url(proxy_url: str) -> Optional[dict]:
+        """解析代理URL字符串。"""
+        try:
+            if not proxy_url:
+                return None
+
+            # 去除协议前缀
+            url_lower = proxy_url.lower()
+            scheme = 'http'
+            if url_lower.startswith('http://'):
+                proxy_url = proxy_url[7:]
+                scheme = 'http'
+            elif url_lower.startswith('https://'):
+                proxy_url = proxy_url[8:]
+                scheme = 'https'
+            elif url_lower.startswith('socks4://'):
+                proxy_url = proxy_url[9:]
+                scheme = 'socks4'
+            elif url_lower.startswith('socks4a://'):
+                proxy_url = proxy_url[10:]
+                scheme = 'socks4'
+            elif url_lower.startswith('socks5://'):
+                proxy_url = proxy_url[9:]
+                scheme = 'socks5'
+            elif url_lower.startswith('socks5h://'):
+                proxy_url = proxy_url[10:]
+                scheme = 'socks5'
+
+            if '@' in proxy_url:
+                _, proxy_url = proxy_url.split('@', 1)
+
+            # 解析地址和端口。
+            if ':' in proxy_url:
+                hostname, port = proxy_url.rsplit(':', 1)
+                try:
+                    port = int(port)
+                except ValueError:
+                    return None
+            else:
+                return None
+
+            # 验证端口号有效性
+            if not (0 <= port <= 65535):
+                return None
+
+            return {
+                'scheme': scheme,
+                'hostname': hostname,
+                'port': port
+            }
+        except Exception:
+            return None
+
+    @staticmethod
+    def _get_unix_proxy_from_env() -> Optional[dict]:
+        """从环境变量获取 Unix/Linux/macOS 代理设置。"""
+        env_vars = ['http_proxy', 'HTTP_PROXY', 'https_proxy', 'HTTPS_PROXY', 'all_proxy', 'ALL_PROXY']
+
+        for var in env_vars:
+            proxy_url = os.environ.get(var)
+            if proxy_url:
+                proxy_info = ProcessConfig._parse_proxy_url(proxy_url)
+                if proxy_info:
+                    return proxy_info
+
+        return None
+
+    @staticmethod
+    def _get_windows_proxy_from_registry() -> Optional[dict]:
+        """从 Windows 注册表获取代理设置。"""
+        try:
+            import winreg
+            with winreg.OpenKey(
+                    winreg.HKEY_CURRENT_USER,
+                    r'Software\Microsoft\Windows\CurrentVersion\Internet Settings'
+            ) as key:
+                proxy_enable, _ = winreg.QueryValueEx(key, 'ProxyEnable')
+                if not proxy_enable:
+                    return None
+
+                proxy_server, _ = winreg.QueryValueEx(key, 'ProxyServer')
+                if not proxy_server:
+                    return None
+
+                proxy_info = {}
+                if ';' in proxy_server:
+                    parts = proxy_server.split(';')
+                    for part in parts:
+                        if '=' in part:
+                            proto, addr = part.split('=', 1)
+                            proxy_info[proto.lower().strip()] = addr.strip()
+                else:
+                    proxy_info['http'] = proxy_server
+                    proxy_info['https'] = proxy_server
+
+                proxy_addr = None
+                if 'http' in proxy_info:
+                    proxy_addr = proxy_info['http']
+                elif 'https' in proxy_info:
+                    proxy_addr = proxy_info['https']
+                elif 'socks' in proxy_info:
+                    proxy_addr = proxy_info['socks']
+
+                if not proxy_addr:
+                    return None
+
+                if ':' in proxy_addr:
+                    hostname, port = proxy_addr.rsplit(':', 1)
+                    try:
+                        port = int(port)
+                    except ValueError:
+                        return None
+                else:
+                    return None
+
+                scheme = 'http'
+                if 'socks' in proxy_server.lower():
+                    if 'socks5' in proxy_server.lower():
+                        scheme = 'socks5'
+                    else:
+                        scheme = 'socks4'
+
+                if not (0 <= port <= 65535):
+                    return None
+
+                return {
+                    'scheme': scheme,
+                    'hostname': hostname,
+                    'port': port
+                }
+
+        except (WindowsError, OSError, ValueError):
+            return None
+
+    @staticmethod
+    def get_system_proxy(param_name: str):
+
+        def decorator(func: Callable) -> Callable:
+            @wraps(func)
+            def wrapper(*args, **kwargs) -> Any:
+                # 尝试获取系统代理（跨平台）。
+                system = platform.system()
+                system_proxy = None
+                if system == 'Windows':
+                    system_proxy = ProcessConfig._get_windows_proxy_from_registry()
+                elif system in ('Linux', 'Darwin'):
+                    system_proxy = ProcessConfig._get_unix_proxy_from_env()
+
+                # 如果成功获取到系统代理并且包含所需的参数。
+                if system_proxy and param_name in system_proxy:
+                    question: str = GetStdioParams.UNDEFINED
+                    if param_name == 'scheme' and ProcessConfig.PROXY_AUTO_FILL is False:
+                        while True:
+                            try:
+                                question = console.input(
+                                    f'获取到系统代理"{system_proxy}",是否自动填入? - 「y|n」(默认y):').strip().lower()
+                                if question in ('y', ''):
+                                    ProcessConfig.PROXY_AUTO_FILL = True
+                                    break
+                                elif question == 'n':
+                                    break
+                                else:
+                                    log.warning(f'意外的参数:"{question}",支持的参数 - 「y|n」')
+                            except Exception as e:
+                                log.error(f'意外的错误,原因:"{e}"')
+                                break
+                    if question in ('y', '') or ProcessConfig.PROXY_AUTO_FILL:
+                        # 提取对应参数的值。
+                        value = system_proxy[param_name]
+                        # 根据参数类型打印相应的提示信息。
+                        if param_name == 'scheme':
+                            console.print(
+                                f'已从系统代理自动获取「scheme」为:「{value}」',
+                                style=ProcessConfig.stdio_style('scheme')
+                            )
+                            return {
+                                'scheme': value,
+                                'record_flag': True
+                            }
+                        elif param_name == 'hostname':
+                            console.print(
+                                f'已从系统代理自动获取「hostname」为:「{value}」',
+                                style=ProcessConfig.stdio_style('hostname')
+                            )
+                            return {
+                                'hostname': value,
+                                'record_flag': True
+                            }
+                        elif param_name == 'port':
+                            console.print(
+                                f'已从系统代理自动获取「port」为:「{value}」',
+                                style=ProcessConfig.stdio_style('port')
+                            )
+                            return {
+                                'port': value,
+                                'record_flag': True
+                            }
+
+                # 如果没有获取到系统代理或参数不完整，执行原函数。
+                return func(*args, **kwargs)
+
+            return wrapper
+
+        return decorator
+
     @staticmethod
     def set_dtype(_dtype: list) -> list:
         record_dtype: list = []
@@ -1105,7 +1182,7 @@ class GetStdioParams:
                 log.error(f'意外的参数:"{enable_proxy}",请输入有效参数!支持的参数 - 「{valid_format}」!')
 
     @staticmethod
-    @Validator.get_system_proxy('scheme')
+    @ProcessConfig.get_system_proxy('scheme')
     def get_scheme(last_record: str, valid_format: list) -> dict:
         if valid_format is None:
             valid_format: list = ['http', 'socks4', 'socks5']
@@ -1127,7 +1204,7 @@ class GetStdioParams:
                     f'意外的参数:"{scheme}",请输入有效的代理类型!支持的参数 - 「{fmt_valid_format}」!')
 
     @staticmethod
-    @Validator.get_system_proxy('hostname')
+    @ProcessConfig.get_system_proxy('hostname')
     def get_hostname(proxy_config: dict, last_record: str, valid_format: str = 'x.x.x.x'):
         hostname = None
         while True:
@@ -1150,7 +1227,7 @@ class GetStdioParams:
                     f'"{hostname}"不是一个「ip地址」,请输入有效的ipv4地址!支持的参数 - 「{valid_format}」!')
 
     @staticmethod
-    @Validator.get_system_proxy('port')
+    @ProcessConfig.get_system_proxy('port')
     def get_port(proxy_config: dict, last_record: str, valid_format: str = '0~65535'):
         port = None
         # 输入代理端口。
