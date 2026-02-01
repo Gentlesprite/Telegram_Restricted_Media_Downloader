@@ -150,6 +150,7 @@ class UserConfig(BaseConfig):
         },
         'links': None,
         'save_directory': None,  # v1.3.0 将配置文件中save_path的参数名修改为save_directory。
+        'temp_directory': None,
         'max_tasks': {
             'download': None,
             'upload': None
@@ -176,7 +177,6 @@ class UserConfig(BaseConfig):
         self.difference_timestamp: dict = {}
         self.download_type: list = []
         self.record_dtype: set = set()
-        self.temp_directory: str = PARSE_ARGS.temp or UserConfig.TEMP_DIRECTORY
         self.record_flag: bool = False
         self.modified: bool = False
         self.get_last_history_record()
@@ -199,6 +199,7 @@ class UserConfig(BaseConfig):
         self.save_directory: str = self.config.get('save_directory')
         self.work_directory: str = PARSE_ARGS.session or (
                 self.config.get('session_directory') or UserConfig.WORK_DIRECTORY)
+        self.temp_directory: str = PARSE_ARGS.temp or (self.config.get('temp_directory') or UserConfig.TEMP_DIRECTORY)
 
     def get_last_history_record(self) -> None:
         """获取最近一次保存的历史配置文件。"""
@@ -545,11 +546,20 @@ class UserConfig(BaseConfig):
                 'upload': 3}
         )['upload'] = (pre_load_config.get('max_retries') or {}).get('upload', 3) or 3
         if not PARSE_ARGS.session:
-            session_directory = pre_load_config.get('session_directory',
-                                                    UserConfig.WORK_DIRECTORY) or UserConfig.WORK_DIRECTORY
-            pre_load_config['session_directory'] = session_directory
+            _session_directory = pre_load_config.get(
+                'session_directory',
+                UserConfig.WORK_DIRECTORY) or UserConfig.WORK_DIRECTORY
+            pre_load_config['session_directory'] = _session_directory
         else:
             pre_load_config['session_directory'] = PARSE_ARGS.session
+
+        if not PARSE_ARGS.temp:
+            _temp_directory = pre_load_config.get(
+                'temp_directory',
+                UserConfig.TEMP_DIRECTORY) or UserConfig.TEMP_DIRECTORY
+            pre_load_config['temp_directory'] = _temp_directory
+        else:
+            pre_load_config['temp_directory'] = PARSE_ARGS.temp
         self.save_config(pre_load_config)  # v1.3.0 修复不保存配置文件时,配置文件仍然保存的问题。
 
     def save_config(self, config: dict) -> None:
