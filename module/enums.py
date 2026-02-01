@@ -899,7 +899,8 @@ class GetStdioParams:
     def get_is_change_account(valid_format: str = 'y|n') -> dict:
         style: str = '#FF4689'
         while True:
-            is_change_account = console.input('是否需要切换账号? - 「y|n」(默认n):').strip().lower()
+            is_change_account = console.input(
+                '是否需要切换账号? - 「y|n」(默认n):').strip().lower()
             if is_change_account in ('n', ''):
                 console.print('用户不需要切换「账号」。', style=style)
                 return {'is_change_account': False}
@@ -908,6 +909,15 @@ class GetStdioParams:
                 return {'is_change_account': True}
             else:
                 log.warning(f'意外的参数:"{is_change_account}",支持的参数 - 「{valid_format}」!')
+
+    @staticmethod
+    def get_session_directory():
+        style: str = '#FF4689'
+        while True:
+            session_directory = console.input(
+                '请输入「会话文件目录」(可为「空目录」,也可为「已登录的会话文件目录」):').strip()
+            console.print(f'「会话文件夹的路径」设置为:{session_directory}。', style=style)
+            return {'session_directory': session_directory}
 
     @staticmethod
     def get_api_id(last_record: str) -> dict:

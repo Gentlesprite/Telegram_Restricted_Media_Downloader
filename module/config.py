@@ -24,7 +24,6 @@ from module.language import _t
 from module.parser import PARSE_ARGS
 from module.path_tool import (
     gen_backup_config,
-    safe_delete,
     safe_scan_directory_file
 )
 from module.enums import (
@@ -140,6 +139,7 @@ class UserConfig(BaseConfig):
         'api_id': None,
         'api_hash': None,
         'bot_token': None,
+        'session_directory': None,
         'proxy': {
             'enable_proxy': None,
             'scheme': None,
@@ -168,8 +168,7 @@ class UserConfig(BaseConfig):
 
     def __init__(self):
         super().__init__()
-        self.config_path: str = PARSE_ARGS.config if os.path.isfile(
-            PARSE_ARGS.config) and PARSE_ARGS.config.endswith('.yaml') else UserConfig.PATH
+        self.config_path: str = PARSE_ARGS.config if PARSE_ARGS.config.endswith('.yaml') else UserConfig.PATH
         self.platform: str = PLATFORM
         self.history_timestamp: dict = {}
         self.input_link: list = []
@@ -375,11 +374,7 @@ class UserConfig(BaseConfig):
                     self.is_change_account = gsp.get_is_change_account(valid_format='y|n').get(
                         'is_change_account')
                     if self.is_change_account:
-                        if safe_delete(file_p_d=os.path.join(self.DIRECTORY_NAME, 'sessions')):
-                            console.log('已删除旧会话文件,稍后需重新登录。')
-                        else:
-                            console.log(
-                                '删除旧会话文件失败,请手动删除软件目录下的sessions文件夹,再进行下一步操作!')
+                        self.work_directory = gsp.get_session_directory().get('session_directory')
             _api_id: Union[str, None] = pre_load_config.get('api_id')
             _api_hash: Union[str, None] = pre_load_config.get('api_hash')
             _bot_token: Union[str, None] = pre_load_config.get('bot_token')
@@ -543,6 +538,7 @@ class UserConfig(BaseConfig):
                 'download': _max_download_retries,
                 'upload': 3}
         )['upload'] = (pre_load_config.get('max_retries') or {}).get('upload', 3) or 3
+        pre_load_config['session_directory'] = self.work_directory
         self.save_config(pre_load_config)  # v1.3.0 修复不保存配置文件时,配置文件仍然保存的问题。
 
     def save_config(self, config: dict) -> None:
