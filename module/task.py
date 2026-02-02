@@ -20,7 +20,8 @@ from module.stdio import MetaData
 from module.parser import PARSE_ARGS
 from module.path_tool import (
     safe_delete,
-    truncate_filename
+    calc_sha256,
+    truncate_filename,
 )
 from module.enums import (
     DownloadStatus,
@@ -128,7 +129,11 @@ class DownloadTask:
 
 
 class UploadTask:
-    DIRECTORY_NAME: str = PARSE_ARGS.temp or os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'temp')
+    DIRECTORY_NAME: str = PARSE_ARGS.temp or os.path.join(
+        os.path.dirname(os.path.abspath(sys.argv[0])),
+        'temp',
+        '.cache'
+    )
     PART_SIZE: int = 512 * 1024
     TASKS: set = set()
     TASK_COUNTER: int = 0
@@ -214,8 +219,7 @@ class UploadTask:
                         if value:
                             self.upload_manager_path: str = os.path.join(
                                 UploadTask.DIRECTORY_NAME,
-                                str(self.chat_id),
-                                f'{truncate_filename(f"{self.file_size} - {self.file_name}")}.json'
+                                f'{truncate_filename(calc_sha256(file_path=self.file_path))}.json'
                             )
                         os.makedirs(os.path.dirname(self.upload_manager_path), exist_ok=True)
                         self.load_json()
@@ -255,7 +259,6 @@ class UploadTask:
         with open(file=self.upload_manager_path, mode='w', encoding='UTF-8') as f:
             json.dump(
                 obj={
-                    'file_path': self.file_path,
                     'file_id': self.file_id,
                     'file_size': self.file_size,
                     'file_part': self.file_part,
@@ -278,7 +281,6 @@ class UploadTask:
                 log.info(f'UploadManager的json内容可能为空,即将重新生成,{_t(KeyWord.REASON)}:"{e}"')
                 safe_delete(self.upload_manager_path)
                 self.save_json()
-        self.file_path = _json.get('file_path', self.file_path)
         self.file_id = _json.get('file_id', self.file_id)
         self.file_size = _json.get('file_size', self.file_size)
         self.file_part = _json.get('file_part', self.file_part)

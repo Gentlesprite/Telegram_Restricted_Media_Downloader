@@ -446,7 +446,6 @@ class TelegramUploader:
             return None
 
         retry = 0
-        file_part_retry = 0
         while retry < self.max_upload_retries:
             try:
                 if retry != 0 or upload_task.file_part:
@@ -465,10 +464,6 @@ class TelegramUploader:
                 fp = upload_task.file_part
                 if missing_part in fp:
                     fp.remove(missing_part)
-                file_part_retry += 1
-                if file_part_retry >= upload_task.file_total_parts:
-                    upload_task.error_msg = f'缺失分片重传次数大于分片总数{upload_task.file_total_parts},可能存在网络问题'
-                    upload_task.status = UploadStatus.FAILURE
                 continue
             except (ChatAdminRequired, ChannelPrivate_400, ChannelPrivate_406) as e:
                 upload_task.error_msg = str(e)

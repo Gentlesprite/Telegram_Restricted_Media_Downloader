@@ -6,6 +6,7 @@
 import os
 import re
 import struct
+import hashlib
 import shutil
 import datetime
 import mimetypes
@@ -301,3 +302,19 @@ def is_compressed_file(filename: Union[str, None]) -> bool:
             return True
 
     return False
+
+
+def calc_sha256(file_path, chunk_size=8192) -> str:
+    sha256_hash = hashlib.sha256()
+
+    try:
+        with open(file_path, 'rb') as f:
+            while True:
+                chunk = f.read(chunk_size)
+                if not chunk:
+                    break
+                sha256_hash.update(chunk)
+        return sha256_hash.hexdigest()
+
+    except Exception:
+        return os.path.basename(file_path)
