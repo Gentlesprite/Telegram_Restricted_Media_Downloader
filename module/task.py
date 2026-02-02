@@ -21,7 +21,6 @@ from module.parser import PARSE_ARGS
 from module.path_tool import (
     safe_delete,
     calc_sha256,
-    truncate_filename,
 )
 from module.enums import (
     DownloadStatus,
@@ -215,7 +214,7 @@ class UploadTask:
                         if value:
                             self.upload_manager_path: str = os.path.join(
                                 UploadTask.DIRECTORY_NAME,
-                                f'{truncate_filename(calc_sha256(file_path=self.file_path))}.json'
+                                f'{calc_sha256(file_path=self.file_path)}.json'
                             )
                         os.makedirs(os.path.dirname(self.upload_manager_path), exist_ok=True)
                         self.load_json()

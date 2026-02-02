@@ -37,8 +37,7 @@ from module.stdio import (
 )
 from module.path_tool import (
     split_path,
-    safe_delete,
-    truncate_filename
+    safe_delete
 )
 from module.enums import (
     KeyWord,
