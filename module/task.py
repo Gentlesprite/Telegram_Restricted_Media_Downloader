@@ -129,11 +129,7 @@ class DownloadTask:
 
 
 class UploadTask:
-    DIRECTORY_NAME: str = PARSE_ARGS.temp or os.path.join(
-        os.path.dirname(os.path.abspath(sys.argv[0])),
-        'temp',
-        '.cache'
-    )
+    DIRECTORY_NAME: str = PARSE_ARGS.temp or os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'temp')
     PART_SIZE: int = 512 * 1024
     TASKS: set = set()
     TASK_COUNTER: int = 0

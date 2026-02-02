@@ -79,6 +79,7 @@ from module.uploader import TelegramUploader
 from module.util import (
     parse_link,
     format_chat_link,
+    get_my_id,
     get_message_by_link,
     get_chat_with_notify,
     safe_message,
@@ -101,6 +102,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.pb: ProgressBar = ProgressBar()
         self.uploader: Union[TelegramUploader, None] = None
         self.cd: Union[CallbackData, None] = None
+        self.my_id: int = 0
 
     def env_save_directory(
             self,
@@ -964,8 +966,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
             if not all([origin_chat, target_chat]):
                 return None
-            me = await client.get_me()
-            if target_chat.id == me.id:
+            my_id = await get_my_id(client)
+            if target_chat.id == my_id:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     text='⚠️⚠️⚠️无法转发到此机器人⚠️⚠️⚠️',
@@ -1978,6 +1980,7 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     async def __download_media_from_links(self) -> None:
         await self.app.client.start(use_qr=False)
+        self.my_id = await get_my_id(self.app.client)
         self.pb.progress.start()  # v1.1.8修复登录输入手机号不显示文本问题。
         if self.app.bot_token is not None:
             result = await self.start_bot(

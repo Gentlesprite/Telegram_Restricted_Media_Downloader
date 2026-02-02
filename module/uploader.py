@@ -69,6 +69,7 @@ class TelegramUploader:
         self.is_bot_running = download_object.is_bot_running
         self.upload_queue: asyncio.Queue = asyncio.Queue()
         UploadTask.NOTIFY = download_object.done_notice
+        UploadTask.DIRECTORY_NAME = os.path.join(UploadTask.DIRECTORY_NAME, str(download_object.my_id))
         asyncio.create_task(self.send_media_worker())
 
     async def resume_upload(
