@@ -1436,13 +1436,14 @@ class TelegramRestrictedMediaDownloader(Bot):
         if downloaded == 0:
             mode = 'wb'
         else:
-            mode = 'ab'
+            mode = 'r+b'
             console.log(
                 f'{_t(KeyWord.DOWNLOAD_TASK)}'
                 f'{_t(KeyWord.RESUME)}:"{file_name}",'
                 f'{_t(KeyWord.ERROR_SIZE)}:{MetaData.suitable_units_display(downloaded)}。')
         with open(file=temp_path, mode=mode) as f:
             skip_chunks: int = downloaded // chunk_size  # 计算要跳过的块数。
+            f.seek(downloaded)
             async for chunk in self.app.client.stream_media(message=message, offset=skip_chunks):
                 f.write(chunk)
                 downloaded += len(chunk)
