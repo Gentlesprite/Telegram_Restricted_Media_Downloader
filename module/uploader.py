@@ -543,22 +543,10 @@ class TelegramUploader:
             self.event.set()
             log.info(e)
             return
-        chat_id: Union[str, int] = upload_task.chat_id
-        file_size: int = upload_task.file_size
         file_path: str = upload_task.file_path
         with_delete: bool = upload_task.with_delete
         self.current_task_num -= 1
         self.pb.progress.remove_task(task_id=task_id)
-        if not safe_delete(
-                os.path.join(
-                    UploadTask.DIRECTORY_NAME,
-                    str(chat_id),
-                    f'{truncate_filename(f"{file_size} - {os.path.basename(file_path)}")}.json'
-                )
-        ):
-            log.warning(f'无法删除"{os.path.basename(file_path)}"的上传缓存管理文件。')
-        else:
-            log.info(f'成功删除"{os.path.basename(file_path)}"的上传缓存管理文件。')
         self.event.set()
         safe_delete(file_path) if with_delete else None
         upload_task.status = UploadStatus.SUCCESS
