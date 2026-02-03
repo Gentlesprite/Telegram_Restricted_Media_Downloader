@@ -70,6 +70,7 @@ class TelegramUploader:
         self.max_upload_retries: int = self.app.max_upload_retries
         self.is_bot_running = download_object.is_bot_running
         self.upload_queue: asyncio.Queue = asyncio.Queue()
+        self.valid_link_cache = {}
         UploadTask.NOTIFY = download_object.done_notice
         UploadTask.DIRECTORY_NAME = os.path.join(UploadTask.DIRECTORY_NAME, str(download_object.my_id))
         asyncio.create_task(self.send_media_worker())
@@ -351,6 +352,7 @@ class TelegramUploader:
                                 for task in UploadTask.TASKS:
                                     if task.message_id in message_ids and task.status == UploadStatus.SUCCESS:
                                         task.status = UploadStatus.SENT
+                                self.valid_link_cache = {k: v for k, v in self.valid_link_cache.items() if v != chat_id}
                             except Exception as send_error:
                                 log.error(f'[Upload Worker]发送媒体组失败,{_t(KeyWord.REASON)}:"{send_error}"',
                                           exc_info=True)
@@ -404,6 +406,7 @@ class TelegramUploader:
                 )
             )
             upload_task.status = UploadStatus.SENT
+            self.valid_link_cache = {k: v for k, v in self.valid_link_cache.items() if v != chat_id}
             log.info(f'[Upload Worker]单条消息发送完成,{_t(KeyWord.CHANNEL)}:"{chat_id}"')
         except Exception as e:
             log.error(f'"[Upload Worker]发送单条消息失败,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
@@ -458,21 +461,25 @@ class TelegramUploader:
     ) -> None:
         if isinstance(link, str):
             if link.startswith('https://t.me/'):
-                target_meta: Union[dict, None] = await parse_link(
-                    client=self.client,
-                    link=link
-                )
-                chat_id: Union[int, str] = target_meta.get('chat_id')
-                target_chat = await get_chat_with_notify(
-                    user_client=self.client,
-                    chat_id=chat_id
-                )
-                if not target_chat:
-                    raise ValueError
+                if link in self.valid_link_cache:
+                    chat_id: Union[int, str] = self.valid_link_cache[link]
+                else:
+                    target_meta: Union[dict, None] = await parse_link(
+                        client=self.client,
+                        link=link
+                    )
+                    chat_id: Union[int, str] = target_meta.get('chat_id')
+                    target_chat = await get_chat_with_notify(
+                        user_client=self.client,
+                        chat_id=chat_id
+                    )
+                    if not target_chat:
+                        raise ValueError
+                    self.valid_link_cache[link] = chat_id
             else:
-                chat_id = link
+                chat_id: Union[int, str] = link
         else:
-            chat_id = link
+            chat_id: Union[int, str] = link
         file_path = upload_task.file_path
         file_size: int = os.path.getsize(file_path)
         upload_task.chat_id = chat_id
