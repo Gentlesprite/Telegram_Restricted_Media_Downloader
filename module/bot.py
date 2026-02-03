@@ -43,7 +43,7 @@ from module.util import (
     safe_index,
     safe_message,
     is_allow_upload,
-    is_valid_link
+    get_valid_chat_id
 )
 from module.enums import (
     CalenderKeyboard,
@@ -533,7 +533,7 @@ class Bot:
             target_link = parts[1]  # URL部分。
             if not recursion:
                 if target_link not in valid_link_cache:
-                    valid_link_cache[target_link] = await is_valid_link(
+                    valid_link_cache[target_link] = await get_valid_chat_id(
                         link=target_link,
                         user_client=self.user,
                         bot_client=self.bot,
@@ -605,6 +605,7 @@ class Bot:
             if target_link.startswith('https://t.me/') or target_link in ('me', 'self'):  # 验证目标链接格式。
                 return {
                     'target_link': target_link,
+                    'valid_link_cache': valid_link_cache,
                     'upload_task': UploadTask(
                         chat_id=None,
                         file_path=file_path,

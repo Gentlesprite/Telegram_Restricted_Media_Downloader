@@ -419,21 +419,27 @@ class TelegramUploader:
 
     async def create_upload_task(
             self,
-            link: str,
+            link: Union[str, int],
             upload_task: UploadTask
     ) -> None:
+        if isinstance(link, str):
+            if link.startswith('https://t.me/'):
+                target_meta: Union[dict, None] = await parse_link(
+                    client=self.client,
+                    link=link
+                )
+                chat_id: Union[int, str] = target_meta.get('chat_id')
+                target_chat = await get_chat_with_notify(
+                    user_client=self.client,
+                    chat_id=chat_id
+                )
+                if not target_chat:
+                    raise ValueError
+            else:
+                chat_id = link
+        else:
+            chat_id = link
         file_path = upload_task.file_path
-        target_meta: Union[dict, None] = await parse_link(
-            client=self.client,
-            link=link
-        )
-        chat_id: Union[int, str] = target_meta.get('chat_id')
-        target_chat = await get_chat_with_notify(
-            user_client=self.client,
-            chat_id=chat_id
-        )
-        if not target_chat:
-            raise ValueError
         file_size: int = os.path.getsize(file_path)
         upload_task.chat_id = chat_id
         if not is_allow_upload(file_size, self.is_premium):

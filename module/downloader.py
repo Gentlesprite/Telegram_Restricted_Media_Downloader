@@ -197,20 +197,13 @@ class TelegramRestrictedMediaDownloader(Bot):
         if link_meta is None:
             return None
         target_link: str = link_meta.get('target_link')
+        valid_link_cache: dict = link_meta.get('valid_link_cache')
         upload_task = link_meta.get('upload_task')
         upload_task.with_delete = self.gc.upload_delete
-        try:
-            await self.uploader.create_upload_task(
-                link=target_link,
-                upload_task=upload_task
-            )
-        except ValueError:
-            if not recursion:
-                await client.send_message(
-                    chat_id=message.from_user.id,
-                    reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
-                )
+        await self.uploader.create_upload_task(
+            link=valid_link_cache.get(target_link, None) or target_link if valid_link_cache else target_link,
+            upload_task=upload_task,
+        )
 
     @staticmethod
     async def __send_pay_qr(
