@@ -93,7 +93,7 @@ class Bot:
         await client.send_message(
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
-            text='❓❓❓未知命令❓❓❓\n请查看帮助后重试。',
+            text='⚠️⚠️⚠️未知命令⚠️⚠️⚠️\n请查看帮助后重试。',
             link_preview_options=LINK_PREVIEW_OPTIONS
         )
 
@@ -139,7 +139,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❓❓❓请提供下载链接❓❓❓语法:\n`/download https://t.me/x/x`',
+                text='⚠️⚠️⚠️请提供下载链接⚠️⚠️⚠️语法:\n`/download https://t.me/x/x`',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
         elif text.startswith('https://t.me/'):
@@ -166,7 +166,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='⁉️⁉️⁉️链接错误⁉️⁉️⁉️\n请查看帮助后重试。',
+                text='❌❌❌链接错误❌❌❌\n请查看帮助后重试。',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
         else:
@@ -228,7 +228,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❓❓❓请提供下载链接❓❓❓语法:\n`/download_chat https://t.me/x/x`',
+                text='⚠️⚠️⚠️请提供下载链接⚠️⚠️⚠️语法:\n`/download_chat https://t.me/x/x`',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
         command = text.split()
@@ -237,7 +237,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='⁉️⁉️⁉️命令语法错误⁉️⁉️⁉️\n请查看帮助后重试。',
+                text='❌❌❌命令语法错误❌❌❌\n请查看帮助后重试。',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
             return None
@@ -512,7 +512,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❓❓❓请提供参数❓❓❓语法:\n`/upload 本地文件 目标频道`或`/upload_r 本地文件夹 目标频道`',
+                text='⚠️⚠️⚠️请提供参数⚠️⚠️⚠️语法:\n`/upload 本地文件 目标频道`或`/upload_r 本地文件夹 目标频道`',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
             return None
