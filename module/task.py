@@ -174,7 +174,7 @@ class UploadTask:
                 if old_value != value:
                     super().__setattr__(name, value)
                     if name == 'status':
-                        if value == UploadStatus.IDLE:
+                        if value == UploadStatus.PENDING:
                             pass
                         elif value == UploadStatus.UPLOADING:
                             console.log(
@@ -290,7 +290,7 @@ class UploadTask:
     def has_pending_media_group_tasks() -> bool:
         """检查是否还有IDLE或UPLOADING状态且属于媒体组的任务。"""
         for task in UploadTask.TASKS:
-            if task.status in (UploadStatus.IDLE, UploadStatus.UPLOADING) and task.is_media_group:
+            if task.status in (UploadStatus.PENDING, UploadStatus.UPLOADING) and task.is_media_group:
                 return True
         return False
 

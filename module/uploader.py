@@ -608,7 +608,7 @@ class TelegramUploader:
                         file_id=self.client.rnd_id(),
                         file_size=os.path.getsize(file_path),
                         file_part=[],
-                        status=UploadStatus.IDLE,
+                        status=UploadStatus.PENDING,
                         with_delete=with_upload.get('with_delete'),
                         media_group=with_upload.get('media_group'),
                         message_id=with_upload.get('message_id'),

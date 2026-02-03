@@ -56,7 +56,7 @@ class DownloadStatus:
 
 
 class UploadStatus:
-    IDLE = 'idle'
+    PENDING = 'pending'
     UPLOADING = 'uploading'
     SUCCESS = 'success'
     FAILURE = 'failure'

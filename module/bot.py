@@ -612,7 +612,7 @@ class Bot:
                         file_id=self.user.rnd_id(),
                         file_size=os.path.getsize(file_path),
                         file_part=[],
-                        status=UploadStatus.IDLE
+                        status=UploadStatus.PENDING
                     )
                 }
         if not recursion:

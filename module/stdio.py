@@ -6,7 +6,6 @@
 import os
 import sys
 import csv
-import math
 import base64
 import random
 import datetime
@@ -68,7 +67,7 @@ class StatisticalTable:
             )
     ) -> Union[bool, None]:
         """打印统计的下载信息的表格。"""
-        header: tuple = ('种类&状态', '成功下载', '失败下载', '跳过下载', '合计')
+        header: tuple = ('类型&状态', '成功下载', '失败下载', '跳过下载', '合计')
         success_video: int = len(self.success_video)
         failure_video: int = len(self.failure_video)
         skip_video: int = len(self.skip_video)
@@ -233,78 +232,55 @@ class StatisticalTable:
         if not tasks:
             log.info(f'无法生成上传统计表,{_t(KeyWord.REASON)}:"没有任何上传"')
             return False
-        header: tuple = (
+        meta_table_title = '上传任务统计'
+        meta_table_header: tuple = (
+            '编号',
             '频道',
-            '文件路径',
-            '文件ID',
+            '文件',
             '文件大小',
             '状态',
-            '文件分块',
-            '上传后自动删除'
+            '上传后自动删除',
+            '错误信息'
         )
-        table_data = []
-        for task in tasks:
-            uploaded_parts = len(set(task.file_part))
-            total_parts = getattr(task, 'file_total_parts', 0)
-            if total_parts == 0:
-                # 计算总分块数。
-                part_size = getattr(task, 'PART_SIZE', 512 * 1024)
-                total_parts = int(math.ceil(task.file_size / part_size))
-            file_part_display = f'{uploaded_parts}/{total_parts}'
+        meta_table_data = []
+        for index, task in enumerate(tasks, start=1):
             if isinstance(task.status, Enum):
-                status_display = _t(str(task.status.value))
+                status = _t(str(task.status.value))
             else:
-                status_display = _t(str(task.status))
-                # 获取是否自动删除。
-            delete_display = '是' if getattr(task, 'with_delete', False) else '否'
-
-            # 构建一行数据
+                status = _t(str(task.status))
+            delete = '是' if getattr(task, 'with_delete', False) else '否'
+            error_msg = getattr(task, 'error_msg', False) or ''
             row = [
-                str(task.chat_id) if task.chat_id else "未知",
+                index,
+                str(task.chat_id) if task.chat_id else '未知',
                 task.file_path,
-                str(task.file_id),
                 MetaData.suitable_units_display(task.file_size),
-                status_display,
-                file_part_display,
-                delete_display
+                status,
+                delete,
+                error_msg
             ]
-            table_data.append(row)
+            meta_table_data.append(row)
 
         # 检查数据有效性。
-        if len(table_data) < 1:
+        if len(meta_table_data) < 1:
             return False
-
-        total_tasks = len(tasks)
-        total_size = sum(task.file_size for task in tasks)
+        count_table_title = '上传任务计数统计'
+        count_table_header: tuple = ('状态', '数量')
+        uploading_tasks = len([t for t in tasks if t.status == UploadStatus.UPLOADING])
         success_tasks = len([t for t in tasks if t.status == UploadStatus.SUCCESS])
         failure_tasks = len([t for t in tasks if t.status == UploadStatus.FAILURE])
-        uploading_tasks = len([t for t in tasks if t.status == UploadStatus.UPLOADING])
+        sent_tasks = len([t for t in tasks if t.status == UploadStatus.SENT])
         delete_tasks = len([t for t in tasks if getattr(t, 'with_delete', False)])
-
-        # 添加汇总行。
-        summary_row = [
-            '汇总统计',
-            f'总计:{total_tasks}个文件',
-            f'成功:{success_tasks}个',
-            f'总大小:{MetaData.suitable_units_display(total_size)}',
-            f'上传中:{uploading_tasks}个',
-            f'失败:{failure_tasks}个',
-            f'自动删除:{delete_tasks}个'
+        total_tasks = len(tasks)
+        total_size = sum(task.file_size for task in tasks)
+        count_table_data = [
+            [_t(UploadStatus.UPLOADING), uploading_tasks],
+            [_t(UploadStatus.SUCCESS), success_tasks],
+            [_t(UploadStatus.FAILURE), failure_tasks],
+            [_t(UploadStatus.SENT), sent_tasks],
+            ['自动删除', delete_tasks],
+            ['合计', total_tasks]
         ]
-        table_data.append([])  # 空行分隔。
-        table_data.append(summary_row)
-
-        # 详细的汇总信息行。
-        detailed_summary = [
-            '详细统计',
-            '',
-            '',
-            f'平均大小:{MetaData.suitable_units_display(total_size / total_tasks if total_tasks > 0 else 0)}',
-            f'成功率:{success_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0.0%',
-            f'失败率:{failure_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0.0%',
-            f'删除率:{delete_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0.0%'
-        ]
-        table_data.append(detailed_summary)
 
         if export:
             try:
@@ -319,29 +295,25 @@ class StatisticalTable:
                         encoding='utf-8-sig'
                 ) as f:
                     writer = csv.writer(f)
-                    # 写入原始表头。
-                    writer.writerow(header)
-                    # 写入数据行(不包含汇总行，因为格式不匹配)。
-                    for row in table_data[:-3]:  # 不写入最后的空行和汇总行。
-                        if row:  # 跳过空行
-                            writer.writerow(row)
+                    writer.writerow([meta_table_title])
+                    writer.writerow(meta_table_header)
+                    for row in meta_table_data:
+                        writer.writerow(row)
 
-                    # 在CSV中添加汇总信息。
-                    writer.writerow([])  # 空行。
-                    writer.writerow(['=== 汇总统计信息 ==='])
-                    writer.writerow(['统计项', '数量/大小', '百分比'])
-                    writer.writerow(['总任务数', total_tasks, '100%'])
-                    writer.writerow(['成功任务', success_tasks,
-                                     f'{success_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0%'])
-                    writer.writerow(['失败任务', failure_tasks,
-                                     f'{failure_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0%'])
-                    writer.writerow(['上传中任务', uploading_tasks,
-                                     f'{uploading_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0%'])
-                    writer.writerow(['自动删除', delete_tasks,
-                                     f'{delete_tasks / total_tasks * 100:.1f}%' if total_tasks > 0 else '0%'])
-                    writer.writerow(['总大小', MetaData.suitable_units_display(total_size), '-'])
-                    writer.writerow(['平均大小', MetaData.suitable_units_display(
-                        total_size / total_tasks if total_tasks > 0 else 0), '-'])
+                    writer.writerow([])
+                    writer.writerow([count_table_title])
+                    for row in count_table_data:
+                        writer.writerow(row)
+
+                    writer.writerow([])
+                    writer.writerow(
+                        ['平均大小', MetaData.suitable_units_display(
+                            total_size / total_tasks if total_tasks > 0 else 0)]
+                    )
+                    writer.writerow(
+                        ['总大小', MetaData.suitable_units_display(
+                            total_size)]
+                    )
 
                 log.info(f'上传任务统计表已导出:{os.path.join(export_directory, filename)}')
 
@@ -353,12 +325,17 @@ class StatisticalTable:
         try:
             if only_export is False:
                 PanelTable(
-                    title='上传任务统计',
-                    header=header,
-                    data=table_data,
+                    title=meta_table_title,
+                    header=meta_table_header,
+                    data=meta_table_data,
                     show_lines=True
                 ).print_meta()
-
+                PanelTable(
+                    title=count_table_title,
+                    header=count_table_header,
+                    data=count_table_data,
+                    show_lines=False
+                ).print_meta()
             return True
 
         except Exception as e:
