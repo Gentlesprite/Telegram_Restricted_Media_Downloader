@@ -67,7 +67,6 @@ class StatisticalTable:
             )
     ) -> Union[bool, None]:
         """打印统计的下载信息的表格。"""
-        header: tuple = ('类型&状态', '成功下载', '失败下载', '跳过下载', '合计')
         success_video: int = len(self.success_video)
         failure_video: int = len(self.failure_video)
         skip_video: int = len(self.skip_video)
@@ -116,7 +115,8 @@ class StatisticalTable:
         if check_count == 0:
             log.info(f'无法生成计数统计表,{_t(KeyWord.REASON)}:"没有任何下载"')
             return False
-
+        title: str = '媒体下载统计'
+        header: tuple = ('类型&状态', '成功下载', '失败下载', '跳过下载', '合计')
         if export:
             try:
                 os.makedirs(export_directory, exist_ok=True)
@@ -139,7 +139,7 @@ class StatisticalTable:
         try:
             if only_export is False:
                 PanelTable(
-                    title=f'媒体下载统计',
+                    title=title,
                     header=header,
                     data=table_data
                 ).print_meta()
@@ -186,6 +186,8 @@ class StatisticalTable:
             if not data:
                 log.info(f'无法生成下载链接统计表,{_t(KeyWord.REASON)}:"没有任何下载"')
                 return False
+            title: str = '下载链接统计'
+            header: tuple = ('编号', '链接', '文件名', '完成率', '错误信息')
             if export:
                 try:
                     os.makedirs(export_directory, exist_ok=True)
@@ -198,7 +200,7 @@ class StatisticalTable:
                             encoding='utf-8-sig'
                     ) as f:
                         writer = csv.writer(f)
-                        writer.writerow(['编号', '链接', '文件名', '完成率', '错误信息'])
+                        writer.writerow(header)
                         writer.writerows(data)
                 except Exception as e:
                     log.error(f'导出下载链接统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
@@ -206,8 +208,8 @@ class StatisticalTable:
                         return None
             if only_export is False:
                 PanelTable(
-                    title='下载链接统计',
-                    header=('编号', '链接', '文件名', '完成率', '错误信息'),
+                    title=title,
+                    header=header,
                     data=data,
                     show_lines=True
                 ).print_meta()
@@ -232,7 +234,7 @@ class StatisticalTable:
         if not tasks:
             log.info(f'无法生成上传统计表,{_t(KeyWord.REASON)}:"没有任何上传"')
             return False
-        meta_table_title = '上传任务统计'
+        meta_table_title: str = '上传任务统计'
         meta_table_header: tuple = (
             '编号',
             '频道',
