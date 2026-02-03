@@ -1970,10 +1970,10 @@ class TelegramRestrictedMediaDownloader(Bot):
         if links:
             return links
         elif not self.app.bot_token:
-            console.log('没有找到有效链接,程序已退出。', style='#FF4689')
+            console.log('🔗 没有找到有效链接,程序已退出。', style='#FF4689')
             sys.exit(0)
         else:
-            console.log('没有找到有效链接。', style='#FF4689')
+            console.log('🔗 没有找到有效链接。', style='#FF4689')
             return None
 
     def __retry_call(self, notice, _future):

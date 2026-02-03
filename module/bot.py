@@ -562,6 +562,21 @@ class Bot:
                             valid_link_cache=valid_link_cache
                         )
                     )
+                if upload_folder:
+                    await client.send_message(
+                        chat_id=message.from_user.id,
+                        reply_parameters=ReplyParameters(message_id=message.id),
+                        text=f'📤📤📤上传任务已创建,请耐心等待📤📤📤\n`{file_path}`',
+                        link_preview_options=LINK_PREVIEW_OPTIONS
+                    )
+                else:
+                    await client.send_message(
+                        chat_id=message.from_user.id,
+                        reply_parameters=ReplyParameters(message_id=message.id),
+                        text=f'⚠️⚠️⚠️文件夹为空⚠️⚠️⚠️\n`{file_path}`',
+                        link_preview_options=LINK_PREVIEW_OPTIONS
+                    )
+                    return None
                 sem = asyncio.Semaphore(self.application.max_upload_task)
 
                 async def limited(coro):
@@ -600,7 +615,13 @@ class Bot:
                          f'(普通用户2000MiB,会员用户4000MiB)',
                     link_preview_options=LINK_PREVIEW_OPTIONS
                 )
-
+            if not recursion:
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
+                    text=f'📤📤📤上传任务已创建,请耐心等待📤📤📤\n`{file_path}`',
+                    link_preview_options=LINK_PREVIEW_OPTIONS
+                )
             log.info(f'上传文件:"{file_path}",上传频道:"{target_link}"。')
             if target_link.startswith('https://t.me/') or target_link in ('me', 'self'):  # 验证目标链接格式。
                 return {
