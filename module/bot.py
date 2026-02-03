@@ -87,7 +87,6 @@ class Bot:
         self.listen_forward_chat: dict = {}
         self.handle_media_groups: dict = {}
         self.download_chat_filter: dict = {}
-        self.valid_link_cache: dict = {}
 
     async def process_error_message(self, client: pyrogram.Client, message: pyrogram.types.Message) -> None:
         await self.help(client, message)
@@ -502,8 +501,12 @@ class Bot:
             message: pyrogram.types.Message,
             delete: bool = False,
             save_directory: str = None,
-            recursion: bool = False
+            recursion: bool = False,
+            valid_link_cache: dict = None
     ):
+        if not recursion:
+            valid_link_cache = {}
+
         text: str = message.text
         if text == '/upload' or text == '/upload_r':
             await client.send_message(
@@ -529,15 +532,15 @@ class Bot:
             file_path = parts[0]  # 文件名部分（可能包含空格）。
             target_link = parts[1]  # URL部分。
             if not recursion:
-                if target_link not in self.valid_link_cache:
-                    self.valid_link_cache[target_link] = await is_valid_link(
+                if target_link not in valid_link_cache:
+                    valid_link_cache[target_link] = await is_valid_link(
                         link=target_link,
                         user_client=self.user,
                         bot_client=self.bot,
                         bot_message=self.last_message,
                         error_msg=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
                     )
-                if not self.valid_link_cache[target_link]:
+                if not valid_link_cache[target_link]:
                     return None
             if os.path.isdir(file_path):
                 upload_folder = []
@@ -555,7 +558,8 @@ class Bot:
                             message=new_message,
                             delete=delete,
                             save_directory=save_directory,
-                            recursion=True
+                            recursion=True,
+                            valid_link_cache=valid_link_cache
                         )
                     )
                 sem = asyncio.Semaphore(self.application.max_upload_task)

@@ -183,9 +183,17 @@ class TelegramRestrictedMediaDownloader(Bot):
             message: pyrogram.types.Message,
             delete: bool = False,
             save_directory: str = None,
-            recursion: bool = False
+            recursion: bool = False,
+            valid_link_cache: dict = None
     ):
-        link_meta: Union[dict, None] = await super().get_upload_link_from_bot(client, message)
+        link_meta: Union[dict, None] = await super().get_upload_link_from_bot(
+            client=client,
+            message=message,
+            delete=delete,
+            save_directory=save_directory,
+            recursion=recursion,
+            valid_link_cache=valid_link_cache
+        )
         if link_meta is None:
             return None
         target_link: str = link_meta.get('target_link')
