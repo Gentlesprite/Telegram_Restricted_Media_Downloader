@@ -10,6 +10,7 @@ import inspect
 
 from functools import partial
 from typing import (
+    List,
     Dict,
     Union,
     Callable
@@ -19,7 +20,9 @@ import pyrogram
 from pyrogram import raw, utils
 from pyrogram.errors.exceptions import (
     FilePartMissing,
-    ChatAdminRequired
+    ChatAdminRequired,
+    PhotoInvalidDimensions,
+    PhotoSaveFileInvalid
 )
 from pyrogram.errors.exceptions.bad_request_400 import ChannelPrivate as ChannelPrivate_400
 from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate as ChannelPrivate_406
@@ -155,25 +158,42 @@ class TelegramUploader:
         mime_type = self.client.guess_mime_type(file_path) or get_mime_from_extension(file_path)
         file_name = split_path(file_path).get('file_name', 'file')
 
-        if file_path.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')) and file_size < 10 * 1024 * 1024:
-            media = raw.types.InputMediaUploadedPhoto(
-                file=file,
-                spoiler=False
-            )
-            media = await self.client.invoke(
-                raw.functions.messages.UploadMedia(
-                    peer=await self.client.resolve_peer(chat_id),
-                    media=media
+        if file_path.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+            try:
+                media = raw.types.InputMediaUploadedPhoto(
+                    file=file,
+                    spoiler=False
                 )
-            )
-            media = raw.types.InputMediaPhoto(
-                id=raw.types.InputPhoto(
-                    id=media.photo.id,
-                    access_hash=media.photo.access_hash,
-                    file_reference=media.photo.file_reference
-                ),
-                spoiler=False
-            )
+                media = await self.client.invoke(
+                    raw.functions.messages.UploadMedia(
+                        peer=await self.client.resolve_peer(chat_id),
+                        media=media
+                    )
+                )
+                media = raw.types.InputMediaPhoto(
+                    id=raw.types.InputPhoto(
+                        id=media.photo.id,
+                        access_hash=media.photo.access_hash,
+                        file_reference=media.photo.file_reference
+                    ),
+                    spoiler=False
+                )
+            except (PhotoInvalidDimensions, PhotoSaveFileInvalid) as e:
+                obj: str = ''
+                if isinstance(e, PhotoInvalidDimensions):
+                    obj: str = '尺寸'
+                elif isinstance(e, PhotoSaveFileInvalid):
+                    obj: str = '大小'
+                p = f'[图片]:"{file_path}"因来自Telegram的{obj}限制,回退为文档格式进行上传,{_t(KeyWord.REASON)}:"{e}"'
+                log.info(p)
+                console.log(p, style='#FF4689')
+                attributes = [raw.types.DocumentAttributeFilename(file_name=file_name)]
+                media = await self.get_input_media_document(
+                    chat_id=chat_id,
+                    file=file,
+                    attributes=attributes,
+                    mime_type=mime_type
+                )
         else:
             attributes = [raw.types.DocumentAttributeFilename(file_name=file_name)]
             if file_path.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
@@ -187,28 +207,14 @@ class TelegramUploader:
                     ))
                     log.info(f'视频"{file_path}"将以原本格式进行上传。')
                 else:
-                    p = f'获取视频元数据失败,视频"{file_path}"将以文档格式进行上传。'
-                    console.log(p)
+                    p = f'[视频]:"{file_path}"获取视频元数据失败,回退为文档格式进行上传。'
                     log.info(p)
-            media = raw.types.InputMediaUploadedDocument(
-                mime_type=mime_type,
+                    console.log(p, style='#FF4689')
+            media = await self.get_input_media_document(
+                chat_id=chat_id,
                 file=file,
                 attributes=attributes,
-                force_file=False,  # 不要强制作为文件发送。
-                thumb=None  # 缩略图。
-            )
-            media = await self.client.invoke(
-                raw.functions.messages.UploadMedia(
-                    peer=await self.client.resolve_peer(chat_id),
-                    media=media
-                )
-            )
-            media = raw.types.InputMediaDocument(
-                id=raw.types.InputDocument(
-                    id=media.document.id,
-                    access_hash=media.document.access_hash,
-                    file_reference=media.document.file_reference
-                )
+                mime_type=mime_type
             )
         self.upload_queue.put_nowait((media, upload_task))
 
@@ -416,6 +422,34 @@ class TelegramUploader:
                 return meta
         except Exception as e:
             log.error(f'获取视频元数据失败,{_t(KeyWord.REASON)}:"{e}"')
+
+    async def get_input_media_document(
+            self,
+            chat_id: Union[int, str],
+            file: Union[raw.types.InputFile, raw.types.InputFileBig],
+            attributes: List[raw.types.DocumentAttributeFilename],
+            mime_type: str,
+    ) -> raw.types.InputMediaDocument:
+        media = raw.types.InputMediaUploadedDocument(
+            mime_type=mime_type,
+            file=file,
+            attributes=attributes,
+            force_file=False,
+            thumb=None
+        )
+        media = await self.client.invoke(
+            raw.functions.messages.UploadMedia(
+                peer=await self.client.resolve_peer(chat_id),
+                media=media
+            )
+        )
+        return raw.types.InputMediaDocument(
+            id=raw.types.InputDocument(
+                id=media.document.id,
+                access_hash=media.document.access_hash,
+                file_reference=media.document.file_reference
+            )
+        )
 
     async def create_upload_task(
             self,
