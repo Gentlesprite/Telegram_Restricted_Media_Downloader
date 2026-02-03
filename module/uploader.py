@@ -155,7 +155,7 @@ class TelegramUploader:
         mime_type = self.client.guess_mime_type(file_path) or get_mime_from_extension(file_path)
         file_name = split_path(file_path).get('file_name', 'file')
 
-        if file_path.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+        if file_path.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')) and file_size < 10 * 1024 * 1024:
             media = raw.types.InputMediaUploadedPhoto(
                 file=file,
                 spoiler=False
