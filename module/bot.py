@@ -569,6 +569,7 @@ class Bot:
                         text=f'📤📤📤上传任务已创建,请耐心等待📤📤📤\n`{file_path}`',
                         link_preview_options=LINK_PREVIEW_OPTIONS
                     )
+                    await asyncio.gather(*upload_folder)
                 else:
                     await client.send_message(
                         chat_id=message.from_user.id,
@@ -576,8 +577,6 @@ class Bot:
                         text=f'⚠️⚠️⚠️文件夹为空⚠️⚠️⚠️\n`{file_path}`',
                         link_preview_options=LINK_PREVIEW_OPTIONS
                     )
-                    return None
-                await asyncio.gather(*upload_folder)
                 return None
             if not os.path.isfile(file_path):
                 log.error(f'上传出错,{_t(KeyWord.REASON)}:"{file_path}"不存在。')
