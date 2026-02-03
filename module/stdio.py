@@ -268,6 +268,7 @@ class StatisticalTable:
             return False
         count_table_title = '媒体上传统计'
         count_table_header: tuple = ('状态', '数量')
+        pending_tasks = len([t for t in tasks if t.status == UploadStatus.PENDING])
         uploading_tasks = len([t for t in tasks if t.status == UploadStatus.UPLOADING])
         success_tasks = len([t for t in tasks if t.status == UploadStatus.SUCCESS])
         failure_tasks = len([t for t in tasks if t.status == UploadStatus.FAILURE])
@@ -276,6 +277,7 @@ class StatisticalTable:
         total_tasks = len(tasks)
         total_size = sum(task.file_size for task in tasks)
         count_table_data = [
+            [_t(UploadStatus.PENDING), pending_tasks],
             [_t(UploadStatus.UPLOADING), uploading_tasks],
             [_t(UploadStatus.SUCCESS), success_tasks],
             [_t(UploadStatus.FAILURE), failure_tasks],

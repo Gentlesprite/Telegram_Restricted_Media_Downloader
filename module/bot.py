@@ -577,15 +577,7 @@ class Bot:
                         link_preview_options=LINK_PREVIEW_OPTIONS
                     )
                     return None
-                sem = asyncio.Semaphore(self.application.max_upload_task)
-
-                async def limited(coro):
-                    async with sem:
-                        return await coro
-
-                limited_tasks = [limited(coro) for coro in upload_folder]
-                for future in asyncio.as_completed(limited_tasks):
-                    await future
+                await asyncio.gather(*upload_folder)
                 return None
             if not os.path.isfile(file_path):
                 log.error(f'上传出错,{_t(KeyWord.REASON)}:"{file_path}"不存在。')

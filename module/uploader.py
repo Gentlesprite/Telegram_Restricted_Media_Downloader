@@ -495,9 +495,6 @@ class TelegramUploader:
         retry = 0
         while retry < self.max_upload_retries:
             try:
-                if retry != 0 or upload_task.file_part:
-                    console.log(f'{_t(KeyWord.RESUME)}:"{file_path}"。')
-                upload_task.status = UploadStatus.UPLOADING
                 await self.__add_task(
                     upload_task=upload_task
                 )
@@ -537,6 +534,8 @@ class TelegramUploader:
         while self.current_task_num >= self.max_upload_task:  # v1.0.7 增加下载任务数限制。
             await self.event.wait()
             self.event.clear()
+        upload_task.status = UploadStatus.UPLOADING
+        console.log(f'{_t(KeyWord.UPLOAD_TASK)}{_t(KeyWord.RESUME)}:"{file_path}"。') if upload_task.file_part else None
         format_file_size: str = MetaData.suitable_units_display(file_size)
         task_id = self.pb.progress.add_task(
             description='📤',
@@ -586,11 +585,15 @@ class TelegramUploader:
             log.info(e)
             return
         file_path: str = upload_task.file_path
-        with_delete: bool = upload_task.with_delete
         self.current_task_num -= 1
         self.pb.progress.remove_task(task_id=task_id)
+        if upload_task.file_size < 10 * 1024 * 1024:
+            if not safe_delete(os.path.join(UploadTask.DIRECTORY_NAME, f'{upload_task.sha256}.json')):
+                log.warning(f'无法删除"{os.path.basename(file_path)}"的上传缓存管理文件。')
+            else:
+                log.info(f'成功删除"{os.path.basename(file_path)}"的上传缓存管理文件。')
         self.event.set()
-        safe_delete(file_path) if with_delete else None
+        safe_delete(file_path) if upload_task.with_delete else None
         upload_task.status = UploadStatus.SUCCESS
         MetaData.print_current_task_num(
             prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),

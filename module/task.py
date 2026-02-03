@@ -163,6 +163,7 @@ class UploadTask:
         self.__media_group: asyncio.Task = media_group
         self.message_id: Optional[int] = message_id
         self.send_as_media_group: bool = send_as_media_group
+        self.sha256: str = calc_sha256(file_path=self.file_path)
         self.prompt: str = ''
 
     def __setattr__(self, name, value):
@@ -214,7 +215,7 @@ class UploadTask:
                         if value:
                             self.upload_manager_path: str = os.path.join(
                                 UploadTask.DIRECTORY_NAME,
-                                f'{calc_sha256(file_path=self.file_path)}.json'
+                                f'{self.sha256}.json'
                             )
                         os.makedirs(os.path.dirname(self.upload_manager_path), exist_ok=True)
                         self.load_json()
