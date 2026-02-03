@@ -231,6 +231,7 @@ class Bot:
                 text='⚠️⚠️⚠️请提供下载链接⚠️⚠️⚠️语法:\n`/download_chat https://t.me/x/x`',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
+            return None
         command = text.split()
         if len(command) != 2:
             await self.help(client, message)
