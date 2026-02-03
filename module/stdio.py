@@ -266,7 +266,7 @@ class StatisticalTable:
         # 检查数据有效性。
         if len(meta_table_data) < 1:
             return False
-        count_table_title = '上传任务计数统计'
+        count_table_title = '媒体下载统计'
         count_table_header: tuple = ('状态', '数量')
         uploading_tasks = len([t for t in tasks if t.status == UploadStatus.UPLOADING])
         success_tasks = len([t for t in tasks if t.status == UploadStatus.SUCCESS])
