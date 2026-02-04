@@ -38,10 +38,11 @@
 
 *本项目按“原样”提供，不附带任何明示或暗示的保证。*
 
-|      作者      |     [Gentlesprite](https://github.com/Gentlesprite)     |
-| :------------: | :-----------------------------------------------------: |
-|  B站视频教程   | [点击观看](https://www.bilibili.com/video/BV1nCp8evEwv) |
-| Telegram交流群 |       [点击加入](https://t.me/+6KKA-buFaixmNTE1)        |
+|      作者      |       [Gentlesprite](https://github.com/Gentlesprite)        |
+| :------------: | :----------------------------------------------------------: |
+|  B站视频教程   |   [点击观看](https://www.bilibili.com/video/BV1nCp8evEwv)    |
+| Telegram交流群 |          [点击加入](https://t.me/+6KKA-buFaixmNTE1)          |
+|  **支持作者**  | [点击跳转](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/tree/main?tab=readme-ov-file#70%E6%94%AF%E6%8C%81%E4%BD%9C%E8%80%85) |
 
 # 1.0.下载地址:
 
