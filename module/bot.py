@@ -369,7 +369,7 @@ class Bot:
         text = (
             f'`\n💎 {SOFTWARE_FULL_NAME} v{__version__} 💎\n'
             f'©️ {__copyright__.replace(" <https://github.com/Gentlesprite>", ".")}\n'
-            f'📖 Licensed under the terms of the {__license__}.`\n'
+            f'📖 Licensed under the terms of the {__license__}.`\n\n'
             f'🎮️ 可用命令:\n'
             f'🛎️ {BotCommandText.with_description(BotCommandText.HELP)}\n'
             f'📁 {BotCommandText.with_description(BotCommandText.DOWNLOAD)}\n'
@@ -381,8 +381,7 @@ class Bot:
             f'🔍 {BotCommandText.with_description(BotCommandText.LISTEN_INFO)}\n'
             f'📤 {BotCommandText.with_description(BotCommandText.UPLOAD)}\n'
             f'🌳 {BotCommandText.with_description(BotCommandText.UPLOAD_R)}\n'
-            f'💬 {BotCommandText.with_description(BotCommandText.DOWNLOAD_CHAT)}\n'
-            f'\n'
+            f'💬 {BotCommandText.with_description(BotCommandText.DOWNLOAD_CHAT)}\n\n'
             f'✨ 其他功能:\n'
             f'📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`类型的消息给我,即可自动下载。\n'
         )
