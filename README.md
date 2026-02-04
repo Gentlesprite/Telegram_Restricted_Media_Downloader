@@ -901,50 +901,16 @@ _**设置命令行运行参数**需先在**软件目录**打开**终端**，或*
 
 | 短参数 |   长参数    |            解释            |
 | :----: | :---------: | :------------------------: |
-|  `-v`  | `--version` |        展示版本信息        |
 |  `-h`  |  `--help`   |          展示帮助          |
+|  `-v`  | `--version` |        展示版本信息        |
+|  `-q`  |  `--quiet`  | 跳过重新配置文件的确认提示 |
 |  `-c`  | `--config`  |   设置用户配置文件的路径   |
 |  `-s`  | `--session` |     设置会话文件的路径     |
 |  `-t`  |  `--temp`   |     设置运行缓存的路径     |
-|  `-q`  |  `--quiet`  | 跳过重新配置文件的确认提示 |
 
 _**长参数与短参数最终结果一致。**_
 
-1. `-v`、`--version`参数用法：
-
-   该参数用于展示版本信息。
-
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
-
-     ```bash
-     TRMD.exe -v
-     ```
-
-     ```bash
-     TRMD.exe --version
-     ```
-
-   - 对于Windows用户:
-
-     ```bash
-     TRMD.exe -v
-     ```
-
-     ```bash
-     TRMD.exe --version
-     ```
-
-   - 对于Linux用户:
-
-     ```bash
-     ./TRMD -v
-     ```
-
-     ```bash
-     ./TRMD --version
-     ```
-
-2. `-h`、`--help`参数用法：
+1. `-h`、`--help`参数用法：
 
    该参数用于展示帮助。
 
@@ -978,7 +944,79 @@ _**长参数与短参数最终结果一致。**_
      ./TRMD --help
      ```
 
-3. `-c`、`--config`参数用法：
+2. `-v`、`--version`参数用法：
+
+   该参数用于展示版本信息。
+
+   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+
+     ```bash
+     TRMD.exe -v
+     ```
+
+     ```bash
+     TRMD.exe --version
+     ```
+
+   - 对于Windows用户:
+
+     ```bash
+     TRMD.exe -v
+     ```
+
+     ```bash
+     TRMD.exe --version
+     ```
+
+   - 对于Linux用户:
+
+     ```bash
+     ./TRMD -v
+     ```
+
+     ```bash
+     ./TRMD --version
+     ```
+
+3. `-q`、`--quiet`参数用法：
+   
+    | 使用须知                                         |
+    | ------------------------------------------------ |
+    | _1.该参数用于跳过重新配置文件的确认提示。_       |
+    | _2.用户配置文件缺少必要参数时，指定该参数无效。_ |
+    | _3.该参数为一次性设置，不记忆。_                 |
+
+   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+   
+     ```bash
+     python3 main.py -q
+     ```
+     
+     ```bash
+     python3 main.py --quiet
+     ```
+     
+   - 对于Windows用户:
+   
+     ```bash
+     TRMD.exe -q
+     ```
+     
+     ```bash
+     TRMD.exe --quiet
+     ```
+     
+   - 对于Linux用户:
+   
+     ```bash
+     ./TRMD -q
+     ```
+     
+     ```bash
+     ./TRMD --quiet
+     ```
+
+4. `-c`、`--config`参数用法：
 
    | 使用须知                                                     |
    | ------------------------------------------------------------ |
@@ -1024,7 +1062,7 @@ _**长参数与短参数最终结果一致。**_
       ./TRMD --config /home/username/files/example.yaml
       ```
 
-4. `-s`、`--session`参数用法：
+5. `-s`、`--session`参数用法：
 
    > ⚠️ 注意：  
    > 自版本`≥v1.8.5`起：  
@@ -1074,7 +1112,7 @@ _**长参数与短参数最终结果一致。**_
      ./TRMD --session /home/username/files/session
      ```
 
-5. `-t`、`--temp`参数用法：
+6. `-t`、`--temp`参数用法：
 
     > ⚠️ 注意：  
     > 自版本`≥v1.8.5`起：  
@@ -1122,44 +1160,6 @@ _**长参数与短参数最终结果一致。**_
    
      ```bash
      ./TRMD --temp /home/username/files/temp
-     ```
-
-6. `-q`、`--quiet`参数用法：
-   
-    | 使用须知                                         |
-    | ------------------------------------------------ |
-    | _1.该参数用于跳过重新配置文件的确认提示。_       |
-    | _2.用户配置文件缺少必要参数时，指定该参数无效。_ |
-    | _3.该参数为一次性设置，不记忆。_                 |
-
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
-   
-     ```bash
-     python3 main.py -q
-     ```
-     
-     ```bash
-     python3 main.py --quiet
-     ```
-     
-   - 对于Windows用户:
-   
-     ```bash
-     TRMD.exe -q
-     ```
-     
-     ```bash
-     TRMD.exe --quiet
-     ```
-     
-   - 对于Linux用户:
-   
-     ```bash
-     ./TRMD -q
-     ```
-     
-     ```bash
-     ./TRMD --quiet
      ```
 
    </details>

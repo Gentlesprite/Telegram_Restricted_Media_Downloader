@@ -22,6 +22,12 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.add_argument(
+            '-h', '--help',
+            action='help',
+            default=SUPPRESS,
+            help='展示帮助'
+        )
+        self.add_argument(
             '-v', '--version',
             action='version',
             version=f'TRMD {__version__} (pyrogram {pyrogram_version})',
@@ -29,10 +35,10 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             help='展示版本信息'
         )
         self.add_argument(
-            '-h', '--help',
-            action='help',
-            default=SUPPRESS,
-            help='展示帮助'
+            '-q', '--quiet',
+            action='store_true',
+            default=False,
+            help='跳过重新配置文件的确认提示'
         )
         self.add_argument(
             '-c', '--config',
@@ -54,12 +60,6 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             required=False,
             default='',
             help='设置运行缓存的路径'
-        )
-        self.add_argument(
-            '-q', '--quiet',
-            action='store_true',
-            default=False,
-            help='跳过重新配置文件的确认提示'
         )
 
     def print_help(self, file=None):
