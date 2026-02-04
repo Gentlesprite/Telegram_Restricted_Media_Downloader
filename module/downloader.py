@@ -1437,6 +1437,40 @@ class TelegramRestrictedMediaDownloader(Bot):
         except Exception as e:
             log.exception(f'监听转发出现错误,{_t(KeyWord.REASON)}:"{e}"')
 
+    async def handle_forwarded_media(
+            self,
+            user_client: pyrogram.Client,
+            user_message: pyrogram.types.Message
+    ):
+        try:
+            task = await self.create_download_task(
+                message_ids=user_message,
+                diy_download_type=[_ for _ in DownloadType()]
+            )
+            if task.get('status') == DownloadStatus.DOWNLOADING:
+                await self.bot.send_message(
+                    chat_id=user_message.from_user.id,
+                    reply_parameters=ReplyParameters(message_id=user_message.id),
+                    text='✅已创建下载任务。',
+                    link_preview_options=LINK_PREVIEW_OPTIONS
+                )
+            else:
+                error_msg = task.get('e_code', {}).get('error_msg', '未知错误。')
+                await self.bot.send_message(
+                    chat_id=user_message.from_user.id,
+                    reply_parameters=ReplyParameters(message_id=user_message.id),
+                    text=f'❌❌❌创建下载任务失败❌❌❌\n{error_msg}',
+                    link_preview_options=LINK_PREVIEW_OPTIONS
+                )
+        except Exception as e:
+            log.exception(f'获取原始消息失败,{_t(KeyWord.REASON)}:"{e}"')
+            await self.bot.send_message(
+                chat_id=user_message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=user_message.id),
+                text=f'❌❌❌获取原始消息失败❌❌❌\n{_t(KeyWord.REASON)}:{e}',
+                link_preview_options=LINK_PREVIEW_OPTIONS
+            )
+
     async def resume_download(
             self,
             message: Union[pyrogram.types.Message, str],
