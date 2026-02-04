@@ -653,6 +653,41 @@ class TelegramRestrictedMediaDownloader(Bot):
             def _filter_prompt():
                 return f'💬下载频道:`{chat_id}`\n⏮️当前选择的起始日期为:{_get_update_time()[0]}\n⏭️当前选择的结束日期为:{_get_update_time()[1]}\n📝当前选择的下载类型为:{_get_format_dtype()}'
 
+            def _download_chat_call(_callback_query, _future):
+                try:
+                    _links = _future.result()
+                    if _links:
+                        asyncio.create_task(_callback_query.message.edit_text(
+                            text=f'{_callback_query.message.text}\n'
+                                 '🎉频道下载任务已完成。',
+                            reply_markup=kb.single_button(
+                                text=BotButton.TASK_DONE,
+                                callback_data=BotCallbackText.NULL
+                            )
+                        ))
+                    else:
+                        asyncio.create_task(_callback_query.message.edit_text(
+                            text=f'{_callback_query.message.text}\n'
+                                 '❎没有找到任何匹配的消息。',
+                            reply_markup=kb.single_button(
+                                text=BotButton.TASK_CANCEL,
+                                callback_data=BotCallbackText.NULL
+                            )
+                        ))
+                except Exception as _e:
+                    log.error(
+                        f'{_t(KeyWord.CHANNEL)}:"{chat_id}",无法进行下载,{_t(KeyWord.REASON)}:"{_e}"',
+                        exc_info=True
+                    )
+                    asyncio.create_task(_callback_query.message.edit_text(
+                        text=f'{_callback_query.message.text}`\n'
+                             f'⚠️由于"{_e}"无法执行频道下载任务。',
+                        reply_markup=kb.single_button(
+                            text=BotButton.TASK_CANCEL,
+                            callback_data=BotCallbackText.NULL
+                        )
+                    ))
+
             async def _verification_time(_start_time, _end_time) -> bool:
                 if isinstance(_start_time, datetime.datetime) and isinstance(_end_time, datetime.datetime):
                     if _start_time > _end_time:
@@ -673,7 +708,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 BotCallbackText.DOWNLOAD_CHAT_ID = 'download_chat_id'
                 if callback_data == chat_id:
                     await callback_query.message.edit_text(
-                        text=f'下载频道:`{chat_id}`\n{callback_query.message.text}\n'
+                        text=f'下载频道:`{chat_id}`\n'
+                             f'{callback_query.message.text}\n'
                              f'⏳需要检索该频道所有匹配的消息,请耐心等待。\n'
                              f'💡请忽略终端中的请求频繁提示`messages.GetHistory`,因为这并不影响下载。',
                         reply_markup=kb.single_button(
@@ -681,9 +717,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                             callback_data=BotCallbackText.NULL
                         )
                     )
-                    await self.download_chat(
-                        chat_id=chat_id
+                    task = asyncio.create_task(self.download_chat(chat_id=chat_id))
+                    task.add_done_callback(
+                        partial(
+                            _download_chat_call,
+                            callback_query
+                        )
                     )
+                    await task
                     _remove_chat_id(chat_id)
                 elif callback_data == BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL:
                     _remove_chat_id(chat_id)
@@ -1756,7 +1797,7 @@ class TelegramRestrictedMediaDownloader(Bot):
     async def download_chat(
             self,
             chat_id: str
-    ):
+    ) -> Union[list, None]:
         _filter = Filter()
         download_chat_filter: Union[dict, None] = None
         for i in self.download_chat_filter:
@@ -1784,6 +1825,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 single_link=True,
                 diy_download_type=[_ for _ in DownloadType()]
             )
+        return links
 
     @DownloadTask.on_create_task
     async def create_download_task(

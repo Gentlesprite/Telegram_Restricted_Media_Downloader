@@ -1386,6 +1386,7 @@ class BotButton:
     DOWNLOAD_UPLOAD: str = '↕️下载后上传'
     TASK_ASSIGN: str = '✅任务已分配'
     TASK_CANCEL: str = '🗑️任务已取消'
+    TASK_DONE: str = '🌟任务已完成'
     EXECUTE_TASK: str = '▶️执行任务'
     CANCEL_TASK: str = '⏹️取消任务'
     OK: str = '✅确定'
