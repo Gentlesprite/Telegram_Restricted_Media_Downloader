@@ -656,16 +656,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             def _download_chat_call(_callback_query, _future):
                 try:
                     _links = _future.result()
-                    if _links:
-                        asyncio.create_task(_callback_query.message.edit_text(
-                            text=f'{_callback_query.message.text}\n'
-                                 '🎉频道下载任务已完成。',
-                            reply_markup=kb.single_button(
-                                text=BotButton.TASK_DONE,
-                                callback_data=BotCallbackText.NULL
-                            )
-                        ))
-                    else:
+                    if not _links:
                         asyncio.create_task(_callback_query.message.edit_text(
                             text=f'{_callback_query.message.text}\n'
                                  '❎没有找到任何匹配的消息。',
