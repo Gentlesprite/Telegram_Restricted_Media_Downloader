@@ -1442,34 +1442,26 @@ class TelegramRestrictedMediaDownloader(Bot):
             user_client: pyrogram.Client,
             user_message: pyrogram.types.Message
     ):
+        chat_id = user_message.from_user.id
+        message_id = user_message.id
+        last_message = await self.bot.send_message(
+            chat_id=chat_id,
+            text=f'🔄正在处理转发内容`{message_id}`...'
+        )
         try:
             task = await self.create_download_task(
                 message_ids=user_message,
-                diy_download_type=[_ for _ in DownloadType()]
+                diy_download_type=[_ for _ in DownloadType()],
+                single_link=True
             )
             if task.get('status') == DownloadStatus.DOWNLOADING:
-                await self.bot.send_message(
-                    chat_id=user_message.from_user.id,
-                    reply_parameters=ReplyParameters(message_id=user_message.id),
-                    text='✅已创建下载任务。',
-                    link_preview_options=LINK_PREVIEW_OPTIONS
-                )
+                await last_message.edit_text(text=f'✅已创建下载任务`{message_id}`。')
             else:
                 error_msg = task.get('e_code', {}).get('error_msg', '未知错误。')
-                await self.bot.send_message(
-                    chat_id=user_message.from_user.id,
-                    reply_parameters=ReplyParameters(message_id=user_message.id),
-                    text=f'❌❌❌创建下载任务失败❌❌❌\n{error_msg}',
-                    link_preview_options=LINK_PREVIEW_OPTIONS
-                )
+                await last_message.edit_text(text=f'❌❌❌无法创建下载任务`{message_id}`❌❌❌\n{error_msg}')
         except Exception as e:
-            log.exception(f'获取原始消息失败,{_t(KeyWord.REASON)}:"{e}"')
-            await self.bot.send_message(
-                chat_id=user_message.from_user.id,
-                reply_parameters=ReplyParameters(message_id=user_message.id),
-                text=f'❌❌❌获取原始消息失败❌❌❌\n{_t(KeyWord.REASON)}:{e}',
-                link_preview_options=LINK_PREVIEW_OPTIONS
-            )
+            log.error(f'获取原始消息失败,{_t(KeyWord.REASON)}:"{e}"')
+            await last_message.edit_text(text=f'❌❌❌无法创建下载任务`{message_id}`❌❌❌\n{e}')
 
     async def resume_download(
             self,
