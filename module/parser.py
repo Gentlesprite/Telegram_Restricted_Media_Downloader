@@ -55,6 +55,12 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             default='',
             help='设置运行缓存的路径'
         )
+        self.add_argument(
+            '-q', '--quiet',
+            action='store_true',
+            default=False,
+            help='跳过重新配置文件的确认提示'
+        )
 
     def print_help(self, file=None):
         console.print(

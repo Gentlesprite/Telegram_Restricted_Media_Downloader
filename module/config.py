@@ -367,7 +367,7 @@ class UserConfig(BaseConfig):
         # v1.1.0 更替api_id和api_hash位置,与telegram申请的api位置对应以免输错。
         try:
             if not self.modified and pre_load_config != UserConfig.TEMPLATE:
-                re_config: bool = gsp.get_is_re_config().get('is_re_config')
+                re_config: bool = False if PARSE_ARGS.quiet else gsp.get_is_re_config().get('is_re_config')
                 if re_config:
                     self.re_config = re_config
                     # 缓存原有的session_directory，防止重新配置时丢失。
