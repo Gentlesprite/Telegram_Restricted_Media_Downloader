@@ -1819,11 +1819,12 @@ class TelegramRestrictedMediaDownloader(Bot):
         ):
             if _filter.date_range(message, start_date, end_date) and _filter.dtype(message, download_type):
                 links.append(message.link if message.link else message)
+        diy_download_type = [_ for _ in DownloadType()]
         for link in links:
             await self.create_download_task(
                 message_ids=link,
                 single_link=True,
-                diy_download_type=[_ for _ in DownloadType()]
+                diy_download_type=diy_download_type
             )
         return links
 
