@@ -1905,7 +1905,6 @@ class TelegramRestrictedMediaDownloader(Bot):
         end_date = date_filter.get('end_date')
         download_type: dict = download_chat_filter.get('download_type')
         keyword_filter: dict = download_chat_filter.get('keyword', {})
-        active_keywords = [k for k, v in keyword_filter.items() if v]
         links: list = []
         async for message in self.app.client.get_chat_history(
                 chat_id=chat_id,
@@ -1913,7 +1912,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         ):
             if (_filter.date_range(message, start_date, end_date) and
                     _filter.dtype(message, download_type) and
-                    _filter.keyword_filter(message, active_keywords)):
+                    _filter.keyword_filter(message, keyword_filter)):
                 links.append(message.link if message.link else message)
         diy_download_type = [_ for _ in DownloadType()]
         for link in links:

@@ -104,9 +104,10 @@ class Bot:
             self.keyword_handler = MessageHandler(
                 partial(self.handle_keyword_input, chat_id, callback_query, callback_prompt),
                 filters=pyrogram.filters.user(self.root) & pyrogram.filters.text & (
-                    lambda client, m: isinstance(m,
-                                                 pyrogram.types.Message
-                                                 ) and m.text and m.text.strip() and not m.text.startswith(
+                    lambda client, m: isinstance(
+                        m,
+                        pyrogram.types.Message
+                    ) and m.text and m.text.strip() and not m.text.startswith(
                         '/') and not m.text.startswith('http')
                 )
             )
@@ -1765,16 +1766,6 @@ class KeyboardButton:
                 ],
                 [
                     InlineKeyboardButton(
-                        text=BotButton.EXECUTE_TASK,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID
-                    ),
-                    InlineKeyboardButton(
-                        text=BotButton.CANCEL_TASK,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
                         text=BotButton.CONFIRM_KEYWORDS,
                         callback_data=BotCallbackText.CONFIRM_KEYWORD
                     ),
@@ -1790,16 +1781,6 @@ class KeyboardButton:
                     InlineKeyboardButton(
                         text=BotButton.INPUT_KEYWORD,
                         callback_data=BotCallbackText.NULL
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        text=BotButton.EXECUTE_TASK,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID
-                    ),
-                    InlineKeyboardButton(
-                        text=BotButton.CANCEL_TASK,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
                     )
                 ],
                 [
