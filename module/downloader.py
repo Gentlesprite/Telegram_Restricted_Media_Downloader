@@ -629,7 +629,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     'set_time_',
                     'set_specific_time_',
                     'adjust_step_',
-                    'toggle_keyword_',  # 翻转关键词状态。
                     'drop_keyword_'  # 移除特定关键词。
             )  # 切换月份,选择日期。
         ):
@@ -654,13 +653,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _keywords = self.download_chat_filter[chat_id]['keyword']
                 if not _keywords:
                     return '未定义'
-
-                _p_f_k = []
-                for k, v in _keywords.items():
-                    _s = '开' if v else '关'
-                    _p_f_k.append(f'{k}[{_s}]')
-
-                return ','.join(_p_f_k)
+                return ','.join(_keywords.keys())
 
             def _remove_chat_id(_chat_id):
                 if _chat_id in self.download_chat_filter:
@@ -672,7 +665,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'⏮️当前选择的起始日期为:{_get_update_time()[0]}\n'
                         f'⏭️当前选择的结束日期为:{_get_update_time()[1]}\n'
                         f'📝当前选择的下载类型为:{_get_format_dtype()}\n'
-                        f'🔑当前关键词过滤:{_get_format_keywords()}')
+                        f'🔑当前匹配的关键词为:{_get_format_keywords()}')
 
             def _download_chat_call(_callback_query, _future):
                 try:
@@ -721,8 +714,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 self.adding_keywords.clear()
                 if callback_data == chat_id:
                     await callback_query.message.edit_text(
-                        text=f'下载频道:`{chat_id}`\n'
-                             f'{callback_query.message.text}\n'
+                        text=f'{callback_query.message.text}\n'
                              f'⏳需要检索该频道所有匹配的消息,请耐心等待。\n'
                              f'💡请忽略终端中的请求频繁提示`messages.GetHistory`,因为这并不影响下载。',
                         reply_markup=kb.single_button(
@@ -831,18 +823,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                 )
                 log.info(f'日期设置,起始日期:{_get_update_time()[0]},结束日期:{_get_update_time()[1]}。')
-            elif callback_data.startswith(('toggle_keyword_', 'drop_keyword_')):
+            elif callback_data.startswith('drop_keyword_'):
                 parts = callback_data.split('_')
                 keyword = parts[-1]
-                if callback_data.startswith('toggle_keyword_'):  # 切换关键词状态。
-                    status = self.download_chat_filter.get(chat_id, {}).get('keyword', {}).get(keyword)
-                    self.download_chat_filter[chat_id]['keyword'][keyword] = not status
-                elif callback_data.startswith('drop_keyword_'):
-                    _keyword = self.download_chat_filter.get(chat_id, {}).get('keyword', {})
-                    _keyword.pop(keyword)
-                    self.adding_keywords.remove(keyword)
-                else:
-                    return None
+                _keyword = self.download_chat_filter.get(chat_id, {}).get('keyword', {})
+                _keyword.pop(keyword)
+                self.adding_keywords.remove(keyword)
                 await callback_query.message.edit_text(
                     text=_filter_prompt(),
                     reply_markup=KeyboardButton.keyword_filter_button(self.adding_keywords)
@@ -1904,6 +1890,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         end_date = date_filter.get('end_date')
         download_type: dict = download_chat_filter.get('download_type')
         keyword_filter: dict = download_chat_filter.get('keyword', {})
+        active_keywords = [k for k, v in keyword_filter.items() if v]
         links: list = []
         async for message in self.app.client.get_chat_history(
                 chat_id=chat_id,
@@ -1911,7 +1898,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         ):
             if (_filter.date_range(message, start_date, end_date) and
                     _filter.dtype(message, download_type) and
-                    _filter.keyword_filter(message, keyword_filter)):
+                    _filter.keyword_filter(message, active_keywords)):
                 links.append(message.link if message.link else message)
         diy_download_type = [_ for _ in DownloadType()]
         for link in links:

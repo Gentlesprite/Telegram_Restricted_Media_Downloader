@@ -158,10 +158,6 @@ class Bot:
                                 InlineKeyboardButton(
                                     BotButton.DROP,
                                     callback_data=f'{BotCallbackText.DROP_KEYWORD}_{keyword}'
-                                ),
-                                InlineKeyboardButton(
-                                    BotButton.TOGGLE,
-                                    callback_data=f'{BotCallbackText.TOGGLE_KEYWORD}_{keyword}'
                                 )
                             ]
                         ]
@@ -384,7 +380,7 @@ class Bot:
                  f'⏮️当前选择的起始日期为:未定义\n'
                  f'⏭️当前选择的结束日期为:未定义\n'
                  f'📝当前选择的下载类型为:{format_dtype}\n'
-                 f'🔑当前关键词过滤:未设置',
+                 f'🔑当前关键词过滤:未定义',
             reply_markup=KeyboardButton.download_chat_filter_button(),
             link_preview_options=LINK_PREVIEW_OPTIONS
         )
