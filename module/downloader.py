@@ -629,7 +629,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     'set_time_',
                     'set_specific_time_',
                     'adjust_step_',
-                    'drop_keyword_'  # 移除特定关键词。
+                    'drop_keyword_',  # 移除特定关键词。
+                    'ignore_keyword'  # 忽略特定关键词。
             )  # 切换月份,选择日期。
         ):
             chat_id = BotCallbackText.DOWNLOAD_CHAT_ID
@@ -823,12 +824,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                 )
                 log.info(f'日期设置,起始日期:{_get_update_time()[0]},结束日期:{_get_update_time()[1]}。')
-            elif callback_data.startswith('drop_keyword_'):
-                parts = callback_data.split('_')
-                keyword = parts[-1]
-                _keyword = self.download_chat_filter.get(chat_id, {}).get('keyword', {})
-                _keyword.pop(keyword)
-                self.adding_keywords.remove(keyword)
+            elif callback_data.startswith(('drop_keyword_', 'ignore_keyword')):
+                if callback_data.startswith('drop_keyword_'):
+                    parts = callback_data.split('_')
+                    keyword = parts[-1]
+                    _keyword = self.download_chat_filter.get(chat_id, {}).get('keyword', {})
+                    _keyword.pop(keyword)
+                    self.adding_keywords.remove(keyword)
                 await callback_query.message.edit_text(
                     text=_filter_prompt(),
                     reply_markup=KeyboardButton.keyword_filter_button(self.adding_keywords)

@@ -1358,6 +1358,7 @@ class BotCallbackText:
     FILTER_START_DATE: str = 'filter_start_date'
     FILTER_END_DATE: str = 'filter_end_date'
     DROP_KEYWORD: str = 'drop_keyword'
+    IGNORE_KEYWORD: str = 'ignore_keyword'
     CONFIRM_KEYWORD: str = 'confirm_keyword'
     CANCEL_KEYWORD_INPUT: str = 'cancel_keyword_input'
 
@@ -1395,6 +1396,7 @@ class BotButton:
     OK: str = '✅确定'
     CANCEL: str = '❌取消'
     DROP: str = '🗑️移除'
+    IGNORE: str = '👁️‍🗨️忽略'
     RETURN: str = '🔙返回'
     CONFIRM_AND_RETURN: str = '↩️确定并返回'
     LOOKUP_LISTEN_INFO: str = '🔍查看监听信息'
@@ -1437,5 +1439,4 @@ class BotButton:
     INPUT_KEYWORD: str = '⌨️请向我发送关键词'
     DOWNLOAD_DTYPE_SETTING: str = '📝设置下载类型'
     KEYWORD_FILTER_SETTING: str = '🔑设置匹配关键词'
-    ADD_KEYWORD: str = '➕添加关键词'
     CONFIRM_KEYWORD: str = '✅确认关键词'

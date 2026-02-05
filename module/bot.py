@@ -144,7 +144,7 @@ class Bot:
         text: str = message.text.strip()
 
         if not text:
-            return
+            return None
 
         # 以空格分隔关键词。
         keywords = [kw.strip() for kw in text.split() if kw.strip()]
@@ -152,17 +152,22 @@ class Bot:
             if keyword in self.adding_keywords:
                 try:
                     await callback_query.message.edit_text(
-                        text=f'🚛{keyword}已被添加,选择处理方式后继续。',
+                        text=f'🚛`{keyword}`已被添加,选择处理方式后继续。',
                         reply_markup=InlineKeyboardMarkup([
                             [
                                 InlineKeyboardButton(
                                     BotButton.DROP,
                                     callback_data=f'{BotCallbackText.DROP_KEYWORD}_{keyword}'
+                                ),
+                                InlineKeyboardButton(
+                                    BotButton.IGNORE,
+                                    callback_data=f'{BotCallbackText.IGNORE_KEYWORD}_{keyword}'
                                 )
                             ]
                         ]
                         )
                     )
+                    return None
                 except MessageNotModified:
                     pass
             else:
