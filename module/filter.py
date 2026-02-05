@@ -37,3 +37,13 @@ class Filter:
         if True in table:
             return True
         return False
+
+    @staticmethod
+    def keyword_filter(
+            message: pyrogram.types.Message,
+            keywords: Optional[list]
+    ) -> bool:
+        if not keywords:
+            return True
+        text = getattr(message, 'text') or getattr(message, 'caption') or ''
+        return any(keyword.lower() in text.lower() for keyword in keywords)

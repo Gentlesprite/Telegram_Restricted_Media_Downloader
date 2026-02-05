@@ -1347,6 +1347,7 @@ class BotCallbackText:
     DOWNLOAD_CHAT_FILTER: str = 'download_chat_filter'
     DOWNLOAD_CHAT_DATE_FILTER: str = 'download_chat_date_filter'
     DOWNLOAD_CHAT_DTYPE_FILTER: str = 'download_chat_dtype_filter'
+    DOWNLOAD_CHAT_KEYWORD_FILTER: str = 'download_chat_keyword_filter'
     TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO: str = 'toggle_download_chat_video'
     TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO: str = 'toggle_download_chat_photo'
     TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO: str = 'toggle_download_chat_audio'
@@ -1356,6 +1357,10 @@ class BotCallbackText:
     CALENDAR_CONFIRM: str = 'calendar_confirm'
     FILTER_START_DATE: str = 'filter_start_date'
     FILTER_END_DATE: str = 'filter_end_date'
+    TOGGLE_KEYWORD: str = 'toggle_keyword'
+    DROP_KEYWORD: str = 'drop_keyword'
+    CONFIRM_KEYWORD: str = 'confirm_keyword'
+    CANCEL_KEYWORD_INPUT: str = 'cancel_keyword_input'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
@@ -1390,6 +1395,7 @@ class BotButton:
     CANCEL_TASK: str = '⏹️取消任务'
     OK: str = '✅确定'
     CANCEL: str = '❌取消'
+    DROP: str = '🗑️移除'
     RETURN: str = '🔙返回'
     CONFIRM_AND_RETURN: str = '↩️确定并返回'
     LOOKUP_LISTEN_INFO: str = '🔍查看监听信息'
@@ -1429,4 +1435,9 @@ class BotButton:
     DATE_RANGE_SETTING: str = '📅设置日期范围'
     SELECT_START_DATE: str = '⏮️选择起始日期'
     SELECT_END_DATE: str = '⏭️选择结束日期'
+    INPUT_KEYWORD: str = '⌨️请向我发送关键词'
     DOWNLOAD_DTYPE_SETTING: str = '📝下载类型设置'
+    KEYWORD_FILTER_SETTING: str = '🔑关键词过滤'
+    ADD_KEYWORD: str = '➕添加关键词'
+    CONFIRM_KEYWORDS: str = '✅确认关键词'
+    TOGGLE: str = '🔁翻转'

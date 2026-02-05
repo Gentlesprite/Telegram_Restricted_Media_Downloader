@@ -8,7 +8,8 @@ import copy
 import asyncio
 import datetime
 import calendar
-from typing import List, Dict, Union, Optional
+from functools import partial
+from typing import List, Dict, Union, Optional, Callable
 
 import pyrogram
 from pyrogram.types.messages_and_media import ReplyParameters
@@ -87,8 +88,40 @@ class Bot:
         self.listen_forward_chat: dict = {}
         self.handle_media_groups: dict = {}
         self.download_chat_filter: dict = {}
+        self.adding_keywords: list = []  # 用于跟踪正在添加的关键词列表。
+        self.keyword_handler: Union[MessageHandler, None] = None  # 关键词输入模式的handler。
+
+    def add_keyword_mode_handler(
+            self,
+            chat_id,
+            callback_query: CallbackQuery,
+            callback_prompt: Callable,
+            enable: bool,
+    ):
+        """添加或移除关键词输入模式的 handler"""
+        if enable:
+            # 先创建 handler 对象，然后添加
+            self.keyword_handler = MessageHandler(
+                partial(self.handle_keyword_input, chat_id, callback_query, callback_prompt),
+                filters=pyrogram.filters.user(self.root) & pyrogram.filters.text & (
+                    lambda client, m: isinstance(m,
+                                                 pyrogram.types.Message
+                                                 ) and m.text and m.text.strip() and not m.text.startswith(
+                        '/') and not m.text.startswith('http')
+                )
+            )
+            # 使用group=-1确保在process_error_message(group=0)之前处理。
+            self.bot.add_handler(self.keyword_handler, group=-1)
+            log.info(f'用户输入模式已打开,Handler:"{self.keyword_handler}"。')
+        else:
+            if self.keyword_handler:
+                self.bot.remove_handler(self.keyword_handler, group=-1)
+                log.info('用户输入模式已关闭,Handler已清空。')
+                self.keyword_handler = None
 
     async def process_error_message(self, client: pyrogram.Client, message: pyrogram.types.Message) -> None:
+        if self.keyword_handler:
+            return
         await self.help(client, message)
         await client.send_message(
             chat_id=message.from_user.id,
@@ -96,6 +129,49 @@ class Bot:
             text='⚠️⚠️⚠️未知命令⚠️⚠️⚠️\n请查看帮助后重试。',
             link_preview_options=LINK_PREVIEW_OPTIONS
         )
+
+    async def handle_keyword_input(
+            self,
+            chat_id: Union[str, int],
+            callback_query: CallbackQuery,
+            callback_prompt: Callable,
+            _client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ) -> None:
+        """处理用户输入的关键词。"""
+
+        text: str = message.text.strip()
+
+        if not text:
+            return
+
+        # 以空格分隔关键词。
+        keywords = [kw.strip() for kw in text.split() if kw.strip()]
+        for keyword in keywords:
+            if keyword in self.adding_keywords:
+                await callback_query.message.edit_text(
+                    text=f'🚛{keyword}已被添加,选择处理方式后继续。',
+                    reply_markup=InlineKeyboardMarkup([
+                        [
+                            InlineKeyboardButton(
+                                BotButton.DROP,
+                                callback_data=f'{BotCallbackText.DROP_KEYWORD}_{keyword}'
+                            ),
+                            InlineKeyboardButton(
+                                BotButton.TOGGLE,
+                                callback_data=f'{BotCallbackText.TOGGLE_KEYWORD}_{keyword}'
+                            )
+                        ]
+                    ]
+                    )
+                )
+            else:
+                self.download_chat_filter[chat_id]['keyword'][keyword] = True
+                self.adding_keywords.append(keyword)  # 添加到正在添加的关键词列表。
+                await callback_query.message.edit_text(
+                    text=callback_prompt(),
+                    reply_markup=KeyboardButton.keyword_filter_button(self.adding_keywords)
+                )
 
     @staticmethod
     async def check_download_range(
@@ -289,7 +365,8 @@ class Bot:
                     'audio': True,
                     'voice': True,
                     'animation': True
-                }
+                },
+            'keyword': {}
         }
         log.info(f'"{BotCallbackText.DOWNLOAD_CHAT_ID}"已添加至{self.download_chat_filter}。')
         format_dtype = ','.join([_t(_) for _ in DownloadType()])
@@ -299,7 +376,8 @@ class Bot:
             text=f'💬下载频道:`{chat_id}`\n'
                  f'⏮️当前选择的起始日期为:未定义\n'
                  f'⏭️当前选择的结束日期为:未定义\n'
-                 f'📝当前选择的下载类型为:{format_dtype}',
+                 f'📝当前选择的下载类型为:{format_dtype}\n'
+                 f'🔑当前关键词过滤:未设置',
             reply_markup=KeyboardButton.download_chat_filter_button(),
             link_preview_options=LINK_PREVIEW_OPTIONS
         )
@@ -1490,6 +1568,12 @@ class KeyboardButton:
                 ],
                 [
                     InlineKeyboardButton(
+                        text=BotButton.KEYWORD_FILTER_SETTING,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
                         text=BotButton.EXECUTE_TASK,
                         callback_data=BotCallbackText.DOWNLOAD_CHAT_ID
                     ),
@@ -1665,6 +1749,67 @@ class KeyboardButton:
         ]
 
         return InlineKeyboardMarkup(time_keyboard)
+
+    @staticmethod
+    def keyword_filter_button(
+            adding_keywords=Union[list, None]
+    ):
+        """关键词过滤设置按钮。"""
+        if adding_keywords:
+            keyword_buttons = [
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.INPUT_KEYWORD,
+                        callback_data=BotCallbackText.NULL
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.EXECUTE_TASK,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.CANCEL_TASK,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.CONFIRM_KEYWORDS,
+                        callback_data=BotCallbackText.CONFIRM_KEYWORD
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.CANCEL,
+                        callback_data=BotCallbackText.CANCEL_KEYWORD_INPUT
+                    )
+                ]
+            ]
+        else:
+            keyword_buttons = [
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.INPUT_KEYWORD,
+                        callback_data=BotCallbackText.NULL
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.EXECUTE_TASK,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.CANCEL_TASK,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.RETURN,
+                        callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
+                    )
+                ]
+            ]
+        return InlineKeyboardMarkup(keyword_buttons)
 
 
 class CallbackData:

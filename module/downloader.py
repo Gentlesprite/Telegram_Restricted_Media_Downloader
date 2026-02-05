@@ -214,7 +214,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             last_msg = await client.send_message(
                 chat_id=chat_id,
-                text=f'🙈🙈🙈请稍后🙈🙈🙈{load_name}加载中. . .',
+                text=f'🚛请稍后{load_name}加载中. . .',
                 link_preview_options=LINK_PREVIEW_OPTIONS
             )
             tasks = [client.send_photo(
@@ -225,7 +225,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 client.edit_message_text(
                     chat_id=chat_id,
                     message_id=last_msg.id,
-                    text=f'🐵🐵🐵{load_name}加载成功!🐵🐵🐵'
+                    text=f'✅{load_name}加载成功!'
                 )]
             await asyncio.gather(*tasks)
         except Exception as e:
@@ -249,7 +249,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 super().start(client, message),
                 client.send_message(
                     chat_id=chat_id,
-                    text='😊😊😊欢迎使用😊😊😊您的支持是我持续更新的动力。',
+                    text='😊欢迎使用,您的支持是我持续更新的动力。',
                     link_preview_options=LINK_PREVIEW_OPTIONS)
             )
 
@@ -609,6 +609,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 BotCallbackText.DOWNLOAD_CHAT_FILTER,  # 主页面。
                 BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER,  # 下载日期范围设置页面。
                 BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER,  # 下载类型设置页面。
+                BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER,  # 关键词过滤设置页面。
                 BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO,
                 BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO,
                 BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO,
@@ -618,14 +619,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                 BotCallbackText.DOWNLOAD_CHAT_ID,  # 执行任务。
                 BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL,  # 取消任务。
                 BotCallbackText.FILTER_START_DATE,  # 设置下载起始日期。
-                BotCallbackText.FILTER_END_DATE  # 设置下载结束日期。
+                BotCallbackText.FILTER_END_DATE,  # 设置下载结束日期。
+                BotCallbackText.CONFIRM_KEYWORD,  # 确认设置关键词。
+                BotCallbackText.CANCEL_KEYWORD_INPUT  # 取消设置关键词。
         ) or callback_data.startswith(
             (
                     'time_inc_',
                     'time_dec_',
                     'set_time_',
                     'set_specific_time_',
-                    'adjust_step_'
+                    'adjust_step_',
+                    'toggle_keyword_',  # 翻转关键词状态。
+                    'drop_keyword_'  # 移除特定关键词。
             )  # 切换月份,选择日期。
         ):
             chat_id = BotCallbackText.DOWNLOAD_CHAT_ID
@@ -645,13 +650,29 @@ class TelegramRestrictedMediaDownloader(Bot):
                         _download_type.append(_t(_dtype))
                 return ','.join(_download_type)
 
+            def _get_format_keywords():
+                _keywords = self.download_chat_filter[chat_id]['keyword']
+                if not _keywords:
+                    return '未定义'
+
+                _p_f_k = []
+                for k, v in _keywords.items():
+                    _s = '开' if v else '关'
+                    _p_f_k.append(f'{k}[{_s}]')
+
+                return ','.join(_p_f_k)
+
             def _remove_chat_id(_chat_id):
                 if _chat_id in self.download_chat_filter:
                     self.download_chat_filter.pop(_chat_id)
                     log.info(f'"{_chat_id}"已从{self.download_chat_filter}中移除。')
 
             def _filter_prompt():
-                return f'💬下载频道:`{chat_id}`\n⏮️当前选择的起始日期为:{_get_update_time()[0]}\n⏭️当前选择的结束日期为:{_get_update_time()[1]}\n📝当前选择的下载类型为:{_get_format_dtype()}'
+                return (f'💬下载频道:`{chat_id}`\n'
+                        f'⏮️当前选择的起始日期为:{_get_update_time()[0]}\n'
+                        f'⏭️当前选择的结束日期为:{_get_update_time()[1]}\n'
+                        f'📝当前选择的下载类型为:{_get_format_dtype()}\n'
+                        f'🔑当前关键词过滤:{_get_format_keywords()}')
 
             def _download_chat_call(_callback_query, _future):
                 try:
@@ -809,6 +830,23 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                 )
                 log.info(f'日期设置,起始日期:{_get_update_time()[0]},结束日期:{_get_update_time()[1]}。')
+            elif callback_data.startswith(('toggle_keyword_', 'drop_keyword_')):
+                parts = callback_data.split('_')
+                keyword = parts[-1]
+                if callback_data.startswith('toggle_keyword_'):  # 切换关键词状态。
+                    status = self.download_chat_filter.get(chat_id, {}).get('keyword', {}).get(keyword)
+                    self.download_chat_filter[chat_id]['keyword'][keyword] = not status
+                elif callback_data.startswith('drop_keyword_'):
+                    _keyword = self.download_chat_filter.get(chat_id, {}).get('keyword', {})
+                    _keyword.pop(keyword)
+                    self.adding_keywords.remove(keyword)
+                else:
+                    return None
+                await callback_query.message.edit_text(
+                    text=_filter_prompt(),
+                    reply_markup=KeyboardButton.keyword_filter_button(self.adding_keywords)
+                )
+
             elif callback_data in (
                     BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER,
                     BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO,
@@ -845,7 +883,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     await callback_query.message.edit_text(
                         text=_filter_prompt(),
                         reply_markup=kb.toggle_download_chat_type_filter_button(self.download_chat_filter)
-
                     )
                 except ValueError:
                     await callback_query.message.reply_text('⚠️⚠️⚠️至少需要选择一个下载类型⚠️⚠️⚠️')
@@ -853,6 +890,48 @@ class TelegramRestrictedMediaDownloader(Bot):
                     await callback_query.message.reply_text(
                         '下载类型设置失败\n(具体原因请前往终端查看报错信息)')
                     log.error(f'下载类型设置失败,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+            elif callback_data in (
+                    BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER,
+                    BotCallbackText.CONFIRM_KEYWORD,
+                    BotCallbackText.CANCEL_KEYWORD_INPUT
+            ):
+                if callback_data == BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER:
+                    self.adding_keywords = []
+                    await callback_query.message.edit_text(
+                        text=_filter_prompt(),
+                        reply_markup=kb.keyword_filter_button(self.adding_keywords)
+                    )
+                    self.add_keyword_mode_handler(
+                        enable=True,
+                        chat_id=chat_id,
+                        callback_query=callback_query,
+                        callback_prompt=_filter_prompt
+                    )  # 进入添加关键词模式。
+                elif callback_data == BotCallbackText.CONFIRM_KEYWORD:
+                    self.adding_keywords.clear()
+                    self.add_keyword_mode_handler(
+                        enable=False,
+                        chat_id=chat_id,
+                        callback_query=callback_query,
+                        callback_prompt=_filter_prompt
+                    )
+                    await callback_query.message.edit_text(
+                        text=_filter_prompt(),
+                        reply_markup=kb.download_chat_filter_button()
+                    )
+                elif callback_data == BotCallbackText.CANCEL_KEYWORD_INPUT:
+                    self.adding_keywords.clear()
+                    self.add_keyword_mode_handler(
+                        enable=False,
+                        chat_id=chat_id,
+                        callback_query=callback_query,
+                        callback_prompt=_filter_prompt
+                    )
+                    self.download_chat_filter[chat_id]['keyword'] = {}
+                    await callback_query.message.edit_text(
+                        text=_filter_prompt(),
+                        reply_markup=kb.download_chat_filter_button()
+                    )
 
     async def forward(
             self,
@@ -1189,17 +1268,13 @@ class TelegramRestrictedMediaDownloader(Bot):
         await client.send_message(
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
-            text=f'`{link if len(args) == 1 else forward_emoji.join(args)}`\n⚠️⚠️⚠️已经在监听列表中⚠️⚠️⚠️\n请选择是否移除',
+            text=f'`{link if len(args) == 1 else forward_emoji.join(args)}`\n🚛已经在监听列表中。',
             link_preview_options=LINK_PREVIEW_OPTIONS,
             reply_markup=InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton(
-                        BotButton.OK,
+                        BotButton.DROP,
                         callback_data=f'{BotCallbackText.REMOVE_LISTEN_DOWNLOAD} {link}' if command == '/listen_download' else BotCallbackText.REMOVE_LISTEN_FORWARD
-                    ),
-                    InlineKeyboardButton(
-                        BotButton.CANCEL,
-                        callback_data=BotCallbackText.NULL
                     )
                 ]
             ]
@@ -1829,12 +1904,16 @@ class TelegramRestrictedMediaDownloader(Bot):
         start_date = date_filter.get('start_date')
         end_date = date_filter.get('end_date')
         download_type: dict = download_chat_filter.get('download_type')
+        keyword_filter: dict = download_chat_filter.get('keyword', {})
+        active_keywords = [k for k, v in keyword_filter.items() if v]
         links: list = []
         async for message in self.app.client.get_chat_history(
                 chat_id=chat_id,
                 reverse=True
         ):
-            if _filter.date_range(message, start_date, end_date) and _filter.dtype(message, download_type):
+            if (_filter.date_range(message, start_date, end_date) and
+                    _filter.dtype(message, download_type) and
+                    _filter.keyword_filter(message, active_keywords)):
                 links.append(message.link if message.link else message)
         diy_download_type = [_ for _ in DownloadType()]
         for link in links:
