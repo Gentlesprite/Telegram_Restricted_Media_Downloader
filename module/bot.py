@@ -380,7 +380,7 @@ class Bot:
                  f'⏮️当前选择的起始日期为:未定义\n'
                  f'⏭️当前选择的结束日期为:未定义\n'
                  f'📝当前选择的下载类型为:{format_dtype}\n'
-                 f'🔑当前关键词过滤:未定义',
+                 f'🔑当前匹配的关键词为:未定义',
             reply_markup=KeyboardButton.download_chat_filter_button(),
             link_preview_options=LINK_PREVIEW_OPTIONS
         )

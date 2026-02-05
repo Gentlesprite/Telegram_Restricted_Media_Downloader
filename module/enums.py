@@ -1436,6 +1436,6 @@ class BotButton:
     SELECT_END_DATE: str = '⏭️选择结束日期'
     INPUT_KEYWORD: str = '⌨️请向我发送关键词'
     DOWNLOAD_DTYPE_SETTING: str = '📝下载类型设置'
-    KEYWORD_FILTER_SETTING: str = '🔑匹配关键词'
+    KEYWORD_FILTER_SETTING: str = '🔑匹配关键词设置'
     ADD_KEYWORD: str = '➕添加关键词'
     CONFIRM_KEYWORD: str = '✅确认关键词'
