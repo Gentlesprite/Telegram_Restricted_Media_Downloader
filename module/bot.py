@@ -150,29 +150,35 @@ class Bot:
         keywords = [kw.strip() for kw in text.split() if kw.strip()]
         for keyword in keywords:
             if keyword in self.adding_keywords:
-                await callback_query.message.edit_text(
-                    text=f'🚛{keyword}已被添加,选择处理方式后继续。',
-                    reply_markup=InlineKeyboardMarkup([
-                        [
-                            InlineKeyboardButton(
-                                BotButton.DROP,
-                                callback_data=f'{BotCallbackText.DROP_KEYWORD}_{keyword}'
-                            ),
-                            InlineKeyboardButton(
-                                BotButton.TOGGLE,
-                                callback_data=f'{BotCallbackText.TOGGLE_KEYWORD}_{keyword}'
-                            )
+                try:
+                    await callback_query.message.edit_text(
+                        text=f'🚛{keyword}已被添加,选择处理方式后继续。',
+                        reply_markup=InlineKeyboardMarkup([
+                            [
+                                InlineKeyboardButton(
+                                    BotButton.DROP,
+                                    callback_data=f'{BotCallbackText.DROP_KEYWORD}_{keyword}'
+                                ),
+                                InlineKeyboardButton(
+                                    BotButton.TOGGLE,
+                                    callback_data=f'{BotCallbackText.TOGGLE_KEYWORD}_{keyword}'
+                                )
+                            ]
                         ]
-                    ]
+                        )
                     )
-                )
+                except MessageNotModified:
+                    pass
             else:
                 self.download_chat_filter[chat_id]['keyword'][keyword] = True
                 self.adding_keywords.append(keyword)  # 添加到正在添加的关键词列表。
-                await callback_query.message.edit_text(
-                    text=callback_prompt(),
-                    reply_markup=KeyboardButton.keyword_filter_button(self.adding_keywords)
-                )
+                try:
+                    await callback_query.message.edit_text(
+                        text=callback_prompt(),
+                        reply_markup=KeyboardButton.keyword_filter_button(self.adding_keywords)
+                    )
+                except MessageNotModified:
+                    pass
 
     @staticmethod
     async def check_download_range(
