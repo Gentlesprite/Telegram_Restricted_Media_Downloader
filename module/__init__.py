@@ -104,7 +104,7 @@ console_handler = RichHandler(
     console=console,
     rich_tracebacks=True,
     show_path=False,
-    omit_repeated_times=False,
+    omit_repeated_times=True,
     log_time_format=LOG_TIME_FORMAT
 )
 # 配置日志记录器(根记录器设置为最低级别 DEBUG)
