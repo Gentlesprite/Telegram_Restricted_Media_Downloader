@@ -1439,5 +1439,5 @@ class BotButton:
     DOWNLOAD_DTYPE_SETTING: str = '📝下载类型设置'
     KEYWORD_FILTER_SETTING: str = '🔑关键词过滤'
     ADD_KEYWORD: str = '➕添加关键词'
-    CONFIRM_KEYWORDS: str = '✅确认关键词'
+    CONFIRM_KEYWORD: str = '✅确认关键词'
     TOGGLE: str = '🔁翻转'

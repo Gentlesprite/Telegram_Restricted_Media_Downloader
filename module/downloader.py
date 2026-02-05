@@ -718,6 +718,7 @@ class TelegramRestrictedMediaDownloader(Bot):
 
             if callback_data in (BotCallbackText.DOWNLOAD_CHAT_ID, BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL):  # 执行或取消任务。
                 BotCallbackText.DOWNLOAD_CHAT_ID = 'download_chat_id'
+                self.adding_keywords.clear()
                 if callback_data == chat_id:
                     await callback_query.message.edit_text(
                         text=f'下载频道:`{chat_id}`\n'
@@ -896,7 +897,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     BotCallbackText.CANCEL_KEYWORD_INPUT
             ):
                 if callback_data == BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER:
-                    self.adding_keywords = []
                     await callback_query.message.edit_text(
                         text=_filter_prompt(),
                         reply_markup=kb.keyword_filter_button(self.adding_keywords)
@@ -908,7 +908,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                         callback_prompt=_filter_prompt
                     )  # 进入添加关键词模式。
                 elif callback_data == BotCallbackText.CONFIRM_KEYWORD:
-                    self.adding_keywords.clear()
                     self.add_keyword_mode_handler(
                         enable=False,
                         chat_id=chat_id,

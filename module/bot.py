@@ -1766,7 +1766,7 @@ class KeyboardButton:
                 ],
                 [
                     InlineKeyboardButton(
-                        text=BotButton.CONFIRM_KEYWORDS,
+                        text=BotButton.CONFIRM_KEYWORD,
                         callback_data=BotCallbackText.CONFIRM_KEYWORD
                     ),
                     InlineKeyboardButton(
