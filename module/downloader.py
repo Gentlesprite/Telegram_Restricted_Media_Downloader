@@ -1894,14 +1894,23 @@ class TelegramRestrictedMediaDownloader(Bot):
         keyword_filter: dict = download_chat_filter.get('keyword', {})
         active_keywords = [k for k, v in keyword_filter.items() if v]
         links: list = []
+        media_group_matched = set()  # 记录已匹配的media_group_id。
         async for message in self.app.client.get_chat_history(
                 chat_id=chat_id,
                 reverse=True
         ):
+            # 对于媒体组，如果该媒体组已匹配，直接添加。
+            if message.media_group_id and message.media_group_id in media_group_matched:
+                links.append(message.link if message.link else message)
+                continue
+
             if (_filter.date_range(message, start_date, end_date) and
                     _filter.dtype(message, download_type) and
                     _filter.keyword_filter(message, active_keywords)):
                 links.append(message.link if message.link else message)
+                # 如果是媒体组的第一条消息，记录该media_group_id。
+                if message.media_group_id:
+                    media_group_matched.add(message.media_group_id)
         diy_download_type = [_ for _ in DownloadType()]
         for link in links:
             await self.create_download_task(
