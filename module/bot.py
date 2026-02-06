@@ -98,7 +98,7 @@ class Bot:
             callback_prompt: Callable,
             enable: bool,
     ):
-        """添加或移除关键词输入模式的 handler"""
+        """添加或移除关键词输入模式的handler。"""
         if enable:
             # 先创建 handler 对象，然后添加
             self.keyword_handler = MessageHandler(
@@ -374,10 +374,14 @@ class Bot:
                     'voice': True,
                     'animation': True
                 },
-            'keyword': {}
+            'keyword': {},
+            'title': {},
+            'comment': False
         }
         log.info(f'"{BotCallbackText.DOWNLOAD_CHAT_ID}"已添加至{self.download_chat_filter}。')
         format_dtype = ','.join([_t(_) for _ in DownloadType()])
+        include_comment = self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['comment']
+        comment: str = '开' if include_comment else '关'
         await client.send_message(
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
@@ -385,8 +389,9 @@ class Bot:
                  f'⏮️当前选择的起始日期为:未定义\n'
                  f'⏭️当前选择的结束日期为:未定义\n'
                  f'📝当前选择的下载类型为:{format_dtype}\n'
-                 f'🔑当前匹配的关键词为:未定义',
-            reply_markup=KeyboardButton.download_chat_filter_button(),
+                 f'🔑当前匹配的关键词为:未定义\n'
+                 f'👥包含评论区:{comment}',
+            reply_markup=KeyboardButton.download_chat_filter_button(include_comment),
             link_preview_options=LINK_PREVIEW_OPTIONS
         )
 
@@ -1561,7 +1566,9 @@ class KeyboardButton:
         )
 
     @staticmethod
-    def download_chat_filter_button():
+    def download_chat_filter_button(
+            include_comment: bool
+    ):
         return InlineKeyboardMarkup(
             [
                 [
@@ -1578,6 +1585,10 @@ class KeyboardButton:
                     InlineKeyboardButton(
                         text=BotButton.KEYWORD_FILTER_SETTING,
                         callback_data=BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.INCLUDE_COMMENT if include_comment else BotButton.IGNORE_COMMENT,
+                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_COMMENT
                     ),
                 ],
                 [

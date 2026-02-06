@@ -1354,6 +1354,7 @@ class BotCallbackText:
     TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE: str = 'toggle_download_chat_voice'
     TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION: str = 'toggle_download_chat_animation'
     TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT: str = 'toggle_download_chat_document'
+    TOGGLE_DOWNLOAD_CHAT_COMMENT: str = 'toggle_download_chat_comment'
     CALENDAR_CONFIRM: str = 'calendar_confirm'
     FILTER_START_DATE: str = 'filter_start_date'
     FILTER_END_DATE: str = 'filter_end_date'
@@ -1440,3 +1441,5 @@ class BotButton:
     DOWNLOAD_DTYPE_SETTING: str = '📝设置下载类型'
     KEYWORD_FILTER_SETTING: str = '🔑设置匹配关键词'
     CONFIRM_KEYWORD: str = '✅确认关键词'
+    INCLUDE_COMMENT: str = '✅包含评论区'
+    IGNORE_COMMENT: str = '❌包含评论区'
