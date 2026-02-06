@@ -1894,23 +1894,46 @@ class TelegramRestrictedMediaDownloader(Bot):
         keyword_filter: dict = download_chat_filter.get('keyword', {})
         active_keywords = [k for k, v in keyword_filter.items() if v]
         links: list = []
-        media_group_matched = set()  # 记录已匹配的media_group_id。
+        # 第一阶段：收集匹配的消息。
+        messages_to_download = []
+        media_group_matched = set()  # 记录已匹配的media_group_id
         async for message in self.app.client.get_chat_history(
                 chat_id=chat_id,
                 reverse=True
         ):
-            # 对于媒体组，如果该媒体组已匹配，直接添加。
+            # 对于媒体组，如果该媒体组已匹配，直接添加
             if message.media_group_id and message.media_group_id in media_group_matched:
-                links.append(message.link if message.link else message)
+                messages_to_download.append(message)
                 continue
 
             if (_filter.date_range(message, start_date, end_date) and
                     _filter.dtype(message, download_type) and
                     _filter.keyword_filter(message, active_keywords)):
-                links.append(message.link if message.link else message)
-                # 如果是媒体组的第一条消息，记录该media_group_id。
+                messages_to_download.append(message)
+                # 如果是媒体组的第一条消息，记录该media_group_id
                 if message.media_group_id:
                     media_group_matched.add(message.media_group_id)
+
+        # 第二阶段：对匹配的消息进行处理，获取评论区。
+        
+        for message in messages_to_download:
+            message_link = message.link if message.link else message
+            links.append(message_link)
+
+            # 检查并获取评论区。
+            try:
+                async for comment in self.app.client.get_discussion_replies(
+                        chat_id=chat_id,
+                        message_id=message.id
+                ):
+                    # 根据用户设置的download_type过滤评论中的媒体，但不过滤具体时间。
+                    if not _filter.dtype(comment, download_type):
+                        continue
+                    comment_link = comment.link if comment.link else comment
+                    links.append(comment_link)
+            except (ValueError, AttributeError, MsgIdInvalid):
+                # 消息没有评论区或消息ID无效，跳过
+                pass
         diy_download_type = [_ for _ in DownloadType()]
         for link in links:
             await self.create_download_task(
@@ -1918,6 +1941,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 single_link=True,
                 diy_download_type=diy_download_type
             )
+
         return links
 
     @DownloadTask.on_create_task
