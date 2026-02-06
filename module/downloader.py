@@ -1914,13 +1914,13 @@ class TelegramRestrictedMediaDownloader(Bot):
         links: list = []
         # 第一阶段：收集匹配的消息。
         messages_to_download = []
-        media_group_matched = set()  # 记录已匹配的media_group_id
+        media_group_matched = set()  # 记录已匹配的media_group_id。
         async for message in self.app.client.get_chat_history(
                 chat_id=chat_id,
                 reverse=True
         ):
-            # 对于媒体组，如果该媒体组已匹配，直接添加
-            if message.media_group_id and message.media_group_id in media_group_matched:
+            # 对于媒体组，如果该媒体组已匹配，直接添加。
+            if getattr(message, 'media_group_id', None) and message.media_group_id in media_group_matched:
                 messages_to_download.append(message)
                 continue
 
