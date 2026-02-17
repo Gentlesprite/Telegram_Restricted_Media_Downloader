@@ -61,6 +61,12 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             default='',
             help='设置运行缓存的路径'
         )
+        self.add_argument(
+            '-w', '--web',
+            action='store_true',
+            default=False,
+            help='通过浏览器运行'
+        )
 
     def print_help(self, file=None):
         console.print(
