@@ -5,6 +5,8 @@
 # File:util.py
 import os
 import re
+import sys
+import stat
 import platform
 
 from pathlib import Path
@@ -338,6 +340,22 @@ def get_ttyd_path(file: Optional[str] = None) -> Union[str]:
     path = str(Path(f'res/bin/{get_ttyd_executable()}').resolve())
     log.info(f'在生产环境获取ttyd路径:"{path}"。')
     return path
+
+
+def add_executable_permission(file_path: str) -> bool:
+    """确保文件具有执行权限(仅Linux/macOS)。"""
+    if sys.platform not in ('linux', 'darwin'):
+        return True
+    try:
+        st = os.stat(file_path)
+        mode = st.st_mode
+        if not (mode & stat.S_IXUSR):
+            os.chmod(file_path, mode | stat.S_IXUSR)
+            log.info(f'已为"{file_path}"添加执行权限。')
+            return True
+    except Exception as e:
+        log.warning(f'添加执行权限失败:{e}。')
+        return False
 
 
 class Issues:
