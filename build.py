@@ -14,6 +14,13 @@ from module.util import get_ttyd_executable
 platform = sys.platform
 
 
+def ready_zstandard():
+    try:
+        import zstandard
+    except (ImportError, ModuleNotFoundError, NameError):
+        os.system('pip install zstandard')
+
+
 def ready_nuitka():
     try:
         import nuitka
@@ -80,6 +87,7 @@ def build(command):
 if __name__ == '__main__':
     try:
         ready_nuitka()
+        ready_zstandard()
         media_info_lib_filename, media_info_lib_path = ready_pymediainfo()
         ttyd_filename, ttyd_path = ready_ttyd()
         extension = '.exe' if platform == 'win32' else ''
