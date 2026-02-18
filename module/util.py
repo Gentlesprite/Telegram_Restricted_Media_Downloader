@@ -17,6 +17,7 @@ from pyrogram.types.messages_and_media import ReplyParameters
 from urllib.parse import parse_qs, urlparse
 from rich.text import Text
 
+from module import log
 from module.enums import (
     Link,
     LinkType,
@@ -328,10 +329,15 @@ def get_ttyd_executable() -> Union[str, None]:
     }.get(platform.machine().lower())
 
 
-def get_ttyd_path() -> Union[str]:
+def get_ttyd_path(file: Optional[str] = None) -> Union[str]:
     if '__compiled__' in globals():
-        return str(Path(__file__).parent / get_ttyd_executable())
-    return str(Path(f'res/bin/{get_ttyd_executable()}').resolve())
+        path = str(Path(file or __file__).parent / get_ttyd_executable())
+        log.info(f'在编译环境获取ttyd路径:"{path}"。')
+        return path
+
+    path = str(Path(f'res/bin/{get_ttyd_executable()}').resolve())
+    log.info(f'在生产环境获取ttyd路径:"{path}"。')
+    return path
 
 
 class Issues:
