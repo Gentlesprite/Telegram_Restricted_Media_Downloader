@@ -5,7 +5,9 @@
 # File:util.py
 import os
 import re
+import platform
 
+from pathlib import Path
 from typing import Tuple, List, Union, Optional
 
 import pyrogram
@@ -305,6 +307,31 @@ async def format_chat_link(
 async def get_my_id(client: pyrogram.Client) -> int:
     me = await client.get_me()
     return me.id
+
+
+def get_ttyd_executable() -> Union[str, None]:
+    """获取对应平台的ttyd可执行文件。"""
+
+    return {
+        'x86_64': 'ttyd.x86_64',
+        'amd64': 'ttyd.win32.exe',
+        'i686': 'ttyd.i686',
+        'i386': 'ttyd.i686',
+        'armv6l': 'ttyd.arm',
+        'armv7l': 'ttyd.armhf',
+        'aarch64': 'ttyd.aarch64',
+        'mips': 'ttyd.mips',
+        'mipsel': 'ttyd.mipsel',
+        'mips64': 'ttyd.mips64',
+        'mips64el': 'ttyd.mips64el',
+        's390x': 'ttyd.s390x'
+    }.get(platform.machine().lower())
+
+
+def get_ttyd_path() -> Union[str]:
+    if '__compiled__' in globals():
+        return str(Path(__file__).parent / get_ttyd_executable())
+    return str(Path(f'res/bin/{get_ttyd_executable()}').resolve())
 
 
 class Issues:

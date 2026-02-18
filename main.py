@@ -7,36 +7,28 @@ import os
 import sys
 import subprocess
 
-from module.parser import PARSE_ARGS
+from module.util import get_ttyd_path
+from module.parser import PARSE_ARGS, get_subprocess_args
 from module.downloader import TelegramRestrictedMediaDownloader
-
-
-def build_subprocess_args():
-    """构建子进程参数列表。"""
-    args = [sys.argv[0]] if '__compiled__' in globals() else [sys.executable, __file__]
-
-    # 添加非web参数
-    if PARSE_ARGS.quiet:
-        args.append('--quiet')
-    if PARSE_ARGS.config:
-        args.extend(['--config', PARSE_ARGS.config])
-    if PARSE_ARGS.session:
-        args.extend(['--session', PARSE_ARGS.session])
-    if PARSE_ARGS.temp:
-        args.extend(['--temp', PARSE_ARGS.temp])
-
-    return args
-
 
 if __name__ == '__main__':
     if PARSE_ARGS.web:
         try:
-            subprocess_args = build_subprocess_args()
+            ttyd_path = get_ttyd_path()
+            if not os.path.isfile(ttyd_path):  # TODO 编译后提示未找到ttyd，但实际上ttyd存在。
+                print('未找到ttyd。')
+                sys.exit(0)
+
             subprocess.Popen(
-                ['ttyd', '--writable', '--cwd', os.getcwd(), '--port', '0', '--browser'] + subprocess_args
+                [ttyd_path,
+                 '--writable',
+                 '--cwd', os.getcwd(),
+                 '--port', '0',
+                 '--browser'
+                 ] + get_subprocess_args(__file__)
             )
-            # TODO --cwd参数为中文路径需要添加双引号，否则报错。
-            # TODO ttyd跨平台的问题。
+            # TODO --cwd参数为中文路径需要添加双引号，但经过实测添加双引号也会报错。
+            # TODO 在Linux下，需要考虑执行权限的问题。
         except KeyboardInterrupt:
             pass  # TODO keyboard interrupt时，需要按两次的问题。
     else:
