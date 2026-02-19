@@ -358,7 +358,7 @@ def gen_random_credential():
 
 def check_environ():
     if PARSE_ARGS.web is not None:
-        environ_name, environ_param = ENVIRON.TRMD_WEB_MODE, str(PARSE_ARGS.web)
+        environ_name, environ_param = ENVIRON.TRMD_WEB_PORT, str(PARSE_ARGS.web)
         os.environ[environ_name] = environ_param
         log.info(f'添加系统环境变量:"{environ_name}={environ_param}"。')
 

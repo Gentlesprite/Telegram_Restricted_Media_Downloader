@@ -84,7 +84,10 @@ class Account:
 
 
 class ENVIRON:
-    TRMD_WEB_MODE = 'TRMD_WEB_MODE'
+    TRMD_WEB_PID: str = 'TRMD_WEB_PID'
+    TRMD_WEB_USERNAME: str = 'TRMD_WEB_USERNAME'
+    TRMD_WEB_PASSWORD: str = 'TRMD_WEB_PASSWORD'
+    TRMD_WEB_PORT: str = 'TRMD_WEB_PORT'
 
 
 class KeyWord:

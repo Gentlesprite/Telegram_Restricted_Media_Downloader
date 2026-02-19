@@ -12,7 +12,7 @@ from module.downloader import TelegramRestrictedMediaDownloader
 
 if __name__ == '__main__':
     check_environ()
-    if os.environ.get(ENVIRON.TRMD_WEB_MODE):
+    if os.environ.get(ENVIRON.TRMD_WEB_PORT) and os.environ.get(ENVIRON.TRMD_WEB_PID) is None:
         web = Web(__file__)
         web.run()
     else:

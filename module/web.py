@@ -21,17 +21,12 @@ from module.util import (
 
 
 class Web(TTYD):
-    USERNAME: str = ''
-    PASSWORD: str = ''
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.credential: dict = gen_random_credential()
         self.username: str = self.credential.get(Account.USERNAME)
         self.password: str = self.credential.get(Account.PASSWORD)
-        self.port: int = int(os.environ.get(ENVIRON.TRMD_WEB_MODE, '0'))
-        Web.USERNAME = self.username
-        Web.PASSWORD = self.password
+        self.port: int = int(os.environ.get(ENVIRON.TRMD_WEB_PORT, '0'))
         PanelTable(
             title='Web登录认证',
             header=(_t(Account.USERNAME), _t(Account.PASSWORD)),
@@ -42,6 +37,12 @@ class Web(TTYD):
     def run(self):
         process = None
         try:
+            env: dict = os.environ.copy()
+            env[ENVIRON.TRMD_WEB_PID] = str(os.getpid())
+            env[ENVIRON.TRMD_WEB_USERNAME] = self.username
+            env[ENVIRON.TRMD_WEB_PASSWORD] = self.password
+            env[ENVIRON.TRMD_WEB_PORT] = str(self.port)
+            log.info(f'通过浏览器运行,父进程pid:{env.get(ENVIRON.TRMD_WEB_PID)},未写入系统环境变量。')
             cmd: list = [
                             self.ttyd_path,
                             '--writable',
@@ -52,10 +53,13 @@ class Web(TTYD):
                             '--browser'
                         ] + get_subprocess_args(self.main_file)
             log.info(f'通过浏览器运行,命令:"{cmd}"。')
-            process = subprocess.Popen(cmd)
+            process = subprocess.Popen(cmd, env=env)
+            os.environ[ENVIRON.TRMD_WEB_PID] = str(process.pid)
+            log.info(f'通过浏览器运行,子进程pid:{os.environ.get(ENVIRON.TRMD_WEB_PID)},已写入系统环境变量。')
             process.wait()
             # TODO --cwd参数为中文路径需要添加双引号，但经过实测添加双引号也会报错。
             # TODO 将ttyd的运行日志重定向到rich.console。
+            # TODO 账号密码明文存储在系统环境变量、并记录在ttyd日志中带来的安全问题。
         except KeyboardInterrupt:
             if process and process.poll() is None:
                 process.terminate()

@@ -34,7 +34,6 @@ from module import (
     SOFTWARE_FULL_NAME,
     LINK_PREVIEW_OPTIONS
 )
-from module.web import Web
 from module.language import _t
 from module.stdio import MetaData
 from module.task import UploadTask
@@ -558,17 +557,19 @@ class Bot:
             client: Union[pyrogram.Client, None] = None,
             message: Union[pyrogram.types.Message, None] = None
     ) -> None:
-        if os.environ.get(ENVIRON.TRMD_WEB_MODE):
-            if all([Web.USERNAME, Web.PASSWORD]):
+        if os.environ.get(ENVIRON.TRMD_WEB_PID):
+            username: Union[str, None] = os.environ.get(ENVIRON.TRMD_WEB_USERNAME, None)
+            password: Union[str, None] = os.environ.get(ENVIRON.TRMD_WEB_PASSWORD, None)
+            if all([username, password]):
                 await client.send_message(
                     chat_id=message.from_user.id,
-                    text=f'👤{_t(Account.USERNAME)}:`{Web.USERNAME}`\n🔑{_t(Account.PASSWORD)}:`{Web.PASSWORD}`',
+                    text=f'🌐浏览器认证信息:\n👤{_t(Account.USERNAME)}:`{username}`\n🔑{_t(Account.PASSWORD)}:`{password}`',
                     link_preview_options=LINK_PREVIEW_OPTIONS
                 )
             else:
                 await client.send_message(
                     chat_id=message.from_user.id,
-                    text=f'⚠️无法获取浏览器认证信息。',
+                    text=f'⚠️未找到浏览器认证信息。',
                     link_preview_options=LINK_PREVIEW_OPTIONS
                 )
         else:
