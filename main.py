@@ -28,11 +28,13 @@ if __name__ == '__main__':
                 sys.exit(0)
 
             add_executable_permission(ttyd_path)
+            credential = 'admin:123456'
             cmd = [ttyd_path,
                    '--writable',
                    '--cwd', os.getcwd(),
                    '--port', '0',
                    '--ipv6',
+                   '--credential', credential,
                    '--browser'
                    ] + get_subprocess_args(__file__)
             log.info(f'通过浏览器运行,命令:"{cmd}"。')
