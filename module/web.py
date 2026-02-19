@@ -39,8 +39,6 @@ class Web(TTYD):
         try:
             env: dict = os.environ.copy()
             env[ENVIRON.TRMD_WEB_PID] = str(os.getpid())
-            env[ENVIRON.TRMD_WEB_USERNAME] = self.username
-            env[ENVIRON.TRMD_WEB_PASSWORD] = self.password
             env[ENVIRON.TRMD_WEB_PORT] = str(self.port)
             log.info(f'通过浏览器运行,父进程pid:{env.get(ENVIRON.TRMD_WEB_PID)},未写入系统环境变量。')
             cmd: list = [
@@ -60,7 +58,7 @@ class Web(TTYD):
             process.wait()
             # TODO --cwd参数为中文路径需要添加双引号，但经过实测添加双引号也会报错。
             # TODO 将ttyd的运行日志重定向到rich.console。
-            # TODO 账号密码明文存储在系统环境变量、并记录在ttyd日志中带来的安全问题。
+            # TODO 账号密码明文记录在ttyd日志中带来的安全问题。
         except KeyboardInterrupt:
             if process and process.poll() is None:
                 process.terminate()
