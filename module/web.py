@@ -50,6 +50,7 @@ class Web(TTYD):
                             '--port', str(self.port),
                             '--ipv6',
                             '--credential', f'{self.username}:{self.password}',
+                            '--once',
                             '--browser'
                         ] + get_subprocess_args(self.main_file)
             log.info(f'通过浏览器运行,命令:"{cmd}"。')
