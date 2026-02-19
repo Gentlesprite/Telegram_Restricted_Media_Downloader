@@ -7,7 +7,7 @@ import os
 import platform
 import subprocess
 
-from module import log
+from module import log, file_handler
 from module.ttyd import TTYD
 from module.stdio import PanelTable
 from module.language import _t
@@ -54,12 +54,10 @@ class Web(TTYD):
             if platform.system() == 'Windows':
                 cmd.remove('--writable')
             log.info(f'通过浏览器运行,命令:"{cmd}"。')
-            process = subprocess.Popen(cmd, env=env)
+            process = subprocess.Popen(cmd, env=env, stdout=file_handler.stream, stderr=file_handler.stream)
             os.environ[ENVIRON.TRMD_WEB_PID] = str(process.pid)
             log.info(f'通过浏览器运行,子进程pid:{os.environ.get(ENVIRON.TRMD_WEB_PID)},已写入系统环境变量。')
             process.wait()
-            # TODO 将ttyd的运行日志重定向到rich.console。
-            # TODO 账号密码明文记录在ttyd日志中带来的安全问题。
         except KeyboardInterrupt:
             if process and process.poll() is None:
                 process.terminate()
