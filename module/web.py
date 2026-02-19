@@ -8,9 +8,12 @@ import subprocess
 
 from module import log
 from module.ttyd import TTYD
-from module.enums import Account
 from module.stdio import PanelTable
 from module.language import _t
+from module.enums import (
+    Account,
+    ENVIRON
+)
 from module.util import (
     gen_random_credential,
     get_subprocess_args
@@ -23,6 +26,7 @@ class Web(TTYD):
         self.credential: dict = gen_random_credential()
         self.username: str = self.credential.get(Account.USERNAME)
         self.password: str = self.credential.get(Account.PASSWORD)
+        self.port: int = int(os.environ.get(ENVIRON.TRMD_WEB_MODE, '0'))
         PanelTable(
             title='Web登录认证',
             header=(_t(Account.USERNAME), _t(Account.PASSWORD)),
@@ -37,7 +41,7 @@ class Web(TTYD):
                             self.ttyd_path,
                             '--writable',
                             '--cwd', os.getcwd(),
-                            '--port', '0',
+                            '--port', str(self.port),
                             '--ipv6',
                             '--credential', f'{self.username}:{self.password}',
                             '--browser'
@@ -47,8 +51,6 @@ class Web(TTYD):
             process.wait()
             # TODO --cwd参数为中文路径需要添加双引号，但经过实测添加双引号也会报错。
             # TODO 将ttyd的运行日志重定向到rich.console。
-            # TODO ttyd使用随机端口，可能该端口未开放的问题。
-            # TODO --web参数后考虑指定端口。
         except KeyboardInterrupt:
             if process and process.poll() is None:
                 process.terminate()

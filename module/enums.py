@@ -84,7 +84,7 @@ class Account:
 
 
 class ENVIRON:
-    TRMD_WEB_MODE = ('TRMD_WEB_MODE', str(os.getpid()))
+    TRMD_WEB_MODE = 'TRMD_WEB_MODE'
 
 
 class KeyWord:

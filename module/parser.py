@@ -63,8 +63,10 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
         )
         self.add_argument(
             '-w', '--web',
-            action='store_true',
-            default=False,
+            type=int,
+            nargs='?',
+            const=0,
+            default=None,
             help='通过浏览器运行'
         )
 
