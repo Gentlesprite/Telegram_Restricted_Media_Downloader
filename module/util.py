@@ -24,7 +24,8 @@ from module.parser import PARSE_ARGS
 from module.enums import (
     Link,
     LinkType,
-    DownloadType
+    DownloadType,
+    ENVIRON
 )
 
 
@@ -353,6 +354,13 @@ def gen_random_credential():
         'username': username,
         'password': password
     }
+
+
+def check_environ():
+    if PARSE_ARGS.web:
+        environ_name, environ_param = ENVIRON.TRMD_WEB_MODE
+        os.environ[environ_name] = environ_param
+        log.info(f'添加系统环境变量:"{environ_name}={environ_param}"。')
 
 
 class Issues:

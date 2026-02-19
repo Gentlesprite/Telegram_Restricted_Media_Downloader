@@ -83,6 +83,10 @@ class Account:
     PASSWORD: str = 'password'
 
 
+class ENVIRON:
+    TRMD_WEB_MODE = ('TRMD_WEB_MODE', str(os.getpid()))
+
+
 class KeyWord:
     LINK: str = 'link'
     LINK_TYPE: str = 'link type'

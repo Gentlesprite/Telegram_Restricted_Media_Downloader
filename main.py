@@ -3,12 +3,16 @@
 # Software:PyCharm
 # Time:2024/9/5 19:08
 # File:main.py
-from module.parser import PARSE_ARGS
+import os
+
+from module.enums import ENVIRON
+from module.util import check_environ
 from module.web import Web
 from module.downloader import TelegramRestrictedMediaDownloader
 
 if __name__ == '__main__':
-    if PARSE_ARGS.web:
+    check_environ()
+    if os.environ.get(ENVIRON.TRMD_WEB_MODE[0]):
         web = Web(__file__)
         web.run()
     else:

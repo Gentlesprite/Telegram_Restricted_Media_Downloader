@@ -51,7 +51,11 @@ from module import (
 )
 from module.filter import Filter
 from module.app import Application
-from module.bot import Bot, KeyboardButton, CallbackData
+from module.bot import (
+    Bot,
+    KeyboardButton,
+    CallbackData
+)
 from module.enums import (
     DownloadStatus,
     LinkType,
