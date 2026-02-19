@@ -34,6 +34,7 @@ from module import (
     SOFTWARE_FULL_NAME,
     LINK_PREVIEW_OPTIONS
 )
+from module.web import Web
 from module.language import _t
 from module.stdio import MetaData
 from module.task import UploadTask
@@ -54,7 +55,9 @@ from module.enums import (
     BotMessage,
     BotCallbackText,
     BotButton,
-    KeyWord
+    KeyWord,
+    Account,
+    ENVIRON
 )
 
 
@@ -71,7 +74,8 @@ class Bot:
         BotCommand(BotCommandText.LISTEN_INFO[0], BotCommandText.LISTEN_INFO[1]),
         BotCommand(BotCommandText.UPLOAD[0], BotCommandText.UPLOAD[1].replace('`', '')),
         BotCommand(BotCommandText.UPLOAD_R[0], BotCommandText.UPLOAD_R[1].replace('`', '')),
-        BotCommand(BotCommandText.DOWNLOAD_CHAT[0], BotCommandText.DOWNLOAD_CHAT[1].replace('`', ''))
+        BotCommand(BotCommandText.DOWNLOAD_CHAT[0], BotCommandText.DOWNLOAD_CHAT[1].replace('`', '')),
+        BotCommand(BotCommandText.WEB[0], BotCommandText.WEB[1])
     ]
 
     def __init__(self):
@@ -472,7 +476,8 @@ class Bot:
             f'🔍 {BotCommandText.with_description(BotCommandText.LISTEN_INFO)}\n'
             f'📤 {BotCommandText.with_description(BotCommandText.UPLOAD)}\n'
             f'🌳 {BotCommandText.with_description(BotCommandText.UPLOAD_R)}\n'
-            f'💬 {BotCommandText.with_description(BotCommandText.DOWNLOAD_CHAT)}\n\n'
+            f'💬 {BotCommandText.with_description(BotCommandText.DOWNLOAD_CHAT)}\n'
+            f'🌐 {BotCommandText.with_description(BotCommandText.WEB)}\n\n'
             f'✨ 其他功能:\n'
             f'📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`类型的消息给我,即可自动下载。\n'
         )
@@ -547,6 +552,31 @@ class Bot:
             link_preview_options=LINK_PREVIEW_OPTIONS,
             reply_markup=keyboard
         )
+
+    @staticmethod
+    async def web(
+            client: Union[pyrogram.Client, None] = None,
+            message: Union[pyrogram.types.Message, None] = None
+    ) -> None:
+        if os.environ.get(ENVIRON.TRMD_WEB_MODE):
+            if all([Web.USERNAME, Web.PASSWORD]):
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    text=f'👤{_t(Account.USERNAME)}:`{Web.USERNAME}`\n🔑{_t(Account.PASSWORD)}:`{Web.PASSWORD}`',
+                    link_preview_options=LINK_PREVIEW_OPTIONS
+                )
+            else:
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    text=f'⚠️无法获取浏览器认证信息。',
+                    link_preview_options=LINK_PREVIEW_OPTIONS
+                )
+        else:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                text=f'❌当前运行环境非浏览器。',
+                link_preview_options=LINK_PREVIEW_OPTIONS
+            )
 
     async def get_forward_link_from_bot(
             self,
@@ -1009,6 +1039,12 @@ class Bot:
                 MessageHandler(
                     self.table,
                     filters=pyrogram.filters.command(['table']) & pyrogram.filters.user(self.root)
+                )
+            )
+            self.bot.add_handler(
+                MessageHandler(
+                    self.web,
+                    filters=pyrogram.filters.command(['web']) & pyrogram.filters.user(self.root)
                 )
             )
             self.bot.add_handler(

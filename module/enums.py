@@ -1304,6 +1304,7 @@ class BotCommandText:
     UPLOAD: tuple = ('upload', '上传本地的文件到指定频道。`/upload 本地文件 目标频道`')
     UPLOAD_R: tuple = ('upload_r', '递归上传文件夹(包含子文件夹)到指定频道。`/upload_r 本地文件夹 目标频道`')
     DOWNLOAD_CHAT: tuple = ('download_chat', '下载指定频道并支持通过内联键盘自定义内容过滤。`/download_chat 频道链接`')
+    WEB: tuple = ('web', '获取浏览器认证信息(仅通过浏览器运行时有效)。')
 
     @staticmethod
     def with_description(text: tuple) -> str:

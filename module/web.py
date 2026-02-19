@@ -21,12 +21,17 @@ from module.util import (
 
 
 class Web(TTYD):
+    USERNAME: str = ''
+    PASSWORD: str = ''
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.credential: dict = gen_random_credential()
         self.username: str = self.credential.get(Account.USERNAME)
         self.password: str = self.credential.get(Account.PASSWORD)
         self.port: int = int(os.environ.get(ENVIRON.TRMD_WEB_MODE, '0'))
+        Web.USERNAME = self.username
+        Web.PASSWORD = self.password
         PanelTable(
             title='Web登录认证',
             header=(_t(Account.USERNAME), _t(Account.PASSWORD)),
