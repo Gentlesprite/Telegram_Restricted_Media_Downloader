@@ -47,7 +47,9 @@ translations: dict = {
     'forward success': ['转发成功'],
     'forward failure': ['转发失败'],
     'skip forward': ['跳过转发'],
-    'upload file part': ['[上传缺失分片]']
+    'upload file part': ['[上传缺失分片]'],
+    'username': ['账号'],
+    'password': ['密码']
 }
 
 

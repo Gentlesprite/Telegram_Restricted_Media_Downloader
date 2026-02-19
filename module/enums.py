@@ -78,6 +78,11 @@ class SaveDirectoryPrefix:
                 yield value
 
 
+class Account:
+    USERNAME: str = 'username'
+    PASSWORD: str = 'password'
+
+
 class KeyWord:
     LINK: str = 'link'
     LINK_TYPE: str = 'link type'

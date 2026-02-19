@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from module import AUTHOR, __version__, __update_date__, SOFTWARE_SHORT_NAME
-from module.util import get_ttyd_executable
+from module.ttyd import TTYD
 
 platform = sys.platform
 
@@ -71,7 +71,7 @@ def ready_pymediainfo() -> tuple:
 
 
 def ready_ttyd():
-    file_name = get_ttyd_executable()
+    file_name = TTYD.get_ttyd_executable()
     path = str(Path(f'res/bin/{file_name}').resolve())
     if os.path.isfile(path):
         return file_name, path

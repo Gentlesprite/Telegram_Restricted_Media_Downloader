@@ -3,9 +3,6 @@
 # Software:PyCharm
 # Time:2026/1/23 17:47
 # File:parser.py
-import sys
-
-from typing import Optional
 from argparse import (
     ArgumentParser,
     SUPPRESS
@@ -86,19 +83,3 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
 
 
 PARSE_ARGS = TelegramRestrictedMediaDownloaderArgumentParser(add_help=False).parse_args()
-
-
-def get_subprocess_args(file: Optional[str]) -> list:
-    """获取子进程参数列表。"""
-    args = [sys.argv[0]] if '__compiled__' in globals() else [sys.executable, file or __file__]
-    # 添加非web参数
-    if PARSE_ARGS.quiet:
-        args.append('--quiet')
-    if PARSE_ARGS.config:
-        args.extend(['--config', PARSE_ARGS.config])
-    if PARSE_ARGS.session:
-        args.extend(['--session', PARSE_ARGS.session])
-    if PARSE_ARGS.temp:
-        args.extend(['--temp', PARSE_ARGS.temp])
-
-    return args

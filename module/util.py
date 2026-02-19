@@ -7,9 +7,9 @@ import os
 import re
 import sys
 import stat
-import platform
+import string
+import random
 
-from pathlib import Path
 from typing import Tuple, List, Union, Optional
 
 import pyrogram
@@ -20,6 +20,7 @@ from urllib.parse import parse_qs, urlparse
 from rich.text import Text
 
 from module import log
+from module.parser import PARSE_ARGS
 from module.enums import (
     Link,
     LinkType,
@@ -312,36 +313,6 @@ async def get_my_id(client: pyrogram.Client) -> int:
     return me.id
 
 
-def get_ttyd_executable() -> Union[str, None]:
-    """获取对应平台的ttyd可执行文件。"""
-
-    return {
-        'x86_64': 'ttyd.x86_64',
-        'amd64': 'ttyd.win32.exe',
-        'i686': 'ttyd.i686',
-        'i386': 'ttyd.i686',
-        'armv6l': 'ttyd.arm',
-        'armv7l': 'ttyd.armhf',
-        'aarch64': 'ttyd.aarch64',
-        'mips': 'ttyd.mips',
-        'mipsel': 'ttyd.mipsel',
-        'mips64': 'ttyd.mips64',
-        'mips64el': 'ttyd.mips64el',
-        's390x': 'ttyd.s390x'
-    }.get(platform.machine().lower())
-
-
-def get_ttyd_path(file: Optional[str] = None) -> Union[str]:
-    if '__compiled__' in globals():
-        path = str(Path(file or __file__).parent / get_ttyd_executable())
-        log.info(f'在编译环境获取ttyd路径:"{path}"。')
-        return path
-
-    path = str(Path(f'res/bin/{get_ttyd_executable()}').resolve())
-    log.info(f'在生产环境获取ttyd路径:"{path}"。')
-    return path
-
-
 def add_executable_permission(file_path: str) -> bool:
     """确保文件具有执行权限(仅Linux/macOS)。"""
     if sys.platform not in ('linux', 'darwin'):
@@ -356,6 +327,32 @@ def add_executable_permission(file_path: str) -> bool:
     except Exception as e:
         log.warning(f'添加执行权限失败:{e}。')
         return False
+
+
+def get_subprocess_args(main_file: str) -> list:
+    """获取子进程参数列表。"""
+    args = [sys.argv[0]] if '__compiled__' in globals() else [sys.executable, main_file]
+    # 添加非web参数
+    if PARSE_ARGS.quiet:
+        args.append('--quiet')
+    if PARSE_ARGS.config:
+        args.extend(['--config', PARSE_ARGS.config])
+    if PARSE_ARGS.session:
+        args.extend(['--session', PARSE_ARGS.session])
+    if PARSE_ARGS.temp:
+        args.extend(['--temp', PARSE_ARGS.temp])
+
+    return args
+
+
+def gen_random_credential():
+    chars = string.ascii_letters + string.digits
+    username = ''.join(random.choices(chars, k=8))
+    password = ''.join(random.choices(chars, k=12))
+    return {
+        'username': username,
+        'password': password
+    }
 
 
 class Issues:
