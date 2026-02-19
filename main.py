@@ -32,6 +32,7 @@ if __name__ == '__main__':
                    '--writable',
                    '--cwd', os.getcwd(),
                    '--port', '0',
+                   '--ipv6',
                    '--browser'
                    ] + get_subprocess_args(__file__)
             log.info(f'通过浏览器运行,命令:"{cmd}"。')
