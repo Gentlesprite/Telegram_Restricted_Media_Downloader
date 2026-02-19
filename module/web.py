@@ -44,7 +44,6 @@ class Web(TTYD):
             cmd: list = [
                             self.ttyd_path,
                             '--writable',
-                            '--cwd', os.getcwd(),
                             '--port', str(self.port),
                             '--ipv6',
                             '--credential', f'{self.username}:{self.password}',
@@ -56,7 +55,6 @@ class Web(TTYD):
             os.environ[ENVIRON.TRMD_WEB_PID] = str(process.pid)
             log.info(f'通过浏览器运行,子进程pid:{os.environ.get(ENVIRON.TRMD_WEB_PID)},已写入系统环境变量。')
             process.wait()
-            # TODO --cwd参数为中文路径需要添加双引号，但经过实测添加双引号也会报错。
             # TODO 将ttyd的运行日志重定向到rich.console。
             # TODO 账号密码明文记录在ttyd日志中带来的安全问题。
         except KeyboardInterrupt:
