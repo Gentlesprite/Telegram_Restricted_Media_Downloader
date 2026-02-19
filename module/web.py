@@ -4,6 +4,7 @@
 # Time:2026/2/19 18:50
 # File:web.py
 import os
+import platform
 import subprocess
 
 from module import log
@@ -50,6 +51,8 @@ class Web(TTYD):
                             '--once',
                             '--browser'
                         ] + get_subprocess_args(self.main_file)
+            if platform.system() == 'Windows':
+                cmd.remove('--writable')
             log.info(f'通过浏览器运行,命令:"{cmd}"。')
             process = subprocess.Popen(cmd, env=env)
             os.environ[ENVIRON.TRMD_WEB_PID] = str(process.pid)
