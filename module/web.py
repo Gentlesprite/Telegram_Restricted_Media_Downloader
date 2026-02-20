@@ -60,6 +60,7 @@ class Web(TTYD):
             cmd.remove('--writable')
         log.info(f'通过浏览器运行,命令:"{cmd}"。')
         process = subprocess.Popen(cmd, env=env, stdout=file_handler.stream, stderr=file_handler.stream)
+        os.environ[ENVIRON.TRMD_WEB_PID] = str(process.pid)
         PanelTable(
             title='Web配置',
             header=('属性', '内容'),
@@ -72,5 +73,4 @@ class Web(TTYD):
             ],
             show_lines=True
         ).print_meta()
-        os.environ[ENVIRON.TRMD_WEB_PID] = str(process.pid)
         log.info(f'通过浏览器运行,子进程pid:{os.environ.get(ENVIRON.TRMD_WEB_PID)},已写入系统环境变量。')
