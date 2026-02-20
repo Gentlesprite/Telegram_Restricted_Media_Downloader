@@ -78,7 +78,9 @@ class SaveDirectoryPrefix:
                 yield value
 
 
-class Account:
+class WebMeta:
+    IP: str = 'IP'
+    PORT: str = 'port'
     USERNAME: str = 'username'
     PASSWORD: str = 'password'
 

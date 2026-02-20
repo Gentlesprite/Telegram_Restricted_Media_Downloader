@@ -48,6 +48,8 @@ translations: dict = {
     'forward failure': ['转发失败'],
     'skip forward': ['跳过转发'],
     'upload file part': ['[上传缺失分片]'],
+    'IP': ['IP地址'],
+    'port': ['端口'],
     'username': ['账号'],
     'password': ['密码']
 }
