@@ -65,6 +65,7 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             '-w', '--web',
             type=int,
             nargs='?',
+            metavar='PORT',
             const=0,
             default=None,
             help='通过浏览器运行'
