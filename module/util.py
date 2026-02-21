@@ -346,7 +346,7 @@ def get_subprocess_args(main_file: str) -> list:
     return args
 
 
-def gen_random_credential():
+def gen_random_credential() -> dict:
     chars = string.ascii_letters + string.digits
     username = ''.join(random.choices(chars, k=8))
     password = ''.join(random.choices(chars, k=12))
@@ -356,11 +356,15 @@ def gen_random_credential():
     }
 
 
-def check_environ():
+def check_environ() -> None:
     if PARSE_ARGS.web is not None:
         environ_name, environ_param = ENVIRON.TRMD_WEB_PORT, str(PARSE_ARGS.web)
         os.environ[environ_name] = environ_param
         log.info(f'添加系统环境变量:"{environ_name}={environ_param}"。')
+
+
+def is_nuitka() -> bool:
+    return '__compiled__' in globals()
 
 
 class Issues:

@@ -11,10 +11,14 @@ from typing import Union
 from pathlib import Path
 
 from module import log
-from module.util import add_executable_permission
+from module.util import (
+    add_executable_permission,
+    is_nuitka
+)
 
 
 class TTYD:
+    # https://github.com/tsl0922/ttyd
     MACHINE = {
         'x86_64': 'ttyd.x86_64',
         'amd64': 'ttyd.win32.exe',
@@ -40,7 +44,7 @@ class TTYD:
         add_executable_permission(self.ttyd_path)
 
     def get_ttyd_path(self) -> Union[str]:
-        if '__compiled__' in globals():
+        if is_nuitka():
             path = str(Path(self.main_file).parent / self.ttyd_executable)
             log.info(f'在编译环境获取ttyd路径:"{path}"。')
             return path
