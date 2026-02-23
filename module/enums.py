@@ -88,6 +88,7 @@ class WebMeta:
 class ENVIRON:
     TRMD_WEB_PID: str = 'TRMD_WEB_PID'
     TRMD_WEB_PORT: str = 'TRMD_WEB_PORT'
+    PSMUX_SESSION_NAME: str = 'PSMUX_SESSION_NAME'  # Windows专属。
 
 
 class KeyWord:

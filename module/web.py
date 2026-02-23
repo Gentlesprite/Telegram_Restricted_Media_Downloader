@@ -5,9 +5,9 @@
 # File:web.py
 import os
 import socket
+import tempfile
 import platform
 import subprocess
-import tempfile
 
 from module import (
     log,
@@ -101,13 +101,13 @@ class Web(TTYD, TMUX):
                 # 根据psmux文档，不带命令时会自动附加到会话或创建新会话。
                 # 设置环境变量指定默认会话名。
                 cmd_env = env.copy()
-                cmd_env['PSMUX_SESSION_NAME'] = session_name
+                cmd_env[ENVIRON.PSMUX_SESSION_NAME] = session_name
                 cmd.extend([self.tmux_path])
-                log.info(f'psmux使用会话:"{session_name}"。')
+                log.info(f'tmux使用会话:"{session_name}"。')
             else:
                 # 会话不存在，创建一个简单的会话。
                 cmd.extend([self.tmux_path, 'new-session', '-s', session_name, 'cmd', '/k'])
-                log.warning(f'无法创建tmux会话，使用简单的cmd会话。')
+                log.warning(f'无法创建tmux会话,使用简单的cmd会话。')
         else:
             shell_cmd = rf'''
             {self.tmux_path} new -A -s {session_name} -e TERM=xterm-256color \; \
