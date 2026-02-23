@@ -88,23 +88,35 @@ def truncate_filename(path: str, limit: int = 230) -> str:
 
 def gen_backup_config(old_path: str, absolute_backup_dir: str, error_config: bool = False) -> str:
     """备份配置文件。"""
+
+    try:
+        os.makedirs(absolute_backup_dir, exist_ok=True)
+    except PermissionError as e:
+        log.error(f'权限不足,无法创建目录"{absolute_backup_dir}",{_t(KeyWord.REASON)}:"{e}"')
+        raise SystemExit(1)
+    except OSError as e:
+        log.error(f'无法创建目录"{absolute_backup_dir}",{_t(KeyWord.REASON)}:"{e}"')
+        raise SystemExit(1)
+
     time_format: str = '%Y-%m-%d_%H-%M-%S'
     error_flag: str = 'error_' if error_config else ''
     new_path: str = os.path.join(
         absolute_backup_dir,
         f'{error_flag}history_{datetime.datetime.now().strftime(time_format)}_config.yaml'
     )
-    try:
-        os.makedirs(absolute_backup_dir, exist_ok=True)
-    except PermissionError as e:
-        log.error(f'权限不足,无法创建"{absolute_backup_dir}",{_t(KeyWord.REASON)}:"{e}"')
-        raise SystemExit(0)
+
     try:
         shutil.move(old_path, new_path)
         return new_path
+    except FileNotFoundError as e:
+        log.error(f'源文件"{old_path}"不存在,{_t(KeyWord.REASON)}:"{e}"')
+        raise SystemExit(1)
     except PermissionError as e:
         log.error(f'权限不足,无法移动"{old_path}"->"{new_path}",{_t(KeyWord.REASON)}:"{e}"')
-        raise SystemExit(0)
+        raise SystemExit(1)
+    except Exception as e:
+        log.error(f'无法移动"{old_path}"->"{new_path}",{_t(KeyWord.REASON)}:"{e}"')
+        raise SystemExit(1)
 
 
 def safe_delete(file_p_d: str) -> bool:
