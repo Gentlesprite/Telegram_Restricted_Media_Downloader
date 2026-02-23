@@ -37,6 +37,7 @@ class Web(TTYD, TMUX):
         self.port: int = self.get_free_port()
         self.username: str = self.credential.get(WebMeta.USERNAME)
         self.password: str = self.credential.get(WebMeta.PASSWORD)
+        self.platform: str = platform.system()
 
     @staticmethod
     def get_free_port():
@@ -60,7 +61,7 @@ class Web(TTYD, TMUX):
         ]
         session_name: str = 'ttyd_session'
         args: str = ' '.join(get_subprocess_args(main_file=self.main_file))
-        if platform.system() == 'Windows':
+        if self.platform == 'Windows':
             cmd.remove('--writable')
             # Windows (tmux): 检查会话是否存在。
             result = subprocess.run(
@@ -122,7 +123,7 @@ class Web(TTYD, TMUX):
         process = None
         try:
             # 根据平台使用不同的环境变量。
-            use_env = cmd_env if platform.system() == 'Windows' and 'cmd_env' in locals() else env
+            use_env = cmd_env if self.platform == 'Windows' and 'cmd_env' in locals() else env
             process = subprocess.Popen(cmd, env=use_env, stdout=file_handler.stream, stderr=file_handler.stream)
             os.environ[ENVIRON.TRMD_WEB_PID] = str(process.pid)
             PanelTable(
