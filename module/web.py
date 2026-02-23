@@ -60,7 +60,7 @@ class Web(TTYD, TMUX):
                         '--once',
                         '--browser'
                     ] + get_subprocess_args(self.main_file)
-        if platform.system() == 'Windows':
+        if self.platform == 'Windows':
             cmd.remove('--writable')
         log.info(f'通过浏览器运行,命令:"{cmd}"。')
         process = subprocess.Popen(cmd, env=env, stdout=file_handler.stream, stderr=file_handler.stream)
