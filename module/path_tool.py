@@ -89,14 +89,22 @@ def truncate_filename(path: str, limit: int = 230) -> str:
 def gen_backup_config(old_path: str, absolute_backup_dir: str, error_config: bool = False) -> str:
     """备份配置文件。"""
     time_format: str = '%Y-%m-%d_%H-%M-%S'
-    os.makedirs(absolute_backup_dir, exist_ok=True)
     error_flag: str = 'error_' if error_config else ''
-    new_path = os.path.join(
+    new_path: str = os.path.join(
         absolute_backup_dir,
         f'{error_flag}history_{datetime.datetime.now().strftime(time_format)}_config.yaml'
     )
-    shutil.move(old_path, new_path)
-    return new_path
+    try:
+        os.makedirs(absolute_backup_dir, exist_ok=True)
+    except PermissionError as e:
+        log.error(f'权限不足,无法创建"{absolute_backup_dir}",{_t(KeyWord.REASON)}:"{e}"')
+        raise SystemExit(0)
+    try:
+        shutil.move(old_path, new_path)
+        return new_path
+    except PermissionError as e:
+        log.error(f'权限不足,无法移动"{old_path}"->"{new_path}",{_t(KeyWord.REASON)}:"{e}"')
+        raise SystemExit(0)
 
 
 def safe_delete(file_p_d: str) -> bool:
@@ -108,6 +116,9 @@ def safe_delete(file_p_d: str) -> bool:
         elif os.path.isfile(file_p_d):
             os.remove(file_p_d)
             return True
+        else:
+            log.warning(f'"{file_p_d}"不是有效的文件或目录,无法删除。')
+            return False
     except FileNotFoundError:
         return True
     except PermissionError as e:
@@ -308,7 +319,7 @@ def is_compressed_file(filename: Union[str, None]) -> bool:
     return False
 
 
-def calc_sha256(file_path, chunk_size=8192) -> str:
+def calc_sha256(file_path, chunk_size=8192) -> Union[str, None]:
     sha256_hash = hashlib.sha256()
 
     try:
