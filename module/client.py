@@ -489,41 +489,42 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             inner_query = query.query
         else:
             inner_query = query
-
+        reconnect_delay: int = 60
         query_name = '.'.join(inner_query.QUALNAME.split('.')[1:])
+        while True:
+            for attempt in range(1, retries + 1):
+                try:
+                    return await self.send(query, timeout=timeout)
+                except (FloodWait, FloodPremiumWait) as e:
+                    amount = e.value
 
-        for attempt in range(1, retries + 1):
-            try:
-                return await self.send(query, timeout=timeout)
-            except (FloodWait, FloodPremiumWait) as e:
-                amount = e.value
+                    if amount > sleep_threshold >= 0:
+                        raise
+                    log.info(
+                        '[%s] Waiting for %s seconds before continuing (required by "%s")',
+                        self.client.name,
+                        amount,
+                        query_name,
+                    )
+                    console.log(
+                        f'[{self.client.name}]请求频繁,"{query_name}"要求等待{amount}秒后继续运行。',
+                        style='#FF4689'
+                    )
 
-                if amount > sleep_threshold >= 0:
-                    raise
-                log.info(
-                    '[%s] Waiting for %s seconds before continuing (required by "%s")',
-                    self.client.name,
-                    amount,
-                    query_name,
-                )
-                console.log(
-                    f'[{self.client.name}]请求频繁,"{query_name}"要求等待{amount}秒后继续运行。',
-                    style='#FF4689'
-                )
+                    await asyncio.sleep(amount)
+                except (OSError, InternalServerError, ServiceUnavailable) as e:
+                    log.info(
+                        '[%s] Retrying "%s" due to: %s', attempt, query_name, str(e) or repr(e)
+                    )
+                    console.log(
+                        f'[{attempt}/{retries}]由于"{str(e) or repr(e)}"导致无法调用"{query_name}",正在尝试重连。',
+                        style='#FF4689'
+                    )
 
-                await asyncio.sleep(amount)
-            except (OSError, InternalServerError, ServiceUnavailable) as e:
-                log.info(
-                    '[%s] Retrying "%s" due to: %s', attempt, query_name, str(e) or repr(e)
-                )
-                console.log(
-                    f'[{attempt}/{retries}]由于"{str(e) or repr(e)}"导致无法调用"{query_name}",正在尝试重连。',
-                    style='#FF4689'
-                )
+                    await asyncio.sleep(retry_delay)
 
-                await asyncio.sleep(retry_delay)
-
-        raise TimeoutError(f'经{retries}次尝试后仍无法调用"{query_name}"')
+            log.error(f'经{retries}次尝试后仍无法调用"{query_name}",请检查网络环境,等待{reconnect_delay}秒后重新尝试。')
+            await asyncio.sleep(reconnect_delay)
 
     async def send(
             self,
