@@ -1,0 +1,18 @@
+[project]
+name = "Telegram_Restricted_Media_Downloader"
+authors = [{name = "Gentlesprite", email = "Gentlesprites@outlook.com"}]
+version = "1.8.9"
+description = "Telegram downloader (TRMD): Supports resumable downloads and uploads. Bot supports commands/links for downloading, forwarding, listening, uploading, and upload-after-download of non-downloadable Telegram content via API."
+readme = "README.md"
+requires-python = ">=3.13.2"
+license = "MIT"
+dependencies = [
+    "kurigram==2.2.19",
+    "pygments>=2.19.2",
+    "pymediainfo==7.0.1",
+    "pyreadline3>=3.5.4",
+    "pyyaml>=6.0.3",
+    "qrcode>=8.2",
+    "rich==14.2.0",
+    "tgcrypto>=1.2.5",
+]
