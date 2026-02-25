@@ -882,7 +882,7 @@ class Bot:
     async def cancel_listen(
             self,
             client: pyrogram.Client,
-            message: pyrogram.types,
+            message: pyrogram.types.Message,
             link: str,
             command: str
     ):
@@ -891,7 +891,7 @@ class Bot:
     async def listen_info(
             self,
             client: pyrogram.Client,
-            message: pyrogram.types
+            message: pyrogram.types.Message
     ):
         async def __listen_info(_listen_chat: dict, _text: str):
             last_message = await client.send_message(

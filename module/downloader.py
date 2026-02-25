@@ -1263,7 +1263,7 @@ class TelegramRestrictedMediaDownloader(Bot):
     async def cancel_listen(
             self,
             client: pyrogram.Client,
-            message: pyrogram.types,
+            message: pyrogram.types.Message,
             link: str,
             command: str
     ):
