@@ -341,7 +341,7 @@ class UserConfig(BaseConfig):
                 self.re_config = True
                 log.warning('检测到空的配置文件。已生成新的模板文件. . .')
                 config: dict = UserConfig.TEMPLATE.copy()
-            return config
+        return config
 
     def backup_config(
             self,
@@ -362,6 +362,7 @@ class UserConfig(BaseConfig):
 
     def config_guide(self) -> None:
         """引导用户以交互式的方式修改、保存配置文件。"""
+        exit_flag: bool = False
         pre_load_config: dict = self.load_config()
         gsp = GetStdioParams()
         # v1.1.0 更替api_id和api_hash位置,与telegram申请的api位置对应以免输错。
@@ -531,7 +532,9 @@ class UserConfig(BaseConfig):
                     print('\n')
                     console.log('用户手动终止配置参数。')
                 self.ctrl_c()
-                raise SystemExit(0)
+                exit_flag: bool = True
+        if exit_flag:
+            raise SystemExit(0)
         pre_load_config.get(
             'max_tasks',
             {

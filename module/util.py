@@ -42,8 +42,7 @@ def get_terminal_width() -> int:
         terminal_width: int = os.get_terminal_size().columns
     except OSError:
         pass
-    finally:
-        return terminal_width
+    return terminal_width
 
 
 def truncate_display_filename(file_name: str) -> Text:
