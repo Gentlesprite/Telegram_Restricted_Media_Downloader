@@ -292,7 +292,7 @@ class DownloadFileName:
                 return self.get_filename()
 
         except (AttributeError, Exception) as e:
-            log.info(f'无法找到的该文档文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')
+            log.info(f'无法找到该文档文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')
             file_id = getattr(self.message, 'id', '0')
             time_format = '%Y-%m-%d_%H-%M-%S'
             return f'{file_id} - {datetime.datetime.now().strftime(time_format)}.unknown'
@@ -320,4 +320,7 @@ class DownloadFileName:
                 origin_extension
             )
         except Exception as e:
-            log.info(f'无法找到的该{_t(self.download_type)}文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')
+            log.info(f'无法找到该{_t(self.download_type)}文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')
+            file_id = getattr(self.message, 'id', '0')
+            time_format = '%Y-%m-%d_%H-%M-%S'
+            return f'{file_id} - {datetime.datetime.now().strftime(time_format)}.unknown'
