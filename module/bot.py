@@ -1771,7 +1771,7 @@ class KeyboardButton:
 
     @staticmethod
     def keyword_filter_button(
-            adding_keywords=Union[list, None]
+            adding_keywords: Union[list, None]
     ):
         """关键词过滤设置按钮。"""
         if adding_keywords:
