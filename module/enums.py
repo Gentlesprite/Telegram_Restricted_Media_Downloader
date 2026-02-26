@@ -496,6 +496,7 @@ class Validator:
     def is_valid_enable_proxy(enable_proxy: Union[str, bool]) -> bool:
         if enable_proxy in ('y', 'n'):
             return True
+        return False
 
     @staticmethod
     def is_valid_scheme(scheme: str, valid_format: list) -> bool:
