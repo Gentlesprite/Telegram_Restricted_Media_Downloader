@@ -19,7 +19,8 @@ from module.stdio import PanelTable
 from module.language import _t
 from module.enums import (
     WebMeta,
-    ENVIRON
+    ENVIRON,
+    KeyWord
 )
 from module.util import (
     gen_random_credential,
@@ -41,10 +42,19 @@ class Web(TTYD, TMUX):
 
     @staticmethod
     def get_free_port():
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(('', int(os.environ.get(ENVIRON.TRMD_WEB_PORT, '0'))))
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            return s.getsockname()[1]
+
+        def _get_port(_port: int):
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('', _port))
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                return s.getsockname()[1]
+
+        port: int = int(os.environ.get(ENVIRON.TRMD_WEB_PORT, '0'))
+        try:
+            return _get_port(port)
+        except OSError as e:
+            log.warning(f'无法使用{port}端口,已自动分配新的端口,{_t(KeyWord.REASON)}:"{e}"')
+            return _get_port(0)
 
     def run_once(self):
         env: dict = os.environ.copy()
