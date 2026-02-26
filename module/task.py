@@ -141,7 +141,7 @@ class UploadTask:
             file_id: int,
             file_size: int,
             file_part: Union[list],
-            status: UploadStatus,
+            status: Union[UploadStatus, str],
             error_msg: Union[str, None] = None,
             with_delete: bool = False,
             media_group: Optional[asyncio.Task] = None,
@@ -156,7 +156,7 @@ class UploadTask:
         self.file_id: int = file_id
         self.file_size: int = file_size
         self.file_part: list = file_part
-        self.status: UploadStatus = status
+        self.status: Union[UploadStatus, str] = status
         self.error_msg: Union[str, None] = error_msg
         self.with_delete: bool = with_delete
         self.file_total_parts = int(math.ceil(file_size / UploadTask.PART_SIZE))
