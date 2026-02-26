@@ -490,6 +490,7 @@ class Validator:
             return False
         except Exception as e:
             log.error(f'意外的错误,原因:"{e}"')
+            return False
 
     @staticmethod
     def is_valid_enable_proxy(enable_proxy: Union[str, bool]) -> bool:
