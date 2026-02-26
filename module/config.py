@@ -362,6 +362,8 @@ class UserConfig(BaseConfig):
 
     def config_guide(self) -> None:
         """引导用户以交互式的方式修改、保存配置文件。"""
+        _max_download_task: int = 3
+        _max_download_retries: int = 5
         exit_flag: bool = False
         pre_load_config: dict = self.load_config()
         gsp = GetStdioParams()
@@ -388,8 +390,8 @@ class UserConfig(BaseConfig):
             _bot_token: Union[str, None] = pre_load_config.get('bot_token')
             _links: Union[str, None] = pre_load_config.get('links')
             _save_directory: Union[str, None] = pre_load_config.get('save_directory')
-            _max_download_task: Union[int, None] = pre_load_config.get('max_tasks', {'download': 3}).get('download')
-            _max_download_retries: Union[int, None] = pre_load_config.get('max_retries', {'download': 5}).get(
+            _max_download_task: int = pre_load_config.get('max_tasks', {'download': 3}).get('download')
+            _max_download_retries: int = pre_load_config.get('max_retries', {'download': 5}).get(
                 'download')
             _download_type: Union[list, None] = pre_load_config.get('download_type')
             _is_shutdown: Union[bool, None] = pre_load_config.get('is_shutdown')
