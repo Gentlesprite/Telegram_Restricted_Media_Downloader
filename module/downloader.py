@@ -1298,7 +1298,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         if meta is None:
             return None
 
-        async def add_listen_chat(_link: str, _listen_chat: dict, _callback: callable) -> bool:
+        async def add_listen_chat(_link: str, _listen_chat: dict, _callback: Callable) -> bool:
             if _link not in _listen_chat:
                 try:
                     chat = await self.user.get_chat(_link)
