@@ -530,6 +530,7 @@ class Validator:
                 if dtype:
                     return True
                 return False
+            return False
         except Exception as e:
             log.error(f'意外的错误,原因:"{e}"')
             return False
