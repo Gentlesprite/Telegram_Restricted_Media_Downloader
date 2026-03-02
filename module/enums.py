@@ -846,9 +846,30 @@ class GetStdioParams:
                 console.print(prompt, end='')
                 start_time: float = time.time()
                 input_buffer: list = []
+                last_second: int = timeout
+                countdown_displayed: bool = False
 
                 while True:
+                    elapsed = time.time() - start_time
+                    remaining = int(timeout - elapsed)
+
+                    # 倒计时显示更新。
+                    if remaining != last_second and remaining >= 0:
+                        if countdown_displayed:
+                            # 删除之前的倒计时（1位数字+1个空格）。
+                            print('\b \b\b \b', end='', flush=True)
+                        # 显示新的倒计时（输入时才显示）。
+                        if not input_buffer and remaining >= 0:
+                            console.print(f'{remaining} ', end='', style='dim')
+                            countdown_displayed = True
+                        last_second = remaining
+                    
                     if msvcrt.kbhit():  # 检测是否有键盘输入。
+                        # 清除倒计时显示。
+                        if countdown_displayed:
+                            print('\b \b\b \b', end='', flush=True)
+                            countdown_displayed = False
+                        
                         char = msvcrt.getwch()
                         if char == '\r':  # 回车键结束输入。
                             user_input = ''.join(input_buffer)
@@ -863,7 +884,8 @@ class GetStdioParams:
                         else:
                             input_buffer.append(char)
                             console.print(char, end='')
-                    elif time.time() - start_time > timeout:
+                        last_second = -1  # 输入开始后不再显示倒计时。
+                    elif elapsed > timeout:
                         timeout_notice()
                         return default
                     time.sleep(0.1)
@@ -894,11 +916,11 @@ class GetStdioParams:
 
     @staticmethod
     def get_is_re_config(valid_format: str = 'y|n') -> dict:
-        prompt: str = f'检测到已配置完成的配置文件,是否需要重新配置?(之前的配置文件将为你备份到当前目录下) - 「{valid_format}」'
+        prompt: str = f'检测到已配置完成的配置文件,是否需要重新配置?(配置文件将自动备份) - 「{valid_format}」'
         timeout: int = 5
         while True:
             is_re_config: str = GetStdioParams.__timeout_input(
-                prompt=f'{prompt}({timeout}秒后自动设置为默认n):',
+                prompt=f'{prompt}:',
                 error_prompt=f'{prompt}(默认n):',
                 default='n',
                 timeout=timeout
