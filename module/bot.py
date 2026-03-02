@@ -738,7 +738,7 @@ class Bot:
     ) -> None:
         last_message = await client.send_message(
             chat_id=message.from_user.id,
-            text='🫡🫡🫡已收到退出命令。',
+            text='🚧已收到退出命令。',
             reply_parameters=ReplyParameters(message_id=message.id),
             link_preview_options=LINK_PREVIEW_OPTIONS
         )
@@ -747,7 +747,7 @@ class Bot:
             client=client,
             message=message,
             last_message_id=last_message.id,
-            text='👌👌👌退出成功。'
+            text='✅退出成功。'
         )
         raise SystemExit(0)
 
