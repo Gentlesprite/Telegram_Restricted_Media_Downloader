@@ -11,7 +11,7 @@ import random
 import datetime
 
 from io import BytesIO
-from typing import Union
+from typing import Union, Callable
 
 import qrcode
 
@@ -529,6 +529,8 @@ class MetaData:
             return windll.kernel32.SetConsoleTextAttribute(windll.kernel32.GetStdHandle(-0xb), 0x7)
         except ImportError:  # v1.2.9 抛出错误代表非Windows平台。
             return True
+        except Exception:
+            return True
 
     @staticmethod
     def pay():
@@ -546,8 +548,8 @@ class MetaData:
                     ),
                     justify='center'
                 )
-            except Exception as _:
-                return _
+            except Exception:
+                pass
 
     @staticmethod
     def print_meta():
@@ -613,7 +615,7 @@ class MetaData:
         console.print(Markdown(README))
 
     @staticmethod
-    def __qr_terminal_str(str_obj: str, version: int = 1, render: callable = QrcodeRender.render_2by1) -> str:
+    def __qr_terminal_str(str_obj: str, version: int = 1, render: Callable = QrcodeRender.render_2by1) -> str:
         qr = qrcode.QRCode(version)
         qr.add_data(str_obj)
         qr.make()
