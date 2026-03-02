@@ -7,7 +7,6 @@ import os
 import sys
 import csv
 import base64
-import random
 import datetime
 
 from io import BytesIO
@@ -555,7 +554,7 @@ class MetaData:
     def print_meta():
         console.print(
             GradientColor.gen_gradient_text(
-                text=random.Random().choice([Banner.TRMD, Banner.C]),
+                text=Banner.TRMD,
                 gradient_color=GradientColor.generate_gradient(
                     start_color='#fa709a',
                     end_color='#fee140',
@@ -568,14 +567,14 @@ class MetaData:
 
     @staticmethod
     def print_about():
-        console.print(f'[bold]{SOFTWARE_FULL_NAME} v{__version__}[/bold],\n[i]{__copyright__}[/i]')
+        console.print(f'[i]{__copyright__}[/i]')
         console.print(f'Licensed under the terms of the {__license__}.', end='\n')
 
     @staticmethod
     def print_disclaimer():
         console.print(GradientColor.gen_gradient_text(
             '\t所有使用本软件的行为及其后果均由使用者自行承担全部法律责任，开发者不对任何使用行为及其后果负责。',
-            gradient_color=GradientColor.RED_GRADIENT_15)
+            gradient_color=GradientColor.BLUE2PURPLE_14)
         )
 
     @staticmethod
