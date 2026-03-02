@@ -432,6 +432,7 @@ class StatisticalTable:
                 ['TRMD版本', __version__],
                 ['Pyrogram版本', pyrogram_version],
                 ['用户配置文件', app.config_path],
+                ['保存目录', app.save_directory],
                 ['会话目录', app.work_directory],
                 ['缓存目录', app.temp_directory],
                 ['使用系统代理', app.enable_proxy]
