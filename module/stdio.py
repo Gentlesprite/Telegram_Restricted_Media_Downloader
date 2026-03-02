@@ -32,7 +32,6 @@ from module import (
     log,
     console,
     README,
-    SOFTWARE_FULL_NAME,
     __version__,
     __copyright__,
     __license__

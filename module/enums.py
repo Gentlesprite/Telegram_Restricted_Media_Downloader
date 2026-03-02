@@ -863,13 +863,13 @@ class GetStdioParams:
                             console.print(f'{remaining} ', end='', style='dim')
                             countdown_displayed = True
                         last_second = remaining
-                    
+
                     if msvcrt.kbhit():  # 检测是否有键盘输入。
                         # 清除倒计时显示。
                         if countdown_displayed:
                             print('\b \b\b \b', end='', flush=True)
                             countdown_displayed = False
-                        
+
                         char = msvcrt.getwch()
                         if char == '\r':  # 回车键结束输入。
                             user_input = ''.join(input_buffer)
