@@ -409,7 +409,7 @@ class StatisticalTable:
 
     @staticmethod
     def print_env_table(app):
-        log.info(
+        log.debug(
             {
                 'platform': app.platform,
                 'python_version': sys.version.split()[0],
