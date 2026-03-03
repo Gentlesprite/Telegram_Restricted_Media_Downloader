@@ -701,6 +701,12 @@ class TelegramRestrictedMediaDownloader(Bot):
             if callback_data in (BotCallbackText.DOWNLOAD_CHAT_ID, BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL):  # 执行或取消任务。
                 BotCallbackText.DOWNLOAD_CHAT_ID = 'download_chat_id'
                 self.adding_keywords.clear()
+                self.add_keyword_mode_handler(
+                    chat_id=chat_id,
+                    callback_query=callback_query,
+                    callback_prompt=_filter_prompt,
+                    enable=False
+                )  # 关闭关键词输入handler。
                 if callback_data == chat_id:
                     await self.download_chat(chat_id=chat_id, callback_query=callback_query)
                     _remove_chat_id(chat_id)

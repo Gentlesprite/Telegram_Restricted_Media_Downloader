@@ -91,6 +91,19 @@ class Bot:
         self.adding_keywords: list = []  # 用于跟踪正在添加的关键词列表。
         self.keyword_handler: Union[MessageHandler, None] = None  # 关键词输入模式的handler。
 
+    def add_handler(self, handler, group: int = 0):
+        """添加handler到指定的group。直接操作dispatcher.groups以确保正确添加。"""
+        if group not in self.bot.dispatcher.groups:
+            self.bot.dispatcher.groups[group] = []
+        self.bot.dispatcher.groups[group].append(handler)
+        log.info(f'添加handler到group={group},当前handler数量:{len(self.bot.dispatcher.groups[group])}')
+
+    def remove_handler(self, handler, group: int = 0):
+        """从指定的group中移除handler。直接操作dispatcher.groups以确保正确移除。"""
+        if group in self.bot.dispatcher.groups and handler in self.bot.dispatcher.groups[group]:
+            self.bot.dispatcher.groups[group].remove(handler)
+            log.info(f'从group={group}移除handler,剩余handler数量:{len(self.bot.dispatcher.groups[group])}')
+
     def add_keyword_mode_handler(
             self,
             chat_id,
@@ -100,7 +113,7 @@ class Bot:
     ):
         """添加或移除关键词输入模式的handler。"""
         if enable:
-            # 先创建 handler 对象，然后添加
+            # 先创建 handler 对象，然后添加。
             self.keyword_handler = MessageHandler(
                 partial(self.handle_keyword_input, chat_id, callback_query, callback_prompt),
                 filters=pyrogram.filters.user(self.root) & pyrogram.filters.text & (
@@ -112,11 +125,11 @@ class Bot:
                 )
             )
             # 使用group=-1确保在process_error_message(group=0)之前处理。
-            self.bot.add_handler(self.keyword_handler, group=-1)
+            self.add_handler(self.keyword_handler, group=-1)
             log.info(f'用户输入模式已打开,Handler:"{self.keyword_handler}"。')
         else:
             if self.keyword_handler:
-                self.bot.remove_handler(self.keyword_handler, group=-1)
+                self.remove_handler(self.keyword_handler, group=-1)
                 log.info('用户输入模式已关闭,Handler已清空。')
                 self.keyword_handler = None
 
