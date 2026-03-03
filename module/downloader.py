@@ -5,6 +5,7 @@
 # File:downloader.py
 import os
 import sys
+import random
 import asyncio
 import datetime
 
@@ -1911,10 +1912,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     # 如果是媒体组的第一条消息，记录该media_group_id。
                     if message.media_group_id:
                         media_group_matched.add(message.media_group_id)
-                    text: str = f'{callback_query_text}\n检索消息中,已匹配到{len(messages_to_download)}条消息。'
                     try:
                         await callback_query.message.edit_text(
-                            text=text,
+                            text=f'{callback_query_text}\n'
+                                 f'{random.choice(('🔎', '🔍'))}检索消息中,已匹配到{len(messages_to_download)}条消息。',
                             reply_markup=KeyboardButton.single_button(
                                 text=BotButton.RETRIEVE_MESSAGE,
                                 callback_data=BotCallbackText.NULL)
@@ -1931,6 +1932,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                 )
                 return None
+            message_count: int = len(messages_to_download)
             # 第二阶段：对匹配的消息进行处理，获取评论区。
             for message in messages_to_download:
                 message_link = message.link if message.link else message
@@ -1948,10 +1950,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                             continue
                         comment_link = comment.link if comment.link else comment
                         links.append(comment_link)
-                        text: str = f'{callback_query_text}\n检索评论区中,已匹配到{len(links) - len(messages_to_download)}条消息。'
                         try:
                             await callback_query.message.edit_text(
-                                text=text,
+                                text=f'{callback_query_text}\n'
+                                     f'{random.choice(('🔎', '🔍'))}检索评论区中,已匹配到{len(links) - message_count}条消息。',
                                 reply_markup=KeyboardButton.single_button(
                                     text=BotButton.RETRIEVE_COMMENT,
                                     callback_data=BotCallbackText.NULL)
@@ -1962,17 +1964,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     # 消息没有评论区或消息ID无效，跳过。
                     pass
             diy_download_type: list = [_ for _ in DownloadType()]
-            assigned_count: int = 0
-            message_count: int = len(messages_to_download)
             comment_count: int = (len(links) - message_count) if include_comment else 0
             total_count: int = message_count + comment_count
+            assigned_count: int = 0
             for link in links:
-                await self.create_download_task(
-                    message_ids=link,
-                    single_link=True,
-                    diy_download_type=diy_download_type
-                )
-                assigned_count += 1
                 if assigned_count == total_count:
                     reply_markup = KeyboardButton.single_button(
                         text=BotButton.TASK_ASSIGN,
@@ -1987,12 +1982,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                     await callback_query.message.edit_text(
                         text=f'{origin_callback_query_text}\n'
                              f'🔎匹配消息:{message_count}条,评论区消息:{comment_count}条,共{total_count}条。\n'
-                             f'[{assigned_count}/{total_count}]分配下载任务中。\n'
-                             f'{self.pb.bot(assigned_count, total_count)}',
+                             f'⭐️[{assigned_count}/{total_count}]分配下载任务中。\n'
+                             f'{random.choice(('⏳', '⌛'))}{self.pb.bot(assigned_count, total_count)}',
                         reply_markup=reply_markup
                     )
                 except MessageNotModified:
                     pass
+                await self.create_download_task(
+                    message_ids=link,
+                    single_link=True,
+                    diy_download_type=diy_download_type
+                )
+                assigned_count += 1
             await callback_query.message.edit_text(
                 text=origin_callback_query_text,
                 reply_markup=KeyboardButton.single_button(
@@ -2000,7 +2001,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     callback_data=BotCallbackText.NULL
                 )
             )
-
             return links
         except Exception as e:
             log.error(
