@@ -22,6 +22,7 @@ from pyrogram.errors.exceptions.bad_request_400 import (
     BotMethodInvalid,
     UsernameNotOccupied,
     PeerIdInvalid,
+    MessageNotModified,
     ChannelPrivate as ChannelPrivate_400,
     ChatForwardsRestricted as ChatForwardsRestricted_400
 )
@@ -680,32 +681,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'👥包含评论区:{_get_format_comment_status()}'
                 )
 
-            def _download_chat_call(_callback_query, _future):
-                try:
-                    _links = _future.result()
-                    if not _links:
-                        asyncio.create_task(_callback_query.message.edit_text(
-                            text=f'{_callback_query.message.text}\n'
-                                 '❎没有找到任何匹配的消息。',
-                            reply_markup=kb.single_button(
-                                text=BotButton.TASK_CANCEL,
-                                callback_data=BotCallbackText.NULL
-                            )
-                        ))
-                except Exception as _e:
-                    log.error(
-                        f'{_t(KeyWord.CHANNEL)}:"{chat_id}",无法进行下载,{_t(KeyWord.REASON)}:"{_e}"',
-                        exc_info=True
-                    )
-                    asyncio.create_task(_callback_query.message.edit_text(
-                        text=f'{_callback_query.message.text}`\n'
-                             f'⚠️由于"{_e}"无法执行频道下载任务。',
-                        reply_markup=kb.single_button(
-                            text=BotButton.TASK_CANCEL,
-                            callback_data=BotCallbackText.NULL
-                        )
-                    ))
-
             async def _verification_time(_start_time, _end_time) -> bool:
                 if isinstance(_start_time, datetime.datetime) and isinstance(_end_time, datetime.datetime):
                     if _start_time > _end_time:
@@ -726,23 +701,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 BotCallbackText.DOWNLOAD_CHAT_ID = 'download_chat_id'
                 self.adding_keywords.clear()
                 if callback_data == chat_id:
-                    await callback_query.message.edit_text(
-                        text=f'{callback_query.message.text}\n'
-                             f'⏳需要检索该频道所有匹配的消息,请耐心等待。\n'
-                             f'💡请忽略终端中的请求频繁提示`messages.GetHistory`,因为这并不影响下载。',
-                        reply_markup=kb.single_button(
-                            text=BotButton.TASK_ASSIGN,
-                            callback_data=BotCallbackText.NULL
-                        )
-                    )
-                    task = asyncio.create_task(self.download_chat(chat_id=chat_id))
-                    task.add_done_callback(
-                        partial(
-                            _download_chat_call,
-                            callback_query
-                        )
-                    )
-                    await task
+                    await self.download_chat(chat_id=chat_id, callback_query=callback_query)
                     _remove_chat_id(chat_id)
                 elif callback_data == BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL:
                     _remove_chat_id(chat_id)
@@ -899,10 +858,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                     BotCallbackText.CANCEL_KEYWORD_INPUT
             ):
                 if callback_data == BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER:
-                    await callback_query.message.edit_text(
-                        text=_filter_prompt(),
-                        reply_markup=kb.keyword_filter_button(self.adding_keywords)
-                    )
+                    try:
+                        await callback_query.message.edit_text(
+                            text=_filter_prompt(),
+                            reply_markup=kb.keyword_filter_button(self.adding_keywords)
+                        )
+                    except MessageNotModified:
+                        pass
                     self.add_keyword_mode_handler(
                         enable=True,
                         chat_id=chat_id,
@@ -1896,76 +1858,163 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     async def download_chat(
             self,
-            chat_id: str
+            chat_id: str,
+            callback_query: pyrogram.types.CallbackQuery
     ) -> Union[list, None]:
-        _filter = Filter()
-        download_chat_filter: Union[dict, None] = None
-        for i in self.download_chat_filter:
-            if chat_id == i:
-                download_chat_filter = self.download_chat_filter.get(chat_id)
-        if not download_chat_filter:
-            return None
-        if not isinstance(download_chat_filter, dict):
-            return None
-        chat_id: Union[str, int] = int(chat_id) if chat_id.startswith('-') else chat_id
-        date_filter = download_chat_filter.get('date_range')
-        start_date = date_filter.get('start_date')
-        end_date = date_filter.get('end_date')
-        download_type: dict = download_chat_filter.get('download_type')
-        keyword_filter: dict = download_chat_filter.get('keyword', {})
-        include_comment: bool = download_chat_filter.get('comment', False)
-        active_keywords = [k for k, v in keyword_filter.items() if v]
-        links: list = []
-        # 第一阶段：收集匹配的消息。
-        messages_to_download = []
-        media_group_matched = set()  # 记录已匹配的media_group_id。
-        async for message in self.app.client.get_chat_history(
-                chat_id=chat_id,
-                reverse=True
-        ):
-            # 对于媒体组，如果该媒体组已匹配，直接添加。
-            if getattr(message, 'media_group_id', None) and message.media_group_id in media_group_matched:
-                messages_to_download.append(message)
-                continue
+        origin_callback_query_text: str = callback_query.message.text
+        cq = await callback_query.message.edit_text(
+            text=f'{callback_query.message.text}\n'
+                 f'⏳需要检索该频道所有匹配的消息,请耐心等待。\n'
+                 f'💡请忽略终端中的请求频繁提示`messages.GetHistory`,因为这并不影响下载。',
+            reply_markup=KeyboardButton.single_button(
+                text=BotButton.RETRIEVE_MESSAGE,
+                callback_data=BotCallbackText.NULL
+            )
+        )
+        callback_query_text: str = cq.text
 
-            if (_filter.date_range(message, start_date, end_date) and
-                    _filter.dtype(message, download_type) and
-                    _filter.keyword_filter(message, active_keywords)):
-                messages_to_download.append(message)
-                # 如果是媒体组的第一条消息，记录该media_group_id
-                if message.media_group_id:
-                    media_group_matched.add(message.media_group_id)
+        try:
+            _filter = Filter()
+            download_chat_filter: Union[dict, None] = None
+            for i in self.download_chat_filter:
+                if chat_id == i:
+                    download_chat_filter = self.download_chat_filter.get(chat_id)
+            if not download_chat_filter:
+                return None
+            if not isinstance(download_chat_filter, dict):
+                return None
+            chat_id: Union[str, int] = int(chat_id) if chat_id.startswith('-') else chat_id
+            date_filter = download_chat_filter.get('date_range')
+            start_date = date_filter.get('start_date')
+            end_date = date_filter.get('end_date')
+            download_type: dict = download_chat_filter.get('download_type')
+            keyword_filter: dict = download_chat_filter.get('keyword', {})
+            include_comment: bool = download_chat_filter.get('comment', False)
+            active_keywords = [k for k, v in keyword_filter.items() if v]
+            links: list = []
+            # 第一阶段：收集匹配的消息。
+            messages_to_download = []
+            media_group_matched = set()  # 记录已匹配的media_group_id。
+            async for message in self.app.client.get_chat_history(
+                    chat_id=chat_id,
+                    reverse=True
+            ):
+                # 对于媒体组，如果该媒体组已匹配，直接添加。
+                if getattr(message, 'media_group_id', None) and message.media_group_id in media_group_matched:
+                    messages_to_download.append(message)
+                    continue
 
-        # 第二阶段：对匹配的消息进行处理，获取评论区。
-
-        for message in messages_to_download:
-            message_link = message.link if message.link else message
-            links.append(message_link)
-            if not include_comment:
-                continue
-            # 检查并获取评论区。
-            try:
-                async for comment in self.app.client.get_discussion_replies(
-                        chat_id=chat_id,
-                        message_id=message.id
-                ):
-                    # 根据用户设置的download_type过滤评论中的媒体，但不过滤具体时间。
-                    if not _filter.dtype(comment, download_type):
-                        continue
-                    comment_link = comment.link if comment.link else comment
-                    links.append(comment_link)
-            except (ValueError, AttributeError, MsgIdInvalid):
-                # 消息没有评论区或消息ID无效，跳过
-                pass
-        diy_download_type = [_ for _ in DownloadType()]
-        for link in links:
-            await self.create_download_task(
-                message_ids=link,
-                single_link=True,
-                diy_download_type=diy_download_type
+                if (_filter.date_range(message, start_date, end_date) and
+                        _filter.dtype(message, download_type) and
+                        _filter.keyword_filter(message, active_keywords)):
+                    messages_to_download.append(message)
+                    # 如果是媒体组的第一条消息，记录该media_group_id。
+                    if message.media_group_id:
+                        media_group_matched.add(message.media_group_id)
+                    text: str = f'{callback_query_text}\n检索消息中,已匹配到{len(messages_to_download)}条消息。'
+                    try:
+                        await callback_query.message.edit_text(
+                            text=text,
+                            reply_markup=KeyboardButton.single_button(
+                                text=BotButton.RETRIEVE_MESSAGE,
+                                callback_data=BotCallbackText.NULL)
+                        )
+                    except MessageNotModified:
+                        pass
+            if not messages_to_download:
+                await callback_query.message.edit_text(
+                    text=f'{callback_query.message.text}\n'
+                         '❎没有找到任何匹配的消息。',
+                    reply_markup=KeyboardButton.single_button(
+                        text=BotButton.TASK_CANCEL,
+                        callback_data=BotCallbackText.NULL
+                    )
+                )
+                return None
+            # 第二阶段：对匹配的消息进行处理，获取评论区。
+            for message in messages_to_download:
+                message_link = message.link if message.link else message
+                links.append(message_link)
+                if not include_comment:
+                    continue
+                # 检查并获取评论区。
+                try:
+                    async for comment in self.app.client.get_discussion_replies(
+                            chat_id=chat_id,
+                            message_id=message.id
+                    ):
+                        # 根据用户设置的download_type过滤评论中的媒体，但不过滤具体时间。
+                        if not _filter.dtype(comment, download_type):
+                            continue
+                        comment_link = comment.link if comment.link else comment
+                        links.append(comment_link)
+                        text: str = f'{callback_query_text}\n检索评论区中,已匹配到{len(links) - len(messages_to_download)}条消息。'
+                        try:
+                            await callback_query.message.edit_text(
+                                text=text,
+                                reply_markup=KeyboardButton.single_button(
+                                    text=BotButton.RETRIEVE_COMMENT,
+                                    callback_data=BotCallbackText.NULL)
+                            )
+                        except MessageNotModified:
+                            pass
+                except (ValueError, AttributeError, MsgIdInvalid):
+                    # 消息没有评论区或消息ID无效，跳过。
+                    pass
+            diy_download_type: list = [_ for _ in DownloadType()]
+            assigned_count: int = 0
+            message_count: int = len(messages_to_download)
+            comment_count: int = (len(links) - message_count) if include_comment else 0
+            total_count: int = message_count + comment_count
+            for link in links:
+                await self.create_download_task(
+                    message_ids=link,
+                    single_link=True,
+                    diy_download_type=diy_download_type
+                )
+                assigned_count += 1
+                if assigned_count == total_count:
+                    reply_markup = KeyboardButton.single_button(
+                        text=BotButton.TASK_ASSIGN,
+                        callback_data=BotCallbackText.NULL
+                    )
+                else:
+                    reply_markup = KeyboardButton.single_button(
+                        text=BotButton.ASSIGNING_TASK,
+                        callback_data=BotCallbackText.NULL
+                    )
+                try:
+                    await callback_query.message.edit_text(
+                        text=f'{origin_callback_query_text}\n'
+                             f'🔎匹配消息:{message_count}条,评论区消息:{comment_count}条,共{total_count}条。\n'
+                             f'[{assigned_count}/{total_count}]分配下载任务中。\n'
+                             f'{self.pb.bot(assigned_count, total_count)}',
+                        reply_markup=reply_markup
+                    )
+                except MessageNotModified:
+                    pass
+            await callback_query.message.edit_text(
+                text=origin_callback_query_text,
+                reply_markup=KeyboardButton.single_button(
+                    text=BotButton.TASK_ASSIGN,
+                    callback_data=BotCallbackText.NULL
+                )
             )
 
-        return links
+            return links
+        except Exception as e:
+            log.error(
+                f'{_t(KeyWord.CHANNEL)}:"{chat_id}",无法进行下载,{_t(KeyWord.REASON)}:"{e}"',
+                exc_info=True
+            )
+            asyncio.create_task(callback_query.message.edit_text(
+                text=f'{origin_callback_query_text}`\n'
+                     f'⚠️由于"{e}"无法执行频道下载任务。',
+                reply_markup=KeyboardButton.single_button(
+                    text=BotButton.TASK_CANCEL,
+                    callback_data=BotCallbackText.NULL
+                )
+            ))
 
     @DownloadTask.on_create_task
     async def create_download_task(

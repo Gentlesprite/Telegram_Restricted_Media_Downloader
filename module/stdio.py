@@ -672,3 +672,12 @@ class ProgressBar:
             info=f'{MetaData.suitable_units_display(current)}/{MetaData.suitable_units_display(total)}',
             total=total
         )
+
+    @staticmethod
+    def bot(completed, total, display_width=20):
+        if total == 0:
+            return '░' * display_width
+        ratio = completed / total
+        completed_bars = int(ratio * display_width)
+        remaining_bars = display_width - completed_bars
+        return '█' * completed_bars + '░' * remaining_bars
