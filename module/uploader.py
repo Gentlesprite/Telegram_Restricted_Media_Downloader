@@ -412,7 +412,7 @@ class TelegramUploader:
             log.error(f'"[Upload Worker]发送单条消息失败,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
 
     @staticmethod
-    def get_video_info(video_path: str) -> Dict[str, int]:
+    def get_video_info(video_path: str) -> Union[Dict[str, int], None]:
         try:
             media_info = MediaInfo.parse(video_path)
             video_track = media_info.video_tracks[0]
