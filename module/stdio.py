@@ -677,6 +677,8 @@ class ProgressBar:
     def bot(completed, total, display_width=20):
         if total == 0:
             return '░' * display_width
+        if completed > total:
+            completed = total
         ratio = completed / total
         completed_bars = int(ratio * display_width)
         remaining_bars = display_width - completed_bars
