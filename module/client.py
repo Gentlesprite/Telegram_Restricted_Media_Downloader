@@ -739,7 +739,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             wait_time: int = min(reconnect_delay, max_reconnect_delay)
             log.error(f'经{retries}次尝试后仍无法调用"{query_name}",请检查网络环境,等待{wait_time}秒后重新尝试。')
             await asyncio.sleep(wait_time)
-            console.log(f'已等待{wait_time}秒,重新尝试重连。')
+            console.log(f'已等待{wait_time}秒,重新尝试重连。', style='#B1DB74')
             if reconnect_delay < max_reconnect_delay:
                 reconnect_delay += 5
 
