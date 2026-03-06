@@ -15,7 +15,7 @@ from typing import Union, Callable, Optional, Dict, Set
 
 import pyrogram
 from pyrogram.enums.parse_mode import ParseMode
-from pyrogram.errors import BadMsgNotification
+from pyrogram.errors import BadMsgNotification, FileReferenceExpired
 from pyrogram.errors.exceptions.bad_request_400 import (
     MsgIdInvalid,
     UsernameInvalid,
@@ -1513,7 +1513,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             progress: Callable = None,
             progress_args: tuple = (),
             chunk_size: int = 1024 * 1024,
-            compare_size: Union[int, None] = None  # 不为None时,将通过大小比对判断是否为完整文件。
+            compare_size: Union[int, None] = None,  # 不为None时,将通过大小比对判断是否为完整文件。
+            retry_count:Optional[int] = 0
     ) -> str:
         temp_path = f'{file_name}.temp'
         if os.path.exists(file_name) and compare_size:
@@ -1557,10 +1558,29 @@ class TelegramRestrictedMediaDownloader(Bot):
         with open(file=temp_path, mode=mode) as f:
             skip_chunks: int = downloaded // chunk_size  # 计算要跳过的块数。
             f.seek(downloaded)
-            async for chunk in self.app.client.stream_media(message=message, offset=skip_chunks):
-                f.write(chunk)
-                downloaded += len(chunk)
-                progress(downloaded, *progress_args)
+            while retry_count < self.app.max_download_retries:
+                try:
+                    async for chunk in self.app.client.stream_media(message=message, offset=skip_chunks):
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        progress(downloaded, *progress_args)
+                    break
+                except FileReferenceExpired as e:
+                    retry_count += 1
+                    if retry_count >= self.app.max_download_retries:
+                        log.error(f'文件引用已过期且重试{self.app.max_download_retries}次后仍失败,{_t(KeyWord.REASON)}:"{e}"')
+                        raise
+                    log.warning(f'文件引用已过期,正在重新获取消息以刷新引用(第{retry_count}次重试),{_t(KeyWord.REASON)}:"{e}"')
+                    if isinstance(message, pyrogram.types.Message):
+                        chat_id = message.chat.id
+                        message_id = message.id
+                        try:
+                            message = await self.app.client.get_messages(chat_id=chat_id, message_ids=message_id)
+                            skip_chunks = downloaded // chunk_size
+                            f.seek(downloaded)
+                        except Exception as refresh_error:
+                            log.error(f'重新获取消息失败,{_t(KeyWord.REASON)}:"{refresh_error}"')
+                            raise
         if compare_size is None or compare_file_size(a_size=downloaded, b_size=compare_size):
             result: str = safe_replace(origin_file=temp_path, overwrite_file=file_name).get('e_code')
             log.warning(result) if result is not None else None
@@ -1668,7 +1688,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 self.pb.progress,
                                 task_id
                             ),
-                            compare_size=sever_file_size
+                            compare_size=sever_file_size,
+                            retry_count=retry_count
                         )
                     )
                     MetaData.print_current_task_num(
