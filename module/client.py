@@ -701,7 +701,8 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             inner_query = query.query
         else:
             inner_query = query
-        reconnect_delay: int = 60
+        reconnect_delay: int = 5
+        max_reconnect_delay: int = 60
         query_name = '.'.join(inner_query.QUALNAME.split('.')[1:])
         while True:
             for attempt in range(1, retries + 1):
@@ -736,7 +737,9 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                     await asyncio.sleep(retry_delay)
 
             log.error(f'经{retries}次尝试后仍无法调用"{query_name}",请检查网络环境,等待{reconnect_delay}秒后重新尝试。')
-            await asyncio.sleep(reconnect_delay)
+            await asyncio.sleep(min(reconnect_delay, max_reconnect_delay))
+            if reconnect_delay < max_reconnect_delay:
+                reconnect_delay += 5
 
     async def send(
             self,
