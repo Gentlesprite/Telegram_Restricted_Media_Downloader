@@ -1513,7 +1513,7 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     async def resume_download(
             self,
-            message: Union[pyrogram.types.Message, str],
+            message: pyrogram.types.Message,
             file_name: str,
             progress: Callable = None,
             progress_args: tuple = (),
@@ -1572,16 +1572,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                 except FileReferenceExpired as e:
                     log.warning(
                         f'文件引用已过期,正在重新获取消息以刷新引用,{_t(KeyWord.REASON)}:"{e}"')
-                    if isinstance(message, pyrogram.types.Message):
-                        chat_id = message.chat.id
-                        message_id = message.id
-                        try:
-                            message = await self.app.client.get_messages(chat_id=chat_id, message_ids=message_id)
-                            skip_chunks = downloaded // chunk_size
-                            f.seek(downloaded)
-                        except Exception as refresh_error:
-                            log.error(f'重新获取消息失败,{_t(KeyWord.REASON)}:"{refresh_error}"')
-                            break
+                    chat_id = message.chat.id
+                    message_id = message.id
+                    try:
+                        message = await self.app.client.get_messages(chat_id=chat_id, message_ids=message_id)
+                        skip_chunks: int = downloaded // chunk_size
+                        f.seek(downloaded)
+                    except Exception as refresh_error:
+                        log.error(f'重新获取消息失败,{_t(KeyWord.REASON)}:"{refresh_error}"')
+                        break
                 except (FloodWait, FloodPremiumWait) as e:
                     amount = e.value
                     console.log(
