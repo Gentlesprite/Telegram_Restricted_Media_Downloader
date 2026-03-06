@@ -15,7 +15,12 @@ from typing import Union, Callable, Optional, Dict, Set
 
 import pyrogram
 from pyrogram.enums.parse_mode import ParseMode
-from pyrogram.errors import BadMsgNotification, FileReferenceExpired
+from pyrogram.errors import (
+    BadMsgNotification,
+    FileReferenceExpired,
+    FloodWait,
+    FloodPremiumWait
+)
 from pyrogram.errors.exceptions.bad_request_400 import (
     MsgIdInvalid,
     UsernameInvalid,
@@ -1514,7 +1519,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             progress_args: tuple = (),
             chunk_size: int = 1024 * 1024,
             compare_size: Union[int, None] = None,  # 不为None时,将通过大小比对判断是否为完整文件。
-            retry_count:Optional[int] = 0
+            retry_count: Optional[int] = 0
     ) -> str:
         temp_path = f'{file_name}.temp'
         if os.path.exists(file_name) and compare_size:
@@ -1568,9 +1573,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                 except FileReferenceExpired as e:
                     retry_count += 1
                     if retry_count >= self.app.max_download_retries:
-                        log.error(f'文件引用已过期且重试{self.app.max_download_retries}次后仍失败,{_t(KeyWord.REASON)}:"{e}"')
+                        log.error(
+                            f'文件引用已过期且重试{self.app.max_download_retries}次后仍失败,{_t(KeyWord.REASON)}:"{e}"')
                         raise
-                    log.warning(f'文件引用已过期,正在重新获取消息以刷新引用(第{retry_count}次重试),{_t(KeyWord.REASON)}:"{e}"')
+                    log.warning(
+                        f'文件引用已过期,正在重新获取消息以刷新引用(第{retry_count}次重试),{_t(KeyWord.REASON)}:"{e}"')
                     if isinstance(message, pyrogram.types.Message):
                         chat_id = message.chat.id
                         message_id = message.id
@@ -1581,6 +1588,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                         except Exception as refresh_error:
                             log.error(f'重新获取消息失败,{_t(KeyWord.REASON)}:"{refresh_error}"')
                             raise
+                except (FloodWait, FloodPremiumWait) as e:
+                    amount = e.value
+                    console.log(
+                        f'[{self.app.client.name}]下载请求频繁,要求等待{amount}秒后继续运行。',
+                        style='#FF4689'
+                    )
+                    await asyncio.sleep(amount)
         if compare_size is None or compare_file_size(a_size=downloaded, b_size=compare_size):
             result: str = safe_replace(origin_file=temp_path, overwrite_file=file_name).get('e_code')
             log.warning(result) if result is not None else None
