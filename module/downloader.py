@@ -1563,6 +1563,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         with open(file=temp_path, mode=mode) as f:
             skip_chunks: int = downloaded // chunk_size  # 计算要跳过的块数。
             f.seek(downloaded)
+            retry_count: int = 0 if retry_count >= self.app.max_download_retries else retry_count
             while retry_count < self.app.max_download_retries:
                 try:
                     async for chunk in self.app.client.stream_media(message=message, offset=skip_chunks):
