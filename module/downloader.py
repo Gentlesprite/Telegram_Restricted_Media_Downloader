@@ -1576,7 +1576,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     if retry_count >= self.app.max_download_retries:
                         log.error(
                             f'文件引用已过期且重试{self.app.max_download_retries}次后仍失败,{_t(KeyWord.REASON)}:"{e}"')
-                        raise
+                        break
                     log.warning(
                         f'文件引用已过期,正在重新获取消息以刷新引用(第{retry_count}次重试),{_t(KeyWord.REASON)}:"{e}"')
                     if isinstance(message, pyrogram.types.Message):
