@@ -1231,7 +1231,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
             )
         finally:
-            if last_message and last_message.text == loading:
+            if last_message and getattr(last_message, 'text', '') == loading:
                 await last_message.delete()
 
     async def cancel_listen(
