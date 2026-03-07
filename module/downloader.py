@@ -957,13 +957,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                     protect_content=False
                 )
             else:
-                await self.app.client.forward_messages(
+                await self.app.client.copy_message(
                     chat_id=target_chat_id,
                     from_chat_id=origin_chat_id,
-                    message_ids=message_id,
+                    message_id=message_id,
                     disable_notification=True,
-                    protect_content=False,
-                    hide_sender_name=True
+                    protect_content=False
                 )
             p_message_id = ','.join(map(str, media_group)) if media_group else message_id
             console.log(
