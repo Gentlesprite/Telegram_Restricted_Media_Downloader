@@ -24,7 +24,7 @@
 
 > [!NOTE]
 > 由于本项目**提供**的Linux版本可能对较早版本的Linux系统兼容性较差。  
-> 若**无法运行的**Linux用户请**阅读**:[_"3.0.在生产环境中运行(对于Linux用户)"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7-2)。  
+> 若**无法运行的**Linux用户请**阅读**:[_"3.0.在生产环境中运行(对于Linux用户)"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7-2)或[_"6.0.通过Docker运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#60%E9%80%9A%E8%BF%87docker%E8%BF%90%E8%A1%8C)。  
 > 如果你**遇到任何问题**，请先仔细**阅读**:[_"常见问题及解决方案汇总"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
 > **没有找到解决方案**再进群或私聊提问。
 
@@ -38,11 +38,11 @@
 
 *本项目按“原样”提供，不附带任何明示或暗示的保证。*
 
-|      作者      |       [Gentlesprite](https://github.com/Gentlesprite)        |
-| :------------: | :----------------------------------------------------------: |
-|  B站视频教程   |   [点击观看](https://www.bilibili.com/video/BV1nCp8evEwv)    |
-| Telegram交流群 |          [点击加入](https://t.me/+6KKA-buFaixmNTE1)          |
-|  **支持作者**  | [点击跳转](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/tree/main?tab=readme-ov-file#70%E6%94%AF%E6%8C%81%E4%BD%9C%E8%80%85) |
+|      作者      |                                                 [Gentlesprite](https://github.com/Gentlesprite)                                                  |
+| :------------: |:------------------------------------------------------------------------------------------------------------------------------------------------:|
+|  B站视频教程   |                                               [点击观看](https://www.bilibili.com/video/BV1nCp8evEwv)                                                |
+| Telegram交流群 |                                                      [点击加入](https://t.me/+6KKA-buFaixmNTE1)                                                      |
+|  **支持作者**  | [点击跳转](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/tree/main?tab=readme-ov-file#80%E6%94%AF%E6%8C%81%E4%BD%9C%E8%80%85) |
 
 # 1.0.下载地址:
 
@@ -1260,12 +1260,82 @@ _**推荐**使用`Python==3.13.2`作为该项目环境(避免使用其他`Python
 python build.py
 ```
 
-# 6.0.联系作者:
+# 6.0.通过Docker运行：
+
+方式1：
+
+- _确保`git`、`docker`、`docker-compose`已安装并配置**环境变量。**_
+
+- 使用`git`克隆仓库:
+
+  ```bash
+  git clone https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader.git
+  ```
+
+- 进入项目文件夹：
+
+  ```bash
+  cd Telegram_Restricted_Media_Downloader
+  ```
+
+- 首次使用时需要配置文件：
+
+  ```bash
+  docker-compose run --rm trmd
+  ```
+
+- 已配置完成的情况下：
+
+  ```bash
+  docker-compose up -d
+  ```
+
+方式2：
+
+- _确保`git`、`docker`已安装并配置**环境变量。**_
+
+- 使用`docker`从远程仓库拉取镜像：
+
+  ```bash
+  docker pull gentlesprite/telegram_restricted_media_downloader:latest
+  ```
+
+
+- **需要使用**时，创建并启动容器：
+
+  ```bash
+  docker run -it \
+    --name trmd \
+    -v ./config:/app/TRMD \
+    -v ./sessions:/app/sessions \
+    -v ./downloads:/app/downloads \
+    -v ./temp:/app/temp \
+    -e TZ=Asia/Shanghai \
+    --restart unless-stopped \
+    gentlesprite/telegram_restricted_media_downloader:latest
+  ```
+
+
+  - 如果是通过`Windows`使用`wsl2`运行`docker`：
+
+  ```bash
+  docker run -it --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest
+  ```
+
+
+- **不再使用**时，停止并删除容器：
+
+  ```bash
+  docker stop trmd && docker rm trmd
+  ```
+
+
+# 7.0.联系作者:
 
   Telegram:[@Gentlesprite](https://t.me/Gentlesprite)
 
   邮箱:Gentlesprites@outlook.com
 
-# 7.0.支持作者:
+# 8.0.支持作者:
 
 ![image](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/res/pay.png)
