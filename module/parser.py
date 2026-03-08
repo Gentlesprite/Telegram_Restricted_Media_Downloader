@@ -13,6 +13,7 @@ from pyrogram import __version__ as pyrogram_version
 from module import __version__
 from module.enums import (
     Banner,
+    MODE,
     GradientColor,
     console
 )
@@ -69,6 +70,14 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             const=0,
             default=None,
             help='通过浏览器运行'
+        )
+        self.add_argument(
+            '-m', '--mode',
+            type=str,
+            required=False,
+            default=MODE.ONCE,
+            choices=[MODE.ONCE, MODE.SESSION],
+            help='设置运行模式'
         )
 
     def print_help(self, file=None):

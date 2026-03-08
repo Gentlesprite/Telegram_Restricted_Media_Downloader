@@ -943,6 +943,7 @@ _**设置命令行运行参数**需先在**软件目录**打开**终端**，或*
 | `-s` | `--session` |     设置会话文件的路径     |
 | `-t` |  `--temp`   |     设置运行缓存的路径     |
 | `-w` |   `--web`   |     通过浏览器运行     |
+| `-m` | `--mode` | 设置运行模式 |
 
 _**长参数与短参数最终结果一致。**_
 
@@ -1244,7 +1245,57 @@ _**长参数与短参数最终结果一致。**_
      ```bash
      ./TRMD --web
      ```
+   
+8. `-m`、`--mode`参数用法：
 
+   | 使用须知                                                     |
+   | ------------------------------------------------------------ |
+   | _1.该参数用于设置运行模式。_                                 |
+   | _2.该参数为`-w`、`--web`命令设置启动模式，控制是否存储`web`模式的会话状态。_ |
+   | _3.该参数为一次性设置，不记忆。_                             |
+   
+   - 运行模式分为`ONCE`、`SESSION`模式，默认为`ONCE`模式，区别如下表所示：
+       | 模式        | 效果                                                         |
+       | ----------- | ------------------------------------------------------------ |
+       | `ONCE` | 不保存会话，在关闭、刷新网页后软件随之退出。                 |
+       | `SESSION` | 保存会话，在关闭、刷新网页后软件保持运行，在下次访问时自动恢复。 |
+   
+   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+
+     _设置`SESSION`模式时，保存会话，在关闭、刷新网页后软件保持运行，在下次访问时自动恢复。_
+   
+     ```bash
+     TRMD.exe -w -m SESSION
+     ```
+   
+     ```bash
+     TRMD.exe --web --mode SESSION
+     ```
+
+   - 对于Windows用户:
+   
+     _设置`ONCE`模式时，不保存会话，在关闭、刷新网页后软件随之退出。_
+
+     ```bash
+     TRMD.exe -w -m ONCE
+     ```
+
+     ```bash
+     TRMD.exe --web --mode ONCE
+     ```
+   
+   - 对于Linux用户:
+
+     _不设置时，`-m`、`--mode`默认为`ONCE`模式，不保存会话，在关闭、刷新网页后软件随之退出。_
+     
+     ```bash
+     ./TRMD -w
+     ```
+     
+     ```bash
+     ./TRMD --web
+     ```
+   
    </details>
 
 
@@ -1292,7 +1343,7 @@ python build.py
 
 方式2：
 
-- _确保`git`、`docker`已安装并配置**环境变量。**_
+- _确保`docker`已安装并配置**环境变量。**_
 
 - 使用`docker`从远程仓库拉取镜像：
 
@@ -1316,11 +1367,11 @@ python build.py
   ```
 
 
-  - 如果是通过`Windows`使用`wsl2`运行`docker`：
+- 如果是通过`Windows`使用`wsl2`运行`docker`：
 
-  ```bash
-  docker run -it --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest
-  ```
+    ```bash
+    docker run -it --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest
+    ```
 
 
 - **不再使用**时，停止并删除容器：
@@ -1329,6 +1380,62 @@ python build.py
   docker stop trmd && docker rm trmd
   ```
 
+方式3，使用`web模式`运行（`≥1.9.3`）：
+
+- _确保`docker`已安装并配置**环境变量。**_
+
+- 使用`docker`从远程仓库拉取镜像，注意软件版本需要`≥1.9.3`：
+
+  ```bash
+  docker pull gentlesprite/telegram_restricted_media_downloader:latest
+  ```
+
+- 创建并启动容器，`web模式`使用`2921`端口：
+
+  ```bash
+  docker run -d \
+    --name trmd \
+    -v ./config:/app/TRMD \
+    -v ./sessions:/app/sessions \
+    -v ./downloads:/app/downloads \
+    -v ./temp:/app/temp \
+    -p 2921:2921 \
+    -w /app \
+    -e TZ=Asia/Shanghai \
+    --restart unless-stopped \
+    gentlesprite/telegram_restricted_media_downloader:latest \
+    python main.py --config /app/TRMD/config.yaml --web 2921 --mode SESSION
+  ```
+
+- 如果是通过`Windows`使用`wsl2`运行`docker`：
+
+  ```bash
+  docker run -d --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -p 2921:2921 -w /app -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest python main.py --config /app/TRMD/config.yaml --web 2921 --mode SESSION
+  ```
+
+- 查看运行日志：
+
+  ```bash
+  docker logs trmd
+  ```
+
+- 正常运行时会在运行日志中输出一个`Web配置`表格，类似下表：
+
+  | 属性     | 内容                    |
+  | -------- | ----------------------- |
+  | IP地址   | `127.0.0.1`             |
+  | 端口     | `2921`                  |
+  | 账号     | `cLJqKG3b`              |
+  | 密码     | `AiJaKSObcRCZ`          |
+  | 访问链接 | `http://127.0.0.1:2921` |
+
+  _账号密码由系统随机生成，使用浏览器打开[http://127.0.0.1:2921](http://127.0.0.1:2921)网页输入账号密码即可进入。_
+
+- **不再使用**时，停止并删除容器：
+
+  ```bash
+  docker stop trmd && docker rm trmd
+  ```
 
 # 7.0.联系作者:
 

@@ -63,6 +63,11 @@ class UploadStatus:
     SENT = 'sent'
 
 
+class MODE:
+    SESSION: str = 'SESSION'
+    ONCE: str = 'ONCE'
+
+
 class CalenderKeyboard:
     START_TIME_BUTTON: str = 'start time button'
     END_TIME_BUTTON: str = 'end time button'
@@ -1430,8 +1435,8 @@ class BotButton:
     DOWNLOAD_UPLOAD: str = '↕️下载后上传'
     TASK_ASSIGN: str = '🌟任务已分配'
     RETRIEVE_MESSAGE: str = '🔎检索消息中'
-    RETRIEVE_COMMENT:str = '🔎检索评论区中'
-    ASSIGNING_TASK:str = '🚛分配任务中'
+    RETRIEVE_COMMENT: str = '🔎检索评论区中'
+    ASSIGNING_TASK: str = '🚛分配任务中'
     TASK_CANCEL: str = '🗑️任务已取消'
     EXECUTE_TASK: str = '▶️执行任务'
     CANCEL_TASK: str = '⏹️取消任务'
