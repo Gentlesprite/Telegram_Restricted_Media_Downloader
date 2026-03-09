@@ -323,7 +323,7 @@ def add_executable_permission(file_path: str) -> bool:
         if not (mode & stat.S_IXUSR):
             os.chmod(file_path, mode | stat.S_IXUSR)
             log.info(f'已为"{file_path}"添加执行权限。')
-            return True
+        return True
     except Exception as e:
         log.warning(f'添加执行权限失败:{e}。')
         return False

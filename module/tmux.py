@@ -23,8 +23,6 @@ class TMUX:
     MACHINE: dict = {
         'x86_64': 'tmux.linux-amd64',
         'amd64': 'tmux.exe',
-        'armv6l': 'tmux.linux-arm64',
-        'armv7l': 'tmux.linux-arm64',
         'aarch64': 'tmux.linux-arm64'
     }
 
@@ -33,8 +31,11 @@ class TMUX:
         self.tmux_executable = self.get_tmux_executable()
         self.tmux_path = self.get_tmux_path()
         if not os.path.isfile(self.tmux_path):
-            log.error(f'在"{os.path.dirname(self.tmux_path)}"目录下未找到"{os.path.basename(self.tmux_path)}"。')
-            sys.exit(0)
+            log.warning(f'在"{os.path.dirname(self.tmux_path)}"目录下未找到"{os.path.basename(self.tmux_path)}"。')
+            self.tmux_path = self.check_system_tmux()
+            if not self.tmux_path:
+                log.error('系统中未找到tmux。')
+                sys.exit(0)
         add_executable_permission(self.tmux_path)
 
     def get_tmux_path(self) -> Union[str]:
@@ -50,3 +51,12 @@ class TMUX:
     @staticmethod
     def get_tmux_executable() -> str:
         return TMUX.MACHINE.get(platform.machine().lower())
+
+    @staticmethod
+    def check_system_tmux() -> Union[str, None]:
+        if sys.platform != 'win32':
+            from shutil import which
+            tmux_path = which('tmux')
+            if tmux_path:
+                log.info(f'从环境变量中找到tmux:"{tmux_path}"。')
+            return tmux_path
