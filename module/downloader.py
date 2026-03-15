@@ -1905,6 +1905,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
         )
         callback_query_text: str = cq.text
+        last_displayed_count: int = -1  # 记录上次显示的数量,初始化为-1确保第一次一定更新。
+        last_update_time: float = 0  # 记录上次更新的时间戳。
+        update_interval: float = 1.0  # 更新时间间隔(秒),无论多少条消息,都只在这个时间间隔更新一次。
 
         try:
             _filter = Filter()
@@ -1944,16 +1947,35 @@ class TelegramRestrictedMediaDownloader(Bot):
                     # 如果是媒体组的第一条消息，记录该media_group_id。
                     if message.media_group_id:
                         media_group_matched.add(message.media_group_id)
-                    try:
-                        await callback_query.message.edit_text(
-                            text=f'{callback_query_text}\n'
-                                 f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到{len(messages_to_download)}条消息。',
-                            reply_markup=KeyboardButton.single_button(
-                                text=BotButton.RETRIEVE_MESSAGE,
-                                callback_data=BotCallbackText.NULL)
-                        )
-                    except MessageNotModified:
-                        pass
+                    # 使用时间节流机制,只在指定时间间隔后才更新,避免频繁API调用。
+                    current_time = asyncio.get_event_loop().time()
+                    current_count = len(messages_to_download)
+                    if current_time - last_update_time >= update_interval:
+                        try:
+                            await callback_query.message.edit_text(
+                                text=f'{callback_query_text}\n'
+                                     f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到{current_count}条消息。',
+                                reply_markup=KeyboardButton.single_button(
+                                    text=BotButton.RETRIEVE_MESSAGE,
+                                    callback_data=BotCallbackText.NULL)
+                            )
+                            last_displayed_count = current_count
+                            last_update_time = current_time
+                        except MessageNotModified:
+                            pass
+            # 确保最后一次更新显示正确的消息数量。
+            final_count = len(messages_to_download)
+            if final_count != last_displayed_count:
+                try:
+                    await callback_query.message.edit_text(
+                        text=f'{callback_query_text}\n'
+                             f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到{final_count}条消息。',
+                        reply_markup=KeyboardButton.single_button(
+                            text=BotButton.RETRIEVE_MESSAGE,
+                            callback_data=BotCallbackText.NULL)
+                    )
+                except MessageNotModified:
+                    pass
             if not messages_to_download:
                 await callback_query.message.edit_text(
                     text=f'{callback_query.message.text}\n'
@@ -1965,10 +1987,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
                 return None
             message_count: int = len(messages_to_download)
+            last_displayed_comment_count: int = -1  # 记录上次显示的评论数量,初始化为-1确保第一次一定更新。
+            last_comment_update_time: float = 0  # 记录上次评论更新的时间戳。
+            processed_message_count: int = 0  # 记录已处理的消息数量。
             # 第二阶段：对匹配的消息进行处理，获取评论区。
             for message in messages_to_download:
                 message_link = message.link if message.link else message
                 links.append(message_link)
+                processed_message_count += 1
                 if not include_comment:
                     continue
                 # 检查并获取评论区。
@@ -1982,19 +2008,40 @@ class TelegramRestrictedMediaDownloader(Bot):
                             continue
                         comment_link = comment.link if comment.link else comment
                         links.append(comment_link)
-                        try:
-                            await callback_query.message.edit_text(
-                                text=f'{callback_query_text}\n'
-                                     f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到{len(links) - message_count}条消息。',
-                                reply_markup=KeyboardButton.single_button(
-                                    text=BotButton.RETRIEVE_COMMENT,
-                                    callback_data=BotCallbackText.NULL)
-                            )
-                        except MessageNotModified:
-                            pass
+                        # 使用时间节流机制,只在指定时间间隔后才更新,避免频繁API调用。
+                        current_time = asyncio.get_event_loop().time()
+                        # 计算评论数量: 总链接数减去已处理的消息数。
+                        current_comment_count = len(links) - processed_message_count
+                        if current_time - last_comment_update_time >= update_interval:
+                            try:
+                                await callback_query.message.edit_text(
+                                    text=f'{callback_query_text}\n'
+                                         f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到{current_comment_count}条消息。',
+                                    reply_markup=KeyboardButton.single_button(
+                                        text=BotButton.RETRIEVE_COMMENT,
+                                        callback_data=BotCallbackText.NULL)
+                                )
+                            except MessageNotModified:
+                                pass
+                            last_displayed_comment_count = current_comment_count
+                            last_comment_update_time = current_time
                 except (ValueError, AttributeError, MsgIdInvalid):
                     # 消息没有评论区或消息ID无效，跳过。
                     pass
+            # 确保最后一次更新显示正确的评论数量。
+            if include_comment:
+                final_comment_count = len(links) - message_count
+                if final_comment_count != last_displayed_comment_count:
+                    try:
+                        await callback_query.message.edit_text(
+                            text=f'{callback_query_text}\n'
+                                 f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到{final_comment_count}条消息。',
+                            reply_markup=KeyboardButton.single_button(
+                                text=BotButton.RETRIEVE_COMMENT,
+                                callback_data=BotCallbackText.NULL)
+                        )
+                    except MessageNotModified:
+                        pass
             diy_download_type: list = [_ for _ in DownloadType()]
             comment_count: int = (len(links) - message_count) if include_comment else 0
             total_count: int = message_count + comment_count
@@ -2010,16 +2057,23 @@ class TelegramRestrictedMediaDownloader(Bot):
                         text=BotButton.ASSIGNING_TASK,
                         callback_data=BotCallbackText.NULL
                     )
-                try:
-                    await callback_query.message.edit_text(
-                        text=f'{origin_callback_query_text}\n'
-                             f'🔎匹配消息:{message_count}条,评论区消息:{comment_count}条,共{total_count}条。\n'
-                             f'⭐️[{assigned_count}/{total_count}]分配下载任务中。\n'
-                             f'{random.choice(("⏳", "⌛"))}{self.pb.bot(assigned_count, total_count)}',
-                        reply_markup=reply_markup
-                    )
-                except MessageNotModified:
-                    pass
+
+                while True:
+                    try:
+                        await callback_query.message.edit_text(
+                            text=f'{origin_callback_query_text}\n'
+                                 f'🔎匹配消息:{message_count}条,评论区消息:{comment_count}条,共{total_count}条。\n'
+                                 f'⭐️[{assigned_count}/{total_count}]分配下载任务中。\n'
+                                 f'{random.choice(("⏳", "⌛"))}{self.pb.bot(assigned_count, total_count)}',
+                            reply_markup=reply_markup
+                        )
+                        break
+                    except MessageNotModified:
+                        break
+                    except FloodWait as e:
+                        await asyncio.sleep(e.value)
+                    except Exception:
+                        break
                 await self.create_download_task(
                     message_ids=link,
                     single_link=True,
