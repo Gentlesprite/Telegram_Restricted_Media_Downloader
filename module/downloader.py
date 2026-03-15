@@ -2046,6 +2046,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             comment_count: int = (len(links) - message_count) if include_comment else 0
             total_count: int = message_count + comment_count
             assigned_count: int = 0
+            last_progress_update_time: float = 0  # 记录上次分配任务更新的时间戳。
             for link in links:
                 if assigned_count == total_count:
                     reply_markup = KeyboardButton.single_button(
@@ -2058,22 +2059,26 @@ class TelegramRestrictedMediaDownloader(Bot):
                         callback_data=BotCallbackText.NULL
                     )
 
-                while True:
-                    try:
-                        await callback_query.message.edit_text(
-                            text=f'{origin_callback_query_text}\n'
-                                 f'🔎匹配消息:{message_count}条,评论区消息:{comment_count}条,共{total_count}条。\n'
-                                 f'⭐️[{assigned_count}/{total_count}]分配下载任务中。\n'
-                                 f'{random.choice(("⏳", "⌛"))}{self.pb.bot(assigned_count, total_count)}',
-                            reply_markup=reply_markup
-                        )
-                        break
-                    except MessageNotModified:
-                        break
-                    except FloodWait as e:
-                        await asyncio.sleep(e.value)
-                    except Exception:
-                        break
+                # 使用时间节流机制,只在指定时间间隔后才更新任务分配进度。
+                current_time = asyncio.get_event_loop().time()
+                if current_time - last_progress_update_time >= update_interval:
+                    while True:
+                        try:
+                            await callback_query.message.edit_text(
+                                text=f'{origin_callback_query_text}\n'
+                                     f'🔎匹配消息:{message_count}条,评论区消息:{comment_count}条,共{total_count}条。\n'
+                                     f'⭐️[{assigned_count}/{total_count}]分配下载任务中。\n'
+                                     f'{random.choice(("⏳", "⌛"))}{self.pb.bot(assigned_count, total_count)}',
+                                reply_markup=reply_markup
+                            )
+                            last_progress_update_time = current_time
+                            break
+                        except MessageNotModified:
+                            break
+                        except FloodWait as e:
+                            await asyncio.sleep(e.value)
+                        except Exception:
+                            break
                 await self.create_download_task(
                     message_ids=link,
                     single_link=True,
