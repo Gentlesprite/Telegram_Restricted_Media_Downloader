@@ -612,7 +612,7 @@ max_retries:
   download: 5 # 最大的下载任务的重试次数。
   upload: 3 # 最大的上传任务的重试次数。
 max_tasks:
-  download: 5 # 最大同时下载的任务数。
+  download: 3 # 最大同时下载的任务数。
   upload: 3 # 最大同时上传的任务数。
 proxy: # 代理部分，如不使用请全部填null注意冒号后面有空格，否则不生效导致报错。
   enable_proxy: true # 是否开启代理。支持的参数：true,false。
@@ -1315,6 +1315,39 @@ python build.py
 ```
 
 # 6.0.通过Docker运行：
+
+_**Docker环境运行配置文件模板参考（前提：需完全按照后续教程提供的命令启动Docker）：**_
+
+```yaml
+api_hash: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+api_id: 'xxxxxxxx'
+bot_token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 # Docker运行推荐使用机器人，通过"电报机器人(bot_token)申请及使用教程"自行申请。
+download_type:
+- video
+- photo
+- document
+- audio
+- voice
+- animation
+is_shutdown: false
+links: /app/TRMD/links.txt # 主机的路径为："config/links.txt"。
+max_retries:
+  download: 5
+  upload: 3
+max_tasks:
+  download: 3
+  upload: 3
+proxy:
+  enable_proxy: true # 如果网络能直接访问Telegram服务器，设置为false。
+  hostname: 192.168.1.10 # 此处为示例，每个人地址不同，填写提供代理服务器主机的ip地址，通常使用ifconfig查看。
+  scheme: socks5 # 代理的类型。支持的参数：http,socks4,socks5。
+  port: 10808 # 此处为示例，实际使用的代理软件不同端口也不同，填写主机的代理ip的端口。支持的参数：0~65535。
+  username: null # 代理的账号，没有就填null。
+  password: null # 代理的密码，没有就填null。
+save_directory: /app/downloads/%CHAT_ID%/%MIME_TYPE% # 主机的路径为："downloads/%CHAT_ID%/%MIME_TYPE%"。
+session_directory: /app/sessions # 主机的路径为："sessions/"。
+temp_directory: /app/temp # 主机的路径为："temp/"。
+```
 
 方式1：
 
