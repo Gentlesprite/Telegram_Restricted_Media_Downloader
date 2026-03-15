@@ -19,6 +19,9 @@
   <a style="text-decoration:none">
     <img src="https://img.shields.io/badge/Platform-Windows & Linux%20-blue?color=00B16A" alt="Platform Windows & Linux"/>
   </a>
+    <a href="https://deepwiki.com/Gentlesprite/Telegram_Restricted_Media_Downloader">
+    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+  </a>
 </p>
 
 
