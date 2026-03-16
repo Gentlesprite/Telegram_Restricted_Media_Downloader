@@ -1991,6 +1991,17 @@ class TelegramRestrictedMediaDownloader(Bot):
             last_comment_update_time: float = 0  # 记录上次评论更新的时间戳。
             processed_message_count: int = 0  # 记录已处理的消息数量。
             # 第二阶段：对匹配的消息进行处理，获取评论区。
+            if include_comment:
+                try:
+                    await callback_query.message.edit_text(
+                        text=f'{callback_query_text}\n'
+                             f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到0条消息。',
+                        reply_markup=KeyboardButton.single_button(
+                            text=BotButton.RETRIEVE_COMMENT,
+                            callback_data=BotCallbackText.NULL)
+                    )
+                except MessageNotModified:
+                    pass
             for message in messages_to_download:
                 message_link = message.link if message.link else message
                 links.append(message_link)
