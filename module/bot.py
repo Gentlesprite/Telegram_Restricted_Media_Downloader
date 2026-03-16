@@ -12,7 +12,6 @@ from functools import partial
 from typing import List, Dict, Union, Optional, Callable
 
 import pyrogram
-from pyrogram.enums import ButtonStyle
 from pyrogram.types.messages_and_media import ReplyParameters
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.errors.exceptions.flood_420 import FloodWait
@@ -461,8 +460,7 @@ class Bot:
                     ),
                     InlineKeyboardButton(
                         BotButton.PAY,
-                        callback_data=BotCallbackText.PAY,
-                        style=ButtonStyle.SUCCESS
+                        callback_data=BotCallbackText.PAY
                     )
                 ],
                 [
