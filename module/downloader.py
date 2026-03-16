@@ -1908,7 +1908,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         cq = await callback_query.message.edit_text(
             text=f'{callback_query.message.text}\n'
                  f'⏳需要检索该频道所有匹配的消息,请耐心等待。\n'
-                 f'💡请忽略终端中的请求频繁提示`messages.GetHistory`,因为这并不影响下载。',
+                 f'💡请忽略终端中的请求频繁提示,不会影响下载。',
             reply_markup=KeyboardButton.single_button(
                 text=BotButton.RETRIEVE_MESSAGE,
                 callback_data=BotCallbackText.NULL
