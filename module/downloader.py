@@ -1931,6 +1931,16 @@ class TelegramRestrictedMediaDownloader(Bot):
             # 第一阶段：收集匹配的消息。
             messages_to_download = []
             media_group_matched = set()  # 记录已匹配的media_group_id。
+            try:
+                await callback_query.message.edit_text(
+                    text=f'{callback_query_text}\n'
+                         f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到0条消息。',
+                    reply_markup=KeyboardButton.single_button(
+                        text=BotButton.RETRIEVE_MESSAGE,
+                        callback_data=BotCallbackText.NULL)
+                )
+            except MessageNotModified:
+                pass
             async for message in self.app.client.get_chat_history(
                     chat_id=chat_id,
                     reverse=True
