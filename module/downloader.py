@@ -1894,6 +1894,16 @@ class TelegramRestrictedMediaDownloader(Bot):
             chat_id: str,
             callback_query: pyrogram.types.CallbackQuery
     ) -> Union[list, None]:
+        async def _progress(_prompt: str, _reply_markup: InlineKeyboardMarkup) -> None:
+            try:
+                await callback_query.message.edit_text(
+                    text=f'{callback_query_text}\n'
+                         f'{_prompt}',
+                    reply_markup=_reply_markup
+                )
+            except MessageNotModified:
+                pass
+
         origin_callback_query_text: str = callback_query.message.text
         cq = await callback_query.message.edit_text(
             text=f'{callback_query.message.text}\n'
@@ -1931,16 +1941,12 @@ class TelegramRestrictedMediaDownloader(Bot):
             # 第一阶段：收集匹配的消息。
             messages_to_download = []
             media_group_matched = set()  # 记录已匹配的media_group_id。
-            try:
-                await callback_query.message.edit_text(
-                    text=f'{callback_query_text}\n'
-                         f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到0条消息。',
-                    reply_markup=KeyboardButton.single_button(
-                        text=BotButton.RETRIEVE_MESSAGE,
-                        callback_data=BotCallbackText.NULL)
-                )
-            except MessageNotModified:
-                pass
+            await _progress(
+                _prompt=f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到0条消息。',
+                _reply_markup=KeyboardButton.single_button(
+                    text=BotButton.RETRIEVE_MESSAGE,
+                    callback_data=BotCallbackText.NULL)
+            )
             async for message in self.app.client.get_chat_history(
                     chat_id=chat_id,
                     reverse=True
@@ -1961,31 +1967,23 @@ class TelegramRestrictedMediaDownloader(Bot):
                     current_time = asyncio.get_event_loop().time()
                     current_count = len(messages_to_download)
                     if current_time - last_update_time >= update_interval:
-                        try:
-                            await callback_query.message.edit_text(
-                                text=f'{callback_query_text}\n'
-                                     f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到{current_count}条消息。',
-                                reply_markup=KeyboardButton.single_button(
-                                    text=BotButton.RETRIEVE_MESSAGE,
-                                    callback_data=BotCallbackText.NULL)
-                            )
-                            last_displayed_count = current_count
-                            last_update_time = current_time
-                        except MessageNotModified:
-                            pass
+                        await _progress(
+                            _prompt=f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到{current_count}条消息。',
+                            _reply_markup=KeyboardButton.single_button(
+                                text=BotButton.RETRIEVE_MESSAGE,
+                                callback_data=BotCallbackText.NULL)
+                        )
+                        last_displayed_count = current_count
+                        last_update_time = current_time
             # 确保最后一次更新显示正确的消息数量。
             final_count = len(messages_to_download)
             if final_count != last_displayed_count:
-                try:
-                    await callback_query.message.edit_text(
-                        text=f'{callback_query_text}\n'
-                             f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到{final_count}条消息。',
-                        reply_markup=KeyboardButton.single_button(
-                            text=BotButton.RETRIEVE_MESSAGE,
-                            callback_data=BotCallbackText.NULL)
-                    )
-                except MessageNotModified:
-                    pass
+                await _progress(
+                    _prompt=f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到{final_count}条消息。',
+                    _reply_markup=KeyboardButton.single_button(
+                        text=BotButton.RETRIEVE_MESSAGE,
+                        callback_data=BotCallbackText.NULL)
+                )
             if not messages_to_download:
                 await callback_query.message.edit_text(
                     text=f'{callback_query.message.text}\n'
@@ -2002,16 +2000,12 @@ class TelegramRestrictedMediaDownloader(Bot):
             processed_message_count: int = 0  # 记录已处理的消息数量。
             # 第二阶段：对匹配的消息进行处理，获取评论区。
             if include_comment:
-                try:
-                    await callback_query.message.edit_text(
-                        text=f'{callback_query_text}\n'
-                             f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到0条消息。',
-                        reply_markup=KeyboardButton.single_button(
-                            text=BotButton.RETRIEVE_COMMENT,
-                            callback_data=BotCallbackText.NULL)
-                    )
-                except MessageNotModified:
-                    pass
+                await _progress(
+                    _prompt=f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到0条消息。',
+                    _reply_markup=KeyboardButton.single_button(
+                        text=BotButton.RETRIEVE_COMMENT,
+                        callback_data=BotCallbackText.NULL)
+                )
             for message in messages_to_download:
                 message_link = message.link if message.link else message
                 links.append(message_link)
@@ -2034,16 +2028,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                         # 计算评论数量: 总链接数减去已处理的消息数。
                         current_comment_count = len(links) - processed_message_count
                         if current_time - last_comment_update_time >= update_interval:
-                            try:
-                                await callback_query.message.edit_text(
-                                    text=f'{callback_query_text}\n'
-                                         f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到{current_comment_count}条消息。',
-                                    reply_markup=KeyboardButton.single_button(
-                                        text=BotButton.RETRIEVE_COMMENT,
-                                        callback_data=BotCallbackText.NULL)
-                                )
-                            except MessageNotModified:
-                                pass
+                            await _progress(
+                                _prompt=f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到{current_comment_count}条消息。',
+                                _reply_markup=KeyboardButton.single_button(
+                                    text=BotButton.RETRIEVE_COMMENT,
+                                    callback_data=BotCallbackText.NULL)
+                            )
                             last_displayed_comment_count = current_comment_count
                             last_comment_update_time = current_time
                 except (ValueError, AttributeError, MsgIdInvalid):
@@ -2053,16 +2043,12 @@ class TelegramRestrictedMediaDownloader(Bot):
             if include_comment:
                 final_comment_count = len(links) - message_count
                 if final_comment_count != last_displayed_comment_count:
-                    try:
-                        await callback_query.message.edit_text(
-                            text=f'{callback_query_text}\n'
-                                 f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到{final_comment_count}条消息。',
-                            reply_markup=KeyboardButton.single_button(
-                                text=BotButton.RETRIEVE_COMMENT,
-                                callback_data=BotCallbackText.NULL)
-                        )
-                    except MessageNotModified:
-                        pass
+                    await _progress(
+                        _prompt=f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到{final_comment_count}条消息。',
+                        _reply_markup=KeyboardButton.single_button(
+                            text=BotButton.RETRIEVE_COMMENT,
+                            callback_data=BotCallbackText.NULL)
+                    )
             diy_download_type: list = [_ for _ in DownloadType()]
             comment_count: int = (len(links) - message_count) if include_comment else 0
             total_count: int = message_count + comment_count
