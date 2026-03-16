@@ -1441,16 +1441,6 @@ class KeyboardButton:
                 ],
                 [
                     InlineKeyboardButton(
-                        text=BotButton.EXECUTE_TASK,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID
-                    ),
-                    InlineKeyboardButton(
-                        text=BotButton.CANCEL_TASK,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
                         text=BotButton.RETURN,
                         callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
                     )
@@ -1631,16 +1621,6 @@ class KeyboardButton:
                     InlineKeyboardButton(
                         text=BotButton.SELECT_END_DATE,
                         callback_data=BotCallbackText.FILTER_END_DATE
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        text=BotButton.EXECUTE_TASK,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID
-                    ),
-                    InlineKeyboardButton(
-                        text=BotButton.CANCEL_TASK,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
                     )
                 ],
                 [
