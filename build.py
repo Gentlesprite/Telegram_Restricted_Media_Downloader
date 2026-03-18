@@ -71,9 +71,11 @@ def ready_pymediainfo() -> tuple:
         print(f'缺少依赖,请使用pip install pymediainfo安装依赖后重试。')
         sys.exit()
     except (ImportError, ModuleNotFoundError, NameError):
-        os.system('pip install pymediainfo==7.0.1') if sys.version_info >= (3, 9) else print(
-            'python版本过低,请至少升级至3.9.x后重试。')
-        print(f'已经自动安装所需依赖,请重新运行。')
+        if sys.version_info >= (3, 9):
+            subprocess.run(f'{uv}pip install pymediainfo==7.0.1', shell=True)
+            print(f'已经自动安装所需依赖,请重新运行。')
+        else:
+            print('python版本过低,请至少升级至3.9.x后重试。')
         sys.exit()
 
 
