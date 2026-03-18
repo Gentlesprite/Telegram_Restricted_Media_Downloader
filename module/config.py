@@ -7,6 +7,8 @@ import os
 import sys
 import logging
 import datetime
+import subprocess
+
 from typing import Union
 
 from module import (
@@ -576,10 +578,10 @@ class UserConfig(BaseConfig):
 
     def ctrl_c(self):
         if self.platform == 'Windows':
-            os.system('pause')
+            subprocess.run('pause', shell=True)
         else:
             try:
-                console.input('请按「Enter」键继续. . .')
+                subprocess.run('read -p "请按任意键继续. . ."', shell=True)
             except KeyboardInterrupt:
                 pass
 
