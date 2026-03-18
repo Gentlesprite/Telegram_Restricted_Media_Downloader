@@ -40,7 +40,7 @@ class TTYD:
         self.ttyd_path = self.get_ttyd_path()
         if not os.path.isfile(self.ttyd_path):
             log.error(f'在"{os.path.dirname(self.ttyd_path)}"目录下未找到"{os.path.basename(self.ttyd_path)}"。')
-            sys.exit(0)
+            sys.exit(1)
         add_executable_permission(self.ttyd_path)
 
     def get_ttyd_path(self) -> Union[str]:

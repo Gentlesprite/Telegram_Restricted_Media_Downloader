@@ -35,7 +35,7 @@ class TMUX:
             self.tmux_path = self.get_system_tmux()
             if not self.tmux_path:
                 log.error(f'无法在"{os.path.dirname(self.tmux_path)}"目录和系统中未找到tmux。')
-                sys.exit(0)
+                sys.exit(1)
         add_executable_permission(self.tmux_path)
 
     def get_tmux_path(self) -> Union[str]:
