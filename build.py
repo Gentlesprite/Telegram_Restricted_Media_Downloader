@@ -73,7 +73,7 @@ def ready_pymediainfo() -> tuple:
     except (ImportError, ModuleNotFoundError, NameError):
         if sys.version_info >= (3, 9):
             subprocess.run(f'{uv}pip install pymediainfo==7.0.1', shell=True)
-            print(f'已经自动安装所需依赖,请重新运行。')
+            subprocess.run([sys.executable] + sys.argv)
         else:
             print('python版本过低,请至少升级至3.9.x后重试。')
         sys.exit(1)
