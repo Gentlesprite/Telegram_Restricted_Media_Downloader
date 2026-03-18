@@ -9,6 +9,7 @@ import logging
 import datetime
 import subprocess
 
+from shutil import which
 from typing import Union
 
 from module import (
@@ -581,7 +582,10 @@ class UserConfig(BaseConfig):
             subprocess.run('pause', shell=True)
         else:
             try:
-                subprocess.run('read -p "请按任意键继续. . ."', shell=True)
+                if which('read'):
+                    subprocess.run('read -p "请按任意键继续. . ."', shell=True)
+                else:
+                    console.input('请按「Enter」键继续. . .')
             except KeyboardInterrupt:
                 pass
 
