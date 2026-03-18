@@ -2384,13 +2384,13 @@ class TelegramRestrictedMediaDownloader(Bot):
             if str(e) == '0':
                 log.error('「网络」或「代理问题」,在确保当前网络连接正常情况下检查:\n「VPN」是否可用,「软件代理」是否配置正确。')
                 console.print(Issues.PROXY_NOT_CONFIGURED)
-                raise SystemExit(0)
+                raise SystemExit(1)
             log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
         except BadMsgNotification as e:
             record_error: bool = True
             if str(e) in (str(BadMsgNotification(16)), str(BadMsgNotification(17))):
                 console.print(Issues.SYSTEM_TIME_NOT_SYNCHRONIZED)
-                raise SystemExit(0)
+                raise SystemExit(1)
             log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
         except (SessionRevoked, AuthKeyUnregistered, SessionExpired, Unauthorized) as e:
             log.error(f'登录时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
