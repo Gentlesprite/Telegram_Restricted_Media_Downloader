@@ -69,14 +69,14 @@ def ready_pymediainfo() -> tuple:
         if os.path.isfile(path):
             return file_name, path
         print(f'缺少依赖,请使用pip install pymediainfo安装依赖后重试。')
-        sys.exit()
+        sys.exit(1)
     except (ImportError, ModuleNotFoundError, NameError):
         if sys.version_info >= (3, 9):
             subprocess.run(f'{uv}pip install pymediainfo==7.0.1', shell=True)
             print(f'已经自动安装所需依赖,请重新运行。')
         else:
             print('python版本过低,请至少升级至3.9.x后重试。')
-        sys.exit()
+        sys.exit(1)
 
 
 def ready_ttyd():
@@ -85,7 +85,7 @@ def ready_ttyd():
     if os.path.isfile(path):
         return file_name, path
     print(f'未找到ttyd。')
-    sys.exit()
+    sys.exit(1)
 
 
 def ready_tmux():
@@ -94,7 +94,7 @@ def ready_tmux():
     if os.path.isfile(path):
         return file_name, path
     print('未找到tmux。')
-    sys.exit()
+    sys.exit(1)
 
 
 def build(command):
