@@ -17,8 +17,12 @@ from module.tmux import TMUX
 VERSION_INFO = sys.version_info
 PLATFORM: str = sys.platform
 UV: str = 'uv ' if which('uv') and os.path.exists('uv.lock') else ''
-TERMINAL_COLUMNS: int = os.get_terminal_size().columns
-GRID_CONTENT: str = '='
+try:
+    TERMINAL_COLUMNS: int = os.get_terminal_size().columns
+    GRID_CONTENT: str = '='
+except OSError:
+    TERMINAL_COLUMNS: int = 1
+    GRID_CONTENT: str = ''
 GRID: str = GRID_CONTENT * TERMINAL_COLUMNS
 
 
