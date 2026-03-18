@@ -8,19 +8,21 @@ import sys
 import subprocess
 
 from pathlib import Path
+from shutil import which
 
 from module import AUTHOR, __version__, __update_date__, SOFTWARE_SHORT_NAME
 from module.ttyd import TTYD
 from module.tmux import TMUX
 
-platform = sys.platform
+platform: str = sys.platform
+uv: str = 'uv ' if which('uv') and os.path.exists('uv.lock') else ''
 
 
 def ready_zstandard():
     try:
         import zstandard
     except (ImportError, ModuleNotFoundError, NameError):
-        subprocess.run('pip install zstandard', shell=True)
+        subprocess.run(f'{uv}pip install zstandard', shell=True)
 
 
 def ready_nuitka():
@@ -28,9 +30,9 @@ def ready_nuitka():
         import nuitka
     except (ImportError, ModuleNotFoundError, NameError):
         if sys.version_info >= (3, 13):
-            subprocess.run('pip install nuitka==2.6.7', shell=True)
+            subprocess.run(f'{uv}pip install nuitka==2.6.7', shell=True)
         else:
-            subprocess.run('pip install nuitka', shell=True)
+            subprocess.run(f'{uv}pip install nuitka', shell=True)
 
 
 def ready_pymediainfo() -> tuple:
