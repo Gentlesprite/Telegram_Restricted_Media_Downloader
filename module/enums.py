@@ -845,8 +845,8 @@ class GetStdioParams:
         def timeout_notice():
             console.print('\n输入超时,已自动设置为默认值。\n', style='#FF4689')
 
-        try:
-            if sys.platform == 'win32':
+        if sys.platform == 'win32':
+            try:
                 import msvcrt
                 console.print(prompt, end='')
                 start_time: float = time.time()
@@ -894,89 +894,92 @@ class GetStdioParams:
                         timeout_notice()
                         return default
                     time.sleep(0.1)
-            else:
-                import tty
-                import select
-                import termios
+            except Exception as e:
+                log.exception(f'无法自动设置!请手动进行设置,{_t(KeyWord.REASON)}:"{e}"')
+                return console.input(error_prompt if error_prompt else prompt)
+        else:
+            import tty
+            import select
+            import termios
 
-                console.print(prompt, end='')
-                sys.stdout.flush()
+            console.print(prompt, end='')
+            sys.stdout.flush()
 
-                # 保存原始终端设置。
-                old_settings = termios.tcgetattr(sys.stdin)
-                elapsed = 0
-                try:
-                    # 设置终端为原始模式,允许逐字符读取。
-                    tty.setraw(sys.stdin.fileno())
+            # 保存原始终端设置。
+            old_settings = termios.tcgetattr(sys.stdin)
+            elapsed = 0
+            try:
+                # 设置终端为原始模式,允许逐字符读取。
+                tty.setraw(sys.stdin.fileno())
 
-                    start_time: float = time.time()
-                    input_buffer: list = []
-                    last_second: int = timeout
-                    countdown_displayed: bool = False
-                    while True:
-                        elapsed = time.time() - start_time
-                        remaining = int(timeout - elapsed)
+                start_time: float = time.time()
+                input_buffer: list = []
+                last_second: int = timeout
+                countdown_displayed: bool = False
+                while True:
+                    elapsed = time.time() - start_time
+                    remaining = int(timeout - elapsed)
 
-                        # 倒计时显示更新。
-                        if remaining != last_second and remaining >= 0:
-                            if countdown_displayed:
-                                # 删除之前的倒计时（数字+空格）。
-                                backspace_count = len(str(last_second)) + 1
-                                sys.stdout.write('\b \b' * backspace_count)
+                    # 倒计时显示更新。
+                    if remaining != last_second and remaining >= 0:
+                        if countdown_displayed:
+                            # 删除之前的倒计时（数字+空格）。
+                            backspace_count = len(str(last_second)) + 1
+                            sys.stdout.write('\b \b' * backspace_count)
+                            sys.stdout.flush()
+                        # 显示新的倒计时（输入时才显示）。
+                        if not input_buffer and remaining >= 0:
+                            console.print(f'{remaining} ', end='', style='dim')
+                            sys.stdout.flush()
+                            countdown_displayed = True
+                        last_second = remaining
+
+                    # 使用select检测输入,超时0.1秒以便更新倒计时。
+                    ready, _, _ = select.select([sys.stdin], [], [], 0.1)
+
+                    if ready:
+                        # 清除倒计时显示。
+                        if countdown_displayed:
+                            backspace_count = len(str(remaining)) + 1
+                            sys.stdout.write('\b \b' * backspace_count)
+                            sys.stdout.flush()
+                            countdown_displayed = False
+
+                        # 读取一个字符。
+                        char = sys.stdin.read(1)
+
+                        if char == '\r' or char == '\n':  # 回车键结束输入。
+                            user_input = ''.join(input_buffer)
+                            sys.stdout.write('\n')
+                            sys.stdout.flush()
+                            return user_input.strip() or default
+                        elif char == '\x7f' or char == '\b':  # Backspace/Delete键处理。
+                            if input_buffer:
+                                input_buffer.pop()
+                                sys.stdout.write('\b \b')
                                 sys.stdout.flush()
-                            # 显示新的倒计时（输入时才显示）。
-                            if not input_buffer and remaining >= 0:
-                                console.print(f'{remaining} ', end='', style='dim')
-                                sys.stdout.flush()
-                                countdown_displayed = True
-                            last_second = remaining
+                        elif char == '\x1b':  # 转义序列（上下左右键等）。
+                            # 读取接下来的两个字符。
+                            _ = sys.stdin.read(2)
+                        elif ord(char) >= 32:  # 可打印字符。
+                            input_buffer.append(char)
+                            sys.stdout.write(char)
+                            sys.stdout.flush()
+                        last_second = -1  # 输入开始后不再显示倒计时。
 
-                        # 使用select检测输入,超时0.1秒以便更新倒计时。
-                        ready, _, _ = select.select([sys.stdin], [], [], 0.1)
-
-                        if ready:
-                            # 清除倒计时显示。
-                            if countdown_displayed:
-                                backspace_count = len(str(remaining)) + 1
-                                sys.stdout.write('\b \b' * backspace_count)
-                                sys.stdout.flush()
-                                countdown_displayed = False
-
-                            # 读取一个字符。
-                            char = sys.stdin.read(1)
-
-                            if char == '\r' or char == '\n':  # 回车键结束输入。
-                                user_input = ''.join(input_buffer)
-                                sys.stdout.write('\n')
-                                sys.stdout.flush()
-                                return user_input.strip() or default
-                            elif char == '\x7f' or char == '\b':  # Backspace/Delete键处理。
-                                if input_buffer:
-                                    input_buffer.pop()
-                                    sys.stdout.write('\b \b')
-                                    sys.stdout.flush()
-                            elif char == '\x1b':  # 转义序列（上下左右键等）。
-                                # 读取接下来的两个字符。
-                                _ = sys.stdin.read(2)
-                            elif ord(char) >= 32:  # 可打印字符。
-                                input_buffer.append(char)
-                                sys.stdout.write(char)
-                                sys.stdout.flush()
-                            last_second = -1  # 输入开始后不再显示倒计时。
-
-                        elif elapsed > timeout:
-                            # 清除倒计时显示。
-                            if countdown_displayed:
-                                backspace_count = len(str(remaining)) + 1
-                                sys.stdout.write('\b \b' * backspace_count)
-                                sys.stdout.flush()
-                            return default
-                finally:
-                    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)  # 恢复终端设置。
-                    timeout_notice() if elapsed > timeout else print()
-        except Exception as e:
-            log.exception(f'无法自动设置!请手动进行设置,{_t(KeyWord.REASON)}:"{e}"')
-            return console.input(error_prompt if error_prompt else prompt)
+                    elif elapsed > timeout:
+                        # 清除倒计时显示。
+                        if countdown_displayed:
+                            backspace_count = len(str(remaining)) + 1
+                            sys.stdout.write('\b \b' * backspace_count)
+                            sys.stdout.flush()
+                        return default
+            except Exception as e:
+                log.exception(f'无法自动设置!请手动进行设置,{_t(KeyWord.REASON)}:"{e}"')
+                return console.input(error_prompt if error_prompt else prompt)
+            finally:
+                termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)  # 恢复终端设置。
+                timeout_notice() if elapsed > timeout else print()
 
     @staticmethod
     def get_is_ki_save_config(valid_format: str = 'y|n') -> dict:
