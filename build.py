@@ -5,6 +5,7 @@
 # File:build.py
 import os
 import sys
+import subprocess
 
 from pathlib import Path
 
@@ -19,14 +20,17 @@ def ready_zstandard():
     try:
         import zstandard
     except (ImportError, ModuleNotFoundError, NameError):
-        os.system('pip install zstandard')
+        subprocess.run('pip install zstandard', shell=True)
 
 
 def ready_nuitka():
     try:
         import nuitka
     except (ImportError, ModuleNotFoundError, NameError):
-        os.system('pip install nuitka==2.6.7') if sys.version_info >= (3, 13) else os.system('pip install nuitka')
+        if sys.version_info >= (3, 13):
+            subprocess.run('pip install nuitka==2.6.7', shell=True)
+        else:
+            subprocess.run('pip install nuitka', shell=True)
 
 
 def ready_pymediainfo() -> tuple:
@@ -91,7 +95,7 @@ def ready_tmux():
 
 def build(command):
     print(command)
-    os.system(command)
+    subprocess.run(command, shell=True)
 
 
 if __name__ == '__main__':
