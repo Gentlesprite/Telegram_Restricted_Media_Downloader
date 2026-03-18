@@ -588,6 +588,8 @@ class UserConfig(BaseConfig):
                     console.input('请按「Enter」键继续. . .')
             except KeyboardInterrupt:
                 pass
+            except Exception:
+                pass
 
 
 class GlobalConfig(BaseConfig):
