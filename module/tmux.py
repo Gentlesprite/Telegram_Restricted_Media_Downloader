@@ -32,7 +32,7 @@ class TMUX:
         self.tmux_path = self.get_tmux_path()
         if not os.path.isfile(self.tmux_path):
             log.info(f'在"{os.path.dirname(self.tmux_path)}"目录下未找到"{os.path.basename(self.tmux_path)}"。')
-            self.tmux_path = self.check_system_tmux()
+            self.tmux_path = self.get_system_tmux()
             if not self.tmux_path:
                 log.error(f'无法在"{os.path.dirname(self.tmux_path)}"目录和系统中未找到tmux。')
                 sys.exit(0)
@@ -53,7 +53,7 @@ class TMUX:
         return TMUX.MACHINE.get(platform.machine().lower())
 
     @staticmethod
-    def check_system_tmux() -> Union[str, None]:
+    def get_system_tmux() -> Union[str, None]:
         if sys.platform != 'win32':
             from shutil import which
             tmux_path = which('tmux')
