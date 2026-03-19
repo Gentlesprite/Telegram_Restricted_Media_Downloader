@@ -82,7 +82,8 @@ from module.path_tool import (
     split_path,
     compare_file_size,
     move_to_save_directory,
-    safe_replace
+    safe_replace,
+    validate_title
 )
 from module.task import DownloadTask, UploadTask
 from module.stdio import ProgressBar, Base64Image, MetaData
@@ -130,7 +131,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if placeholder == SaveDirectoryPrefix.CHAT_NAME:
                     save_directory = save_directory.replace(
                         placeholder,
-                        str(getattr(getattr(message, 'chat'), 'full_name', 'UNKNOWN_CHAT_NAME'))
+                        validate_title(str(getattr(getattr(message, 'chat'), 'full_name', 'UNKNOWN_CHAT_NAME')))
                     )
                 if placeholder == SaveDirectoryPrefix.MIME_TYPE:
                     for dtype in DownloadType():
