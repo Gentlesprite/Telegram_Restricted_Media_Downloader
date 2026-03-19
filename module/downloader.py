@@ -127,6 +127,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         placeholder,
                         str(getattr(getattr(message, 'chat'), 'id', 'UNKNOWN_CHAT_ID'))
                     )
+                if placeholder == SaveDirectoryPrefix.CHAT_NAME:
+                    save_directory = save_directory.replace(
+                        placeholder,
+                        str(getattr(getattr(message, 'chat'), 'full_name', 'UNKNOWN_CHAT_NAME'))
+                    )
                 if placeholder == SaveDirectoryPrefix.MIME_TYPE:
                     for dtype in DownloadType():
                         if getattr(message, dtype, None):
