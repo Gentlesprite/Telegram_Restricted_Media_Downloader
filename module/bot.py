@@ -14,7 +14,10 @@ from typing import List, Dict, Union, Optional, Callable
 import pyrogram
 from pyrogram.types.messages_and_media import ReplyParameters
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
-from pyrogram.errors.exceptions.flood_420 import FloodWait
+from pyrogram.errors import (
+    FloodWait,
+    FloodPremiumWait
+)
 from pyrogram.errors.exceptions.bad_request_400 import (
     MessageNotModified,
     AccessTokenInvalid
@@ -30,6 +33,7 @@ from module import (
     __version__,
     __copyright__,
     __license__,
+    console,
     log,
     SOFTWARE_FULL_NAME,
     LINK_PREVIEW_OPTIONS
@@ -1134,28 +1138,37 @@ class Bot:
             text: Union[str, List[str]],
             reply_markup: Union[pyrogram.types.InlineKeyboardMarkup, None] = None
     ) -> Union[pyrogram.types.Message, str, None]:
-        try:
-            if isinstance(text, list):
-                last_message: pyrogram.types.Message = await self.safe_process_message(
-                    client=client,
-                    message=message,
-                    last_message_id=last_message_id,
-                    text=text,
-                    reply_markup=reply_markup
+        while True:
+            try:
+                if isinstance(text, list):
+                    last_message: pyrogram.types.Message = await self.safe_process_message(
+                        client=client,
+                        message=message,
+                        last_message_id=last_message_id,
+                        text=text,
+                        reply_markup=reply_markup
+                    )
+                    return last_message
+                elif isinstance(text, str):
+                    await client.edit_message_text(
+                        chat_id=message.from_user.id,
+                        message_id=last_message_id,
+                        text=text,
+                        link_preview_options=LINK_PREVIEW_OPTIONS,
+                        reply_markup=reply_markup
+                    )
+                    return None
+            except MessageNotModified:
+                return None
+            except (FloodWait, FloodPremiumWait) as e:
+                amount = e.value
+                console.log(
+                    f'[{self.bot.name}]编辑消息请求频繁,要求等待{amount}秒后继续运行。',
+                    style='#FF4689'
                 )
-                return last_message
-            elif isinstance(text, str):
-                await client.edit_message_text(
-                    chat_id=message.from_user.id,
-                    message_id=last_message_id,
-                    text=text,
-                    link_preview_options=LINK_PREVIEW_OPTIONS,
-                    reply_markup=reply_markup
-                )
-        except MessageNotModified:
-            pass
-        except (FloodWait, Exception) as e:
-            return str(e)
+                await asyncio.sleep(amount)
+            except Exception:
+                raise
 
 
 class KeyboardButton:
