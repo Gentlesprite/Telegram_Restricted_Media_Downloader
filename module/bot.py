@@ -964,11 +964,23 @@ class Bot:
     ):
         if self.gc.get_config(BotCallbackText.NOTICE):
             if all([self.last_client, self.last_message]):
-                await self.last_client.send_message(
-                    chat_id=self.last_message.from_user.id,
-                    text=f'📢通知:\n{text}',
-                    link_preview_options=LINK_PREVIEW_OPTIONS
-                )
+                while True:
+                    try:
+                        await self.last_client.send_message(
+                            chat_id=self.last_message.from_user.id,
+                            text=f'📢通知:\n{text}',
+                            link_preview_options=LINK_PREVIEW_OPTIONS
+                        )
+                        break
+                    except (FloodWait, FloodPremiumWait) as e:
+                        amount = e.value
+                        console.log(
+                            f'[{self.bot.name}]发送消息请求频繁,要求等待{amount}秒后继续运行。',
+                            style='#FF4689'
+                        )
+                        await asyncio.sleep(amount)
+                    except Exception:
+                        break
 
     async def start_bot(
             self,
