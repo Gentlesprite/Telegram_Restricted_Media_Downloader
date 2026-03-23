@@ -1166,8 +1166,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                         )
                     )
             else:
-                if isinstance(last_message, str):
-                    log.warning('消息过长编辑频繁,暂时无法通过机器人显示通知。')
                 if not record_id:
                     last_message = await self.safe_edit_message(
                         client=client,
