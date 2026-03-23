@@ -956,12 +956,24 @@ class TelegramRestrictedMediaDownloader(Bot):
                     disable_notification=True
                 )
             elif getattr(message, 'text', False):
-                await self.app.client.send_message(
-                    chat_id=target_chat_id,
-                    text=message.text,
-                    disable_notification=True,
-                    protect_content=False
-                )
+                while True:
+                    try:
+                        await self.app.client.send_message(
+                            chat_id=target_chat_id,
+                            text=message.text,
+                            disable_notification=True,
+                            protect_content=False
+                        )
+                        break
+                    except (FloodWait, FloodPremiumWait) as e:
+                        amount = e.value
+                        console.log(
+                            f'[{self.app.client.name}]发送消息请求频繁,要求等待{amount}秒后继续运行。',
+                            style='#FF4689'
+                        )
+                        await asyncio.sleep(amount)
+                    except Exception:
+                        break
             else:
                 await self.app.client.copy_message(
                     chat_id=target_chat_id,
