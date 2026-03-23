@@ -95,6 +95,7 @@ from module.util import (
     get_message_by_link,
     get_chat_with_notify,
     safe_message,
+    safe_delete_message,
     truncate_display_filename,
     Issues
 )
@@ -1192,7 +1193,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     invalid_chat = invalid_chat if invalid_chat else 'Your Saved Messages'
                     invalid_text = '\n'.join(f'{invalid_chat}/{i}' for i in invalid_id)
-                    await last_message.delete() if len(invalid_text) >= 3969 else None
+                    await safe_delete_message(last_message) if len(invalid_text) >= 3969 else None
                     last_message = await self.safe_edit_message(
                         client=client,
                         message=message,
@@ -1246,7 +1247,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
         finally:
             if last_message and getattr(last_message, 'text', '') == loading:
-                await last_message.delete()
+                await safe_delete_message(last_message)
 
     async def cancel_listen(
             self,

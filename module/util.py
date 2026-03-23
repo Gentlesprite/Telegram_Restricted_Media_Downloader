@@ -65,6 +65,14 @@ def safe_message(text: str, max_length: int = 3969) -> List[str]:
         return [part1] + safe_message(part2, max_length)
 
 
+async def safe_delete_message(message: pyrogram.types.Message) -> bool:
+    try:
+        await message.delete()
+        return True
+    except Exception:
+        return False
+
+
 async def parse_link(client: pyrogram.Client, link: str) -> dict:
     # https://github.com/tangyoha/telegram_media_downloader/blob/master/module/pyrogram_extension.py#L1092
     try:
