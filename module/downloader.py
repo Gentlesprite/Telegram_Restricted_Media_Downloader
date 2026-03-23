@@ -1355,7 +1355,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             reply_parameters=ReplyParameters(message_id=message.id),
                             link_preview_options=LINK_PREVIEW_OPTIONS,
                             text=f'✅新增`监听下载频道`频道:\n')
-                    last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
+                    last_message: Union[pyrogram.types.Message, None] = await self.safe_edit_message(
                         client=client,
                         message=message,
                         last_message_id=last_message.id,

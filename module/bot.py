@@ -1137,7 +1137,7 @@ class Bot:
             last_message_id: int,
             text: Union[str, List[str]],
             reply_markup: Union[pyrogram.types.InlineKeyboardMarkup, None] = None
-    ) -> Union[pyrogram.types.Message, str, None]:
+    ) -> Union[pyrogram.types.Message, None]:
         while True:
             try:
                 if isinstance(text, list):
