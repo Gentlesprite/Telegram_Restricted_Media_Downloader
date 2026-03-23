@@ -931,7 +931,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             target_chat_id: Union[str, int],
             target_link: str,
             download_upload: Optional[bool] = False,
-            media_group: Optional[list] = None
+            media_group: Optional[list] = None,
+            done_notice: Optional[bool] = True
     ):
         try:
             if not self.check_type(message):
@@ -990,13 +991,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                 f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
                 f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
             )
-            await asyncio.create_task(
-                self.done_notice(
-                    f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{p_message_id}'
-                    f' ➡️ '
-                    f'"{target_chat_id}",{_t(KeyWord.FORWARD_SUCCESS)}。'
+            if done_notice:
+                await asyncio.create_task(
+                    self.done_notice(
+                        f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{p_message_id}'
+                        f' ➡️ '
+                        f'"{target_chat_id}",{_t(KeyWord.FORWARD_SUCCESS)}。'
+                    )
                 )
-            )
         except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
             if not download_upload:
                 if (
@@ -1109,7 +1111,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         message_id=message_id,
                         origin_chat_id=origin_chat_id,
                         target_chat_id=target_chat_id,
-                        target_link=target_link
+                        target_link=target_link,
+                        done_notice=False
                     )
                     record_id.append(message_id)
                 except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
