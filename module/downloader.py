@@ -1193,15 +1193,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                         topic=origin_chat.is_forum
                     )
                     invalid_chat = invalid_chat if invalid_chat else 'Your Saved Messages'
-                    for i in invalid_id:
-                        last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
-                            client=client,
-                            message=message,
-                            last_message_id=last_message.id,
-                            text=safe_message(
-                                f'{last_message.text}\n{invalid_chat}/{i}'
-                            )
-                        )
+                    invalid_text = '\n'.join(f'{invalid_chat}/{i}' for i in invalid_id)
+                    last_message = await self.safe_edit_message(
+                        client=client,
+                        message=message,
+                        last_message_id=last_message.id,
+                        text=safe_message(f'{last_message.text}\n{invalid_text}')
+                    )
                 direct_url: str = await format_chat_link(
                     link=target_link,
                     client=self.app.client,
