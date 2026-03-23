@@ -1194,6 +1194,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     invalid_chat = invalid_chat if invalid_chat else 'Your Saved Messages'
                     invalid_text = '\n'.join(f'{invalid_chat}/{i}' for i in invalid_id)
+                    await last_message.delete() if len(invalid_text) >= 3969 else None
                     last_message = await self.safe_edit_message(
                         client=client,
                         message=message,
