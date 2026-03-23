@@ -942,13 +942,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
                     f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SKIP)}。'
                 )
-                await asyncio.create_task(
-                    self.done_notice(
-                        f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{message_id}'
-                        f' ➡️ '
-                        f'"{target_chat_id}",{_t(KeyWord.FORWARD_SKIP)}(该类型已过滤)。'
+                if done_notice:
+                    await asyncio.create_task(
+                        self.done_notice(
+                            f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{message_id}'
+                            f' ➡️ '
+                            f'"{target_chat_id}",{_t(KeyWord.FORWARD_SKIP)}(该类型已过滤)。'
+                        )
                     )
-                )
                 return None
             if media_group:
                 await self.app.client.copy_media_group(
