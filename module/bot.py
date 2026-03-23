@@ -979,8 +979,8 @@ class Bot:
                             style='#FF4689'
                         )
                         await asyncio.sleep(amount)
-                    except Exception:
-                        break
+                    except Exception as e:
+                        log.error(f'无法发送通知,{_t(KeyWord.REASON)}:"{e}"')
 
     async def start_bot(
             self,

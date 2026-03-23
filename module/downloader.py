@@ -975,8 +975,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                             style='#FF4689'
                         )
                         await asyncio.sleep(amount)
-                    except Exception:
-                        break
+                    except Exception as e:
+                        log.error(f'无法转发"{message.text}"消息,{_t(KeyWord.REASON)}:"{e}"')
             else:
                 await self.app.client.copy_message(
                     chat_id=target_chat_id,
