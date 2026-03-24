@@ -535,7 +535,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     _toggle_download_type_button('animation')
                 elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_DOCUMENT:
                     _toggle_download_type_button('document')
-                elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE:
+                elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_VIDEO_NOTE:
                     _toggle_download_type_button('video_note')
                 self.app.config['download_type'] = self.app.download_type
                 self.app.save_config(self.app.config)
