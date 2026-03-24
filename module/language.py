@@ -14,6 +14,7 @@ translations: dict = {
     'audio': ['音频'],
     'voice': ['语音'],
     'animation': ['GIF'],
+    'video_note': ['视频笔记'],
     'media': ['媒体'],
     'pending': ['队列中'],
     'downloading': ['下载中'],

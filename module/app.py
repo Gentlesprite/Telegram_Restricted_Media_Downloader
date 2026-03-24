@@ -89,7 +89,7 @@ class Application(UserConfig, StatisticalTable):
 
         os.makedirs(self.temp_directory, exist_ok=True)
         dt = DownloadFileName(message=message, download_type=dtype)
-        if dtype == DownloadType.VIDEO:
+        if dtype in (DownloadType.VIDEO, DownloadType.VIDEO_NOTE):
             file_name: str = dt.get_video_filename()
         elif dtype == DownloadType.PHOTO:
             file_name: str = dt.get_photo_filename()
@@ -127,7 +127,8 @@ class Application(UserConfig, StatisticalTable):
             DownloadType.DOCUMENT: self.success_document,
             DownloadType.AUDIO: self.success_audio,
             DownloadType.VOICE: self.success_voice,
-            DownloadType.ANIMATION: self.success_animation
+            DownloadType.ANIMATION: self.success_animation,
+            DownloadType.VIDEO_NOTE: self.success_video_note
         }
 
         type_to_failure = {
@@ -136,7 +137,8 @@ class Application(UserConfig, StatisticalTable):
             DownloadType.DOCUMENT: self.failure_document,
             DownloadType.AUDIO: self.failure_audio,
             DownloadType.VOICE: self.failure_voice,
-            DownloadType.ANIMATION: self.failure_animation
+            DownloadType.ANIMATION: self.failure_animation,
+            DownloadType.VIDEO_NOTE: self.failure_video_note
         }
 
         type_to_skip = {
@@ -145,7 +147,8 @@ class Application(UserConfig, StatisticalTable):
             DownloadType.DOCUMENT: self.skip_document,
             DownloadType.AUDIO: self.skip_audio,
             DownloadType.VOICE: self.skip_voice,
-            DownloadType.ANIMATION: self.skip_animation
+            DownloadType.ANIMATION: self.skip_animation,
+            DownloadType.VIDEO_NOTE: self.skip_video_note
         }
 
         if download_status == DownloadStatus.SUCCESS:
