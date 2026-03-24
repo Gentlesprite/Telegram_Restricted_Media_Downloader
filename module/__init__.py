@@ -135,6 +135,7 @@ download_type: # 需要下载的类型。支持的参数:video,photo,document,au
 - audio # 音频。
 - voice # 语音。
 - animation # GIF。
+- video_note # 视频笔记。
 is_shutdown: true # 下载完成后是否自动关机。支持的参数：true,false。
 links: D:\path\where\your\link\files\save\content.txt # 链接地址写法如下:
 # 新建txt文本，一个链接为一行，将路径填入即可请不要加引号，在软件运行前就准备好。
