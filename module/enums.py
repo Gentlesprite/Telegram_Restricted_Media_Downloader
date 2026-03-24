@@ -531,13 +531,14 @@ class Validator:
         try:
             if isinstance(dtype, list):
                 support_dtype: list = [_ for _ in DownloadType()]
+                valid_dtype = []
                 for i in dtype:
-                    if i not in support_dtype:
-                        dtype.remove(i)
+                    if i in support_dtype:
+                        valid_dtype.append(i)
+                    else:
                         log.warning(f'"{i}"不在支持的下载类型中,已移除。')
-                if dtype:
-                    return True
-                return False
+                dtype[:] = valid_dtype
+                return bool(dtype)
             return False
         except Exception as e:
             log.error(f'意外的错误,原因:"{e}"')
