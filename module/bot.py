@@ -1199,27 +1199,30 @@ class KeyboardButton:
             export_callback_data = BotCallbackText.EXPORT_COUNT_TABLE
         elif choice == BotCallbackText.EXPORT_UPLOAD_TABLE:
             export_callback_data = BotCallbackText.EXPORT_UPLOAD_TABLE
-        await self.callback_query.message.edit_reply_markup(InlineKeyboardMarkup(
-            [
+        try:
+            await self.callback_query.message.edit_reply_markup(InlineKeyboardMarkup(
                 [
-                    InlineKeyboardButton(
-                        text=BotButton.EXPORT_TABLE,
-                        callback_data=export_callback_data
-                    ),
-                    InlineKeyboardButton(
-                        text=BotButton.RESELECT,
-                        callback_data=BotCallbackText.BACK_TABLE
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        text=BotButton.HELP_PAGE,
-                        callback_data=BotCallbackText.BACK_HELP
-                    )
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.EXPORT_TABLE,
+                            callback_data=export_callback_data
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.RESELECT,
+                            callback_data=BotCallbackText.BACK_TABLE
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.HELP_PAGE,
+                            callback_data=BotCallbackText.BACK_HELP
+                        )
+                    ]
                 ]
-            ]
-        )
-        )
+            )
+            )
+        except MessageNotModified:
+            pass
 
     async def toggle_setting_button(
             self,
@@ -1279,155 +1282,164 @@ class KeyboardButton:
             self,
             global_config: dict
     ):
-        await self.callback_query.message.edit_reply_markup(
-            InlineKeyboardMarkup(
-                [
+        try:
+            await self.callback_query.message.edit_reply_markup(
+                InlineKeyboardMarkup(
                     [
-                        InlineKeyboardButton(
-                            text=BotButton.CLOSE_UPLOAD_DOWNLOAD if global_config.get('upload').get(
-                                'download_upload') else BotButton.OPEN_UPLOAD_DOWNLOAD,
-                            callback_data=BotCallbackText.UPLOAD_DOWNLOAD
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.CLOSE_UPLOAD_DOWNLOAD_DELETE if global_config.get('upload').get(
-                                'delete') else BotButton.OPEN_UPLOAD_DOWNLOAD_DELETE,
-                            callback_data=BotCallbackText.UPLOAD_DOWNLOAD_DELETE
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.RETURN,
-                            callback_data=BotCallbackText.SETTING
-                        )
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.CLOSE_UPLOAD_DOWNLOAD if global_config.get('upload').get(
+                                    'download_upload') else BotButton.OPEN_UPLOAD_DOWNLOAD,
+                                callback_data=BotCallbackText.UPLOAD_DOWNLOAD
+                            ),
+                            InlineKeyboardButton(
+                                text=BotButton.CLOSE_UPLOAD_DOWNLOAD_DELETE if global_config.get('upload').get(
+                                    'delete') else BotButton.OPEN_UPLOAD_DOWNLOAD_DELETE,
+                                callback_data=BotCallbackText.UPLOAD_DOWNLOAD_DELETE
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.RETURN,
+                                callback_data=BotCallbackText.SETTING
+                            )
+                        ]
                     ]
-                ]
+                )
             )
-        )
+        except MessageNotModified:
+            pass
 
     async def toggle_download_setting_button(
             self,
             user_config: dict
     ):
-        await self.callback_query.message.edit_reply_markup(
-            InlineKeyboardMarkup(
-                [
+        try:
+            await self.callback_query.message.edit_reply_markup(
+                InlineKeyboardMarkup(
                     [
-                        InlineKeyboardButton(
-                            text=BotButton.VIDEO_ON if DownloadType.VIDEO in user_config.get(
-                                'download_type') else BotButton.VIDEO_OFF,
-                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VIDEO
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.PHOTO_ON if DownloadType.PHOTO in user_config.get(
-                                'download_type') else BotButton.PHOTO_OFF,
-                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_PHOTO
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.AUDIO_ON if DownloadType.AUDIO in user_config.get(
-                                'download_type') else BotButton.AUDIO_OFF,
-                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_AUDIO
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.VOICE_ON if DownloadType.VOICE in user_config.get(
-                                'download_type') else BotButton.VOICE_OFF,
-                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VOICE
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.ANIMATION_ON if DownloadType.ANIMATION in user_config.get(
-                                'download_type') else BotButton.ANIMATION_OFF,
-                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_ANIMATION
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.DOCUMENT_ON if DownloadType.DOCUMENT in user_config.get(
-                                'download_type') else BotButton.DOCUMENT_OFF,
-                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_DOCUMENT
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.VIDEO_NOTE_ON if DownloadType.VIDEO_NOTE in user_config.get(
-                                'download_type') else BotButton.VIDEO_NOTE_OFF,
-                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VIDEO_NOTE
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.RETURN,
-                            callback_data=BotCallbackText.SETTING
-                        )
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.VIDEO_ON if DownloadType.VIDEO in user_config.get(
+                                    'download_type') else BotButton.VIDEO_OFF,
+                                callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VIDEO
+                            ),
+                            InlineKeyboardButton(
+                                text=BotButton.PHOTO_ON if DownloadType.PHOTO in user_config.get(
+                                    'download_type') else BotButton.PHOTO_OFF,
+                                callback_data=BotCallbackText.TOGGLE_DOWNLOAD_PHOTO
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.AUDIO_ON if DownloadType.AUDIO in user_config.get(
+                                    'download_type') else BotButton.AUDIO_OFF,
+                                callback_data=BotCallbackText.TOGGLE_DOWNLOAD_AUDIO
+                            ),
+                            InlineKeyboardButton(
+                                text=BotButton.VOICE_ON if DownloadType.VOICE in user_config.get(
+                                    'download_type') else BotButton.VOICE_OFF,
+                                callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VOICE
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.ANIMATION_ON if DownloadType.ANIMATION in user_config.get(
+                                    'download_type') else BotButton.ANIMATION_OFF,
+                                callback_data=BotCallbackText.TOGGLE_DOWNLOAD_ANIMATION
+                            ),
+                            InlineKeyboardButton(
+                                text=BotButton.DOCUMENT_ON if DownloadType.DOCUMENT in user_config.get(
+                                    'download_type') else BotButton.DOCUMENT_OFF,
+                                callback_data=BotCallbackText.TOGGLE_DOWNLOAD_DOCUMENT
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.VIDEO_NOTE_ON if DownloadType.VIDEO_NOTE in user_config.get(
+                                    'download_type') else BotButton.VIDEO_NOTE_OFF,
+                                callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VIDEO_NOTE
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.RETURN,
+                                callback_data=BotCallbackText.SETTING
+                            )
+                        ]
                     ]
-                ]
+                )
             )
-        )
+        except MessageNotModified:
+            pass
 
     async def toggle_forward_setting_button(
             self,
             global_config: dict
     ):
-        await self.callback_query.message.edit_reply_markup(
-            InlineKeyboardMarkup(
-                [
+        try:
+            await self.callback_query.message.edit_reply_markup(
+                InlineKeyboardMarkup(
                     [
-                        InlineKeyboardButton(
-                            text=BotButton.VIDEO_ON if global_config.get('forward_type').get(
-                                'video') else BotButton.VIDEO_OFF,
-                            callback_data=BotCallbackText.TOGGLE_FORWARD_VIDEO
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.PHOTO_ON if global_config.get('forward_type').get(
-                                'photo') else BotButton.PHOTO_OFF,
-                            callback_data=BotCallbackText.TOGGLE_FORWARD_PHOTO
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.AUDIO_ON if global_config.get('forward_type').get(
-                                'audio') else BotButton.AUDIO_OFF,
-                            callback_data=BotCallbackText.TOGGLE_FORWARD_AUDIO
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.VOICE_ON if global_config.get('forward_type').get(
-                                'voice') else BotButton.VOICE_OFF,
-                            callback_data=BotCallbackText.TOGGLE_FORWARD_VOICE
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.ANIMATION_ON if global_config.get('forward_type').get(
-                                'animation') else BotButton.ANIMATION_OFF,
-                            callback_data=BotCallbackText.TOGGLE_FORWARD_ANIMATION
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.DOCUMENT_ON if global_config.get('forward_type').get(
-                                'document') else BotButton.DOCUMENT_OFF,
-                            callback_data=BotCallbackText.TOGGLE_FORWARD_DOCUMENT
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.TEXT_ON if global_config.get('forward_type').get(
-                                'text') else BotButton.TEXT_OFF,
-                            callback_data=BotCallbackText.TOGGLE_FORWARD_TEXT
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.VIDEO_NOTE_ON if global_config.get('forward_type').get(
-                                'video_note') else BotButton.VIDEO_NOTE_OFF,
-                            callback_data=BotCallbackText.TOGGLE_FORWARD_VIDEO_NOTE
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.RETURN,
-                            callback_data=BotCallbackText.SETTING
-                        )
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.VIDEO_ON if global_config.get('forward_type').get(
+                                    'video') else BotButton.VIDEO_OFF,
+                                callback_data=BotCallbackText.TOGGLE_FORWARD_VIDEO
+                            ),
+                            InlineKeyboardButton(
+                                text=BotButton.PHOTO_ON if global_config.get('forward_type').get(
+                                    'photo') else BotButton.PHOTO_OFF,
+                                callback_data=BotCallbackText.TOGGLE_FORWARD_PHOTO
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.AUDIO_ON if global_config.get('forward_type').get(
+                                    'audio') else BotButton.AUDIO_OFF,
+                                callback_data=BotCallbackText.TOGGLE_FORWARD_AUDIO
+                            ),
+                            InlineKeyboardButton(
+                                text=BotButton.VOICE_ON if global_config.get('forward_type').get(
+                                    'voice') else BotButton.VOICE_OFF,
+                                callback_data=BotCallbackText.TOGGLE_FORWARD_VOICE
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.ANIMATION_ON if global_config.get('forward_type').get(
+                                    'animation') else BotButton.ANIMATION_OFF,
+                                callback_data=BotCallbackText.TOGGLE_FORWARD_ANIMATION
+                            ),
+                            InlineKeyboardButton(
+                                text=BotButton.DOCUMENT_ON if global_config.get('forward_type').get(
+                                    'document') else BotButton.DOCUMENT_OFF,
+                                callback_data=BotCallbackText.TOGGLE_FORWARD_DOCUMENT
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.TEXT_ON if global_config.get('forward_type').get(
+                                    'text') else BotButton.TEXT_OFF,
+                                callback_data=BotCallbackText.TOGGLE_FORWARD_TEXT
+                            ),
+                            InlineKeyboardButton(
+                                text=BotButton.VIDEO_NOTE_ON if global_config.get('forward_type').get(
+                                    'video_note') else BotButton.VIDEO_NOTE_OFF,
+                                callback_data=BotCallbackText.TOGGLE_FORWARD_VIDEO_NOTE
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.RETURN,
+                                callback_data=BotCallbackText.SETTING
+                            )
+                        ]
                     ]
-                ]
+                )
             )
-        )
+        except MessageNotModified:
+            pass
 
     @staticmethod
     def toggle_download_chat_type_filter_button(
@@ -1551,38 +1563,43 @@ class KeyboardButton:
                 log.error(f'设置启用或禁用导出统计表失败,{_t(KeyWord.REASON)}:"{_e}"')
 
     async def back_table_button(self):
-
-        await self.callback_query.message.edit_reply_markup(
-            InlineKeyboardMarkup(
-                [
+        try:
+            await self.callback_query.message.edit_reply_markup(
+                InlineKeyboardMarkup(
                     [
-                        InlineKeyboardButton(
-                            text=BotButton.RESELECT,
-                            callback_data=BotCallbackText.BACK_TABLE
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.HELP_PAGE,
-                            callback_data=BotCallbackText.BACK_HELP
-                        )
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.RESELECT,
+                                callback_data=BotCallbackText.BACK_TABLE
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.HELP_PAGE,
+                                callback_data=BotCallbackText.BACK_HELP
+                            )
+                        ]
                     ]
-                ]
-            ))
+                ))
+        except MessageNotModified:
+            pass
 
     async def task_assign_button(self):
-        await self.callback_query.message.edit_reply_markup(
-            InlineKeyboardMarkup(
-                [
+        try:
+            await self.callback_query.message.edit_reply_markup(
+                InlineKeyboardMarkup(
                     [
-                        InlineKeyboardButton(
-                            text=BotButton.TASK_ASSIGN,
-                            callback_data=BotCallbackText.NULL
-                        )
+                        [
+                            InlineKeyboardButton(
+                                text=BotButton.TASK_ASSIGN,
+                                callback_data=BotCallbackText.NULL
+                            )
+                        ]
                     ]
-                ]
+                )
             )
-        )
+        except MessageNotModified:
+            pass
 
     @staticmethod
     def restrict_forward_button():
@@ -1729,8 +1746,10 @@ class KeyboardButton:
                 )
             ]
         )
-
-        await self.callback_query.message.edit_reply_markup(InlineKeyboardMarkup(keyboard))
+        try:
+            await self.callback_query.message.edit_reply_markup(InlineKeyboardMarkup(keyboard))
+        except MessageNotModified:
+            pass
 
     @staticmethod
     def time_keyboard(
