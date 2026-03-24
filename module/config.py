@@ -664,7 +664,10 @@ class GlobalConfig(BaseConfig):
             template=self.TEMPLATE,
             log_message='"{}"不在全局配置文件中,已添加。'
         )
+        # 处理嵌套参数。
         self.process_nesting(param_name='export_table', config=config)
+        self.process_nesting(param_name='upload', config=config)
+        self.process_nesting(param_name='forward_type', config=config)
         # 删除父级模板中没有的字段。
         self.remove_extra_keys(
             target=config,
