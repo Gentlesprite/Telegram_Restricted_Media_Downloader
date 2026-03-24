@@ -494,7 +494,7 @@ class Bot:
             f'🌳 {BotCommandText.with_description(BotCommandText.UPLOAD_R)}\n'
             f'💬 {BotCommandText.with_description(BotCommandText.DOWNLOAD_CHAT)}\n\n'
             f'✨ 其他功能:\n'
-            f'📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`类型的消息给我,即可自动下载。\n'
+            f'📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`类型的消息给我,即可创建下载任务。\n'
         )
         if not all([client, message]):
             return {
@@ -1085,6 +1085,7 @@ class Bot:
                                     | pyrogram.filters.voice
                                     | pyrogram.filters.animation
                                     | pyrogram.filters.document
+                                    | pyrogram.filters.video_note
                             )
                 )
             )
@@ -1104,6 +1105,7 @@ class Bot:
                             | pyrogram.filters.voice
                             | pyrogram.filters.animation
                             | pyrogram.filters.document
+                            | pyrogram.filters.video_note
                     )
                 )
             )
