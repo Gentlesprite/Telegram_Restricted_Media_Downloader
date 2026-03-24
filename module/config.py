@@ -611,7 +611,8 @@ class GlobalConfig(BaseConfig):
                 'document': True,
                 'voice': True,
                 'text': True,
-                'animation': True
+                'animation': True,
+                'video_note': True
             }
     }
 

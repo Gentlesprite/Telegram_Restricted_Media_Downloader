@@ -389,7 +389,8 @@ class Bot:
                     'document': True,
                     'audio': True,
                     'voice': True,
-                    'animation': True
+                    'animation': True,
+                    'video_note': True
                 },
             'keyword': {},
             'title': {},
@@ -1348,6 +1349,13 @@ class KeyboardButton:
                     ],
                     [
                         InlineKeyboardButton(
+                            text=BotButton.VIDEO_NOTE_ON if DownloadType.VIDEO_NOTE in user_config.get(
+                                'download_type') else BotButton.VIDEO_NOTE_OFF,
+                            callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VIDEO_NOTE
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
                             text=BotButton.RETURN,
                             callback_data=BotCallbackText.SETTING
                         )
@@ -1404,6 +1412,11 @@ class KeyboardButton:
                             text=BotButton.TEXT_ON if global_config.get('forward_type').get(
                                 'text') else BotButton.TEXT_OFF,
                             callback_data=BotCallbackText.TOGGLE_FORWARD_TEXT
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.VIDEO_NOTE_ON if global_config.get('forward_type').get(
+                                'video_note') else BotButton.VIDEO_NOTE_OFF,
+                            callback_data=BotCallbackText.TOGGLE_FORWARD_VIDEO_NOTE
                         )
                     ],
                     [
@@ -1462,6 +1475,14 @@ class KeyboardButton:
                         download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
                             DownloadType.DOCUMENT] else BotButton.DOCUMENT_OFF,
                         callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.VIDEO_NOTE_ON if
+                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                            DownloadType.VIDEO_NOTE] else BotButton.VIDEO_NOTE_ON,
+                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE
                     )
                 ],
                 [
