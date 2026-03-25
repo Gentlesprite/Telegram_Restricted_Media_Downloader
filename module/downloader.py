@@ -89,6 +89,7 @@ from module.task import DownloadTask, UploadTask
 from module.stdio import ProgressBar, Base64Image, MetaData
 from module.uploader import TelegramUploader
 from module.util import (
+    is_docker,
     parse_link,
     format_chat_link,
     get_my_id,
@@ -463,6 +464,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     only_export=True
                 )
             if res:
+                _folder: str = 'form' if is_docker() else _folder
                 await callback_query.message.edit_text(
                     f'✅✅✅`{_prompt_string}`已发送至您的「终端」并已「导出」为表格请注意查收。\n(请查看软件目录下`{_folder}`文件夹)')
             elif res is False:
