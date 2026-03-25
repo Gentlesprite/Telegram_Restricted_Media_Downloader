@@ -1866,7 +1866,7 @@ class KeyboardButton:
                 [
                     InlineKeyboardButton(
                         text=BotButton.RETURN,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
+                        callback_data=BotCallbackText.CANCEL_KEYWORD_INPUT
                     )
                 ]
             ]
