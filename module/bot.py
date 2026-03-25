@@ -1495,7 +1495,7 @@ class KeyboardButton:
                     InlineKeyboardButton(
                         text=BotButton.VIDEO_NOTE_ON if
                         download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
-                            DownloadType.VIDEO_NOTE] else BotButton.VIDEO_NOTE_ON,
+                            DownloadType.VIDEO_NOTE] else BotButton.VIDEO_NOTE_OFF,
                         callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE
                     )
                 ],

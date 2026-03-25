@@ -640,6 +640,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE,
                 BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION,
                 BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE,
                 BotCallbackText.TOGGLE_DOWNLOAD_CHAT_COMMENT,
                 BotCallbackText.DOWNLOAD_CHAT_ID,  # 执行任务。
                 BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL,  # 取消任务。
@@ -841,7 +842,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO,
                     BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE,
                     BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION,
-                    BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT
+                    BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT,
+                    BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE
             ):
                 def _toggle_dtype_filter_button(_param: str):
                     _dtype: dict = self.download_chat_filter[chat_id]['download_type']
@@ -867,6 +869,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         _toggle_dtype_filter_button('animation')
                     elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT:
                         _toggle_dtype_filter_button('document')
+                    elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE:
+                        _toggle_dtype_filter_button('video_note')
                     await callback_query.message.edit_text(
                         text=_filter_prompt(),
                         reply_markup=kb.toggle_download_chat_type_filter_button(self.download_chat_filter)
