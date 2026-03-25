@@ -21,8 +21,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get purge -y gcc g++ \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
-# 创建配置目录、下载目录、会话目录、临时目录、可执行程序目录。
-RUN mkdir -p /app/TRMD /app/downloads /app/sessions /app/temp /res/bin
+# 创建配置目录、下载目录、会话目录、临时目录、可执行程序目录、统计表目录。
+RUN mkdir -p /app/TRMD /app/downloads /app/sessions /app/temp /res/bin /app/form
 
 # 复制项目文件。
 COPY main.py .
@@ -35,7 +35,7 @@ COPY res/bin/ttyd* ./res/bin/
 RUN chmod +x ./res/bin/ttyd* ./res/bin/tmux* 2>/dev/null || true
 
 # 设置挂载点。
-VOLUME ["/app/TRMD", "/app/downloads", "/app/sessions", "/app/temp"]
+VOLUME ["/app/TRMD", "/app/downloads", "/app/sessions", "/app/temp", "/app/form"]
 
 # 运行应用。
 # --config: 用户配置存到挂载目录，容器重启不丢失。

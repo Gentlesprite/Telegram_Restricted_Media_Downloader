@@ -10,5 +10,6 @@ services:
       - ./sessions:/app/sessions
       - ./downloads:/app/downloads
       - ./temp:/app/temp
+      - ./form:/app/form
     environment:
       - TZ=Asia/Shanghai

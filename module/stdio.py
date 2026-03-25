@@ -37,7 +37,10 @@ from module import (
     __license__
 )
 from module.language import _t
-from module.util import get_terminal_width
+from module.util import (
+    get_terminal_width,
+    is_docker
+)
 from module.enums import (
     DownloadType,
     UploadStatus,
@@ -126,6 +129,7 @@ class StatisticalTable:
         header: tuple = ('类型&状态', '成功下载', '失败下载', '跳过下载', '合计')
         if export:
             try:
+                export_directory: str = '/app/form/CountForm' if is_docker() else export_directory
                 os.makedirs(export_directory, exist_ok=True)
                 with open(
                         file=os.path.join(
@@ -197,6 +201,7 @@ class StatisticalTable:
             header: tuple = ('编号', '链接', '文件名', '完成率', '错误信息')
             if export:
                 try:
+                    export_directory: str = '/app/form/LinkForm' if is_docker() else export_directory
                     os.makedirs(export_directory, exist_ok=True)
                     with open(file=os.path.join(
                             export_directory,
@@ -295,6 +300,7 @@ class StatisticalTable:
 
         if export:
             try:
+                export_directory: str = '/app/form/Normal' if is_docker() else export_directory
                 os.makedirs(export_directory, exist_ok=True)
                 timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
                 filename = f'{timestamp}_上传任务统计表.csv'

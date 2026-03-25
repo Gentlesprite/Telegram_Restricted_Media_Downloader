@@ -1406,6 +1406,7 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
     -v ./sessions:/app/sessions \
     -v ./downloads:/app/downloads \
     -v ./temp:/app/temp \
+    -v ./form:/app/form \
     -e TZ=Asia/Shanghai \
     --restart unless-stopped \
     gentlesprite/telegram_restricted_media_downloader:latest
@@ -1415,7 +1416,7 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
 - 如果是通过`Windows`使用`wsl2`运行`docker`：
 
     ```bash
-    docker run -it --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest
+    docker run -it --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -v ./form:/app/form -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest
     ```
 
 
@@ -1444,6 +1445,7 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
     -v ./sessions:/app/sessions \
     -v ./downloads:/app/downloads \
     -v ./temp:/app/temp \
+    -v ./form:/app/form \
     -p 2921:2921 \
     -w /app \
     -e TZ=Asia/Shanghai \
@@ -1455,7 +1457,7 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
 - 如果是通过`Windows`使用`wsl2`运行`docker`：
 
   ```bash
-  docker run -d --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -p 2921:2921 -w /app -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest python main.py --config /app/TRMD/config.yaml --web 2921 --mode SESSION
+  docker run -d --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -v ./form:/app/form -p 2921:2921 -w /app -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest python main.py --config /app/TRMD/config.yaml --web 2921 --mode SESSION
   ```
 
 - 查看运行日志：
