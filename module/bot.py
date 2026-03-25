@@ -461,7 +461,7 @@ class Bot:
                 [
                     InlineKeyboardButton(
                         BotButton.VIDEO_TUTORIAL,
-                        url='https://www.bilibili.com/video/BV1nCp8evEwv'
+                        url='https://www.youtube.com/watch?v=ucwKJu-MrBw'
                     ),
                     InlineKeyboardButton(
                         BotButton.PAY,
