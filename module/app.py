@@ -75,7 +75,7 @@ class Application(UserConfig, StatisticalTable):
 
         def splice_chat_id(_file_name) -> str:
             try:
-                chat_id = str(message.chat.id)
+                chat_id: str = str(getattr(message.chat, 'id', 0))
                 if chat_id:
                     temp_directory_with_chat_id: str = os.path.join(self.temp_directory, chat_id)
                     os.makedirs(temp_directory_with_chat_id, exist_ok=True)
@@ -84,7 +84,7 @@ class Application(UserConfig, StatisticalTable):
                     raise ValueError('chat id is empty.')
             except Exception as e:
                 _file: str = os.path.join(self.temp_directory, validate_title(_file_name))
-                log.warning(f'拼接临时路径时,无法获取频道id,原因:{e}')
+                log.warning(f'拼接临时路径时,无法获取频道id,{_t(KeyWord.REASON)}:"{e}"')
             return _file
 
         os.makedirs(self.temp_directory, exist_ok=True)
