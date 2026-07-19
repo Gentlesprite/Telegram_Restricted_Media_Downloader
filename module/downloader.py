@@ -649,6 +649,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION,
                 BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT,
                 BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_LIVE_PHOTO,
                 BotCallbackText.TOGGLE_DOWNLOAD_CHAT_COMMENT,
                 BotCallbackText.DOWNLOAD_CHAT_ID,  # 执行任务。
                 BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL,  # 取消任务。
