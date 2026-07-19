@@ -137,11 +137,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                 if placeholder == SaveDirectoryPrefix.MIME_TYPE:
                     for dtype in DownloadType():
-                        if getattr(message, dtype, None):
-                            save_directory = save_directory.replace(
-                                placeholder,
-                                dtype
-                            )
+                        _dtype = getattr(message, dtype, None)
+                        if _dtype:
+                            if dtype == DownloadType.PHOTO and getattr(message, DownloadType.LIVE_PHOTO, None):
+                                dtype = DownloadType.LIVE_PHOTO
+                            save_directory = save_directory.replace(placeholder, dtype)
         return save_directory
 
     async def get_download_link_from_bot(

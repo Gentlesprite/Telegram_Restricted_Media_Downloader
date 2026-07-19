@@ -91,7 +91,7 @@ class Application(UserConfig, StatisticalTable):
         dt = DownloadFileName(message=message, download_type=dtype)
         if dtype in (DownloadType.VIDEO, DownloadType.VIDEO_NOTE):
             file_name: str = dt.get_video_filename()
-        elif dtype in (DownloadType.PHOTO,DownloadType.LIVE_PHOTO):
+        elif dtype in (DownloadType.PHOTO, DownloadType.LIVE_PHOTO):
             file_name: str = dt.get_photo_filename()
         elif dtype == DownloadType.DOCUMENT:
             file_name: str = dt.get_document_filename()
