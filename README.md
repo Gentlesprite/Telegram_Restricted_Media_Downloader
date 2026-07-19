@@ -14,7 +14,7 @@
     <img src="https://img.shields.io/badge/Python-3.13.2-blue.svg?color=00B16A" alt="Python 3.13.2"/>
   </a>
   <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.19-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.19"/>
+    <img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.24-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.24"/>
   </a>
   <a style="text-decoration:none">
     <img src="https://img.shields.io/badge/Platform-Windows & Linux%20-blue?color=00B16A" alt="Platform Windows & Linux"/>
@@ -204,7 +204,7 @@
    | `/download_chat`   | `/download_chat 频道链接`                                    | 下载**指定频道**并支持**通过内联键盘自定义内容过滤**。       |
 
    其他功能:
-   - （`≥v1.8.7`）转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`类型的消息给机器人，即可创建下载任务。
+   - （`≥v1.8.7`）转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`类型的消息给机器人，即可创建下载任务。
       - 此项功能不受用户自定义下载类型限制，确保文件即时获取。
       - 转发的消息将按新消息处理，每次均生成独立文件命名。暂不支持重复文件识别，请妥善管理多次转发的相同内容。
       - 此功能仅用于便利用户日常使用，对于无法被转发、下载的消息，请根据实际需求使用对应的命令。
@@ -605,6 +605,7 @@ download_type: # 需要下载的类型。支持的参数:video,photo,document,au
 - voice # 语音。
 - animation # GIF。
 - video_note # 视频笔记。
+- live_photo # 实况图片。
 is_shutdown: true # 下载完成后是否自动关机。支持的参数：true,false。
 links: D:\path\where\your\link\files\save\content.txt # 链接地址写法如下:
 # 新建txt文本，一个链接为一行，将路径填入即可请不要加引号，在软件运行前就准备好。
@@ -683,6 +684,7 @@ forward_type: # 控制/listen_forward与/forward命令可转发的文件类型�
   video: true # 视频类型。
   voice: true # 语音类型。
   video_note: true # 视频笔记类型。
+  live_photo: true # 实况图片类型。
 notice: false # 控制机器人启动时候是否发送启动通知。
 upload:
   delete: false # 控制/listen_forward命令遇到受限内容时,下载上传完成后是否删除已上传完成的本地文件。
@@ -1338,6 +1340,7 @@ download_type:
 - voice
 - animation
 - video_note
+- live_photo
 is_shutdown: false
 links: /app/TRMD/links.txt # 主机的路径为："config/links.txt"。
 max_retries:
