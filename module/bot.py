@@ -390,7 +390,8 @@ class Bot:
                     'audio': True,
                     'voice': True,
                     'animation': True,
-                    'video_note': True
+                    'video_note': True,
+                    'live_photo': True
                 },
             'keyword': {},
             'title': {},
@@ -494,7 +495,7 @@ class Bot:
             f'🌳 {BotCommandText.with_description(BotCommandText.UPLOAD_R)}\n'
             f'💬 {BotCommandText.with_description(BotCommandText.DOWNLOAD_CHAT)}\n\n'
             f'✨ 其他功能:\n'
-            f'📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`类型的消息给我,即可创建下载任务。\n'
+            f'📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`类型的消息给我,即可创建下载任务。\n'
         )
         if not all([client, message]):
             return {
@@ -1361,6 +1362,11 @@ class KeyboardButton:
                                 text=BotButton.VIDEO_NOTE_ON if DownloadType.VIDEO_NOTE in user_config.get(
                                     'download_type') else BotButton.VIDEO_NOTE_OFF,
                                 callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VIDEO_NOTE
+                            ),
+                            InlineKeyboardButton(
+                                text=BotButton.LIVE_PHOTO_ON if DownloadType.LIVE_PHOTO in user_config.get(
+                                    'download_type') else BotButton.LIVE_PHOTO_OFF,
+                                callback_data=BotCallbackText.TOGGLE_DOWNLOAD_LIVE_PHOTO
                             )
                         ],
                         [
@@ -1433,6 +1439,13 @@ class KeyboardButton:
                         ],
                         [
                             InlineKeyboardButton(
+                                text=BotButton.LIVE_PHOTO_ON if global_config.get('forward_type').get(
+                                    'live_photo') else BotButton.LIVE_PHOTO_OFF,
+                                callback_data=BotCallbackText.TOGGLE_FORWARD_LIVE_PHOTO
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
                                 text=BotButton.RETURN,
                                 callback_data=BotCallbackText.SETTING
                             )
@@ -1497,6 +1510,12 @@ class KeyboardButton:
                         download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
                             DownloadType.VIDEO_NOTE] else BotButton.VIDEO_NOTE_OFF,
                         callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.LIVE_PHOTO_ON if
+                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                            DownloadType.LIVE_PHOTO] else BotButton.LIVE_PHOTO_OFF,
+                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_LIVE_PHOTO
                     )
                 ],
                 [

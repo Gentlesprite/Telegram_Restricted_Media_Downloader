@@ -508,7 +508,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 BotCallbackText.TOGGLE_DOWNLOAD_VOICE,
                 BotCallbackText.TOGGLE_DOWNLOAD_ANIMATION,
                 BotCallbackText.TOGGLE_DOWNLOAD_DOCUMENT,
-                BotCallbackText.TOGGLE_DOWNLOAD_VIDEO_NOTE
+                BotCallbackText.TOGGLE_DOWNLOAD_VIDEO_NOTE,
+                BotCallbackText.TOGGLE_DOWNLOAD_LIVE_PHOTO
         ):
             def _toggle_download_type_button(_param: str):
                 if _param in self.app.download_type:
@@ -539,6 +540,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     _toggle_download_type_button('document')
                 elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_VIDEO_NOTE:
                     _toggle_download_type_button('video_note')
+                elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_LIVE_PHOTO:
+                    _toggle_download_type_button('live_photo')
                 self.app.config['download_type'] = self.app.download_type
                 self.app.save_config(self.app.config)
                 await kb.toggle_download_setting_button(self.app.config)
@@ -556,7 +559,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 BotCallbackText.TOGGLE_FORWARD_ANIMATION,
                 BotCallbackText.TOGGLE_FORWARD_DOCUMENT,
                 BotCallbackText.TOGGLE_FORWARD_TEXT,
-                BotCallbackText.TOGGLE_FORWARD_VIDEO_NOTE
+                BotCallbackText.TOGGLE_FORWARD_VIDEO_NOTE,
+                BotCallbackText.TOGGLE_FORWARD_LIVE_PHOTO
         ):
             def _toggle_forward_type_button(_param: str):
                 _forward_type: dict = self.gc.config.get('forward_type', self.gc.default_forward_type_nesting)
@@ -590,6 +594,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     _toggle_forward_type_button('text')
                 elif callback_data == BotCallbackText.TOGGLE_FORWARD_VIDEO_NOTE:
                     _toggle_forward_type_button('video_note')
+                elif callback_data == BotCallbackText.TOGGLE_FORWARD_LIVE_PHOTO:
+                    _toggle_forward_type_button('live_photo')
                 self.gc.save_config(self.gc.config)
                 await kb.toggle_forward_setting_button(self.gc.config)
             except ValueError:
@@ -845,7 +851,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE,
                     BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION,
                     BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT,
-                    BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE
+                    BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE,
+                    BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_LIVE_PHOTO
             ):
                 def _toggle_dtype_filter_button(_param: str):
                     _dtype: dict = self.download_chat_filter[chat_id]['download_type']
@@ -873,6 +880,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         _toggle_dtype_filter_button('document')
                     elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE:
                         _toggle_dtype_filter_button('video_note')
+                    elif callback_data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_LIVE_PHOTO:
+                        _toggle_dtype_filter_button('live_photo')
                     await callback_query.message.edit_text(
                         text=_filter_prompt(),
                         reply_markup=kb.toggle_download_chat_type_filter_button(self.download_chat_filter)

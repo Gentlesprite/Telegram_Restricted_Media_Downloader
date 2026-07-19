@@ -612,7 +612,8 @@ class GlobalConfig(BaseConfig):
                 'voice': True,
                 'text': True,
                 'animation': True,
-                'video_note': True
+                'video_note': True,
+                'live_photo': True
             }
     }
 
