@@ -98,7 +98,8 @@ from module.util import (
     safe_message,
     safe_delete_message,
     truncate_display_filename,
-    Issues
+    Issues,
+    get_message_dtype
 )
 
 
@@ -136,12 +137,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                         validate_title(str(getattr(getattr(message, 'chat'), 'full_name', 'UNKNOWN_CHAT_NAME')))
                     )
                 if placeholder == SaveDirectoryPrefix.MIME_TYPE:
-                    for dtype in DownloadType():
-                        _dtype = getattr(message, dtype, None)
-                        if _dtype:
-                            if dtype == DownloadType.PHOTO and getattr(message, DownloadType.LIVE_PHOTO, None):
-                                dtype = DownloadType.LIVE_PHOTO
-                            save_directory = save_directory.replace(placeholder, dtype)
+                    dtype: str = get_message_dtype(message, self.app.download_type)
+                    if dtype:
+                        save_directory = save_directory.replace(placeholder, dtype)
         return save_directory
 
     async def get_download_link_from_bot(
@@ -1559,7 +1557,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             progress: Callable = None,
             progress_args: tuple = (),
             chunk_size: int = 1024 * 1024,
-            compare_size: Union[int, None] = None  # 不为None时,将通过大小比对判断是否为完整文件。
+            compare_size: Union[int, None] = None,  # 不为None时,将通过大小比对判断是否为完整文件。
+            download_type: str = None
     ) -> str:
         temp_path = f'{file_name}.temp'
         if os.path.exists(file_name) and compare_size:
@@ -1605,7 +1604,11 @@ class TelegramRestrictedMediaDownloader(Bot):
             f.seek(downloaded)
             while True:
                 try:
-                    async for chunk in self.app.client.stream_media(message=message, offset=skip_chunks):
+                    async for chunk in self.app.client.stream_media(
+                        message=message,
+                        offset=skip_chunks,
+                        download_type=download_type
+                    ):
                         f.write(chunk)
                         downloaded += len(chunk)
                         progress(downloaded, *progress_args)
@@ -1676,8 +1679,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     await self.__add_task(chat_id, link_type, link, _message, retry, with_upload, diy_download_type)
         else:
             _task = None
-            valid_dtype: str = next((_ for _ in DownloadType() if getattr(message, _, None)), None)  # 判断该链接是否为有支持的类型。
             download_type: list = diy_download_type if diy_download_type else self.app.download_type
+            valid_dtype: str = get_message_dtype(message, download_type)  # 按下载配置判定消息类型,实况照片是否优先取决于配置。
             if valid_dtype in download_type:
                 # 如果是匹配到的消息类型就创建任务。
                 console.log(
@@ -1736,7 +1739,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 self.pb.progress,
                                 task_id
                             ),
-                            compare_size=sever_file_size
+                            compare_size=sever_file_size,
+                            download_type=valid_dtype
                         )
                     )
                     MetaData.print_current_task_num(

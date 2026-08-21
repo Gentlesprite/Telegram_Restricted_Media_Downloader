@@ -36,6 +36,7 @@ from module.path_tool import (
     extract_full_extension,
     is_compressed_file
 )
+from module.util import get_message_dtype
 
 
 class Application(UserConfig, StatisticalTable):
@@ -170,10 +171,7 @@ class Application(UserConfig, StatisticalTable):
     @on_record
     def get_file_type(self, *args) -> str:
         message, file_name, download_type = args
-        for i in DownloadType():
-            if getattr(message, i):
-                download_type = i
-        return download_type if download_type else 'unknown_type'
+        return get_message_dtype(message, self.download_type) or download_type or 'unknown_type'
 
     def check_download_type(self) -> None:
         for dtype in self.download_type:
@@ -262,7 +260,10 @@ class DownloadFileName:
         default_mtype: str = 'image/jpg'  # v1.2.8 健全获取文件名逻辑。
         media_object = getattr(self.message, self.download_type)
         extension: str = 'unknown'
-        if self.download_type == DownloadType.PHOTO:
+        if self.download_type == DownloadType.LIVE_PHOTO:
+            media_object = getattr(self.message, DownloadType.LIVE_PHOTO)
+            extension = 'mov'
+        elif self.download_type == DownloadType.PHOTO:
             extension: str = get_extension(
                 file_id=media_object.file_id,
                 mime_type=default_mtype,

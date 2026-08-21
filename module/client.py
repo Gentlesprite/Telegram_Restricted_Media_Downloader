@@ -3,6 +3,7 @@
 # Software:PyCharm
 # Time:2025/2/25 1:26
 # File:client.py
+import math
 import asyncio
 import functools
 import inspect
@@ -10,6 +11,7 @@ import inspect
 from datetime import datetime
 from hashlib import sha256
 from typing import (
+    AsyncIterator,
     AsyncGenerator,
     Optional,
     Union,
@@ -54,7 +56,7 @@ from module import (
     log,
     __version__
 )
-from module.enums import KeyWord
+from module.enums import DownloadType, KeyWord
 from module.language import _t
 
 
@@ -636,6 +638,63 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 raise
             except Exception as e:
                 log.exception(e)
+
+    async def stream_media(
+            self: "pyrogram.Client",
+            message: Union["types.Message", str],
+            limit: int = 0,
+            offset: int = 0,
+            download_type: str = None,
+    ) -> AsyncIterator[bytes]:
+
+        if isinstance(message, types.Message) and message.live_photo is not None:
+            # 实况照片消息同时含静态照片与动态视频,按实际下载类型选择下载内容。
+            if download_type == DownloadType.LIVE_PHOTO:
+                # 按实况照片下载时取视频部分,输出可播放的动态照片。
+                file_id_obj = FileId.decode(message.live_photo.file_id)
+                file_size: int = message.live_photo.file_size
+            else:
+                # 按普通照片下载时仅取静态照片部分。
+                file_id_obj = FileId.decode(message.photo.file_id)
+                file_size: int = message.photo.file_size
+            if offset < 0:  # 负偏移表示从文件末尾倒数。
+                if file_size == 0:
+                    raise ValueError('Negative offset for live photo requires file_size')
+                offset += math.ceil(file_size / 1024 / 1024)
+            async for chunk in self.get_file(file_id_obj, file_size, limit, offset):
+                yield chunk
+            return
+
+        available_media = (
+            "audio", "document", "photo", "sticker",
+            "animation", "video", "voice", "video_note", "new_chat_photo",
+        )
+
+        if isinstance(message, types.Message):
+            for kind in available_media:
+                media = getattr(message, kind, None)
+                if media is not None:
+                    break
+            else:
+                raise ValueError("This message doesn't contain any downloadable media")
+        else:
+            media = message
+
+        if isinstance(media, str):
+            file_id_str = media
+        else:
+            file_id_str = media.file_id
+
+        file_id_obj = FileId.decode(file_id_str)
+        file_size = getattr(media, "file_size", 0)
+
+        if offset < 0:
+            if file_size == 0:
+                raise ValueError("Negative offsets are not supported for file ids")
+            offset += math.ceil(file_size / 1024 / 1024)
+
+        async for chunk in self.get_file(file_id_obj, file_size, limit, offset):
+            yield chunk
 
 
 async def get_chunk(
