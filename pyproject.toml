@@ -7,7 +7,7 @@ readme = "README.md"
 requires-python = ">=3.13.2"
 license = "MIT"
 dependencies = [
-    "kurigram==2.2.24",
+    "kurigram==2.2.25",
     "pygments>=2.19.2",
     "pymediainfo==7.0.1",
     "pyreadline3>=3.5.4",
