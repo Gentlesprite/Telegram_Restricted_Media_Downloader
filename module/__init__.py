@@ -52,7 +52,7 @@ SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
 __version__ = '2.0.1'
 __license__ = 'MIT License'
-__update_date__ = '2026/08/21 23:52:44'
+__update_date__ = '2026/08/22 00:24:08'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/Gentlesprite>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
@@ -136,7 +136,7 @@ download_type: # 需要下载的类型。支持的参数:video,photo,document,au
 - voice # 语音。
 - animation # GIF。
 - video_note # 视频笔记。
-- live_photo # 实况图片。
+- live_photo # 实况图片（当不指定时，并且photo类型存在的情况下，live_photo类型将被视为photo类型）。
 is_shutdown: true # 下载完成后是否自动关机。支持的参数：true,false。
 links: D:\path\where\your\link\files\save\content.txt # 链接地址写法如下:
 # 新建txt文本，一个链接为一行，将路径填入即可请不要加引号，在软件运行前就准备好。

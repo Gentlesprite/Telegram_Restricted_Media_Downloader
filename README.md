@@ -14,7 +14,7 @@
     <img src="https://img.shields.io/badge/Python-3.13.2-blue.svg?color=00B16A" alt="Python 3.13.2"/>
   </a>
   <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.24-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.24"/>
+    <img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.25-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.25"/>
   </a>
   <a style="text-decoration:none">
     <img src="https://img.shields.io/badge/Platform-Windows & Linux%20-blue?color=00B16A" alt="Platform Windows & Linux"/>
@@ -605,7 +605,7 @@ download_type: # 需要下载的类型。支持的参数:video,photo,document,au
 - voice # 语音。
 - animation # GIF。
 - video_note # 视频笔记。
-- live_photo # 实况图片。
+- live_photo # 实况图片（当不指定时，并且photo类型存在的情况下，live_photo类型将被视为photo类型）。
 is_shutdown: true # 下载完成后是否自动关机。支持的参数：true,false。
 links: D:\path\where\your\link\files\save\content.txt # 链接地址写法如下:
 # 新建txt文本，一个链接为一行，将路径填入即可请不要加引号，在软件运行前就准备好。
@@ -684,7 +684,7 @@ forward_type: # 控制/listen_forward与/forward命令可转发的文件类型�
   video: true # 视频类型。
   voice: true # 语音类型。
   video_note: true # 视频笔记类型。
-  live_photo: true # 实况图片类型。
+  live_photo: true # 实况图片类型（当不指定时，并且photo类型存在的情况下，live_photo类型将被视为photo类型）。
 notice: false # 控制机器人启动时候是否发送启动通知。
 upload:
   delete: false # 控制/listen_forward命令遇到受限内容时,下载上传完成后是否删除已上传完成的本地文件。
@@ -775,13 +775,13 @@ upload:
 
    "所有"指的是如果有**合并发送为一组**的文件，则给定一个链接，所有**合并发送的文件**会被全部下载。
 
-   "媒体"指的是**视频**和**图片**。
+   "媒体"指的是用户在`config.yaml`文件中，通过`download_type`参数所设置的所需下载类型的媒体。
 
 	| 链接                                       | 实际频道名 | 消息ID | 解释                                           |
 	|:----------------------------------------:| :----: |:----:|:--------------------------------------------:|
 	| `https://t.me/TEST/111`                  | `TEST` | `111` | 下载该链接的**所有媒体**。                       |
 	| `https://t.me/TEST/111?single`           | `TEST` | `111` | 下载该链接的**对应的一个媒体**。                       |
-	| `https://t.me/TEST/111?comment=666`      | `TEST` | `111` | 下载该链接的**视频图片**的同时，下载该链接下方的**评论区**的**对应的一个媒体。** |
+	| `https://t.me/TEST/111?comment=666`      | `TEST` | `111` | 下载该链接的**所有媒体**的同时，下载该链接下方**评论区里所有的媒体（前提该链接存在评论区，否则视为`https://t.me/TEST/111`处理）。** |
 	| `https://t.me/TEST/111?single&comment=666` | `TEST` | `111` | 下载该链接下方的**评论区**的**对应的一个媒体。** |
 	| `https://t.me/c/1111111111/666`          | `-1001111111111` | `666` | 下载该**私密频道**链接的**所有**媒体。 |
 	| `https://t.me/TEST/111/666` | `TEST` | `666` | 下载该**话题**链接的**所有**媒体。 |
