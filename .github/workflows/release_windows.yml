@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2022
+    runs-on: windows-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
@@ -23,7 +23,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install nuitka==2.6.7
+        pip install nuitka==2.8.10
 
     - name: Extract metadata
       shell: bash

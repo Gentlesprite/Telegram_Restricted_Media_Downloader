@@ -37,10 +37,7 @@ def ready_nuitka():
     try:
         import nuitka
     except (ImportError, ModuleNotFoundError, NameError):
-        if sys.version_info >= (3, 13):
-            subprocess.run(f'{UV}pip install nuitka==2.6.7', shell=True)
-        else:
-            subprocess.run(f'{UV}pip install nuitka', shell=True)
+        subprocess.run(f'{UV}pip install nuitka==2.8.10', shell=True)
 
 
 def ready_pymediainfo() -> tuple:
