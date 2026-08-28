@@ -10,7 +10,12 @@ import subprocess
 from pathlib import Path
 from shutil import which
 
-from module import AUTHOR, __version__, __update_date__, SOFTWARE_SHORT_NAME
+from module import (
+    AUTHOR,
+    __version__,
+    __update_date__,
+    SOFTWARE_SHORT_NAME
+)
 from module.ttyd import TTYD
 from module.tmux import TMUX
 
@@ -26,18 +31,15 @@ except OSError:
 GRID: str = GRID_CONTENT * TERMINAL_COLUMNS
 
 
-def ready_zstandard():
+def ready_pyinstaller():
     try:
-        import zstandard
+        import PyInstaller
+        return PyInstaller.__version__
     except (ImportError, ModuleNotFoundError, NameError):
-        subprocess.run(f'{UV}pip install zstandard', shell=True)
-
-
-def ready_nuitka():
-    try:
-        import nuitka
-    except (ImportError, ModuleNotFoundError, NameError):
-        subprocess.run(f'{UV}pip install nuitka==2.8.10', shell=True)
+        subprocess.run(f'{UV}pip install pyinstaller', shell=True)
+        print('缺少PyInstaller依赖已自动安装,正在重启...')
+        subprocess.run([sys.executable] + sys.argv)
+        sys.exit(1)
 
 
 def ready_pymediainfo() -> tuple:
@@ -103,12 +105,6 @@ def ready_tmux():
     sys.exit(1)
 
 
-def build(command):
-    print(f'Command:\n{command}\n{GRID}')
-    print('Build in progress:')
-    subprocess.run(command, shell=True)
-
-
 def check_python_version():
     """检查Python版本是否满足：3.9.0 ≤ Python版本 < 3.14.0"""
 
@@ -130,31 +126,111 @@ def check_python_version():
     print(f'{GRID}\nPython:\n{sys.version}\n{GRID}')
 
 
-if __name__ == '__main__':
+def gen_version_file(output_directory: str) -> str:
+    """生成PyInstaller所需的Windows版本资源信息文件。"""
+    years: str = __update_date__[:4]
+    version_parts: list = __version__.split('.')
+    filevers: tuple = tuple(int(part) for part in version_parts[:4])
+    filevers: tuple = filevers + (0,) * (4 - len(filevers))
+    version_info: str = f'''# UTF-8
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=({', '.join(map(str, filevers))}),
+    prodvers=({', '.join(map(str, filevers))}),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0)
+  ),
+  kids=[
+    StringFileInfo([
+      StringTable('040904B0', [
+        StringStruct('CompanyName', '{AUTHOR}'),
+        StringStruct('FileDescription', '{SOFTWARE_SHORT_NAME}'),
+        StringStruct('FileVersion', '{__version__}'),
+        StringStruct('InternalName', '{SOFTWARE_SHORT_NAME}'),
+        StringStruct('LegalCopyright', 'Copyright (C) 2024-{years} {AUTHOR}.All rights reserved.'),
+        StringStruct('OriginalFilename', '{SOFTWARE_SHORT_NAME}.exe'),
+        StringStruct('ProductName', '{SOFTWARE_SHORT_NAME}'),
+        StringStruct('ProductVersion', '{__version__}')
+      ])
+    ]),
+    VarFileInfo([VarStruct('Translation', [1033, 1200])])
+  ]
+)
+'''
+    os.makedirs(output_directory, exist_ok=True)
+    version_file: str = os.path.join(output_directory, 'version_info.txt')
+    with open(version_file, 'w', encoding='UTF-8') as f:
+        f.write(version_info)
+    return version_file
+
+
+def ready_upx() -> str:
+    """定位UPX可执行文件,返回其所在目录,未找到则返回空字符串。"""
+    upx_executable: str = 'upx.exe' if PLATFORM == 'win32' else 'upx'
+    candidates: list = [which(upx_executable)]
+    if os.environ.get('UPX_DIR'):
+        candidates.append(os.path.join(os.environ.get('UPX_DIR'), upx_executable))
+    candidates.append(str(Path(f'res/bin/{upx_executable}').resolve()))
+    for candidate in candidates:
+        if candidate and os.path.isfile(candidate):
+            return os.path.dirname(os.path.abspath(candidate))
+    return ''
+
+
+def build(command):
+    print(f'Command:\n{command}\n{GRID}')
+    print('Build in progress:')
+    subprocess.run(command, shell=True)
+
+
+def main():
     check_python_version()
+    pyinstaller_version: str = ready_pyinstaller()
+    media_info_lib_filename, media_info_lib_path = ready_pymediainfo()
+    ttyd_filename, ttyd_path = ready_ttyd()
+    tmux_filename, tmux_path = ready_tmux()
+
+    # 使用绝对路径,避免PyInstaller执行spec文件时相对路径解析错误(如output/output/version_info.txt)。
+    ico_path: str = os.path.abspath('res/icon.ico')
+    output_directory: str = os.path.abspath('output')
+    dist_directory: str = os.path.join(output_directory, 'dist')
+    work_directory: str = os.path.join(output_directory, 'build')
+    separator: str = ';' if PLATFORM == 'win32' else ':'  # --add-data路径分隔符。
+
+    command: str = (
+        # 使用sys.executable -m PyInstaller,避免依赖venv激活状态。
+        f'"{sys.executable}" -m PyInstaller --noconfirm --clean --onefile '
+        f'--name {SOFTWARE_SHORT_NAME} '
+        f'--distpath "{dist_directory}" --workpath "{work_directory}" --specpath "{output_directory}" '
+        f'--icon "{ico_path}" '
+        # pyrogram/kurigram存在大量动态导入与raw数据,pygments、pymediainfo需完整收集。
+        f'--collect-all pyrogram --collect-all pygments --collect-all pymediainfo '
+    )
+    upx_directory: str = ready_upx()
+    if upx_directory:
+        command += f'--upx-dir "{upx_directory}" '
+        print(f'UPX已启用,目录:{upx_directory}')
+    else:
+        print('未找到UPX,将不使用UPX压缩。如需启用,请将upx可执行文件放入res/bin目录、加入PATH或设置UPX_DIR环境变量。')
+    if PLATFORM == 'win32':
+        # Windows下readline由pyreadline3提供,需显式包含;附带版本资源信息。
+        command += '--hidden-import readline '
+        command += f'--version-file "{gen_version_file(output_directory)}" '
+    # 资源文件打包到解压目录根目录,运行时通过sys._MEIPASS定位。
+    for resource in (media_info_lib_path, ttyd_path, tmux_path):
+        command += f'--add-data "{resource}{separator}." '
+    command += 'main.py'
+
+    print(f'{GRID}\nPyInstaller版本:{pyinstaller_version}\n{GRID}')
+    build(command)
+
+
+if __name__ == '__main__':
     try:
-        ready_nuitka()
-        ready_zstandard()
-        media_info_lib_filename, media_info_lib_path = ready_pymediainfo()
-        ttyd_filename, ttyd_path = ready_ttyd()
-        tmux_filename, tmux_path = ready_tmux()
-        extension = '.exe' if PLATFORM == 'win32' else ''
-        ico_path = 'res/icon.ico'
-        output = 'output'
-        main = 'main.py'
-        years = __update_date__[:4]
-        include_module = '--include-module=pygments.lexers.data'
-        copy_right = f'Copyright (C) 2024-{years} {AUTHOR}.All rights reserved.'
-        build_command = f'nuitka --standalone --onefile {include_module} '
-        build_command += f'--output-dir={output} --file-version={__version__} --product-version={__version__} '
-        build_command += f'--windows-icon-from-ico="{ico_path}" --assume-yes-for-downloads '
-        build_command += f'--output-filename="{SOFTWARE_SHORT_NAME}{extension}" --copyright="{copy_right}" --msvc=latest '
-        build_command += f'--include-data-file="{media_info_lib_path}"={media_info_lib_filename} '
-        build_command += f'--include-data-file="{ttyd_path}"={ttyd_filename} '
-        build_command += f'--include-data-file="{tmux_path}"={tmux_filename} '
-        build_command += f'--remove-output '
-        build_command += f'--no-deployment-flag=self-execution '
-        build_command += f'--script-name={main}'
-        build(build_command)
+        main()
     except KeyboardInterrupt:
         print('键盘中断。')

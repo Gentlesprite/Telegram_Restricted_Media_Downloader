@@ -339,7 +339,7 @@ def add_executable_permission(file_path: str) -> bool:
 
 def get_subprocess_args(main_file: str) -> list:
     """获取子进程参数列表。"""
-    args = [sys.argv[0]] if '__compiled__' in globals() else [sys.executable, main_file]
+    args = [sys.argv[0]] if is_frozen() else [sys.executable, main_file]
     # 添加非web参数
     if PARSE_ARGS.quiet:
         args.append('--quiet')
@@ -371,7 +371,13 @@ def check_environ() -> None:
 
 
 def is_nuitka() -> bool:
+    """检查是否处于Nuitka/Pyinstaller编译环境。"""
     return '__compiled__' in globals()
+
+
+def is_frozen() -> bool:
+    """检查是否处于打包(冻结)环境,兼容Nuitka与Pyinstaller。"""
+    return bool(getattr(sys, 'frozen', False)) or '__compiled__' in globals()
 
 
 def is_docker() -> bool:

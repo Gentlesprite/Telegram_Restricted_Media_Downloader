@@ -13,6 +13,7 @@ from pathlib import Path
 from module import log
 from module.util import (
     add_executable_permission,
+    is_frozen,
     is_nuitka
 )
 
@@ -41,7 +42,13 @@ class TMUX:
     def get_tmux_path(self) -> Union[str]:
         if is_nuitka():
             path = str(Path(self.main_file).parent / self.tmux_executable)
-            log.info(f'在编译环境获取tmux路径:"{path}"。')
+            log.info(f'在Nuitka编译环境获取tmux路径:"{path}"。')
+            return path
+        if is_frozen():
+            # PyInstaller解压到sys._MEIPASS临时目录。
+            resource_dir = getattr(sys, '_MEIPASS', sys.prefix)
+            path = str(Path(resource_dir) / self.tmux_executable)
+            log.info(f'在打包环境获取tmux路径:"{path}"。')
             return path
 
         path = str(Path(f'res/bin/{self.tmux_executable}').resolve())

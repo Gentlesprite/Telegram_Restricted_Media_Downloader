@@ -13,6 +13,7 @@ from pathlib import Path
 from module import log
 from module.util import (
     add_executable_permission,
+    is_frozen,
     is_nuitka
 )
 
@@ -46,7 +47,13 @@ class TTYD:
     def get_ttyd_path(self) -> Union[str]:
         if is_nuitka():
             path = str(Path(self.main_file).parent / self.ttyd_executable)
-            log.info(f'在编译环境获取ttyd路径:"{path}"。')
+            log.info(f'在Nuitka编译环境获取ttyd路径:"{path}"。')
+            return path
+        if is_frozen():
+            # PyInstaller解压到sys._MEIPASS临时目录,cx_Freeze使用sys.prefix。
+            resource_dir = getattr(sys, '_MEIPASS', sys.prefix)
+            path = str(Path(resource_dir) / self.ttyd_executable)
+            log.info(f'在Pyinstaller环境获取ttyd路径:"{path}"。')
             return path
 
         path = str(Path(f'res/bin/{self.ttyd_executable}').resolve())
