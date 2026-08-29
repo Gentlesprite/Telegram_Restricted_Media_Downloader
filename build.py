@@ -274,8 +274,14 @@ def main():
     finally:
         # 构建结束(无论成功或失败)后清理中间产物。
         for file_path in (spec_path, version_file_path):
-            if file_path and os.path.isfile(file_path):
+            if not file_path or not os.path.isfile(file_path):
+                continue
+            try:
                 os.remove(file_path)
+            except OSError as error:
+                log.warning(f'清理中间产物失败:"{file_path}",原因:"{error}"。')
+                continue
+            log.info(f'已清理中间产物:"{file_path}"。')
 
 
 if __name__ == '__main__':
