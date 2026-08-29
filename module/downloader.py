@@ -1605,9 +1605,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             while True:
                 try:
                     async for chunk in self.app.client.stream_media(
-                        message=message,
-                        offset=skip_chunks,
-                        download_type=download_type
+                            message=message,
+                            offset=skip_chunks,
+                            download_type=download_type
                     ):
                         f.write(chunk)
                         downloaded += len(chunk)
@@ -1633,10 +1633,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     await asyncio.sleep(amount)
         if compare_size is None or compare_file_size(a_size=downloaded, b_size=compare_size):
+            __cache_temp_size: int = os.path.getsize(temp_path) if os.path.exists(temp_path) else 0
             result: str = safe_replace(origin_file=temp_path, overwrite_file=file_name).get('e_code')
             log.warning(result) if result is not None else None
             log.info(
-                f'"{temp_path}"下载完成,更改文件名:[{temp_path}]({get_file_size(temp_path)}) -> [{file_name}]({compare_size})')
+                f'"{temp_path}"下载完成,更改文件名:[{temp_path}]({__cache_temp_size}) -> [{file_name}]({compare_size})')
         return file_name
 
     def get_media_meta(self, message: pyrogram.types.Message, dtype) -> Dict[str, Union[int, str]]:
