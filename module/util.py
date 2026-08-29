@@ -172,6 +172,7 @@ async def get_message_by_link(
     except ValueError:
         chat_id = match.group(1)
     message_id: int = int(match.group(2))
+    log.info(f'解析链接:"{link}",频道:"{chat_id}",消息ID:"{message_id}"。')
     comment_message: list = []
     if LinkType.COMMENT in record_type:
         # 如果用户需要同时下载媒体下面的评论,把评论中的所有信息放入列表一起返回。
@@ -182,6 +183,7 @@ async def get_message_by_link(
                 if '=' in origin_link and int(origin_link.split('=')[-1]) != comment.id:
                     continue
             comment_message.append(comment)
+        log.info(f'链接:"{link}"的评论中检索到媒体:"{len(comment_message)}"条。')
     message = await client.get_messages(chat_id=chat_id, message_ids=message_id)
     is_group, group_message = await __is_group(message)
     if single_link:
@@ -195,22 +197,28 @@ async def get_message_by_link(
                 group_message: list = []
                 group_message.extend(comment_message)
         if comment_message:
+            link_type: str = LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.COMMENT
+            log.info(f'链接:"{link}"解析为"{link_type}",媒体数量:"{len(group_message)}"。')
             return {
-                'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.COMMENT,
+                'link_type': link_type,
                 'chat_id': chat_id,
                 'message': group_message,
                 'member_num': len(group_message)
             }
         else:
+            link_type = LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.GROUP
+            log.info(f'链接:"{link}"解析为"{link_type}",媒体数量:"{len(group_message)}"。')
             return {
-                'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.GROUP,
+                'link_type': link_type,
                 'chat_id': chat_id,
                 'message': group_message,
                 'member_num': len(group_message)
             }
     elif is_group is False and group_message is None:  # 单文件。
+        link_type = LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.SINGLE
+        log.info(f'链接:"{link}"解析为"{link_type}",媒体数量:"1"。')
         return {
-            'link_type': LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.SINGLE,
+            'link_type': link_type,
             'chat_id': chat_id,
             'message': message,
             'member_num': 1
