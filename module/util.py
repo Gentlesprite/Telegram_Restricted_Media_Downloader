@@ -395,19 +395,22 @@ def is_docker() -> bool:
     """检查是否在Docker容器中运行。"""
     # 检查/.dockerenv文件是否存在。
     if os.path.exists('/.dockerenv'):
+        log.info('检测到"/.dockerenv",当前运行于"Docker"容器中。')
         return True
 
     # 检查/proc/1/cgroup中是否包含"docker"。
     try:
         with open('/proc/1/cgroup', 'r') as f:
-            content = f.read()
+            content: str = f.read()
             if 'docker' in content or 'kubepods' in content:
+                log.info('检测到"/proc/1/cgroup"容器标识,当前运行于"Docker"容器中。')
                 return True
     except (FileNotFoundError, IOError):
         pass
     except Exception:
         pass
 
+    log.info('未检测到容器标识,当前运行于非"Docker"环境。')
     return False
 
 
