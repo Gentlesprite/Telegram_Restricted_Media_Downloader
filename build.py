@@ -3,6 +3,7 @@
 # Software:PyCharm
 # Time:2024/7/22 22:37
 # File:build.py
+import logging
 import os
 import sys
 import subprocess
@@ -12,6 +13,8 @@ from shutil import which
 
 from module import (
     AUTHOR,
+    log,
+    console_handler,
     __version__,
     __update_date__,
     SOFTWARE_SHORT_NAME
@@ -29,6 +32,14 @@ except OSError:
     TERMINAL_COLUMNS: int = 1
     GRID_CONTENT: str = ''
 GRID: str = GRID_CONTENT * TERMINAL_COLUMNS
+# PyInstaller输出日志的级别前缀与日志级别的映射关系。
+LOG_LEVEL_PREFIX_MAP: dict = {
+    'DEBUG': logging.DEBUG,
+    'INFO': logging.INFO,
+    'WARNING': logging.WARNING,
+    'ERROR': logging.ERROR,
+    'CRITICAL': logging.CRITICAL,
+}
 
 
 def ready_pyinstaller():
@@ -37,7 +48,7 @@ def ready_pyinstaller():
         return PyInstaller.__version__
     except (ImportError, ModuleNotFoundError, NameError):
         subprocess.run(f'{UV}pip install pyinstaller', shell=True)
-        print('缺少PyInstaller依赖已自动安装,正在重启...')
+        log.info('缺少PyInstaller依赖已自动安装,正在重启...')
         subprocess.run([sys.executable] + sys.argv)
         sys.exit(1)
 
@@ -75,15 +86,15 @@ def ready_pymediainfo() -> tuple:
         path = str(Path(f'res/bin/{file_name}').resolve())
         if os.path.isfile(path):
             return file_name, path
-        print(f'缺少依赖,请使用pip install pymediainfo安装依赖后重试。')
+        log.error('缺少依赖,请使用pip install pymediainfo安装依赖后重试。')
         sys.exit(1)
     except (ImportError, ModuleNotFoundError, NameError):
         if sys.version_info >= (3, 9):
             subprocess.run(f'{UV}pip install pymediainfo==7.0.1', shell=True)
-            print(f'缺少pymediainfo依赖已自动安装,正在重启...')
+            log.info('缺少pymediainfo依赖已自动安装,正在重启...')
             subprocess.run([sys.executable] + sys.argv)
         else:
-            print('python版本过低,请至少升级至3.9.x后重试。')
+            log.error('python版本过低,请至少升级至3.9.x后重试。')
         sys.exit(1)
 
 
@@ -92,7 +103,7 @@ def ready_ttyd():
     path = str(Path(f'res/bin/{file_name}').resolve())
     if os.path.isfile(path):
         return file_name, path
-    print(f'未找到ttyd。')
+    log.error('未找到ttyd。')
     sys.exit(1)
 
 
@@ -101,7 +112,7 @@ def ready_tmux():
     path = str(Path(f'res/bin/{file_name}').resolve())
     if os.path.isfile(path):
         return file_name, path
-    print('未找到tmux。')
+    log.error('未找到tmux。')
     sys.exit(1)
 
 
@@ -119,11 +130,11 @@ def check_python_version():
     )
 
     if not version_valid:
-        print(
+        log.error(
             f'Python版本不满足要求\n当前版本:{sys.version}\n要求范围:3.9.0 ≤ Python 版本 < 3.14.0\n请安装符合要求的Python版本后重试。')
         sys.exit(1)
 
-    print(f'{GRID}\nPython:\n{sys.version}\n{GRID}')
+    log.info(f'{GRID}\nPython:\n{sys.version}\n{GRID}')
 
 
 def gen_version_file(output_directory: str) -> str:
@@ -181,13 +192,41 @@ def ready_upx() -> str:
     return ''
 
 
-def build(command):
-    print(f'Command:\n{command}\n{GRID}')
-    print('Build in progress:')
-    subprocess.run(command, shell=True)
+def build(command: str) -> int:
+    """执行打包命令,并将输出通过rich日志格式转发。"""
+    log.info(f'Command:\n{command}\n{GRID}')
+    log.info('Build in progress:')
+    process = subprocess.Popen(
+        command,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        errors='replace'
+    )
+    for line in iter(process.stdout.readline, ''):
+        line: str = line.rstrip('\r\n')
+        if not line:
+            continue
+        log_level: int = logging.INFO
+        for prefix, level in LOG_LEVEL_PREFIX_MAP.items():
+            if line.startswith(f'{prefix}:'):
+                log_level = level
+                line = line[len(prefix) + 1:].strip()
+                break
+        if not line:
+            continue
+        log.log(log_level, line)
+    process.wait()
+    if process.returncode != 0:
+        log.error(f'打包命令执行失败,退出码:{process.returncode}。')
+        sys.exit(process.returncode)
+    return process.returncode
 
 
 def main():
+    # 构建脚本需要展示完整打包过程,临时将控制台日志级别调整为INFO。
+    console_handler.setLevel(logging.INFO)
     check_python_version()
     pyinstaller_version: str = ready_pyinstaller()
     media_info_lib_filename, media_info_lib_path = ready_pymediainfo()
@@ -212,9 +251,9 @@ def main():
     upx_directory: str = ready_upx()
     if upx_directory:
         command += f'--upx-dir "{upx_directory}" '
-        print(f'UPX已启用,目录:"{upx_directory}"。')
+        log.info(f'UPX已启用,目录:"{upx_directory}"。')
     else:
-        print('未找到UPX,将不使用UPX压缩。如需启用,请将upx可执行文件放入res/bin目录、加入PATH或设置UPX_DIR环境变量。')
+        log.info('未找到UPX,将不使用UPX压缩。如需启用,请将upx可执行文件放入res/bin目录、加入PATH或设置UPX_DIR环境变量。')
     if PLATFORM == 'win32':
         # Windows下readline由pyreadline3提供,需显式包含;附带版本资源信息。
         command += '--hidden-import readline '
@@ -224,7 +263,7 @@ def main():
         command += f'--add-data "{resource}{separator}." '
     command += 'main.py'
 
-    print(f'{GRID}\nPyInstaller版本:{pyinstaller_version}\n{GRID}')
+    log.info(f'{GRID}\nPyInstaller版本:{pyinstaller_version}\n{GRID}')
     build(command)
 
 
@@ -232,4 +271,4 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print('键盘中断。')
+        log.warning('键盘中断。')
