@@ -197,7 +197,6 @@ def main():
     # 使用绝对路径,避免PyInstaller执行spec文件时相对路径解析错误(如output/output/version_info.txt)。
     ico_path: str = os.path.abspath('res/icon.ico')
     output_directory: str = os.path.abspath('output')
-    dist_directory: str = os.path.join(output_directory, 'dist')
     work_directory: str = os.path.join(output_directory, 'build')
     separator: str = ';' if PLATFORM == 'win32' else ':'  # --add-data路径分隔符。
 
@@ -205,7 +204,7 @@ def main():
         # 使用sys.executable -m PyInstaller,避免依赖venv激活状态。
         f'"{sys.executable}" -m PyInstaller --noconfirm --clean --onefile '
         f'--name {SOFTWARE_SHORT_NAME} '
-        f'--distpath "{dist_directory}" --workpath "{work_directory}" --specpath "{output_directory}" '
+        f'--distpath "{output_directory}" --workpath "{work_directory}" --specpath "{output_directory}" '
         f'--icon "{ico_path}" '
         # pyrogram/kurigram存在大量动态导入与raw数据,pygments、pymediainfo需完整收集。
         f'--collect-all pyrogram --collect-all pygments --collect-all pymediainfo '
@@ -213,7 +212,7 @@ def main():
     upx_directory: str = ready_upx()
     if upx_directory:
         command += f'--upx-dir "{upx_directory}" '
-        print(f'UPX已启用,目录:{upx_directory}')
+        print(f'UPX已启用,目录:"{upx_directory}"。')
     else:
         print('未找到UPX,将不使用UPX压缩。如需启用,请将upx可执行文件放入res/bin目录、加入PATH或设置UPX_DIR环境变量。')
     if PLATFORM == 'win32':
