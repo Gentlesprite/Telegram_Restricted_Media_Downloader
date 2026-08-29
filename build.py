@@ -238,6 +238,10 @@ def main():
     output_directory: str = os.path.abspath('output')
     work_directory: str = os.path.join(output_directory, 'build')
     separator: str = ';' if PLATFORM == 'win32' else ':'  # --add-data路径分隔符。
+    # PyInstaller生成的spec文件路径,名称由--name指定,目录由--specpath指定。
+    spec_path: str = os.path.join(output_directory, f'{SOFTWARE_SHORT_NAME}.spec')
+    # 版本信息文件仅Windows需要,非Windows下保持空字符串以便统一清理。
+    version_file_path: str = ''
 
     command: str = (
         # 使用sys.executable -m PyInstaller,避免依赖venv激活状态。
@@ -257,14 +261,21 @@ def main():
     if PLATFORM == 'win32':
         # Windows下readline由pyreadline3提供,需显式包含;附带版本资源信息。
         command += '--hidden-import readline '
-        command += f'--version-file "{gen_version_file(output_directory)}" '
+        version_file_path = gen_version_file(output_directory)
+        command += f'--version-file "{version_file_path}" '
     # 资源文件打包到解压目录根目录,运行时通过sys._MEIPASS定位。
     for resource in (media_info_lib_path, ttyd_path, tmux_path):
         command += f'--add-data "{resource}{separator}." '
     command += 'main.py'
 
     log.info(f'{GRID}\nPyInstaller版本:{pyinstaller_version}\n{GRID}')
-    build(command)
+    try:
+        build(command)
+    finally:
+        # 构建结束(无论成功或失败)后清理中间产物。
+        for file_path in (spec_path, version_file_path):
+            if file_path and os.path.isfile(file_path):
+                os.remove(file_path)
 
 
 if __name__ == '__main__':
