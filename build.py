@@ -47,7 +47,7 @@ def ready_pyinstaller():
         import PyInstaller
         return PyInstaller.__version__
     except (ImportError, ModuleNotFoundError, NameError):
-        subprocess.run(f'{UV}pip install pyinstaller', shell=True)
+        subprocess.run(f'{UV}pip install pyinstaller==6.22.0', shell=True)
         log.info('缺少PyInstaller依赖已自动安装,正在重启...')
         subprocess.run([sys.executable] + sys.argv)
         sys.exit(1)
