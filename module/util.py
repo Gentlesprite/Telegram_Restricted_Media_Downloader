@@ -380,6 +380,17 @@ def is_frozen() -> bool:
     return bool(getattr(sys, 'frozen', False)) or '__compiled__' in globals()
 
 
+def get_work_directory() -> str:
+    """获取软件工作目录,打包环境取可执行文件所在目录,源码环境取入口脚本所在目录。"""
+    if is_frozen():
+        # 打包后sys.argv[0]可能是命令名而非完整路径(如通过PATH启动),故必须使用sys.executable。
+        work_directory: str = os.path.dirname(os.path.abspath(sys.executable))
+    else:
+        work_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
+    log.info(f'获取软件工作目录:"{work_directory}"。')
+    return work_directory
+
+
 def is_docker() -> bool:
     """检查是否在Docker容器中运行。"""
     # 检查/.dockerenv文件是否存在。

@@ -4,7 +4,6 @@
 # Time:2025/2/25 1:32
 # File:config.py
 import os
-import sys
 import logging
 import datetime
 import subprocess
@@ -33,11 +32,12 @@ from module.enums import (
     GetStdioParams,
     ProcessConfig
 )
+from module.util import get_work_directory
 
 
 class BaseConfig:
     FILE_NAME: str = 'base_config.yaml'
-    PATH: str = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), FILE_NAME)
+    PATH: str = os.path.join(get_work_directory(), FILE_NAME)
     TEMPLATE: dict = {}
 
     def __init__(self):
@@ -134,7 +134,7 @@ class BaseConfig:
 
 
 class UserConfig(BaseConfig):
-    DIRECTORY_NAME: str = os.path.dirname(os.path.abspath(sys.argv[0]))  # 获取软件工作绝对目录。
+    DIRECTORY_NAME: str = get_work_directory()  # 获取软件工作绝对目录。
     FILE_NAME: str = 'config.yaml'  # 配置文件名。
     PATH: str = os.path.join(DIRECTORY_NAME, FILE_NAME)
     TEMPLATE: dict = {

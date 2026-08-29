@@ -4,7 +4,6 @@
 # Time:2025/2/27 17:38
 # File:task.py
 import os
-import sys
 import json
 import math
 import asyncio
@@ -18,6 +17,7 @@ from module import console, log
 from module.language import _t
 from module.stdio import MetaData
 from module.parser import PARSE_ARGS
+from module.util import get_work_directory
 from module.path_tool import (
     safe_delete,
     calc_sha256,
@@ -128,7 +128,7 @@ class DownloadTask:
 
 
 class UploadTask:
-    DIRECTORY_NAME: str = PARSE_ARGS.temp or os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'temp')
+    DIRECTORY_NAME: str = PARSE_ARGS.temp or os.path.join(get_work_directory(), 'temp')
     PART_SIZE: int = 512 * 1024
     TASKS: set = set()
     TASK_COUNTER: int = 0
