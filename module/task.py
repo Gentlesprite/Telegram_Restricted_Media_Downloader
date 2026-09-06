@@ -232,7 +232,7 @@ class UploadTask:
             return True
         return False
 
-    async def get_media_group(self) -> pyrogram.types.List:
+    async def get_media_group(self) -> Union[pyrogram.types.List, None]:
         if self.is_media_group:
             return await self.__media_group
 
