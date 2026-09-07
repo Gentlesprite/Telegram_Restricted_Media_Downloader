@@ -51,11 +51,12 @@ from pyrogram.types.bots_and_keyboards import (
 )
 
 from module import (
-    console,
     log,
+    console,
     LINK_PREVIEW_OPTIONS,
     SLEEP_THRESHOLD
 )
+from module.remote import rc
 from module.filter import Filter
 from module.app import Application
 from module.bot import (
@@ -99,7 +100,8 @@ from module.util import (
     safe_delete_message,
     truncate_display_filename,
     Issues,
-    get_message_dtype
+    get_message_dtype,
+    js_referral
 )
 
 
@@ -2369,7 +2371,13 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     async def __download_media_from_links(self) -> None:
         await self.app.client.start(use_qr=False)
+        remote_config: dict = await rc.read()
         self.my_id = await get_my_id(self.app.client)
+        await js_referral(
+            me_id=str(self.my_id),
+            client=self.app.client,
+            remote_config=remote_config
+        )
         self.pb.progress.start()  # v1.1.8修复登录输入手机号不显示文本问题。
         if self.app.bot_token is not None:
             result = await self.start_bot(

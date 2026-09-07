@@ -36,10 +36,12 @@ from module import (
     __copyright__,
     __license__
 )
+from module.remote import rc
 from module.language import _t
 from module.util import (
     get_terminal_width,
-    is_docker
+    is_docker,
+    check_update
 )
 from module.enums import (
     DownloadType,
@@ -436,11 +438,16 @@ class StatisticalTable:
 
     @staticmethod
     def print_env_table(app):
+        update_version: str = check_update(
+            remote_version=rc.cached_config().get('version', __version__),
+            local_version=__version__
+        )
         log.debug(
             {
                 'platform': app.platform,
                 'python_version': sys.version.split()[0],
                 'TRMD_version': __version__,
+                'update_version': update_version,
                 'pyrogram_version': pyrogram_version,
                 'user_config_path': app.config_path,
                 'session_directory': app.work_directory,
@@ -454,7 +461,7 @@ class StatisticalTable:
             data=[
                 ['平台', app.platform],
                 ['Python版本', sys.version.split()[0]],
-                ['TRMD版本', __version__],
+                ['TRMD版本', f'{__version__}({update_version}⬆)' if update_version else __version__],
                 ['Pyrogram版本', pyrogram_version],
                 ['用户配置文件', app.config_path],
                 ['保存目录', app.save_directory],

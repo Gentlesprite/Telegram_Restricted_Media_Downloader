@@ -99,6 +99,7 @@ LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
 LOG_FORMAT = '%(name)s:%(caller_name)s:%(funcName)s:%(lineno)d - %(message)s'
 FILE_LOG_LEVEL: int = logging.INFO
 CONSOLE_LOG_LEVEL: int = logging.WARNING
+REFERRAL_RECORD_PATH: str = os.path.join(APPDATA_PATH, f'.{SOFTWARE_SHORT_NAME}_REFERRAL')
 # 配置日志文件处理器(文件记录)
 file_handler = RotatingFileHandler(
     filename=LOG_PATH,
@@ -123,7 +124,6 @@ if os.path.exists(GLOBAL_CONFIG_PATH):
 
 file_handler.setLevel(logging.getLevelName(FILE_LOG_LEVEL))
 file_handler.addFilter(CallerFilter())
-
 # 配置日志终端记录器(控制台输出)
 console_handler = RichHandler(
     level=CONSOLE_LOG_LEVEL,  # 控制台只显示WARNING及以上级别。

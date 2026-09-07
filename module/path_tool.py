@@ -5,9 +5,9 @@
 # File:path_tool.py
 import os
 import re
+import shutil
 import struct
 import hashlib
-import shutil
 import datetime
 import mimetypes
 import unicodedata
