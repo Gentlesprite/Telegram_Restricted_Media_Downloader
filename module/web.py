@@ -256,10 +256,27 @@ class Web:
                     'link': str(link),
                     'complete': complete_num,
                     'member': member_num,
+                    'remaining': max(member_num - complete_num, 0),
                     'percent': round(complete_num / member_num * 100, 1) if member_num else 0.0
                 })
         except Exception as e:
             log.debug(f'获取链接进度时出错,{_t(KeyWord.REASON)}:"{e}"')
+        return result
+
+    def get_pending(self) -> list:
+        """获取排队中(等待下载槽位)的任务。"""
+        result: list = []
+        try:
+            for info in list(DownloadTask.PENDING.values()):
+                channel: str = str(info.get('channel', ''))
+                result.append({
+                    'channel': channel,
+                    'channel_name': Web.format_channel(channel),
+                    'name': '消息 ' + str(info.get('message_id')),
+                    'link': str(info.get('link', ''))
+                })
+        except Exception as e:
+            log.debug(f'获取排队任务时出错,{_t(KeyWord.REASON)}:"{e}"')
         return result
 
     def get_upload_tasks(self) -> list:
@@ -364,13 +381,16 @@ class Web:
         """生成供网页面板展示的进度数据。"""
         try:
             tasks: list = self.get_tasks()
+            links: list = self.get_link_progress()
             return {
                 'count': self.get_count(),
                 'summary': self.get_summary(tasks),
                 'groups': self.get_groups(tasks),
+                'pending': self.get_pending(),
+                'queue': sum(link.get('remaining', 0) for link in links),  # 所有链接待下载的消息总数。
                 'tasks': tasks,
                 'done': list(reversed(self.done_tasks)),
-                'links': self.get_link_progress(),
+                'links': links,
                 'uploads': self.get_upload_tasks()
             }
         except Exception as e:
@@ -379,6 +399,8 @@ class Web:
                 'count': {'success': 0, 'failure': 0, 'skip': 0},
                 'summary': self.get_summary([]),
                 'groups': [],
+                'pending': [],
+                'queue': 0,
                 'tasks': [],
                 'done': [],
                 'links': [],

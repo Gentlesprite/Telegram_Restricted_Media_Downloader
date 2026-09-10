@@ -168,7 +168,7 @@ h1 {
 /* 统计 */
 .stat {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 10px;
     margin: 12px 0 4px;
 }
@@ -204,6 +204,10 @@ h1 {
 
 .skip {
     color: var(--warn);
+}
+
+.queue {
+    color: #7fb3ff;
 }
 
 /* 分页标签 */
@@ -453,6 +457,18 @@ h2 {
 
 .status-running {
     color: var(--accent2);
+}
+
+.status-pending {
+    color: var(--warn);
+}
+
+.pending-row {
+    opacity: .82;
+}
+
+.pending-row .pct {
+    color: var(--warn);
 }
 
 .status-done {

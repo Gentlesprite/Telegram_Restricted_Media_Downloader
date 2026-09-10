@@ -1695,9 +1695,22 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
                     f'{_t(KeyWord.LINK_TYPE)}:{_t(link_type)}。'  # 链接类型。
                 )
-                while self.app.current_task_num >= self.app.max_download_task:  # v1.0.7 增加下载任务数限制。
-                    await self.event.wait()
-                    self.event.clear()
+                pending_key: str = f'{chat_id}:{message.id}'
+                try:
+                    while self.app.current_task_num >= self.app.max_download_task:  # v1.0.7 增加下载任务数限制。
+                        DownloadTask.add_pending(  # 记录排队中的任务,供网页面板展示。
+                            key=pending_key,
+                            info={
+                                'channel': str(chat_id),
+                                'link': str(link),
+                                'message_id': int(message.id)
+                            }
+                        )
+                        ChatInfo.add(chat=getattr(message, 'chat', None), chat_id=chat_id)
+                        await self.event.wait()
+                        self.event.clear()
+                finally:
+                    DownloadTask.remove_pending(key=pending_key)
                 file_id, temp_file_path, sever_file_size, file_name, save_directory, format_file_size = \
                     self.get_media_meta(
                         message=message,

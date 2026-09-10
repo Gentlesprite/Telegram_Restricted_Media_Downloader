@@ -51,6 +51,17 @@ class ChatInfo:
 class DownloadTask:
     LINK_INFO: dict = {}
     COMPLETE_LINK: set = set()
+    PENDING: dict = {}
+
+    @staticmethod
+    def add_pending(key: str, info: dict) -> None:
+        """登记排队中的任务,用于网页面板展示等待下载槽位的任务。"""
+        DownloadTask.PENDING[key] = info
+
+    @staticmethod
+    def remove_pending(key: str) -> None:
+        """移除排队中的任务。"""
+        DownloadTask.PENDING.pop(key, None)
 
     def __init__(
             self,

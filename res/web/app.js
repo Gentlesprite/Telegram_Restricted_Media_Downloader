@@ -40,6 +40,20 @@ function taskRow(task) {
         '</div>';
 }
 
+function pendingRow(item) {
+    return '<div class="task-row pending-row">' +
+        '<span class="cell-name"><span class="ficon">⏳</span>' +
+        '<span class="fname" title="' + escAttr(item.link) + '">' + esc(item.name) + '</span>' +
+        (item.channel_name ? '<span class="gcount">' + esc(item.channel_name) + '</span>' : '') +
+        '</span>' +
+        '<span class="cell-progress"><span class="pct pending">排队中</span></span>' +
+        '<span class="cell-size">—</span>' +
+        '<span class="cell-speed">—</span>' +
+        '<span class="cell-remain">—</span>' +
+        '<span class="cell-status status-pending">排队中</span>' +
+        '</div>';
+}
+
 function groupBlock(group) {
     var key = group.channel;
     var isCollapsed = collapsed[key] === undefined ? allCollapsed : collapsed[key];
@@ -83,7 +97,8 @@ function linkRow(link) {
         '<span class="cell-size">' + link.complete + '/' + link.member + '</span>' +
         '<span class="cell-speed">—</span>' +
         '<span class="cell-remain">—</span>' +
-        '<span class="cell-status">链接任务</span>' +
+        '<span class="cell-status ' + (link.remaining ? 'status-pending' : 'status-done') + '">' +
+        (link.remaining ? '剩 ' + link.remaining + ' 条' : '已完成') + '</span>' +
         '</div>';
 }
 
@@ -170,7 +185,8 @@ function renderStat(data) {
         '<div><span>成功</span><b class="ok">' + data.count.success + '</b></div>' +
         '<div><span>失败</span><b class="bad">' + data.count.failure + '</b></div>' +
         '<div><span>跳过</span><b class="skip">' + data.count.skip + '</b></div>' +
-        '<div><span>进行中</span><b>' + data.tasks.length + '</b></div>';
+        '<div><span>进行中</span><b>' + data.tasks.length + '</b></div>' +
+        '<div><span>队列中</span><b class="queue">' + (data.queue || 0) + '</b></div>';
 }
 
 function renderBadges(data) {
@@ -182,10 +198,15 @@ function renderBadges(data) {
 
 function renderList(data) {
     var html = '';
+    var body = '';
     var i;
-    for (i = 0; i < data.groups.length; i++) {
-        html += groupBlock(data.groups[i]);
+    for (i = 0; i < (data.pending || []).length; i++) {
+        html += pendingRow(data.pending[i]);
     }
+    for (i = 0; i < data.groups.length; i++) {
+        body += groupBlock(data.groups[i]);
+    }
+    html += body;
     document.getElementById('running').innerHTML = html ? html : '<div class="empty">暂无进行中的任务。</div>';
     bindGroups();
     syncToggleAll();
