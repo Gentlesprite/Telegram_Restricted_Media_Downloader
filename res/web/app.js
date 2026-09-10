@@ -1,10 +1,17 @@
 const EMPTY_SUMMARY = {percent: 0, info: '0.00B / 0.00B', speed: '', remaining: ''};
 
-var TABS = ['running', 'done', 'links', 'uploads'];
+var SECTIONS = {
+    download: ['running', 'done', 'links'],
+    upload: ['uploading', 'uploaded', 'upload_failed']
+};
+var TABS = SECTIONS.download.concat(SECTIONS.upload);
+var SECTION_KEY = 'trmd_section';
 var TAB_KEY = 'trmd_tab';
 
 var collapsed = {};
 var allCollapsed = false;
+var currentSection = 'download';
+var currentTab = 'running';
 
 function esc(text) {
     var div = document.createElement('div');
@@ -165,7 +172,7 @@ function syncToggleAll() {
 }
 
 function toggleAll() {
-    var nodes = document.querySelectorAll('#running .group');  // 只切换正在下载页的分组。
+    var nodes = document.querySelectorAll('#running .group');  // 只切换下载中页的分组。
     allCollapsed = !allCollapsed;
     for (var i = 0; i < nodes.length; i++) {
         var key = nodes[i].getAttribute('data-channel');
@@ -177,23 +184,71 @@ function toggleAll() {
     syncToggleAll();
 }
 
+function sectionOfTab(name) {
+    for (var key in SECTIONS) {
+        if (SECTIONS[key].indexOf(name) !== -1) {
+            return key;
+        }
+    }
+    return 'download';
+}
+
+function saveState(key, value) {
+    try {
+        localStorage.setItem(key, value);
+    } catch (e) {
+        // 隐私模式下写入失败可忽略。
+    }
+}
+
+function applySection() {
+    var items = document.querySelectorAll('.side-item');
+    for (var i = 0; i < items.length; i++) {
+        var active = items[i].getAttribute('data-section') === currentSection;
+        items[i].className = active ? 'side-item active' : 'side-item';
+    }
+    var tabs = document.querySelectorAll('.tab');
+    for (i = 0; i < tabs.length; i++) {
+        tabs[i].hidden = tabs[i].getAttribute('data-section') !== currentSection;  // 上边栏只显示当前分区的子页。
+    }
+    document.getElementById('downloadSummary').hidden = currentSection !== 'download';
+}
+
+function applyTab() {
+    var tabs = document.querySelectorAll('.tab');
+    for (var i = 0; i < tabs.length; i++) {
+        var active = tabs[i].getAttribute('data-tab') === currentTab;
+        tabs[i].className = active ? 'tab active' : 'tab';
+    }
+    for (i = 0; i < TABS.length; i++) {
+        document.getElementById('page-' + TABS[i]).hidden = TABS[i] !== currentTab;
+    }
+}
+
+function switchSection(name) {
+    if (!SECTIONS[name]) {
+        name = 'download';
+    }
+    currentSection = name;
+    if (SECTIONS[currentSection].indexOf(currentTab) === -1) {
+        currentTab = SECTIONS[currentSection][0];  // 切区后当前子页不属于该区时回到首个子页。
+    }
+    applySection();
+    applyTab();
+    saveState(SECTION_KEY, currentSection);
+    saveState(TAB_KEY, currentTab);
+}
+
 function switchTab(name) {
     if (TABS.indexOf(name) === -1) {
         name = TABS[0];
     }
-    var tabs = document.querySelectorAll('.tab');
-    for (var i = 0; i < tabs.length; i++) {
-        var active = tabs[i].getAttribute('data-tab') === name;
-        tabs[i].className = active ? 'tab active' : 'tab';
-    }
-    for (i = 0; i < TABS.length; i++) {
-        document.getElementById('page-' + TABS[i]).hidden = TABS[i] !== name;
-    }
-    try {
-        localStorage.setItem(TAB_KEY, name);
-    } catch (e) {
-        // 隐私模式下写入失败可忽略。
-    }
+    currentSection = sectionOfTab(name);
+    currentTab = name;
+    applySection();
+    applyTab();
+    saveState(SECTION_KEY, currentSection);
+    saveState(TAB_KEY, currentTab);
 }
 
 function extraText(item) {
@@ -232,11 +287,13 @@ function renderStat(data) {
         '<div><span>队列中</span><b class="queue">' + (data.queue || 0) + '</b></div>';
 }
 
-function renderBadges(data) {
+function renderBadges(data, counted) {
     document.getElementById('badgeRunning').textContent = data.tasks.length;
     document.getElementById('badgeDone').textContent = data.done.length;
     document.getElementById('badgeLinks').textContent = data.links.length;
-    document.getElementById('badgeUploads').textContent = data.uploads.length;
+    document.getElementById('badgeUploading').textContent = counted.uploading;
+    document.getElementById('badgeUploaded').textContent = counted.uploaded;
+    document.getElementById('badgeUploadFailed').textContent = counted.failed;
 }
 
 function renderList(data) {
@@ -265,26 +322,45 @@ function renderList(data) {
     bindGroups();  // 所有页面渲染完成后统一绑定折叠事件。
 }
 
-function renderUploads(uploads) {
-    if (uploads.length === 0) {
-        document.getElementById('uploads').innerHTML = '<div class="empty">暂无上传任务。</div>';
-        return;
+function uploadList(tasks) {
+    if (tasks.length === 0) {
+        return '<div class="empty">暂无上传任务。</div>';
     }
     var html = '<table><thead><tr><th>文件</th><th>频道</th><th>大小</th><th>状态</th><th>错误信息</th></tr></thead><tbody>';
-    for (var i = 0; i < uploads.length; i++) {
-        var task = uploads[i];
+    for (var i = 0; i < tasks.length; i++) {
+        var task = tasks[i];
         html += '<tr><td>' + esc(task.file) + '</td><td>' + esc(task.chat) + '</td><td>' +
             esc(task.size) + '</td><td>' + esc(task.status) + '</td><td>' + esc(task.error) + '</td></tr>';
     }
-    document.getElementById('uploads').innerHTML = html + '</tbody></table>';
+    return html + '</tbody></table>';
+}
+
+function renderUploads(uploads) {
+    var uploading = [];
+    var uploaded = [];
+    var failed = [];
+    for (var i = 0; i < uploads.length; i++) {
+        var state = uploads[i].state;
+        if (state === 'failure') {
+            failed.push(uploads[i]);
+        } else if (state === 'success' || state === 'sent') {
+            uploaded.push(uploads[i]);
+        } else {
+            uploading.push(uploads[i]);
+        }
+    }
+    document.getElementById('uploading').innerHTML = uploadList(uploading);
+    document.getElementById('uploaded').innerHTML = uploadList(uploaded);
+    document.getElementById('upload_failed').innerHTML = uploadList(failed);
+    return {uploading: uploading.length, uploaded: uploaded.length, failed: failed.length};
 }
 
 function render(data) {
     renderOverall(data.summary, data.tasks.length);
     renderStat(data);
-    renderBadges(data);
+    var counted = renderUploads(data.uploads);
+    renderBadges(data, counted);
     renderList(data);
-    renderUploads(data.uploads);
 }
 
 async function refresh() {
@@ -297,6 +373,15 @@ async function refresh() {
     }
 }
 
+function bindSections() {
+    var items = document.querySelectorAll('.side-item');
+    for (var i = 0; i < items.length; i++) {
+        items[i].onclick = function () {
+            switchSection(this.getAttribute('data-section'));
+        };
+    }
+}
+
 function bindTabs() {
     var tabs = document.querySelectorAll('.tab');
     for (var i = 0; i < tabs.length; i++) {
@@ -306,14 +391,22 @@ function bindTabs() {
     }
 }
 
-var saved = '';
+var savedSection = '';
+var savedTab = '';
 try {
-    saved = localStorage.getItem(TAB_KEY) || '';
+    savedSection = localStorage.getItem(SECTION_KEY) || '';
+    savedTab = localStorage.getItem(TAB_KEY) || '';
 } catch (e) {
-    saved = '';
+    savedSection = '';
+    savedTab = '';
 }
+bindSections();
 bindTabs();
-switchTab(saved);
+if (savedTab && TABS.indexOf(savedTab) !== -1) {
+    switchTab(savedTab);
+} else {
+    switchSection(savedSection);
+}
 document.getElementById('toggleAll').onclick = toggleAll;
 refresh();
 setInterval(refresh, 1000);

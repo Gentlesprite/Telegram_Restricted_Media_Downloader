@@ -316,6 +316,7 @@ class Web:
                     'chat': Web.format_channel(str(task.chat_id)) if task.chat_id else '',
                     'size': MetaData.suitable_units_display(task.file_size),
                     'status': _t(str(status)),
+                    'state': str(status),  # 原始状态,供网页面板区分上传中、已完成、失败。
                     'error': task.error_msg if task.error_msg else ''
                 })
         except Exception as e:

@@ -18,6 +18,10 @@
     box-sizing: border-box;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 body {
     min-height: 100vh;
     padding: 24px 16px 48px;
@@ -31,8 +35,55 @@ body {
 }
 
 .wrap {
-    max-width: 1120px;
+    max-width: 1280px;
     margin: 0 auto;
+}
+
+/* 两栏布局 */
+.layout {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+/* 左侧边栏 */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: sticky;
+    top: 24px;
+}
+
+.side-item {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+
+.side-item:hover {
+    border-color: var(--accent);
+    color: var(--text);
+}
+
+.side-item.active {
+    border-color: var(--accent);
+    background: rgba(56, 249, 215, .12);
+    color: var(--accent);
+    box-shadow: inset 0 0 0 1px rgba(56, 249, 215, .35);
+}
+
+.content {
+    min-width: 0;
 }
 
 /* 顶部区域 */
@@ -533,6 +584,22 @@ tbody tr:hover {
 }
 
 /* 响应式 */
+@media (max-width: 760px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        flex-direction: row;
+        position: static;
+    }
+
+    .side-item {
+        flex: 1;
+        text-align: center;
+    }
+}
+
 @media (max-width: 900px) {
     .h-speed,
     .h-remain,
