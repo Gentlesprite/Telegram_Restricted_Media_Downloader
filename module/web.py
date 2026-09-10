@@ -87,6 +87,7 @@ class WebHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-Type', content_type)
         self.send_header('Content-Length', str(len(body)))
+        self.send_header('Cache-Control', 'no-store')  # 禁用缓存,避免浏览器沿用旧页面。
         self.end_headers()
         self.wfile.write(body)
 

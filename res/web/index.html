@@ -11,24 +11,25 @@
 <div class="wrap">
 <header>
     <div class="topbar">
-        <h1>TRMD 下载进度</h1>
+        <div class="brand">
+            <span class="logo">TRMD</span>
+            <h1>下载器</h1>
+        </div>
         <div class="status">
             <span class="dot" id="dot"></span>
-            <span id="statusText">等待任务</span>
+            <span id="statusText">空闲 · 等待任务</span>
         </div>
     </div>
 
-    <div class="card overall">
-        <div class="row">
-            <span class="label">总体进度</span>
+    <div class="panel overall">
+        <div class="overall-top">
+            <span class="label">总进度</span>
             <span class="big" id="overallPercent">0%</span>
+            <span class="muted" id="overallInfo">0.00B / 0.00B</span>
+            <span class="muted" id="overallExtra">暂无速度</span>
         </div>
         <div class="track track-lg">
             <div class="fill" id="overallFill"></div>
-        </div>
-        <div class="row meta">
-            <span id="overallInfo">0.00B / 0.00B</span>
-            <span id="overallExtra">暂无速度</span>
         </div>
     </div>
 
@@ -37,28 +38,62 @@
 
 <div class="offline" id="offline">已与程序断开连接，请确认程序是否仍在运行。</div>
 
-<section>
+<nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="running" type="button">正在下载<b class="badge" id="badgeRunning">0</b></button>
+    <button class="tab" data-tab="done" type="button">已完成<b class="badge" id="badgeDone">0</b></button>
+    <button class="tab" data-tab="links" type="button">链接进度<b class="badge" id="badgeLinks">0</b></button>
+    <button class="tab" data-tab="uploads" type="button">上传任务<b class="badge" id="badgeUploads">0</b></button>
+</nav>
+
+<div class="page" id="page-running">
     <div class="section-head">
-        <h2>进行中</h2>
+        <h2>正在下载</h2>
         <button class="toggle" id="toggleAll" type="button">全部折叠</button>
     </div>
-    <div id="running"></div>
-</section>
+    <div class="list">
+        <div class="list-head">
+            <span>名称</span>
+            <span>进度</span>
+            <span class="h-size">大小</span>
+            <span class="h-speed">速度</span>
+            <span class="h-remain">剩余时间</span>
+            <span class="h-status">状态</span>
+        </div>
+        <div id="running"></div>
+    </div>
+</div>
 
-<section>
-    <h2>已完成</h2>
-    <div id="done"></div>
-</section>
+<div class="page" id="page-done" hidden>
+    <div class="list">
+        <div class="list-head">
+            <span>名称</span>
+            <span>进度</span>
+            <span class="h-size">大小</span>
+            <span class="h-speed">速度</span>
+            <span class="h-remain">剩余时间</span>
+            <span class="h-status">状态</span>
+        </div>
+        <div id="done"></div>
+    </div>
+</div>
 
-<section>
-    <h2>链接进度</h2>
-    <div id="links"></div>
-</section>
+<div class="page" id="page-links" hidden>
+    <div class="list">
+        <div class="list-head">
+            <span>链接</span>
+            <span>进度</span>
+            <span class="h-size">完成/总数</span>
+            <span class="h-speed">速度</span>
+            <span class="h-remain">剩余时间</span>
+            <span class="h-status">状态</span>
+        </div>
+        <div id="links"></div>
+    </div>
+</div>
 
-<section>
-    <h2>上传任务</h2>
-    <div id="uploads"></div>
-</section>
+<div class="page" id="page-uploads" hidden>
+    <div class="list" id="uploads"></div>
+</div>
 </div>
 <script src="app.js"></script>
 </body>
