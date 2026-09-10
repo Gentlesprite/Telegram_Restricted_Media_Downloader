@@ -86,7 +86,7 @@ from module.path_tool import (
     safe_replace,
     validate_title
 )
-from module.task import DownloadTask, UploadTask
+from module.task import DownloadTask, UploadTask, ChatInfo
 from module.stdio import ProgressBar, Base64Image, MetaData
 from module.parser import PARSE_ARGS
 from module.web import Web
@@ -1729,6 +1729,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.DOWNLOADING))},'
                         f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.DOWNLOADING)}。'
                     )
+                    ChatInfo.add(chat=getattr(message, 'chat', None), chat_id=chat_id)
                     task_id = self.pb.progress.add_task(
                         description='📥',
                         channel=str(chat_id),

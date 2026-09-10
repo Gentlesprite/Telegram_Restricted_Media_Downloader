@@ -25,7 +25,8 @@ from module.stdio import (
 )
 from module.task import (
     DownloadTask,
-    UploadTask
+    UploadTask,
+    ChatInfo
 )
 from module.language import _t
 from module.parser import PARSE_ARGS
@@ -268,7 +269,7 @@ class Web:
                 status = getattr(task.status, 'value', task.status)
                 result.append({
                     'file': task.file_name,
-                    'chat': str(task.chat_id if task.chat_id else ''),
+                    'chat': Web.format_channel(str(task.chat_id)) if task.chat_id else '',
                     'size': MetaData.suitable_units_display(task.file_size),
                     'status': _t(str(status)),
                     'error': task.error_msg if task.error_msg else ''
@@ -300,6 +301,14 @@ class Web:
         }
 
     @staticmethod
+    def format_channel(channel: str) -> str:
+        """格式化频道的显示名称,有标题时显示为"标题(ID)"。"""
+        if not channel or channel == Web.UNGROUPED:
+            return Web.UNGROUPED
+        title: str = ChatInfo.get(channel)
+        return f'{title}({channel})' if title else channel
+
+    @staticmethod
     def get_groups(tasks: list) -> list:
         """按频道对任务分组,并汇总每组的进度。"""
         groups: dict = {}
@@ -315,6 +324,7 @@ class Web:
             group_tasks: list = groups[channel]
             result.append({
                 'channel': channel,
+                'name': Web.format_channel(channel),
                 'count': len(group_tasks),
                 'summary': Web.get_summary(group_tasks),
                 'tasks': group_tasks
@@ -330,6 +340,7 @@ class Web:
                 'id': task.id,
                 'type': str(task.description),
                 'channel': str(task.fields.get('channel', '')) or Web.UNGROUPED,
+                'channel_name': Web.format_channel(str(task.fields.get('channel', ''))),
                 'filename': str(task.fields.get('filename', '')),
                 'info': str(task.fields.get('info', '')),
                 'completed': int(task.completed),

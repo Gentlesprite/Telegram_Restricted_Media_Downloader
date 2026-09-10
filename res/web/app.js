@@ -42,7 +42,8 @@ function groupCard(group) {
     var key = group.channel;
     var isCollapsed = collapsed[key] === undefined ? allCollapsed : collapsed[key];
     var html = '<details class="group" data-channel="' + escAttr(key) + '"' + (isCollapsed ? '' : ' open') + '>' +
-        '<summary><span class="arrow"></span><span class="gname">' + esc(key) + '</span>' +
+        '<summary><span class="arrow"></span><span class="gname" title="' + escAttr(key) + '">' +
+        esc(group.name || key) + '</span>' +
         '<span class="gcount">' + group.count + '个</span>' +
         '<span class="pct">' + group.summary.percent + '%</span></summary>' +
         bar(group.summary.percent, 'track-md') +
@@ -56,7 +57,7 @@ function groupCard(group) {
 
 function doneCard(task) {
     var name = task.type ? task.type + ' ' + task.filename : task.filename;
-    var meta = task.channel ? task.info + ' · ' + task.channel : task.info;
+    var meta = task.channel_name ? task.info + ' · ' + task.channel_name : task.info;
     return '<div class="card"><div class="row"><span class="name">' + esc(name) +
         '</span><span class="meta">' + esc(meta) + '</span></div></div>';
 }
