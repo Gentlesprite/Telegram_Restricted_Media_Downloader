@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TRMD 下载进度</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<header>
+    <div class="topbar">
+        <h1>TRMD 下载进度</h1>
+        <div class="status">
+            <span class="dot" id="dot"></span>
+            <span id="statusText">等待任务</span>
+        </div>
+    </div>
+
+    <div class="card overall">
+        <div class="row">
+            <span class="label">总体进度</span>
+            <span class="big" id="overallPercent">0%</span>
+        </div>
+        <div class="track track-lg">
+            <div class="fill" id="overallFill"></div>
+        </div>
+        <div class="row meta">
+            <span id="overallInfo">0.00B / 0.00B</span>
+            <span id="overallExtra">暂无速度</span>
+        </div>
+    </div>
+
+    <div class="stat" id="stat"></div>
+</header>
+
+<div class="offline" id="offline">已与程序断开连接，请确认程序是否仍在运行。</div>
+
+<section>
+    <h2>进行中</h2>
+    <div id="running"></div>
+</section>
+
+<section>
+    <h2>已完成</h2>
+    <div id="done"></div>
+</section>
+
+<section>
+    <h2>链接进度</h2>
+    <div id="links"></div>
+</section>
+
+<section>
+    <h2>上传任务</h2>
+    <div id="uploads"></div>
+</section>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

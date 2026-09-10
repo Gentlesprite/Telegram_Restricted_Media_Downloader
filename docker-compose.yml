@@ -5,6 +5,8 @@ services:
     restart: unless-stopped
     stdin_open: true
     tty: true
+    ports:
+      - "2921:2921"
     volumes:
       - ./config:/app/TRMD
       - ./sessions:/app/sessions

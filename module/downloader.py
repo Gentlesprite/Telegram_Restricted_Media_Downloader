@@ -88,6 +88,8 @@ from module.path_tool import (
 )
 from module.task import DownloadTask, UploadTask
 from module.stdio import ProgressBar, Base64Image, MetaData
+from module.parser import PARSE_ARGS
+from module.web import Web
 from module.uploader import TelegramUploader
 from module.util import (
     is_docker,
@@ -120,6 +122,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.uploader: Union[TelegramUploader, None] = None
         self.cd: Union[CallbackData, None] = None
         self.my_id: int = 0
+        self.web: Union[Web, None] = Web(progress=self.pb.progress, app=self.app) if PARSE_ARGS.web is not None else None
 
     def env_save_directory(
             self,
@@ -2433,6 +2436,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             MetaData.print_meta()
             self.app.print_env_table(self.app)
             self.app.print_config_table(self.app)
+            self.web.start() if self.web else None
             self.loop.run_until_complete(self.__download_media_from_links())
         except KeyError as e:
             record_error: bool = True
@@ -2477,6 +2481,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         finally:
             self.is_running = False
             self.pb.progress.stop()
+            self.web.stop() if self.web else None
             if not record_error:
                 self.app.print_link_table(
                     link_info=DownloadTask.LINK_INFO,

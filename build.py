@@ -19,9 +19,6 @@ from module import (
     __update_date__,
     SOFTWARE_SHORT_NAME
 )
-from module.ttyd import TTYD
-from module.tmux import TMUX
-
 VERSION_INFO = sys.version_info
 PLATFORM: str = sys.platform
 UV: str = 'uv ' if which('uv') and os.path.exists('uv.lock') else ''
@@ -98,21 +95,11 @@ def ready_pymediainfo() -> tuple:
         sys.exit(1)
 
 
-def ready_ttyd():
-    file_name = TTYD.get_ttyd_executable()
-    path = str(Path(f'res/bin/{file_name}').resolve())
-    if os.path.isfile(path):
-        return file_name, path
-    log.error('未找到ttyd。')
-    sys.exit(1)
-
-
-def ready_tmux():
-    file_name = TMUX.get_tmux_executable()
-    path = str(Path(f'res/bin/{file_name}').resolve())
-    if os.path.isfile(path):
-        return file_name, path
-    log.error('未找到tmux。')
+def ready_web() -> str:
+    path = str(Path('res/web').resolve())
+    if os.path.isdir(path):
+        return path
+    log.error('未找到网页面板的静态资源目录。')
     sys.exit(1)
 
 
@@ -230,8 +217,7 @@ def main():
     check_python_version()
     pyinstaller_version: str = ready_pyinstaller()
     media_info_lib_filename, media_info_lib_path = ready_pymediainfo()
-    ttyd_filename, ttyd_path = ready_ttyd()
-    tmux_filename, tmux_path = ready_tmux()
+    web_directory: str = ready_web()
 
     # 使用绝对路径,避免PyInstaller执行spec文件时相对路径解析错误(如output/output/version_info.txt)。
     ico_path: str = os.path.abspath('res/icon.ico')
@@ -264,8 +250,10 @@ def main():
         version_file_path = gen_version_file(output_directory)
         command += f'--version-file "{version_file_path}" '
     # 资源文件打包到解压目录根目录,运行时通过sys._MEIPASS定位。
-    for resource in (media_info_lib_path, ttyd_path, tmux_path):
+    for resource in (media_info_lib_path,):
         command += f'--add-data "{resource}{separator}." '
+    # 网页静态资源需保留"res/web"目录结构,运行时按该相对路径查找。
+    command += f'--add-data "{web_directory}{separator}{os.path.join("res", "web")}" '
     command += 'main.py'
 
     log.info(f'{GRID}\nPyInstaller版本:{pyinstaller_version}\n{GRID}')

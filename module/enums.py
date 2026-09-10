@@ -66,11 +66,6 @@ class UploadStatus:
     SENT = 'sent'
 
 
-class MODE:
-    SESSION: str = 'SESSION'
-    ONCE: str = 'ONCE'
-
-
 class CalenderKeyboard:
     START_TIME_BUTTON: str = 'start time button'
     END_TIME_BUTTON: str = 'end time button'
@@ -92,12 +87,7 @@ class WebMeta:
     PORT: str = 'port'
     USERNAME: str = 'username'
     PASSWORD: str = 'password'
-
-
-class ENVIRON:
-    TRMD_WEB_PID: str = 'TRMD_WEB_PID'
-    TRMD_WEB_PORT: str = 'TRMD_WEB_PORT'
-    PSMUX_SESSION_NAME: str = 'PSMUX_SESSION_NAME'  # Windows专属。
+    DEFAULT_PORT: int = 2921
 
 
 class KeyWord:

@@ -955,8 +955,7 @@ _**设置命令行运行参数**需先在**软件目录**打开**终端**，或*
 | `-c` | `--config`  |   设置用户配置文件的路径   |
 | `-s` | `--session` |     设置会话文件的路径     |
 | `-t` |  `--temp`   |     设置运行缓存的路径     |
-| `-w` |   `--web`   |     通过浏览器运行     |
-| `-m` | `--mode` | 设置运行模式 |
+| `-w` |   `--web`   |   通过浏览器查看下载进度   |
 
 _**长参数与短参数最终结果一致。**_
 
@@ -1216,16 +1215,16 @@ _**长参数与短参数最终结果一致。**_
 
    | 使用须知                                                         |
    |--------------------------------------------------------------|
-   | _1.该参数用于控制是否通过浏览器运行。_                                        |
-   | _2.该参数设置后将自动使用**默认浏览器**作为软件的终端界面，**并自动打开**（运行环境不支持时，需手动打开）。_ |
-   | _3.`Web配置`信息会在运行的终端提供，以便启动时输入账号密码。_                          |
-   | _4.**关闭浏览器窗口即代表退出程序，且不会保留任何会话状态**。_                          |
-   | _5.可在此参数后指定一个`0`~`65535`范围内的**端口号**，若不指定，将**随机分配**端口。_       |
+   | _1.该参数用于启用网页面板，通过浏览器查看下载进度。_                                        |
+   | _2.该参数设置后会在后台启动网页服务，终端仍可正常操作。_ |
+   | _3.`Web配置`信息会在运行的终端提供，以便打开网页时输入账号密码。_                          |
+   | _4.**关闭浏览器窗口不会影响程序运行**，程序退出时面板自动关闭。_                          |
+   | _5.可在此参数后指定一个`0`~`65535`范围内的**端口号**，若不指定，将使用`2921`端口，端口被占用时自动分配。_       |
    | _6.该参数为一次性设置，不记忆。_                                           |
    
    - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
    
-     此处假设使用随机端口。
+     此处假设使用默认端口。
    
      ```bash
      python3 -w
@@ -1249,62 +1248,12 @@ _**长参数与短参数最终结果一致。**_
    
    - 对于Linux用户:
    
-     此处假设使用随机端口。
+     此处假设使用默认端口。
    
      ```bash
      ./TRMD -w
      ```
    
-     ```bash
-     ./TRMD --web
-     ```
-   
-8. `-m`、`--mode`参数用法：
-
-   | 使用须知                                                     |
-   | ------------------------------------------------------------ |
-   | _1.该参数用于设置运行模式。_                                 |
-   | _2.该参数为`-w`、`--web`命令设置启动模式，控制是否存储`web`模式的会话状态。_ |
-   | _3.该参数为一次性设置，不记忆。_                             |
-   
-   - 运行模式分为`ONCE`、`SESSION`模式，默认为`ONCE`模式，区别如下表所示：
-       | 模式        | 效果                                                         |
-       | ----------- | ------------------------------------------------------------ |
-       | `ONCE` | 不保存会话，在关闭、刷新网页后软件随之退出。                 |
-       | `SESSION` | 保存会话，在关闭、刷新网页后软件保持运行，在下次访问时自动恢复。 |
-   
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
-
-     _设置`SESSION`模式时，保存会话，在关闭、刷新网页后软件保持运行，在下次访问时自动恢复。_
-   
-     ```bash
-     TRMD.exe -w -m SESSION
-     ```
-   
-     ```bash
-     TRMD.exe --web --mode SESSION
-     ```
-
-   - 对于Windows用户:
-   
-     _设置`ONCE`模式时，不保存会话，在关闭、刷新网页后软件随之退出。_
-
-     ```bash
-     TRMD.exe -w -m ONCE
-     ```
-
-     ```bash
-     TRMD.exe --web --mode ONCE
-     ```
-   
-   - 对于Linux用户:
-
-     _不设置时，`-m`、`--mode`默认为`ONCE`模式，不保存会话，在关闭、刷新网页后软件随之退出。_
-     
-     ```bash
-     ./TRMD -w
-     ```
-     
      ```bash
      ./TRMD --web
      ```
@@ -1429,7 +1378,7 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
   docker stop trmd && docker rm trmd
   ```
 
-方式3，使用`web模式`运行（`≥1.9.3`）：
+方式3，使用网页面板运行（`≥1.9.3`）：
 
 - _确保`docker`已安装并配置**环境变量。**_
 
@@ -1439,7 +1388,7 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
   docker pull gentlesprite/telegram_restricted_media_downloader:latest
   ```
 
-- 创建并启动容器，`web模式`使用`2921`端口：
+- 创建并启动容器，网页面板使用`2921`端口：
 
   ```bash
   docker run -d \
@@ -1454,13 +1403,13 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
     -e TZ=Asia/Shanghai \
     --restart unless-stopped \
     gentlesprite/telegram_restricted_media_downloader:latest \
-    python main.py --config /app/TRMD/config.yaml --web 2921 --mode SESSION
+    python main.py --config /app/TRMD/config.yaml --web 2921
   ```
 
 - 如果是通过`Windows`使用`wsl2`运行`docker`：
 
   ```bash
-  docker run -d --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -v ./form:/app/form -p 2921:2921 -w /app -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest python main.py --config /app/TRMD/config.yaml --web 2921 --mode SESSION
+  docker run -d --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -v ./form:/app/form -p 2921:2921 -w /app -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest python main.py --config /app/TRMD/config.yaml --web 2921
   ```
 
 - 查看运行日志：
@@ -1473,7 +1422,6 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
 
   | 属性     | 内容                    |
   | -------- | ----------------------- |
-  | IP地址   | `127.0.0.1`             |
   | 端口     | `2921`                  |
   | 账号     | `cLJqKG3b`              |
   | 密码     | `AiJaKSObcRCZ`          |

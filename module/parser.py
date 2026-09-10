@@ -16,7 +16,7 @@ from module import (
 )
 from module.enums import (
     Banner,
-    MODE,
+    WebMeta,
     GradientColor
 )
 
@@ -69,17 +69,9 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             type=int,
             nargs='?',
             metavar='PORT',
-            const=0,
+            const=WebMeta.DEFAULT_PORT,
             default=None,
-            help='通过浏览器运行'
-        )
-        self.add_argument(
-            '-m', '--mode',
-            type=str,
-            required=False,
-            default=MODE.ONCE,
-            choices=[MODE.ONCE, MODE.SESSION],
-            help='设置运行模式'
+            help=f'通过浏览器查看下载进度(默认端口{WebMeta.DEFAULT_PORT})'
         )
 
     def print_help(self, file=None):
