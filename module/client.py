@@ -636,6 +636,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 raise
             except FileReferenceExpired:
                 raise
+            except AuthBytesInvalid:
+                raise
             except Exception as e:
                 log.exception(e)
 
