@@ -130,6 +130,7 @@ class Web:
     WEB_DIRECTORY: str = os.path.join('res', 'web')
     INDEX_FILE: str = 'index.html'
     MAX_DONE_TASK: int = 20
+    UNGROUPED: str = '未分组'
 
     def __init__(self, progress, app=None):
         self.progress = progress
@@ -298,6 +299,28 @@ class Web:
             'remaining': Web.format_seconds(remaining)
         }
 
+    @staticmethod
+    def get_groups(tasks: list) -> list:
+        """按频道对任务分组,并汇总每组的进度。"""
+        groups: dict = {}
+        order: list = []
+        for task in tasks:
+            channel: str = task.get('channel') or Web.UNGROUPED
+            if channel not in groups:
+                groups[channel] = []
+                order.append(channel)  # 保持频道首次出现的顺序。
+            groups[channel].append(task)
+        result: list = []
+        for channel in order:
+            group_tasks: list = groups[channel]
+            result.append({
+                'channel': channel,
+                'count': len(group_tasks),
+                'summary': Web.get_summary(group_tasks),
+                'tasks': group_tasks
+            })
+        return result
+
     def get_tasks(self) -> list:
         """读取进度条的任务,并将已移除的完成任务转入完成记录。"""
         tasks: list = []
@@ -305,6 +328,8 @@ class Web:
         for task in self.progress.tasks:
             item: dict = {
                 'id': task.id,
+                'type': str(task.description),
+                'channel': str(task.fields.get('channel', '')) or Web.UNGROUPED,
                 'filename': str(task.fields.get('filename', '')),
                 'info': str(task.fields.get('info', '')),
                 'completed': int(task.completed),
@@ -330,6 +355,7 @@ class Web:
             return {
                 'count': self.get_count(),
                 'summary': self.get_summary(tasks),
+                'groups': self.get_groups(tasks),
                 'tasks': tasks,
                 'done': list(reversed(self.done_tasks)),
                 'links': self.get_link_progress(),
@@ -340,6 +366,7 @@ class Web:
             return {
                 'count': {'success': 0, 'failure': 0, 'skip': 0},
                 'summary': self.get_summary([]),
+                'groups': [],
                 'tasks': [],
                 'done': [],
                 'links': [],

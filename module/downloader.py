@@ -1731,6 +1731,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     task_id = self.pb.progress.add_task(
                         description='📥',
+                        channel=str(chat_id),
                         filename=truncate_display_filename(file_name),
                         info=f'0.00B/{format_file_size}',
                         total=sever_file_size

@@ -539,6 +539,7 @@ class TelegramUploader:
         format_file_size: str = MetaData.suitable_units_display(file_size)
         task_id = self.pb.progress.add_task(
             description='📤',
+            channel=str(upload_task.chat_id) if upload_task.chat_id else '',
             filename=truncate_display_filename(split_path(file_path).get('file_name')),
             info=f'0.00B/{format_file_size}',
             total=file_size

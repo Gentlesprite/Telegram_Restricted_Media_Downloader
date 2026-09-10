@@ -119,16 +119,20 @@ h1 {
 /* 进度条 */
 .track {
     position: relative;
-    height: 8px;
+    height: 12px;
     margin: 10px 0;
     border-radius: 999px;
     background: #202634;
     overflow: hidden;
 }
 
+.track-md {
+    height: 18px;
+}
+
 .track-lg {
-    height: 14px;
-    margin: 12px 0;
+    height: 26px;
+    margin: 14px 0;
 }
 
 .fill {
@@ -137,7 +141,7 @@ h1 {
     border-radius: 999px;
     background: linear-gradient(90deg, #43e97b, #38f9d7, #43e97b);
     background-size: 200% 100%;
-    box-shadow: 0 0 12px rgba(56, 249, 215, .35);
+    box-shadow: 0 0 14px rgba(56, 249, 215, .4), inset 0 1px 0 rgba(255, 255, 255, .28);
     transition: width .5s ease;
     animation: flow 2.4s linear infinite;
 }
@@ -188,6 +192,109 @@ h1 {
 
 .skip {
     color: var(--warn);
+}
+
+/* 分组折叠 */
+.section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.section-head h2 {
+    margin-bottom: 0;
+}
+
+.toggle {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.toggle:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.group {
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, 0)), var(--card);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, .22);
+    overflow: hidden;
+}
+
+.group > summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.group > summary::-webkit-details-marker {
+    display: none;
+}
+
+.group[open] > summary {
+    padding-bottom: 0;
+}
+
+.arrow {
+    flex: none;
+    width: 0;
+    height: 0;
+    border-left: 5px solid var(--muted);
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    transition: transform .2s ease;
+}
+
+.group[open] .arrow {
+    transform: rotate(90deg);
+}
+
+.gname {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 14px;
+}
+
+.gcount {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.gmeta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 16px 8px;
+    font-size: 12px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.group .track {
+    margin: 10px 16px 0;
+}
+
+.group .card {
+    margin: 8px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, .2);
+    box-shadow: none;
 }
 
 /* 分节 */

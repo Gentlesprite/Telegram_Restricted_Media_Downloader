@@ -1,34 +1,64 @@
 const EMPTY_SUMMARY = {percent: 0, info: '0.00B / 0.00B', speed: '', remaining: ''};
 
+var collapsed = {};
+var allCollapsed = false;
+
 function esc(text) {
     var div = document.createElement('div');
     div.textContent = text === undefined || text === null ? '' : text;
     return div.innerHTML;
 }
 
-function bar(percent) {
-    return '<div class="track"><div class="fill" style="width:' + percent + '%"></div></div>';
+function escAttr(text) {
+    return esc(text).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function bar(percent, extra) {
+    return '<div class="track ' + (extra ? extra : '') + '"><div class="fill" style="width:' + percent + '%"></div></div>';
+}
+
+function extraText(item) {
+    var extra = '';
+    if (item.speed) {
+        extra += item.speed;
+    }
+    if (item.remaining) {
+        extra += (extra ? ' · 剩余' : '剩余') + item.remaining;
+    }
+    return extra;
 }
 
 function taskCard(task) {
-    var extra = '';
-    if (task.speed) {
-        extra += task.speed;
-    }
-    if (task.remaining) {
-        extra += (extra ? ' · 剩余' : '剩余') + task.remaining;
-    }
+    var name = task.type ? task.type + ' ' + task.filename : task.filename;
     return '<div class="card">' +
-        '<div class="row"><span class="name">' + esc(task.filename) + '</span>' +
+        '<div class="row"><span class="name">' + esc(name) + '</span>' +
         '<span class="pct">' + task.percent + '%</span></div>' +
         bar(task.percent) +
-        '<div class="row meta"><span>' + esc(task.info) + '</span><span>' + esc(extra) + '</span></div>' +
+        '<div class="row meta"><span>' + esc(task.info) + '</span><span>' + esc(extraText(task)) + '</span></div>' +
         '</div>';
 }
 
+function groupCard(group) {
+    var key = group.channel;
+    var isCollapsed = collapsed[key] === undefined ? allCollapsed : collapsed[key];
+    var html = '<details class="group" data-channel="' + escAttr(key) + '"' + (isCollapsed ? '' : ' open') + '>' +
+        '<summary><span class="arrow"></span><span class="gname">' + esc(key) + '</span>' +
+        '<span class="gcount">' + group.count + '个</span>' +
+        '<span class="pct">' + group.summary.percent + '%</span></summary>' +
+        bar(group.summary.percent, 'track-md') +
+        '<div class="gmeta"><span>' + esc(group.summary.info) + '</span>' +
+        '<span>' + esc(extraText(group.summary)) + '</span></div>';
+    for (var i = 0; i < group.tasks.length; i++) {
+        html += taskCard(group.tasks[i]);
+    }
+    return html + '</details>';
+}
+
 function doneCard(task) {
-    return '<div class="card"><div class="row"><span class="name">' + esc(task.filename) +
-        '</span><span class="meta">' + esc(task.info) + '</span></div></div>';
+    var name = task.type ? task.type + ' ' + task.filename : task.filename;
+    var meta = task.channel ? task.info + ' · ' + task.channel : task.info;
+    return '<div class="card"><div class="row"><span class="name">' + esc(name) +
+        '</span><span class="meta">' + esc(meta) + '</span></div></div>';
 }
 
 function linkCard(link) {
@@ -38,19 +68,40 @@ function linkCard(link) {
         bar(link.percent) + '</div>';
 }
 
+function bindGroups() {
+    var nodes = document.querySelectorAll('.group > summary');
+    for (var i = 0; i < nodes.length; i++) {
+        nodes[i].onclick = function (e) {
+            e.preventDefault();
+            var details = this.parentNode;
+            var key = details.getAttribute('data-channel');
+            collapsed[key] = details.open;  // 当前是展开的,点击后记为折叠。
+            details.open = !details.open;
+        };
+    }
+}
+
+function syncToggleAll() {
+    document.getElementById('toggleAll').textContent = allCollapsed ? '全部展开' : '全部折叠';
+}
+
+function toggleAll() {
+    var nodes = document.querySelectorAll('.group');
+    allCollapsed = !allCollapsed;
+    for (var i = 0; i < nodes.length; i++) {
+        collapsed[nodes[i].getAttribute('data-channel')] = allCollapsed;
+        nodes[i].open = !allCollapsed;
+    }
+    syncToggleAll();
+}
+
 function renderOverall(summary, taskCount) {
     var data = summary || EMPTY_SUMMARY;
-    var extra = '';
-    if (data.speed) {
-        extra += data.speed;
-    }
-    if (data.remaining) {
-        extra += (extra ? ' · 剩余' : '剩余') + data.remaining;
-    }
     document.getElementById('overallFill').style.width = data.percent + '%';
     document.getElementById('overallPercent').textContent = data.percent + '%';
     document.getElementById('overallInfo').textContent = data.info;
-    document.getElementById('overallExtra').textContent = extra ? extra : (taskCount ? '正在测速' : '暂无速度');
+    document.getElementById('overallExtra').textContent =
+        extraText(data) ? extraText(data) : (taskCount ? '正在测速' : '暂无速度');
     if (taskCount > 0) {
         document.getElementById('dot').className = 'dot active';
         document.getElementById('statusText').textContent = '下载中 · ' + taskCount + '个任务';
@@ -71,10 +122,12 @@ function renderStat(data) {
 function renderList(data) {
     var html = '';
     var i;
-    for (i = 0; i < data.tasks.length; i++) {
-        html += taskCard(data.tasks[i]);
+    for (i = 0; i < data.groups.length; i++) {
+        html += groupCard(data.groups[i]);
     }
     document.getElementById('running').innerHTML = html ? html : '<div class="empty">暂无进行中的任务。</div>';
+    bindGroups();
+    syncToggleAll();
     html = '';
     for (i = 0; i < data.done.length; i++) {
         html += doneCard(data.done[i]);
@@ -118,5 +171,6 @@ async function refresh() {
     }
 }
 
+document.getElementById('toggleAll').onclick = toggleAll;
 refresh();
 setInterval(refresh, 1000);
