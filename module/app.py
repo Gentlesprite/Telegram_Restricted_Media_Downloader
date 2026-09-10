@@ -47,6 +47,7 @@ class Application(UserConfig, StatisticalTable):
         self.client = self.build_client()
         self.check_download_type()
         self.current_task_num: int = 0
+        self.enable_queue: bool = True  # v1.7.x 启用下载调度器,置为False可回退为阻塞式限流。
 
     def build_client(self) -> pyrogram.Client:
         """用填写的配置文件,构造pyrogram客户端。"""
@@ -116,6 +117,14 @@ class Application(UserConfig, StatisticalTable):
 
         return wrapper
 
+    def increase_task_num(self) -> None:
+        """递增当前下载任务数。"""
+        self.current_task_num += 1
+
+    def decrease_task_num(self) -> None:
+        """递减当前下载任务数。"""
+        self.current_task_num -= 1
+
     def update_download_status(
             self,
             download_type: str,
@@ -162,7 +171,7 @@ class Application(UserConfig, StatisticalTable):
         elif download_status == DownloadStatus.SKIP:
             type_to_skip[download_type].add(file_name)
         elif download_status == DownloadStatus.DOWNLOADING:
-            self.current_task_num += 1
+            self.increase_task_num()
         failure_set = type_to_failure[download_type]
         success_set = type_to_success[download_type]
         if failure_set and success_set:

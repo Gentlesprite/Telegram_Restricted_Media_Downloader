@@ -66,6 +66,15 @@ class UploadStatus:
     SENT = 'sent'
 
 
+class QueueStatus:
+    PENDING: str = 'pending'          # 排队中,尚未开始处理。
+    WAITING: str = 'waiting'          # 已开始处理,等待下载槽位。
+    DOWNLOADING: str = 'downloading'  # 正在下载。
+    DONE: str = 'done'
+    FAILED: str = 'failed'
+    CANCELLED: str = 'cancelled'
+
+
 class CalenderKeyboard:
     START_TIME_BUTTON: str = 'start time button'
     END_TIME_BUTTON: str = 'end time button'
