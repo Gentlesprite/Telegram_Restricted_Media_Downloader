@@ -23,6 +23,7 @@ from module.stdio import (
     MetaData,
     PanelTable
 )
+from module.path_tool import split_path
 from module.task import (
     DownloadTask,
     UploadTask,
@@ -33,7 +34,8 @@ from module.parser import PARSE_ARGS
 from module.util import (
     is_frozen,
     gen_random_credential,
-    get_work_directory
+    get_work_directory,
+    get_message_dtype
 )
 from module.enums import (
     WebMeta,
@@ -252,15 +254,38 @@ class Web:
             for link, info in list(DownloadTask.LINK_INFO.items()):
                 member_num: int = int(info.get('member_num') or 0)
                 complete_num: int = int(info.get('complete_num') or 0)
+                queue: dict = DownloadTask.get_queue(str(link))
                 result.append({
                     'link': str(link),
                     'complete': complete_num,
                     'member': member_num,
                     'remaining': max(member_num - complete_num, 0),
+                    'queue': [self.format_queue_message(item) for item in queue.get('items')],
+                    'queue_total': queue.get('total'),
                     'percent': round(complete_num / member_num * 100, 1) if member_num else 0.0
                 })
         except Exception as e:
             log.debug(f'获取链接进度时出错,{_t(KeyWord.REASON)}:"{e}"')
+        return result
+
+    def format_queue_message(self, item: dict) -> dict:
+        """解析排队消息的展示信息,首次解析后缓存,避免每次轮询重复解析。"""
+        meta: Union[dict, None] = item.get('meta')
+        if meta is not None:
+            return meta
+        message = item.get('message')
+        result: dict = {'name': '消息 ' + str(getattr(message, 'id', '')), 'size': '', 'date': ''}
+        try:
+            result['date'] = str(getattr(message, 'date', '') or '')[:10]
+            if self.app is None:
+                return result
+            dtype: Union[str, None] = get_message_dtype(message, self.app.download_type)
+            if dtype:
+                result['name'] = str(split_path(self.app.get_temp_file_path(message, dtype)).get('file_name'))
+                result['size'] = MetaData.suitable_units_display(getattr(getattr(message, dtype), 'file_size', 0))
+        except Exception as e:
+            log.debug(f'解析排队消息时出错,{_t(KeyWord.REASON)}:"{e}"')
+        item['meta'] = result
         return result
 
     def get_pending(self) -> list:

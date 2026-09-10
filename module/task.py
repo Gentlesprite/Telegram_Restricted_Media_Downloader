@@ -52,6 +52,7 @@ class DownloadTask:
     LINK_INFO: dict = {}
     COMPLETE_LINK: set = set()
     PENDING: dict = {}
+    QUEUE: dict = {}
 
     @staticmethod
     def add_pending(key: str, info: dict) -> None:
@@ -62,6 +63,30 @@ class DownloadTask:
     def remove_pending(key: str) -> None:
         """移除排队中的任务。"""
         DownloadTask.PENDING.pop(key, None)
+
+    @staticmethod
+    def add_queue(link: str, message: Union[pyrogram.types.Message, list]) -> None:
+        """登记链接中待下载的消息,仅保存消息引用,展示信息由网页面板按需解析。"""
+        messages: list = message if isinstance(message, list) else [message]
+        queue: dict = DownloadTask.QUEUE.setdefault(link, {})
+        for _message in messages:
+            queue[int(getattr(_message, 'id', 0))] = {'message': _message}
+
+    @staticmethod
+    def remove_queue(link: str, message_id: Union[int, str]) -> None:
+        """移除链接中已开始下载的消息。"""
+        DownloadTask.QUEUE.get(link, {}).pop(int(message_id), None)
+
+    @staticmethod
+    def clear_queue(link: str) -> None:
+        """清空指定链接的排队消息。"""
+        DownloadTask.QUEUE.pop(link, None)
+
+    @staticmethod
+    def get_queue(link: str, limit: int = 50) -> dict:
+        """获取指定链接中排队等待下载的消息,最多返回limit条。"""
+        queue: dict = DownloadTask.QUEUE.get(link, {})
+        return {'items': list(queue.values())[:limit], 'total': len(queue)}
 
     def __init__(
             self,

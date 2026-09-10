@@ -1685,6 +1685,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     await self.__add_task(chat_id, link_type, link, _message, retry, with_upload, diy_download_type)
         else:
             _task = None
+            DownloadTask.remove_queue(link=link, message_id=message.id)  # 开始处理即从排队记录中移除。
             download_type: list = diy_download_type if diy_download_type else self.app.download_type
             valid_dtype: str = get_message_dtype(message, download_type)  # 按下载配置判定消息类型,实况照片是否优先取决于配置。
             if valid_dtype in download_type:
@@ -2222,6 +2223,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             link_type, chat_id, message, member_num = meta.values()
             DownloadTask.set(link, 'link_type', link_type)
             DownloadTask.set(link, 'member_num', member_num)
+            if retry.get('count'):  # 重试时只跟踪本次重试的消息,避免残留旧的排队记录。
+                DownloadTask.clear_queue(link)
+            else:
+                DownloadTask.add_queue(link=link, message=message)
             await self.__add_task(chat_id, link_type, link, message, retry, with_upload, diy_download_type)
             return {
                 'chat_id': chat_id,

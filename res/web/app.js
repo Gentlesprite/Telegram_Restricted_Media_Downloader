@@ -89,6 +89,20 @@ function doneRow(task) {
         '</div>';
 }
 
+function queueRow(item) {
+    return '<div class="task-row pending-row">' +
+        '<span class="cell-name"><span class="ficon">⏳</span>' +
+        '<span class="fname" title="' + escAttr(item.name) + '">' + esc(item.name) + '</span>' +
+        (item.date ? '<span class="gcount">' + esc(item.date) + '</span>' : '') +
+        '</span>' +
+        '<span class="cell-progress"><span class="pct pending">排队中</span></span>' +
+        '<span class="cell-size">' + dash(item.size) + '</span>' +
+        '<span class="cell-speed">—</span>' +
+        '<span class="cell-remain">—</span>' +
+        '<span class="cell-status status-pending">排队中</span>' +
+        '</div>';
+}
+
 function linkRow(link) {
     return '<div class="task-row">' +
         '<span class="cell-name"><span class="ficon">🔗</span>' +
@@ -100,6 +114,35 @@ function linkRow(link) {
         '<span class="cell-status ' + (link.remaining ? 'status-pending' : 'status-done') + '">' +
         (link.remaining ? '剩 ' + link.remaining + ' 条' : '已完成') + '</span>' +
         '</div>';
+}
+
+function linkBlock(link) {
+    var queue = link.queue || [];
+    if (queue.length === 0) {
+        return linkRow(link);
+    }
+    var key = 'link:' + link.link;
+    var isCollapsed = collapsed[key] === undefined ? true : collapsed[key];  // 默认折叠,避免一次性铺开。
+    var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '">' +
+        '<div class="group-head" data-channel="' + escAttr(key) + '">' +
+        '<span class="cell-name"><span class="arrow"></span>' +
+        '<span class="fname" title="' + escAttr(link.link) + '">' + esc(link.link) + '</span>' +
+        '<span class="gcount">' + link.queue_total + ' 条排队</span></span>' +
+        progressCell(link.percent) +
+        '<span class="cell-size">' + link.complete + '/' + link.member + '</span>' +
+        '<span class="cell-speed">—</span>' +
+        '<span class="cell-remain">—</span>' +
+        '<span class="cell-status ' + (link.remaining ? 'status-pending' : 'status-done') + '">' +
+        (link.remaining ? '剩 ' + link.remaining + ' 条' : '已完成') + '</span>' +
+        '</div>' +
+        '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
+    for (var i = 0; i < queue.length; i++) {
+        html += queueRow(queue[i]);
+    }
+    if (link.queue_total > queue.length) {
+        html += '<div class="more">…… 还有 ' + (link.queue_total - queue.length) + ' 条未显示</div>';
+    }
+    return html + '</div></div>';
 }
 
 function bindGroups() {
@@ -122,7 +165,7 @@ function syncToggleAll() {
 }
 
 function toggleAll() {
-    var nodes = document.querySelectorAll('.group');
+    var nodes = document.querySelectorAll('#running .group');  // 只切换正在下载页的分组。
     allCollapsed = !allCollapsed;
     for (var i = 0; i < nodes.length; i++) {
         var key = nodes[i].getAttribute('data-channel');
@@ -208,7 +251,6 @@ function renderList(data) {
     }
     html += body;
     document.getElementById('running').innerHTML = html ? html : '<div class="empty">暂无进行中的任务。</div>';
-    bindGroups();
     syncToggleAll();
     html = '';
     for (i = 0; i < data.done.length; i++) {
@@ -217,9 +259,10 @@ function renderList(data) {
     document.getElementById('done').innerHTML = html ? html : '<div class="empty">暂无已完成的任务。</div>';
     html = '';
     for (i = 0; i < data.links.length; i++) {
-        html += linkRow(data.links[i]);
+        html += linkBlock(data.links[i]);
     }
     document.getElementById('links').innerHTML = html ? html : '<div class="empty">暂无链接任务。</div>';
+    bindGroups();  // 所有页面渲染完成后统一绑定折叠事件。
 }
 
 function renderUploads(uploads) {

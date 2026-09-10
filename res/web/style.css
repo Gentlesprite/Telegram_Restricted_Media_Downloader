@@ -475,6 +475,12 @@ h2 {
     color: var(--muted);
 }
 
+.more {
+    padding: 6px 14px 8px 30px;
+    color: #5f6879;
+    font-size: 12px;
+}
+
 /* 空态 */
 .empty {
     padding: 20px 12px;
