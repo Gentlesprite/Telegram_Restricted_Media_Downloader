@@ -174,12 +174,20 @@ class Application(UserConfig, StatisticalTable):
         failure_set = type_to_failure[download_type]
         success_set = type_to_success[download_type]
         if failure_set and success_set:
-            failure_set -= success_set
+            success_name: set = {os.path.basename(str(i)) for i in success_set}
+            failure_set -= success_set  # 重试成功后,移除完全同名(含临时路径)的失败记录。
+            failure_set -= {
+                i for i in failure_set if os.path.basename(str(i)) in success_name
+            }  # 兼容失败记录为临时路径、成功记录为文件名的情况。
+
+    def get_download_type(self, message: pyrogram.types.Message, default_type: str) -> str:
+        """获取消息的下载类型,只用于展示,不记录任何统计信息。"""
+        return get_message_dtype(message, self.download_type) or default_type or 'unknown_type'
 
     @on_record
     def get_file_type(self, *args) -> str:
         message, file_name, download_type = args
-        return get_message_dtype(message, self.download_type) or download_type or 'unknown_type'
+        return self.get_download_type(message=message, default_type=download_type)
 
     def check_download_type(self) -> None:
         for dtype in self.download_type:

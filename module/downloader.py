@@ -1612,7 +1612,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             skip_chunks: int = downloaded // chunk_size  # 计算要跳过的块数。
             f.seek(downloaded)
             log.info(
-                f'处理"{temp_path}"需要跳过的块:{downloaded}//{chunk_size}={skip_chunks},文件指针已移动到{downloaded}。')
+                f'处理"{temp_path}"需要跳过的块:"{downloaded}//{chunk_size}={skip_chunks}",文件指针已移动到"{downloaded}"。')
             while True:
                 try:
                     async for chunk in self.app.client.stream_media(
@@ -1885,7 +1885,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             f'{_t(KeyWord.FILE)}:"{file_path}",'
             f'{_t(KeyWord.ERROR_SIZE)}:{format_local_size},'
             f'{_t(KeyWord.ACTUAL_SIZE)}:{format_sever_size},'
-            f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, temp_file_path, DownloadStatus.FAILURE))},'
+            f'{_t(KeyWord.TYPE)}:{_t(self.app.get_download_type(message, DownloadStatus.FAILURE))},'
             f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
         )
         return False
@@ -1949,6 +1949,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
                     num=self.app.current_task_num
                 )
+                if download_task is not None:
+                    download_task.clear_error(key=file_name)  # 下载成功(含重试成功),清除该文件此前的失败记录。
                 if self.uploader:
                     if with_upload and isinstance(with_upload, dict):
                         try:

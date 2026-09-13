@@ -105,6 +105,8 @@ class DownloadTask:
         retry_dict: dict = retry if retry else {'id': -1, 'count': 0}
         retry_id: int = int(retry_dict.get('id') or -1)
         retry_count: int = int(retry_dict.get('count') or 0)
+        if retry_count == 0:
+            task.clear_error()  # 非重试(重新拉取)的任务,清空该链接此前的失败记录。
         for _message in messages:
             key: int = int(getattr(_message, 'id', 0))
             if retry_count != 0 and key != retry_id:
@@ -177,6 +179,13 @@ class DownloadTask:
     def set_error(self, value, key: Optional[str] = None) -> None:
         """记录下载错误信息。"""
         self.error_msg[key if key else 'all_member'] = value
+
+    def clear_error(self, key: Optional[str] = None) -> None:
+        """清除下载错误信息,指定key时只清除该文件的失败记录。"""
+        if key is None:
+            self.error_msg.clear()
+            return
+        self.error_msg.pop(key, None)
 
     def on_create_task(func):
         @wraps(func)
