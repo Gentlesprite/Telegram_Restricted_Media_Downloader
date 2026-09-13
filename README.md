@@ -1324,11 +1324,13 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
 
   ```bash
   docker run -it --rm \
+    --name trmd \
     -v ./config:/app/TRMD \
     -v ./sessions:/app/sessions \
     -v ./downloads:/app/downloads \
     -v ./temp:/app/temp \
     -v ./form:/app/form \
+    -p 2921:2921 \
     -e TZ=Asia/Shanghai \
     gentlesprite/telegram_restricted_media_downloader:latest \
     python main.py --config /app/TRMD/config.yaml --port 2921
@@ -1337,7 +1339,7 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
 - 如果是通过`Windows`使用`wsl2`运行`docker`：
 
   ```bash
-  docker run -it --rm -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -v ./form:/app/form -e TZ=Asia/Shanghai gentlesprite/telegram_restricted_media_downloader:latest python main.py --config /app/TRMD/config.yaml --port 2921
+  docker run -it --rm --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -v ./form:/app/form -e TZ=Asia/Shanghai gentlesprite/telegram_restricted_media_downloader:latest python main.py --config /app/TRMD/config.yaml --port 2921
   ```
 
 - 如果已配置完成的情况下，直接创建并启动容器：
@@ -1351,7 +1353,6 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
     -v ./temp:/app/temp \
     -v ./form:/app/form \
     -p 2921:2921 \
-    -w /app \
     -e TZ=Asia/Shanghai \
     --restart unless-stopped \
     gentlesprite/telegram_restricted_media_downloader:latest \
@@ -1406,6 +1407,7 @@ _账号密码由系统随机生成，使用浏览器打开[http://127.0.0.1:2921
 - 首次通过账号密码登录成功后，面板会向**此浏览器**下发一个有效期`30`天的记名`Cookie`（名称`TRMD_WEB_SESSION`），之后通过**此浏览器**访问该页面**免密进入**。
 - 记名令牌持久化保存于`%APPDATA%\TRMD\.TRMD_WEB_SESSION`（`Linux`下为`~/.config/TRMD/.TRMD_WEB_SESSION`），因此**软件重启后依然免密**，无需重新输入随机账号密码。
 - 如需更换登录状态，删除该令牌文件并清除浏览器中对应站点的`Cookie`即可。
+- 如需远程访问，请自行查看并替换`ip`地址为公网`ip`。
 
 其他命令：
 
