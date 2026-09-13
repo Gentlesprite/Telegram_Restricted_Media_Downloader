@@ -12,6 +12,11 @@ var SUMMARY_IDS = {
 };  // 下载与上传各自独立的总进度面板,避免相互覆盖。
 var SECTION_KEY = 'trmd_section';
 var LISTEN_KEY = 'trmd_listen';
+var COLLAPSE_KEY = 'trmd_collapsed';  // 各分组折叠状态的本地存储键。
+var ALL_KEY = 'trmd_all_collapsed';  // 下载页全部折叠开关的本地存储键。
+var UPLOAD_ALL_KEY = 'trmd_upload_all_collapsed';  // 上传页全部折叠开关的本地存储键。
+var LINK_LAST_KEY = 'trmd_link_last';  // 下载页链接层最后一次手动选择的本地存储键。
+var UPLOAD_LAST_KEY = 'trmd_upload_last';  // 上传页频道层最后一次手动选择的本地存储键。
 var LISTEN_TABS = ['forward', 'download'];  // 监听页的选项卡:转发、下载。
 
 var STATE_TEXT = {
@@ -70,6 +75,8 @@ var UPLOAD_ICON = {
 var collapsed = {};
 var allCollapsed = false;
 var uploadAllCollapsed = false;
+var lastLinkCollapsed = true;  // 下载页链接层最后的手动选择,缺省折叠以保持原有默认。
+var lastUploadCollapsed = false;  // 上传页频道层最后的手动选择,缺省展开以保持原有默认。
 var UNGROUPED_NAME = '未分组';
 var currentSection = 'download';
 var currentListen = 'forward';
@@ -261,7 +268,7 @@ function channelBlock(group, live) {
 
 function linkBlock(link, live) {
     var key = 'link:' + link.link;
-    var isCollapsed = collapsed[key] === undefined ? true : collapsed[key];  // 链接默认折叠,避免一次性铺开。
+    var isCollapsed = collapsed[key] === undefined ? lastLinkCollapsed : collapsed[key];  // 无记录的链接沿用上次的链接层选择。
     var members = link.queue || [];
     var stat = groupStat(members, live);
     var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '" data-level="2">' +
@@ -320,6 +327,14 @@ function bindGroups() {
             body.style.display = hide ? 'none' : '';
             group.className = hide ? 'group' : 'group open';
             collapsed[key] = hide;
+            saveState(COLLAPSE_KEY, JSON.stringify(collapsed));  // 记住本次折叠,刷新后恢复。
+            if (group.getAttribute('data-level') === '2') {
+                lastLinkCollapsed = hide;  // 下载页链接层的手动选择。
+                saveState(LINK_LAST_KEY, hide ? '1' : '0');
+            } else if (group.closest('#upload')) {
+                lastUploadCollapsed = hide;  // 上传页频道层的手动选择。
+                saveState(UPLOAD_LAST_KEY, hide ? '1' : '0');
+            }
             syncHeadLabel();
             syncUploadHeads();
         };
@@ -343,10 +358,19 @@ function setAllGroups(selector, hide) {
         nodes[i].className = hide ? 'group' : 'group open';
         collapsed[key] = hide;
     }
+    saveState(COLLAPSE_KEY, JSON.stringify(collapsed));  // 批量折叠后同样落盘,刷新后保持。
+    if (selector === '#download') {
+        lastLinkCollapsed = hide;  // 批量操作同样视为一次链接层选择。
+        saveState(LINK_LAST_KEY, hide ? '1' : '0');
+    } else {
+        lastUploadCollapsed = hide;  // 批量操作同样视为一次频道层选择。
+        saveState(UPLOAD_LAST_KEY, hide ? '1' : '0');
+    }
 }
 
 function toggleAll() {
     allCollapsed = !allCollapsed;
+    saveState(ALL_KEY, allCollapsed ? '1' : '0');
     setAllGroups('#download', allCollapsed);
     syncToggleAll();
     syncHeadLabel();
@@ -354,6 +378,7 @@ function toggleAll() {
 
 function toggleUploadAll() {
     uploadAllCollapsed = !uploadAllCollapsed;
+    saveState(UPLOAD_ALL_KEY, uploadAllCollapsed ? '1' : '0');
     setAllGroups('#upload', uploadAllCollapsed);
     syncToggleUpload();
     syncUploadHeads();
@@ -653,7 +678,7 @@ function uploadStatusCell(group) {
 
 function uploadBlock(group) {
     var key = 'upload:' + group.channel;
-    var isCollapsed = collapsed[key] === undefined ? uploadAllCollapsed : collapsed[key];  // 上传分组默认展开。
+    var isCollapsed = collapsed[key] === undefined ? lastUploadCollapsed : collapsed[key];  // 无记录的上传分组沿用上次的频道层选择。
     var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '" data-level="1">' +
         '<div class="group-head" data-channel="' + escAttr(key) + '">' +
         '<span class="cell-name"><span class="arrow"></span>' +
@@ -909,9 +934,19 @@ var savedListen = '';
 try {
     savedSection = localStorage.getItem(SECTION_KEY) || '';
     savedListen = localStorage.getItem(LISTEN_KEY) || '';
+    collapsed = JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}') || {};  // 读回各分组折叠状态。
+    allCollapsed = localStorage.getItem(ALL_KEY) === '1';
+    uploadAllCollapsed = localStorage.getItem(UPLOAD_ALL_KEY) === '1';
+    lastLinkCollapsed = localStorage.getItem(LINK_LAST_KEY) !== '0';  // 无记录时保持链接层默认折叠。
+    lastUploadCollapsed = localStorage.getItem(UPLOAD_LAST_KEY) === '1';  // 无记录时保持上传频道层默认展开。
 } catch (e) {
     savedSection = '';
     savedListen = '';
+    collapsed = {};
+    allCollapsed = false;
+    uploadAllCollapsed = false;
+    lastLinkCollapsed = true;
+    lastUploadCollapsed = false;
 }
 bindSections();
 bindListenTabs();
