@@ -151,6 +151,16 @@ class DownloadTask:
         items: list = [item for item in self.items.values() if item.get('status') == QueueStatus.PENDING]
         return {'items': items[:limit], 'total': len(items)}
 
+    def get_unfinished_items(self, limit: int = 50) -> dict:
+        """获取该下载任务中未完成(排队中或下载中)的消息。
+
+        同时包含DOWNLOADING的消息,避免消息一开始下载就从排队列表消失,
+        导致网页面板的链接项在展开与折叠之间反复切换。
+        """
+        status: tuple = (QueueStatus.PENDING, QueueStatus.WAITING, QueueStatus.DOWNLOADING)
+        items: list = [item for item in self.items.values() if item.get('status') in status]
+        return {'items': items[:limit], 'total': len(items)}
+
     @classmethod
     def queued_items(cls, limit: int = 50) -> list:
         """获取尚未开始下载(PENDING或WAITING)的消息。"""

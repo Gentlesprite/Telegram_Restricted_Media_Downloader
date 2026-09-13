@@ -256,14 +256,14 @@ class Web:
                 member_num: int = int(task.member_num or 0)
                 complete_num: int = int(task.complete_num or 0)
                 fail_num: int = int(task.fail_num or 0)
-                queue: dict = task.get_pending_items()
+                queue: dict = task.get_unfinished_items()
                 result.append({
                     'link': str(link),
                     'complete': complete_num,
                     'member': member_num,
                     'failed': fail_num,
                     'remaining': max(member_num - complete_num - fail_num, 0),
-                    'queue': [self.format_queue_message(item) for item in queue.get('items')],
+                    'queue': [self.format_queue_message(item, item.get('status')) for item in queue.get('items')],
                     'queue_total': queue.get('total'),
                     'percent': round(complete_num / member_num * 100, 1) if member_num else 0.0
                 })
@@ -271,11 +271,17 @@ class Web:
             log.debug(f'获取链接进度时出错,{_t(KeyWord.REASON)}:"{e}"')
         return result
 
-    def format_queue_message(self, item: dict) -> dict:
+    def format_queue_message(self, item: dict, state: Union[str, None] = None) -> dict:
         """解析排队消息的展示信息,首次解析后缓存,避免每次轮询重复解析。"""
         meta: Union[dict, None] = item.get('meta')
-        if meta is not None:
-            return meta
+        if meta is None:
+            meta = self.parse_queue_message(item)
+            item['meta'] = meta
+        meta['state'] = str(state or '')  # 排队状态会变化,不写入缓存。
+        return meta
+
+    def parse_queue_message(self, item: dict) -> dict:
+        """解析排队消息的名称、大小与日期。"""
         message = item.get('message')
         result: dict = {'name': '消息 ' + str(getattr(message, 'id', '')), 'size': '', 'date': ''}
         try:
@@ -288,7 +294,6 @@ class Web:
                 result['size'] = MetaData.suitable_units_display(getattr(getattr(message, dtype), 'file_size', 0))
         except Exception as e:
             log.debug(f'解析排队消息时出错,{_t(KeyWord.REASON)}:"{e}"')
-        item['meta'] = result
         return result
 
     def get_pending(self) -> list:

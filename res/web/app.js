@@ -97,17 +97,43 @@ function doneRow(task) {
 }
 
 function queueRow(item) {
+    var downloading = item.state === 'downloading';
+    var text = downloading ? '下载中' : '排队中';
     return '<div class="task-row pending-row">' +
-        '<span class="cell-name"><span class="ficon">⏳</span>' +
+        '<span class="cell-name"><span class="ficon">' + (downloading ? '📥' : '⏳') + '</span>' +
         '<span class="fname" title="' + escAttr(item.name) + '">' + esc(item.name) + '</span>' +
         (item.date ? '<span class="gcount">' + esc(item.date) + '</span>' : '') +
         '</span>' +
-        '<span class="cell-progress"><span class="pct pending">排队中</span></span>' +
+        '<span class="cell-progress"><span class="pct' + (downloading ? '' : ' pending') + '">' + text + '</span></span>' +
         '<span class="cell-size">' + dash(item.size) + '</span>' +
         '<span class="cell-speed">—</span>' +
         '<span class="cell-remain">—</span>' +
-        '<span class="cell-status status-pending">排队中</span>' +
+        '<span class="cell-status ' + (downloading ? 'status-running' : 'status-pending') + '">' + text + '</span>' +
         '</div>';
+}
+
+function pendingBlock(items) {
+    if (!items || items.length === 0) {
+        return '';
+    }
+    var key = 'pending';
+    var isCollapsed = collapsed[key] === undefined ? allCollapsed : collapsed[key];
+    var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '">' +
+        '<div class="group-head" data-channel="' + escAttr(key) + '">' +
+        '<span class="cell-name"><span class="arrow"></span>' +
+        '<span class="gname">排队中</span>' +
+        '<span class="gcount">' + items.length + ' 条等待下载</span></span>' +
+        '<span class="cell-progress"><span class="pct pending">等待下载</span></span>' +
+        '<span class="cell-size">—</span>' +
+        '<span class="cell-speed">—</span>' +
+        '<span class="cell-remain">—</span>' +
+        '<span class="cell-status status-pending">' + items.length + ' 条</span>' +
+        '</div>' +
+        '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
+    for (var i = 0; i < items.length; i++) {
+        html += pendingRow(items[i]);
+    }
+    return html + '</div></div>';
 }
 
 function linkStatusCell(link) {
@@ -310,9 +336,7 @@ function renderList(data) {
     var html = '';
     var body = '';
     var i;
-    for (i = 0; i < (data.pending || []).length; i++) {
-        html += pendingRow(data.pending[i]);
-    }
+    html += pendingBlock(data.pending);
     for (i = 0; i < data.groups.length; i++) {
         body += groupBlock(data.groups[i]);
     }
