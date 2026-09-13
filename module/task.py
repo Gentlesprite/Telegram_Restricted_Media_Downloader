@@ -157,7 +157,8 @@ class DownloadTask:
             size: Optional[str] = None,
             size_byte: Optional[int] = None,
             date: Optional[str] = None,
-            task_id: Optional[int] = None
+            task_id: Optional[int] = None,
+            note: Optional[str] = None
     ) -> None:
         """登记或更新链接下某个消息成员的展示信息与状态。"""
         key: int = int(message_id)
@@ -167,7 +168,8 @@ class DownloadTask:
             'size_byte': 0,
             'date': '',
             'state': QueueStatus.PENDING,
-            'task_id': None
+            'task_id': None,
+            'note': ''
         }
         if status:
             member['state'] = status
@@ -181,6 +183,8 @@ class DownloadTask:
             member['date'] = date
         if task_id is not None:
             member['task_id'] = task_id
+        if note:
+            member['note'] = note
         self.member_info[key] = member
 
     def remove_item(self, message_id: Union[int, str]) -> None:

@@ -351,7 +351,8 @@ class Web:
                 'size_byte': int(member.get('size_byte') or 0),
                 'date': member.get('date') or meta.get('date') or '',
                 'state': member.get('state') or QueueStatus.PENDING,
-                'task_id': member.get('task_id')
+                'task_id': member.get('task_id'),
+                'note': member.get('note') or ''
             })
         return result
 

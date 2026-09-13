@@ -163,8 +163,15 @@ function memberRow(item) {
     var text = STATE_TEXT[state] || '排队中';
     var cls = STATE_CLASS[state] || 'status-pending';
     var pending = state === 'pending' || state === 'waiting';
-    var progress = state === 'success' ? progressCell(100) :
-        '<span class="cell-progress"><span class="pct' + (pending ? ' pending' : '') + '">' + text + '</span></span>';
+    var progress;
+    if (state === 'success') {
+        progress = progressCell(100);
+    } else if (item.note) {  // 不支持或被忽略的类型拿不到文件类型,进度栏改为显示具体原因,避免与普通跳过混淆。
+        progress = '<span class="cell-progress"><span class="pct note" title="' + escAttr(item.note) + '">' +
+            esc(item.note) + '</span></span>';
+    } else {
+        progress = '<span class="cell-progress"><span class="pct' + (pending ? ' pending' : '') + '">' + text + '</span></span>';
+    }
     return '<div class="task-row member-row">' +
         '<span class="cell-name"><span class="ficon">' + (STATE_ICON[state] || '⏳') + '</span>' +
         '<span class="fname" title="' + escAttr(item.name) + '">' + esc(item.name) + '</span>' +

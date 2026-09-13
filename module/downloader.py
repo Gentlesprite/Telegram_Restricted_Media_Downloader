@@ -1909,7 +1909,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
             else:
                 task.remove_item(message_id=message.id)  # 被忽略的类型直接出队。
+                task.member_num = max(task.member_num - 1, 0)  # 不支持或被忽略的类型不计入总数,避免链接状态的剩余条数无法归零。
                 _error = '不支持或被忽略的类型(已取消)。'
+                _reason: str = _error.replace('。', '')
                 try:
                     _, __, sever_file_size, file_name, ____, format_file_size = self.get_media_meta(
                         message=message,
@@ -1923,20 +1925,21 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.SKIP))},'
                             f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。'
                         )
-                        task.set_error(key=file_name, value=_error.replace('。', ''))
+                        task.set_error(key=file_name, value=_reason)
                         task.update_member(
                             message_id=message.id,
                             status=DownloadStatus.SKIP,
                             name=file_name,
                             size=format_file_size,
                             size_byte=sever_file_size,
-                            date=str(getattr(message, 'date', '') or '')[:10]
+                            date=str(getattr(message, 'date', '') or '')[:10],
+                            note=_reason
                         )
                     else:
                         raise Exception('不支持或被忽略的类型。')
                 except Exception as _:
-                    task.set_error(value=_error.replace('。', ''))
-                    task.update_member(message_id=message.id, status=DownloadStatus.SKIP)
+                    task.set_error(value=_reason)
+                    task.update_member(message_id=message.id, status=DownloadStatus.SKIP, note=_reason)
                     console.log(
                         f'{_t(KeyWord.DOWNLOAD_TASK)}'
                         f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
