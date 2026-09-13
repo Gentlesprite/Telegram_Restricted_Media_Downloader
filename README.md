@@ -1412,22 +1412,22 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
   docker run -d --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -v ./form:/app/form -p 2921:2921 -w /app -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest python main.py --config /app/TRMD/config.yaml --port 2921
   ```
 
-- 查看运行日志：
+- 启动后可在终端查看`Web配置`表格，也可在`Telegram`中向机器人发送`/help`查看`Web配置`（包含端口、账号、密码与访问链接），类似下表：
+
+  | 属性 | 内容                    |
+  |----| ----------------------- |
+  | 端口 | `2921`                  |
+  | 账号 | `cLJqKG3b`              |
+  | 密码 | `AiJaKSObcRCZ`          |
+  | 链接 | `http://127.0.0.1:2921` |
+
+  _账号密码由系统随机生成，使用浏览器打开[http://127.0.0.1:2921](http://127.0.0.1:2921)网页输入账号密码即可进入。_
+
+- 如需查看运行日志：
 
   ```bash
   docker logs trmd
   ```
-
-- 正常运行时会在运行日志中输出一个`Web配置`表格，类似下表：
-
-  | 属性     | 内容                    |
-  | -------- | ----------------------- |
-  | 端口     | `2921`                  |
-  | 账号     | `cLJqKG3b`              |
-  | 密码     | `AiJaKSObcRCZ`          |
-  | 访问链接 | `http://127.0.0.1:2921` |
-
-  _账号密码由系统随机生成，使用浏览器打开[http://127.0.0.1:2921](http://127.0.0.1:2921)网页输入账号密码即可进入。_
 
 - **不再使用**时，停止并删除容器：
 

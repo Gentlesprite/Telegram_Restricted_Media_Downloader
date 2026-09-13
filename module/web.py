@@ -291,7 +291,7 @@ class Web:
         self.server.web = self
         self.thread = threading.Thread(target=self.server.serve_forever, name='TRMDWeb', daemon=True)
         self.thread.start()
-        log.info(f'网页面板已启动,访问链接:"{self.protocol}://127.0.0.1:{self.port}"。')
+        log.info(f'网页面板已启动,链接:"{self.protocol}://127.0.0.1:{self.port}"。')
         self.print_meta()
         return True
 
@@ -312,7 +312,7 @@ class Web:
                 [_t(WebMeta.PORT), self.port],
                 [_t(WebMeta.USERNAME), self.username],
                 [_t(WebMeta.PASSWORD), self.password],
-                ['访问链接', f'{self.protocol}://127.0.0.1:{self.port}']
+                ['链接', f'{self.protocol}://127.0.0.1:{self.port}']
             ],
             show_lines=True
         ).print_meta()

@@ -442,11 +442,21 @@ class Bot:
                 last_bot_messages.append(last_bot_message)
         return last_bot_messages[-1]
 
-    @staticmethod
     async def help(
+            self,
             client: Union[pyrogram.Client, None] = None,
             message: Union[pyrogram.types.Message, None] = None
     ) -> Union[None, dict]:  # client与message都为None时,返回keyboard与text。
+        web = getattr(self, 'web', None)  # 网页面板实例,用于展示认证信息。
+        web_auth: str = ''
+        if web is not None:
+            web_auth = (
+                f'🌐 Web配置:\n'
+                f'🔌 端口: {web.port}'
+                f'👤 账号: ||{web.username}||\n'
+                f'🔑 密码: ||{web.password}||\n'
+                f'🔗 链接: {web.protocol}://127.0.0.1:{web.port}\n\n'
+            )
         keyboard = InlineKeyboardMarkup(
             [
                 [
@@ -494,6 +504,7 @@ class Bot:
             f'📤 {BotCommandText.with_description(BotCommandText.UPLOAD)}\n'
             f'🌳 {BotCommandText.with_description(BotCommandText.UPLOAD_R)}\n'
             f'💬 {BotCommandText.with_description(BotCommandText.DOWNLOAD_CHAT)}\n\n'
+            f'{web_auth}'
             f'✨ 其他功能:\n'
             f'📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`类型的消息给我,即可创建下载任务。\n'
         )

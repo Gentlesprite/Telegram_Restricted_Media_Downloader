@@ -37,4 +37,4 @@ EXPOSE 2921
 # --config: 用户配置存到挂载目录，容器重启不丢失。
 # 网页面板默认启用，端口默认为2921，可通过--port指定。
 # session_directory和temp_directory可在config.yaml中自行配置。
-CMD ["python", "main.py", "--config", "/app/TRMD/config.yaml"]
+CMD ["python", "main.py", "--config", "/app/TRMD/config.yaml", "--port", "2921"]
