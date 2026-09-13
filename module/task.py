@@ -474,6 +474,12 @@ class UploadTask:
             self.file_part.append(file_part)
             self.save_json()
 
+    def reset_upload(self, file_id: int):
+        """丢弃历史分片缓存,改用新的file_id重新上传全部分片。"""
+        self.file_id = file_id
+        self.file_part = []
+        self.save_json()
+
     @staticmethod
     def has_pending_media_group_tasks() -> bool:
         """检查是否还有IDLE或UPLOADING状态且属于媒体组的任务。"""

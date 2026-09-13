@@ -20,6 +20,7 @@ import pyrogram
 from pyrogram import raw, utils
 from pyrogram.errors.exceptions import (
     FilePartMissing,
+    FilePartLengthInvalid,
     ChatAdminRequired,
     PhotoInvalidDimensions,
     PhotoSaveFileInvalid
@@ -493,6 +494,7 @@ class TelegramUploader:
             return None
 
         retry = 0
+        reset = 0
         while retry < self.max_upload_retries:
             try:
                 await self.__add_task(
@@ -508,6 +510,21 @@ class TelegramUploader:
                 fp = upload_task.file_part
                 if missing_part in fp:
                     fp.remove(missing_part)
+                continue
+            except FilePartLengthInvalid as e:
+                # 复用了历史会话的分片缓存,但服务器端已不存在这些分片,最终上报分片长度无效,需要丢弃缓存并换用新的file_id重传全部分片。
+                if reset >= self.max_upload_retries:
+                    upload_task.error_msg = str(e)
+                    upload_task.status = UploadStatus.FAILURE
+                    return None
+                reset += 1
+                upload_task.reset_upload(file_id=self.client.rnd_id())
+                console.log(
+                    f'{_t(KeyWord.UPLOAD_TASK)}'
+                    f'{_t(KeyWord.RESUME)}:"{file_path}",'
+                    f'{_t(KeyWord.RETRY_TIMES)}:{reset}/{self.max_upload_retries},'
+                    f'{_t(KeyWord.REASON)}:"{e}"'
+                )
                 continue
             except (ChatAdminRequired, ChannelPrivate_400, ChannelPrivate_406) as e:
                 upload_task.error_msg = str(e)
