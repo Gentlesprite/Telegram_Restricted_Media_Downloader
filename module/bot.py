@@ -452,7 +452,7 @@ class Bot:
         if web is not None:
             web_auth = (
                 f'🌐 Web配置:\n'
-                f'🔌 端口: {web.port}'
+                f'🔌 端口: {web.port}\n'
                 f'👤 账号: ||{web.username}||\n'
                 f'🔑 密码: ||{web.password}||\n'
                 f'🔗 链接: {web.protocol}://127.0.0.1:{web.port}\n\n'
