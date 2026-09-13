@@ -6,6 +6,7 @@
 import os
 import json
 import math
+import time
 import asyncio
 
 from functools import wraps
@@ -24,6 +25,7 @@ from module.path_tool import (
 )
 from module.enums import (
     DownloadStatus,
+    QueueStatus,
     UploadStatus,
     KeyWord
 )
@@ -49,25 +51,132 @@ class ChatInfo:
 
 
 class DownloadTask:
-    LINK_INFO: dict = {}
+    """下载任务,按链接维护待下载的消息与其下载进度统计。"""
+
+    TASKS: dict = {}  # 链接 -> DownloadTask。
+    ORDER: list = []  # 链接首次出现的顺序,调度器按此顺序派发。
     COMPLETE_LINK: set = set()
 
-    def __init__(
-            self,
-            link: str,
-            link_type: Union[str, None],
-            member_num: int,
-            complete_num: int,
-            file_name: set,
-            error_msg: dict
-    ):
-        DownloadTask.LINK_INFO[link] = {
-            'link_type': link_type,
-            'member_num': member_num,
-            'complete_num': complete_num,
-            'file_name': file_name,
-            'error_msg': error_msg
-        }
+    def __init__(self, link: Union[str, int]):
+        self.link: str = str(link)
+        self.link_type: Optional[str] = None
+        self.chat_id: Union[str, int, None] = None
+        self.member_num: int = 0
+        self.complete_num: int = 0
+        self.file_name: set = set()
+        self.error_msg: dict = {}
+        self.items: dict = {}  # 消息ID -> 待下载消息(dict,字段见add_item)。
+
+    @classmethod
+    def get_or_create(cls, link: Union[str, int]) -> "DownloadTask":
+        """获取链接对应的下载任务,不存在时创建并记录顺序。"""
+        _link: str = str(link)
+        task: Union[DownloadTask, None] = cls.TASKS.get(_link)
+        if task is None:
+            task = cls(_link)
+            cls.TASKS[_link] = task
+            cls.ORDER.append(_link)
+        return task
+
+    @classmethod
+    def get(cls, link: Union[str, int, None]) -> Union["DownloadTask", None]:
+        """获取链接对应的下载任务。"""
+        return cls.TASKS.get(str(link))
+
+    @classmethod
+    def ordered_tasks(cls) -> list:
+        """按链接首次出现的顺序返回下载任务。"""
+        return [cls.TASKS[link] for link in list(cls.ORDER) if link in cls.TASKS]
+
+    @classmethod
+    def add_item(
+            cls,
+            link: Union[str, int],
+            chat_id: Union[str, int],
+            message: Union[pyrogram.types.Message, list],
+            link_type: Optional[str] = None,
+            retry: Optional[dict] = None,
+            with_upload: Optional[dict] = None,
+            diy_download_type: Optional[list] = None
+    ) -> None:
+        """将消息加入下载任务,已存在时重置为排队状态。"""
+        task: DownloadTask = cls.get_or_create(link)
+        messages: list = message if isinstance(message, list) else [message]
+        retry_dict: dict = retry if retry else {}
+        retry_id: int = int(retry_dict.get('id') or -1)
+        retry_count: int = int(retry_dict.get('count') or 0)
+        for _message in messages:
+            key: int = int(getattr(_message, 'id', 0))
+            if retry_count != 0 and key != retry_id:
+                continue  # 重试时只保留需要重试的那条消息,避免整个媒体组被重复排队。
+            item: Union[dict, None] = task.items.get(key)
+            if item is None:
+                task.items[key] = {
+                    'link': task.link,
+                    'chat_id': chat_id,
+                    'message': _message,
+                    'link_type': link_type,
+                    'retry': retry_dict,
+                    'with_upload': with_upload,
+                    'diy_download_type': diy_download_type,
+                    'status': QueueStatus.PENDING,
+                    'create_time': time.time(),
+                    'meta': None  # 网页面板的展示信息缓存。
+                }
+            else:
+                item['status'] = QueueStatus.PENDING  # 重试时重置状态。
+
+    def set_item_status(self, message_id: Union[int, str], status: str) -> None:
+        """设置指定消息的排队状态。"""
+        item: Union[dict, None] = self.items.get(int(message_id))
+        if item is not None:
+            item['status'] = status
+
+    def remove_item(self, message_id: Union[int, str]) -> None:
+        """从下载任务中移除指定的消息。"""
+        self.items.pop(int(message_id), None)
+
+    def get_pending_items(self, limit: int = 50) -> dict:
+        """获取该下载任务中排队(PENDING)的消息。"""
+        items: list = [item for item in self.items.values() if item.get('status') == QueueStatus.PENDING]
+        return {'items': items[:limit], 'total': len(items)}
+
+    @classmethod
+    def queued_items(cls, limit: int = 50) -> list:
+        """获取尚未开始下载(PENDING或WAITING)的消息。"""
+        result: list = []
+        for task in cls.ordered_tasks():
+            for item in task.items.values():
+                if item.get('status') in (QueueStatus.PENDING, QueueStatus.WAITING):
+                    result.append(item)
+        return result[:limit]
+
+    @classmethod
+    def pick_pending(cls) -> Union[dict, None]:
+        """按链接首次出现的顺序取出一个排队(PENDING)中的消息。"""
+        for task in cls.ordered_tasks():
+            for item in task.items.values():
+                if item.get('status') == QueueStatus.PENDING:
+                    return item
+        return None
+
+    @classmethod
+    def has_task(cls) -> bool:
+        """判断是否还存在未处理完毕或未开始的任务。"""
+        for task in cls.ordered_tasks():
+            for item in task.items.values():
+                if item.get('status') in (QueueStatus.PENDING, QueueStatus.WAITING, QueueStatus.DOWNLOADING):
+                    return True
+        return False
+
+    def add_file_name(self, file_name: str) -> None:
+        """记录已完成的文件名,并同步完成数。"""
+        self.file_name.add(file_name)
+        self.complete_num = len(self.file_name)
+
+    def set_error(self, value, key: Optional[str] = None) -> None:
+        """记录下载错误信息。"""
+        self.error_msg[key if key else 'all_member'] = value
 
     def on_create_task(func):
         @wraps(func)
@@ -76,11 +185,12 @@ class DownloadTask:
             link = message_ids
             if isinstance(message_ids, pyrogram.types.Message):
                 link = message_ids.link if message_ids.link else message_ids.id
-            DownloadTask(link=link, link_type=None, member_num=0, complete_num=0, file_name=set(), error_msg={})
+            task: DownloadTask = DownloadTask.get_or_create(link)
             res: dict = await func(self, *args, **kwargs)
-            chat_id, link_type, member_num, status, e_code = res.values()
+            status: Union[str, None] = res.get('status')
+            e_code: Union[dict, None] = res.get('e_code')
             if status == DownloadStatus.FAILURE:
-                DownloadTask.set(link=link, key='error_msg', value=e_code)
+                task.error_msg = e_code
                 reason: str = e_code.get('error_msg')
                 if reason:
                     log.error(
@@ -108,43 +218,23 @@ class DownloadTask:
             if all(i is None for i in res):
                 return None
             link, file_name = res
-            DownloadTask.add_file_name(link=link, file_name=file_name)
-            for i in DownloadTask.LINK_INFO.items():
-                compare_link: str = i[0]
-                info: dict = i[1]
-                if compare_link == link:
-                    info['complete_num'] = len(info.get('file_name'))
-            all_num: int = DownloadTask.get(link=link, key='member_num')
-            complete_num: int = DownloadTask.get(link=link, key='complete_num')
-            if all_num == complete_num:
+            task: Union[DownloadTask, None] = DownloadTask.get(link)
+            if task is None:
+                return res
+            task.add_file_name(file_name)
+            if task.member_num == task.complete_num:
                 console.log(
                     f'{_t(KeyWord.DOWNLOAD_TASK)}'
                     f'{_t(KeyWord.LINK)}:"{link}",'
                     f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SUCCESS)}。'
                 )
-                DownloadTask.LINK_INFO.get(link)['error_msg'] = {}
-                DownloadTask.COMPLETE_LINK.add(link)
+                task.error_msg = {}
+                DownloadTask.COMPLETE_LINK.add(task.link)
                 asyncio.create_task(self.done_notice(f'"{link}"下载完成。'))
                 log.info(f'链接:"{link}"下载完成。')
             return res
 
         return wrapper
-
-    @staticmethod
-    def add_file_name(link, file_name):
-        DownloadTask.LINK_INFO.get(link).get('file_name').add(file_name)
-
-    @staticmethod
-    def get(link: str, key: str) -> Union[str, int, set, dict, None]:
-        return DownloadTask.LINK_INFO.get(link).get(key)
-
-    @staticmethod
-    def set(link: str, key: str, value):
-        DownloadTask.LINK_INFO.get(link)[key] = value
-
-    @staticmethod
-    def set_error(link: str, value, key: Union[str, None] = None):
-        DownloadTask.LINK_INFO.get(link).get('error_msg')[key if key else 'all_member'] = value
 
 
 class UploadTask:

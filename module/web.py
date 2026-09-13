@@ -29,7 +29,6 @@ from module.task import (
     UploadTask,
     ChatInfo
 )
-from module.queue import DownloadQueue
 from module.language import _t
 from module.parser import PARSE_ARGS
 from module.util import (
@@ -252,10 +251,10 @@ class Web:
         """获取每个下载链接的完成进度。"""
         result: list = []
         try:
-            for link, info in list(DownloadTask.LINK_INFO.items()):
-                member_num: int = int(info.get('member_num') or 0)
-                complete_num: int = int(info.get('complete_num') or 0)
-                queue: dict = DownloadQueue.get_pending(str(link))
+            for link, task in list(DownloadTask.TASKS.items()):
+                member_num: int = int(task.member_num or 0)
+                complete_num: int = int(task.complete_num or 0)
+                queue: dict = task.get_pending_items()
                 result.append({
                     'link': str(link),
                     'complete': complete_num,
@@ -269,12 +268,12 @@ class Web:
             log.debug(f'获取链接进度时出错,{_t(KeyWord.REASON)}:"{e}"')
         return result
 
-    def format_queue_message(self, item) -> dict:
+    def format_queue_message(self, item: dict) -> dict:
         """解析排队消息的展示信息,首次解析后缓存,避免每次轮询重复解析。"""
-        meta: Union[dict, None] = getattr(item, 'meta', None)
+        meta: Union[dict, None] = item.get('meta')
         if meta is not None:
             return meta
-        message = item.message
+        message = item.get('message')
         result: dict = {'name': '消息 ' + str(getattr(message, 'id', '')), 'size': '', 'date': ''}
         try:
             result['date'] = str(getattr(message, 'date', '') or '')[:10]
@@ -286,20 +285,20 @@ class Web:
                 result['size'] = MetaData.suitable_units_display(getattr(getattr(message, dtype), 'file_size', 0))
         except Exception as e:
             log.debug(f'解析排队消息时出错,{_t(KeyWord.REASON)}:"{e}"')
-        item.meta = result
+        item['meta'] = result
         return result
 
     def get_pending(self) -> list:
         """获取排队中(尚未开始下载)的任务。"""
         result: list = []
         try:
-            for item in DownloadQueue.get_queued():
-                channel: str = str(item.chat_id)
+            for item in DownloadTask.queued_items():
+                channel: str = str(item.get('chat_id'))
                 result.append({
                     'channel': channel,
                     'channel_name': Web.format_channel(channel),
-                    'name': '消息 ' + str(getattr(item.message, 'id', '')),
-                    'link': item.link
+                    'name': '消息 ' + str(getattr(item.get('message'), 'id', '')),
+                    'link': item.get('link')
                 })
         except Exception as e:
             log.debug(f'获取等待下载槽位的任务时出错,{_t(KeyWord.REASON)}:"{e}"')

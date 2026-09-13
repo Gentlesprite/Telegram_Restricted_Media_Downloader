@@ -47,7 +47,6 @@ class Application(UserConfig, StatisticalTable):
         self.client = self.build_client()
         self.check_download_type()
         self.current_task_num: int = 0
-        self.enable_queue: bool = True  # v1.7.x 启用下载调度器,置为False可回退为阻塞式限流。
 
     def build_client(self) -> pyrogram.Client:
         """用填写的配置文件,构造pyrogram客户端。"""

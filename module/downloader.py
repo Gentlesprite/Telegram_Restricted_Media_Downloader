@@ -87,7 +87,6 @@ from module.path_tool import (
     validate_title
 )
 from module.task import DownloadTask, UploadTask, ChatInfo
-from module.queue import DownloadQueue, QueueItem
 from module.enums import QueueStatus
 from module.stdio import ProgressBar, Base64Image, MetaData
 from module.parser import PARSE_ARGS
@@ -125,7 +124,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.uploader: Union[TelegramUploader, None] = None
         self.cd: Union[CallbackData, None] = None
         self.my_id: int = 0
-        self.web: Union[Web, None] = Web(progress=self.pb.progress, app=self.app) if PARSE_ARGS.web is not None else None
+        self.web: Union[Web, None] = Web(progress=self.pb.progress,
+                                         app=self.app) if PARSE_ARGS.web is not None else None
 
     def env_save_directory(
             self,
@@ -385,7 +385,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _prompt_string: str = '链接统计表'
                 _false_text: str = '😵😵😵没有链接需要统计。'
                 _choice: str = BotCallbackText.EXPORT_LINK_TABLE
-                res: Union[bool, None] = self.app.print_link_table(DownloadTask.LINK_INFO)
+                res: Union[bool, None] = self.app.print_link_table(DownloadTask.TASKS)
             elif callback_data == BotCallbackText.COUNT_TABLE:
                 _prompt_string: str = '计数统计表'
                 _false_text: str = '😵😵😵当前没有任何下载。'
@@ -450,7 +450,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _prompt_string: str = '链接统计表'
                 _folder: str = 'DownloadRecordForm'
                 res: Union[bool, None] = self.app.print_link_table(
-                    link_info=DownloadTask.LINK_INFO,
+                    link_tasks=DownloadTask.TASKS,
                     export=True,
                     only_export=True
                 )
@@ -1666,43 +1666,39 @@ class TelegramRestrictedMediaDownloader(Bot):
             'format_file_size': format_file_size
         }
 
-    async def __download_scheduler(self) -> None:
+    async def download_scheduler(self) -> None:
         """下载调度器,按最大并发数依次把排队中的消息派发为下载任务。"""
         while True:
-            item: Union[QueueItem, None] = None
+            item: Union[dict, None] = None
             dispatched: bool = False
             try:
                 while self.app.current_task_num < self.app.max_download_task:
-                    item = DownloadQueue.pick_pending()
+                    item = DownloadTask.pick_pending()
                     if item is None:
                         break
-                    DownloadQueue.set_status(
-                        link=item.link,
-                        message_id=item.message.id,
-                        status=QueueStatus.DOWNLOADING
-                    )
+                    task: DownloadTask = DownloadTask.get(item.get('link'))
+                    message: pyrogram.types.Message = item.get('message')
+                    task.set_item_status(message_id=message.id, status=QueueStatus.DOWNLOADING)
                     await self.__add_task(
-                        chat_id=item.chat_id,
-                        link_type=item.link_type,
-                        link=item.link,
-                        message=item.message,
-                        retry=item.retry,
-                        with_upload=item.with_upload,
-                        diy_download_type=item.diy_download_type
+                        chat_id=item.get('chat_id'),
+                        link_type=item.get('link_type'),
+                        link=item.get('link'),
+                        message=message,
+                        retry=item.get('retry'),
+                        with_upload=item.get('with_upload'),
+                        diy_download_type=item.get('diy_download_type')
                     )
                     dispatched = True
             except asyncio.CancelledError:
                 if item is not None:
-                    DownloadQueue.set_status(
-                        link=item.link,
-                        message_id=item.message.id,
-                        status=QueueStatus.CANCELLED
-                    )
+                    task: DownloadTask = DownloadTask.get(item.get('link'))
+                    task.set_item_status(message_id=item.get('message').id, status=QueueStatus.CANCELLED)
                 raise
             except Exception as e:
                 log.exception(f'下载调度器派发任务时出错,{_t(KeyWord.REASON)}:"{e}"')
                 if item is not None:  # 出错的任务直接出队,避免调度器反复重试同一条消息。
-                    DownloadQueue.remove(link=item.link, message_id=item.message.id)
+                    task: DownloadTask = DownloadTask.get(item.get('link'))
+                    task.remove_item(message_id=item.get('message').id)
             if dispatched:
                 continue
             self.event.clear()  # 等待任意任务完成以释放下载槽位,超时后重新检查队列避免空转。
@@ -1733,6 +1729,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     await self.__add_task(chat_id, link_type, link, _message, retry, with_upload, diy_download_type)
         else:
             _task = None
+            task: DownloadTask = DownloadTask.get_or_create(link)
             download_type: list = diy_download_type if diy_download_type else self.app.download_type
             valid_dtype: str = get_message_dtype(message, download_type)  # 按下载配置判定消息类型,实况照片是否优先取决于配置。
             if valid_dtype in download_type:
@@ -1743,17 +1740,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
                     f'{_t(KeyWord.LINK_TYPE)}:{_t(link_type)}。'  # 链接类型。
                 )
-                if not self.app.enable_queue:  # v1.7.x 开启调度器后由调度器统一限流,此处仅在回退模式下阻塞。
-                    try:
-                        while self.app.current_task_num >= self.app.max_download_task:  # v1.0.7 增加下载任务数限制。
-                            DownloadQueue.set_status(link=link, message_id=message.id, status=QueueStatus.WAITING)
-                            ChatInfo.add(chat=getattr(message, 'chat', None), chat_id=chat_id)
-                            await self.event.wait()
-                            self.event.clear()
-                    except asyncio.CancelledError:
-                        DownloadQueue.set_status(link=link, message_id=message.id, status=QueueStatus.CANCELLED)
-                        raise
-                DownloadQueue.set_status(link=link, message_id=message.id, status=QueueStatus.DOWNLOADING)
+                task.set_item_status(message_id=message.id, status=QueueStatus.DOWNLOADING)
                 file_id, temp_file_path, sever_file_size, file_name, save_directory, format_file_size = \
                     self.get_media_meta(
                         message=message,
@@ -1828,7 +1815,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         )
                     )
             else:
-                DownloadQueue.remove(link=link, message_id=message.id)  # 被忽略的类型直接出队。
+                task.remove_item(message_id=message.id)  # 被忽略的类型直接出队。
                 _error = '不支持或被忽略的类型(已取消)。'
                 try:
                     _, __, ___, file_name, ____, format_file_size = self.get_media_meta(
@@ -1843,11 +1830,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.SKIP))},'
                             f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。'
                         )
-                        DownloadTask.set_error(link=link, key=file_name, value=_error.replace('。', ''))
+                        task.set_error(key=file_name, value=_error.replace('。', ''))
                     else:
                         raise Exception('不支持或被忽略的类型。')
                 except Exception as _:
-                    DownloadTask.set_error(link=link, value=_error.replace('。', ''))
+                    task.set_error(value=_error.replace('。', ''))
                     console.log(
                         f'{_t(KeyWord.DOWNLOAD_TASK)}'
                         f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
@@ -1912,7 +1899,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             diy_download_type,
             _future
     ):
-        DownloadQueue.remove(link=link, message_id=message.id)  # 处理完毕,从队列中移除。
+        download_task: Union[DownloadTask, None] = DownloadTask.get(link)
+        if download_task is not None:
+            download_task.remove_item(message_id=message.id)  # 处理完毕,从队列中移除。
         if task_id is None:
             if retry_count == 0:
                 console.log(
@@ -1994,7 +1983,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}'
                         f'{_error}'
                     )
-                    DownloadTask.set_error(link=link, key=file_name, value=_error.replace('。', ''))
+                    download_task.set_error(key=file_name, value=_error.replace('。', ''))
                     self.bot_task_link.discard(link)
                     self.queue.task_done()
                 link, file_name = None, None
@@ -2265,10 +2254,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                 link = message_ids
 
             link_type, chat_id, message, member_num = meta.values()
-            DownloadTask.set(link, 'link_type', link_type)
-            DownloadTask.set(link, 'member_num', member_num)
+            task: DownloadTask = DownloadTask.get_or_create(link)
+            task.link_type = link_type
+            task.chat_id = chat_id
+            task.member_num = member_num
             ChatInfo.add(chat=getattr(message, 'chat', None), chat_id=chat_id)
-            DownloadQueue.add(
+            DownloadTask.add_item(
                 link=link,
                 chat_id=chat_id,
                 message=message,
@@ -2277,8 +2268,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                 with_upload=with_upload,
                 diy_download_type=diy_download_type
             )
-            if not self.app.enable_queue:  # v1.7.x 关闭调度器时,保持原有的阻塞式建任务逻辑。
-                await self.__add_task(chat_id, link_type, link, message, retry, with_upload, diy_download_type)
             return {
                 'chat_id': chat_id,
                 'member_num': member_num,
@@ -2480,8 +2469,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
         self.is_running = True
         self.running_log.add(self.is_running)
-        if self.app.enable_queue:  # v1.7.x 启动下载调度器,由调度器统一派发排队中的任务。
-            self.scheduler = self.loop.create_task(self.__download_scheduler())
+        self.scheduler = self.loop.create_task(self.download_scheduler())  # 启动下载调度器,由调度器统一派发排队中的任务。
         links: Union[set, None] = self.__process_links(link=self.app.links)
         # 将初始任务添加到队列中。
         [await self.loop.create_task(self.create_download_task(message_ids=link, retry=None)) for link in
@@ -2489,20 +2477,15 @@ class TelegramRestrictedMediaDownloader(Bot):
         # 处理队列中的任务与机器人事件。
         while (not self.queue.empty()
                or self.is_bot_running
-               or (self.app.enable_queue and DownloadQueue.has_task())):
+               or DownloadTask.has_task()):
             if self.queue.empty():
                 await asyncio.sleep(0.5)  # 队列为空时等待调度器派发任务,避免阻塞在队列获取上。
                 continue
             result = await self.queue.get()
             try:
                 await result
-            except PermissionError as e:
-                log.error(
-                    '临时文件无法移动至下载路径:\n'
-                    '1.可能存在使用网络路径、挂载硬盘行为(本软件不支持);\n'
-                    '2.可能存在多开软件时,同时操作同一文件或目录导致冲突;\n'
-                    '3.由于软件设计缺陷,没有考虑到不同频道文件名相同的情况(若调整将会导致部分用户更新后重复下载已有文件),当保存路径下文件过多时,可能恰巧存在相同文件名的文件,导致相同文件名无法正常移动,故请定期整理归档下载链接与保存路径下的文件。'
-                    f'{_t(KeyWord.REASON)}:"{e}"')
+            except Exception as e:
+                log.exception(f'处理队列时出错,{_t(KeyWord.REASON)}:"{e}"')
         # 等待所有任务完成。
         await self.queue.join()
         if self.scheduler:  # 停止下载调度器。
@@ -2565,7 +2548,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.web.stop() if self.web else None
             if not record_error:
                 self.app.print_link_table(
-                    link_info=DownloadTask.LINK_INFO,
+                    link_tasks=DownloadTask.TASKS,
                     export=self.gc.get_config('export_table').get('link')
                 )
                 self.app.print_count_table(

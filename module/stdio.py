@@ -169,7 +169,7 @@ class StatisticalTable:
 
     @staticmethod
     def print_link_table(
-            link_info: dict,
+            link_tasks: dict,
             export: bool = False,
             only_export: bool = False,
             export_directory: str = os.path.join(
@@ -181,16 +181,16 @@ class StatisticalTable:
         """打印统计的下载链接信息的表格。"""
         try:
             data: list = []
-            for index, (link, info) in enumerate(link_info.items(), start=1):
-                complete_num = int(info.get('complete_num'))
-                member_num = int(info.get('member_num'))
+            for index, (link, task) in enumerate(link_tasks.items(), start=1):
+                complete_num = int(task.complete_num)
+                member_num = int(task.member_num)
                 try:
                     rate = round(complete_num / member_num * 100, 2)
                 except ZeroDivisionError:
                     rate = 0
                 complete_rate = f'{complete_num}/{member_num}[{rate}%]'
-                file_names: Union[set, str] = info.get('file_name', set())
-                error_msg = info.get('error_msg')
+                file_names: Union[set, str] = task.file_name
+                error_msg = task.error_msg
                 if not error_msg:
                     error_info = ''
                 elif 'all_member' in error_msg:
