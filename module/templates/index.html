@@ -27,6 +27,7 @@
     <aside class="sidebar" id="sidebar">
         <button class="side-item active" data-section="download" type="button">下载</button>
         <button class="side-item" data-section="upload" type="button">上传</button>
+        <button class="side-item" data-section="listener" type="button">监听</button>
     </aside>
 
     <main class="content">
@@ -93,6 +94,26 @@
                     <span class="h-status">状态</span>
                 </div>
                 <div id="upload"></div>
+            </div>
+        </div>
+
+        <div class="page" id="page-listener" hidden>
+            <div class="tabs" id="listenTabs">
+                <button class="tab active" data-listen="forward" type="button">转发</button>
+                <button class="tab" data-listen="download" type="button">下载</button>
+            </div>
+            <div class="list listen-two" id="listenForwardBox">
+                <div class="list-head">
+                    <span>监听频道</span>
+                    <span>转发频道</span>
+                </div>
+                <div id="listenForward"></div>
+            </div>
+            <div class="list listen-one" id="listenDownloadBox" hidden>
+                <div class="list-head">
+                    <span>监听频道</span>
+                </div>
+                <div id="listenDownload"></div>
             </div>
         </div>
     </main>

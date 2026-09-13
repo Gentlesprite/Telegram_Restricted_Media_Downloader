@@ -125,8 +125,11 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.uploader: Union[TelegramUploader, None] = None
         self.cd: Union[CallbackData, None] = None
         self.my_id: int = 0
-        self.web: Union[Web, None] = Web(progress=self.pb.progress,
-                                         app=self.app) if PARSE_ARGS.web is not None else None
+        self.web: Union[Web, None] = Web(
+            progress=self.pb.progress,
+            app=self.app,
+            downloader=self
+        ) if PARSE_ARGS.web is not None else None
 
     def env_save_directory(
             self,

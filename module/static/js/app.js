@@ -2,14 +2,17 @@ const EMPTY_SUMMARY = {percent: 0, info: '0.00B / 0.00B', speed: '', remaining: 
 
 var SECTIONS = {
     download: ['download'],
-    upload: ['upload']
+    upload: ['upload'],
+    listener: ['listener']
 };
-var PAGES = SECTIONS.download.concat(SECTIONS.upload);  // 下载、上传各一个页面,均不再有分页标签。
+var PAGES = SECTIONS.download.concat(SECTIONS.upload, SECTIONS.listener);  // 下载、上传各一个页面,监听页只在内部切换选项卡。
 var SUMMARY_IDS = {
     download: {fill: 'overallFill', percent: 'overallPercent', info: 'overallInfo', extra: 'overallExtra'},
     upload: {fill: 'uploadFill', percent: 'uploadPercent', info: 'uploadInfo', extra: 'uploadExtra'}
 };  // 下载与上传各自独立的总进度面板,避免相互覆盖。
 var SECTION_KEY = 'trmd_section';
+var LISTEN_KEY = 'trmd_listen';
+var LISTEN_TABS = ['forward', 'download'];  // 监听页的选项卡:转发、下载。
 
 var STATE_TEXT = {
     pending: '排队中',
@@ -69,8 +72,10 @@ var allCollapsed = false;
 var uploadAllCollapsed = false;
 var UNGROUPED_NAME = '未分组';
 var currentSection = 'download';
+var currentListen = 'forward';
 var lastDownloadActive = 0;
 var lastUploadActive = 0;
+var lastListenCount = 0;
 
 function esc(text) {
     var div = document.createElement('div');
@@ -378,6 +383,25 @@ function switchSection(name) {
     saveState(SECTION_KEY, currentSection);
 }
 
+function applyListenTab() {
+    var tabs = document.querySelectorAll('#listenTabs .tab');
+    for (var i = 0; i < tabs.length; i++) {
+        var active = tabs[i].getAttribute('data-listen') === currentListen;
+        tabs[i].className = active ? 'tab active' : 'tab';
+    }
+    document.getElementById('listenForwardBox').hidden = currentListen !== 'forward';
+    document.getElementById('listenDownloadBox').hidden = currentListen !== 'download';
+}
+
+function switchListen(name) {
+    if (LISTEN_TABS.indexOf(name) === -1) {
+        name = LISTEN_TABS[0];
+    }
+    currentListen = name;
+    applyListenTab();
+    saveState(LISTEN_KEY, currentListen);
+}
+
 function extraText(item) {
     var extra = '';
     if (item.speed) {
@@ -408,14 +432,20 @@ function renderStat(id, cells) {
 }
 
 function renderStatus() {
+    var dot = document.getElementById('dot');
+    var text = document.getElementById('statusText');
+    if (currentSection === 'listener') {  // 监听页不跟随下载与上传的活跃任务数。
+        dot.className = lastListenCount ? 'dot active' : 'dot';
+        text.textContent = lastListenCount ? '监听中 · ' + lastListenCount + ' 个频道' : '空闲 · 等待任务';
+        return;
+    }
     var count = currentSection === 'upload' ? lastUploadActive : lastDownloadActive;
     if (count > 0) {
-        document.getElementById('dot').className = 'dot active';
-        document.getElementById('statusText').textContent =
-            (currentSection === 'upload' ? '上传中 · ' : '下载中 · ') + count + ' 个任务';
+        dot.className = 'dot active';
+        text.textContent = (currentSection === 'upload' ? '上传中 · ' : '下载中 · ') + count + ' 个任务';
     } else {
-        document.getElementById('dot').className = 'dot';
-        document.getElementById('statusText').textContent = '空闲 · 等待任务';
+        dot.className = 'dot';
+        text.textContent = '空闲 · 等待任务';
     }
 }
 
@@ -434,6 +464,35 @@ function renderList(data) {
     syncToggleAll();
     bindGroups();  // 页面渲染完成后统一绑定折叠事件。
     syncHeadLabel();
+}
+
+function listenRow(source, target) {
+    var html = '<div class="task-row">' +
+        '<span class="cell-name"><span class="ficon">🕵️</span>' +
+        '<span class="fname" title="' + escAttr(source) + '">' + esc(source) + '</span></span>';
+    if (target) {
+        html += '<span class="cell-name"><span class="ficon">➡️</span>' +
+            '<span class="fname" title="' + escAttr(target) + '">' + esc(target) + '</span></span>';
+    }
+    return html + '</div>';
+}
+
+function renderListeners(listeners) {
+    var data = listeners || {};
+    var forward = data.forward || [];
+    var download = data.download || [];
+    var html = '';
+    var i;
+    for (i = 0; i < forward.length; i++) {
+        html += listenRow(forward[i].source, forward[i].target);
+    }
+    document.getElementById('listenForward').innerHTML = html ? html : '<div class="empty">暂无监听转发。</div>';
+    html = '';
+    for (i = 0; i < download.length; i++) {
+        html += listenRow(download[i]);
+    }
+    document.getElementById('listenDownload').innerHTML = html ? html : '<div class="empty">暂无监听下载。</div>';
+    return forward.length + download.length;
 }
 
 function uploadDone(file) {
@@ -644,6 +703,7 @@ function render(data) {
         statCell('队列中', data.queue || 0, 'queue')
     ]);
     lastUploadActive = renderUpload(data.uploads || []);
+    lastListenCount = renderListeners(data.listeners);
     renderStatus();
     renderList(data);
 }
@@ -667,14 +727,28 @@ function bindSections() {
     }
 }
 
+function bindListenTabs() {
+    var tabs = document.querySelectorAll('#listenTabs .tab');
+    for (var i = 0; i < tabs.length; i++) {
+        tabs[i].onclick = function () {
+            switchListen(this.getAttribute('data-listen'));
+        };
+    }
+}
+
 var savedSection = '';
+var savedListen = '';
 try {
     savedSection = localStorage.getItem(SECTION_KEY) || '';
+    savedListen = localStorage.getItem(LISTEN_KEY) || '';
 } catch (e) {
     savedSection = '';
+    savedListen = '';
 }
 bindSections();
+bindListenTabs();
 switchSection(savedSection);
+switchListen(savedListen);
 document.getElementById('toggleAll').onclick = toggleAll;
 document.getElementById('toggleUpload').onclick = toggleUploadAll;
 refresh();

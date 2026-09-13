@@ -154,9 +154,10 @@ class Web:
         QueueStatus.CANCELLED
     )  # 尚未出结果的消息状态。
 
-    def __init__(self, progress, app=None):
+    def __init__(self, progress, app=None, downloader=None):
         self.progress = progress
         self.app = app
+        self.downloader = downloader  # 下载器实例,用于读取已注册的监听信息。
         self.credential: dict = gen_random_credential()
         self.protocol: str = 'http'
         self.ip: str = '0.0.0.0'
@@ -338,6 +339,26 @@ class Web:
             log.debug(f'解析排队消息时出错,{_t(KeyWord.REASON)}:"{e}"')
         return result
 
+    def get_listeners(self) -> dict:
+        """获取已注册的监听下载与监听转发信息。
+
+        Returns:
+            dict: download为监听下载的频道链接;forward为监听转发的监听频道与转发频道。
+        """
+        result: dict = {'download': [], 'forward': []}
+        if self.downloader is None:
+            return result
+        try:
+            result['download'] = [str(link) for link in list(self.downloader.listen_download_chat)]
+            for rule in list(self.downloader.listen_forward_chat):
+                args: list = str(rule).split()
+                if len(args) != 2:
+                    continue  # 转发规则固定为"监听频道 转发频道"两段,异常规则直接跳过。
+                result['forward'].append({'source': args[0], 'target': args[1]})
+        except Exception as e:
+            log.debug(f'获取监听信息时出错,{_t(KeyWord.REASON)}:"{e}"')
+        return result
+
     def get_upload_tasks(self, tasks: Union[list, None] = None) -> list:
         """获取上传任务的概要信息,并按进度条任务ID补全上传进度。"""
         result: list = []
@@ -463,7 +484,8 @@ class Web:
                 'queue': sum(link.get('remaining', 0) for link in links),  # 所有链接待下载的消息总数。
                 'tasks': tasks,
                 'links': links,
-                'uploads': uploads
+                'uploads': uploads,
+                'listeners': self.get_listeners()
             }
         except Exception as e:
             log.debug(f'生成进度数据时出错,{_t(KeyWord.REASON)}:"{e}"')
@@ -473,5 +495,6 @@ class Web:
                 'queue': 0,
                 'tasks': [],
                 'links': [],
-                'uploads': []
+                'uploads': [],
+                'listeners': {'download': [], 'forward': []}
             }
