@@ -110,6 +110,18 @@ function queueRow(item) {
         '</div>';
 }
 
+function linkStatusCell(link) {
+    var remaining = link.remaining || 0;
+    var failed = link.failed || 0;
+    if (remaining) {
+        return '<span class="cell-status status-pending">剩 ' + remaining + ' 条</span>';
+    }
+    if (failed) {
+        return '<span class="cell-status status-failed">失败 ' + failed + ' 条</span>';
+    }
+    return '<span class="cell-status status-done">已完成</span>';
+}
+
 function linkRow(link) {
     return '<div class="task-row">' +
         '<span class="cell-name"><span class="ficon">🔗</span>' +
@@ -118,8 +130,7 @@ function linkRow(link) {
         '<span class="cell-size">' + link.complete + '/' + link.member + '</span>' +
         '<span class="cell-speed">—</span>' +
         '<span class="cell-remain">—</span>' +
-        '<span class="cell-status ' + (link.remaining ? 'status-pending' : 'status-done') + '">' +
-        (link.remaining ? '剩 ' + link.remaining + ' 条' : '已完成') + '</span>' +
+        linkStatusCell(link) +
         '</div>';
 }
 
@@ -139,8 +150,7 @@ function linkBlock(link) {
         '<span class="cell-size">' + link.complete + '/' + link.member + '</span>' +
         '<span class="cell-speed">—</span>' +
         '<span class="cell-remain">—</span>' +
-        '<span class="cell-status ' + (link.remaining ? 'status-pending' : 'status-done') + '">' +
-        (link.remaining ? '剩 ' + link.remaining + ' 条' : '已完成') + '</span>' +
+        linkStatusCell(link) +
         '</div>' +
         '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
     for (var i = 0; i < queue.length; i++) {

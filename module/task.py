@@ -65,7 +65,13 @@ class DownloadTask:
         self.complete_num: int = 0
         self.file_name: set = set()
         self.error_msg: dict = {}
+        self.fail_id: set = set()  # 已彻底失败(重试耗尽)的消息ID。
         self.items: dict = {}  # 消息ID -> 待下载消息(dict,字段见add_item)。
+
+    @property
+    def fail_num(self) -> int:
+        """彻底失败(重试耗尽)的文件数。"""
+        return len(self.fail_id)
 
     @classmethod
     def get_or_create(cls, link: Union[str, int]) -> "DownloadTask":
@@ -107,10 +113,12 @@ class DownloadTask:
         retry_count: int = int(retry_dict.get('count') or 0)
         if retry_count == 0:
             task.clear_error()  # 非重试(重新拉取)的任务,清空该链接此前的失败记录。
+            task.clear_fail()
         for _message in messages:
             key: int = int(getattr(_message, 'id', 0))
             if retry_count != 0 and key != retry_id:
                 continue  # 重试时只保留需要重试的那条消息,避免整个媒体组被重复排队。
+            task.remove_fail(message_id=key)  # 重新排队(含重试)时,清除该消息的失败记录。
             item: Union[dict, None] = task.items.get(key)
             if item is None:
                 task.items[key] = {
@@ -186,6 +194,18 @@ class DownloadTask:
             self.error_msg.clear()
             return
         self.error_msg.pop(key, None)
+
+    def add_fail(self, message_id: Union[int, str]) -> None:
+        """记录彻底失败(重试耗尽)的消息。"""
+        self.fail_id.add(int(message_id))
+
+    def remove_fail(self, message_id: Union[int, str]) -> None:
+        """移除消息的失败记录,该消息重新排队或下载成功时调用。"""
+        self.fail_id.discard(int(message_id))
+
+    def clear_fail(self) -> None:
+        """清空全部失败记录。"""
+        self.fail_id.clear()
 
     def on_create_task(func):
         @wraps(func)

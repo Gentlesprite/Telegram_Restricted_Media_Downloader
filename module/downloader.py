@@ -1951,6 +1951,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
                 if download_task is not None:
                     download_task.clear_error(key=file_name)  # 下载成功(含重试成功),清除该文件此前的失败记录。
+                    download_task.remove_fail(message_id=message.id)
+                if self.web is not None:
+                    # 进度条任务会被立即移除,直接登记到网页面板,避免轮询来不及采集100%的任务。
+                    self.web.add_done_task(
+                        task_id=task_id,
+                        filename=file_name,
+                        channel=str(getattr(getattr(message, 'chat', None), 'id', '') or ''),
+                        size=format_file_size
+                    )
                 if self.uploader:
                     if with_upload and isinstance(with_upload, dict):
                         try:
@@ -1993,6 +2002,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'{_error}'
                     )
                     download_task.set_error(key=file_name, value=_error.replace('。', ''))
+                    download_task.add_fail(message_id=message.id)  # 重试耗尽,记录为彻底失败,不再计入排队数量。
                     self.bot_task_link.discard(link)
                     self.queue.task_done()
                 link, file_name = None, None

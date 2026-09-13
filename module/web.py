@@ -150,6 +150,7 @@ class Web:
         self.thread: Union[threading.Thread, None] = None
         self.last_tasks: dict = {}
         self.done_tasks: list = []
+        self.done_ids: set = set()  # 已登记到完成记录的任务ID,避免重复登记。
 
     @staticmethod
     def __bind_port(port: int) -> int:
@@ -254,12 +255,14 @@ class Web:
             for link, task in list(DownloadTask.TASKS.items()):
                 member_num: int = int(task.member_num or 0)
                 complete_num: int = int(task.complete_num or 0)
+                fail_num: int = int(task.fail_num or 0)
                 queue: dict = task.get_pending_items()
                 result.append({
                     'link': str(link),
                     'complete': complete_num,
                     'member': member_num,
-                    'remaining': max(member_num - complete_num, 0),
+                    'failed': fail_num,
+                    'remaining': max(member_num - complete_num - fail_num, 0),
                     'queue': [self.format_queue_message(item) for item in queue.get('items')],
                     'queue_total': queue.get('total'),
                     'percent': round(complete_num / member_num * 100, 1) if member_num else 0.0
@@ -398,10 +401,47 @@ class Web:
             tasks.append(item)
         for task_id, item in self.last_tasks.items():
             if task_id not in current and item.get('percent', 0) >= 100:
-                self.done_tasks.append(item)
-        self.done_tasks = self.done_tasks[-Web.MAX_DONE_TASK:]
+                self.__append_done_task(task_id=task_id, item=item)
         self.last_tasks = current
         return tasks
+
+    def __append_done_task(self, task_id: int, item: dict) -> None:
+        """登记已完成的任务,并只保留最近的任务记录。"""
+        if task_id in self.done_ids:
+            return
+        self.done_ids.add(task_id)
+        self.done_tasks.append(item)
+        self.done_tasks = self.done_tasks[-Web.MAX_DONE_TASK:]
+
+    def add_done_task(self, task_id: int, filename: str, channel: str, size: str) -> None:
+        """主动登记已完成的下载任务。
+
+        进度条任务在下载完成后会被立即移除,轮询可能来不及采集到100%的进度,
+        因此由下载器在移除进度条任务前主动登记。
+
+        Args:
+            task_id: 进度条的任务ID,用于去重。
+            filename: 文件名。
+            channel: 频道ID。
+            size: 已格式化的文件大小。
+        """
+        self.__append_done_task(
+            task_id=task_id,
+            item={
+                'id': task_id,
+                'type': '📥',
+                'channel': channel,
+                'channel_name': Web.format_channel(channel),
+                'filename': filename,
+                'info': f'{size}/{size}',
+                'completed': 0,
+                'total': 0,
+                'percent': 100,
+                'speed': '',
+                'speed_value': 0,
+                'remaining': ''
+            }
+        )
 
     def snapshot(self) -> dict:
         """生成供网页面板展示的进度数据。"""
