@@ -39,6 +39,7 @@ var STATE_ICON = {
 
 var collapsed = {};
 var allCollapsed = false;
+var UNGROUPED_NAME = '未分组';
 var currentSection = 'download';
 var currentTab = 'download';
 
@@ -108,9 +109,68 @@ function linkStatusCell(link) {
     return '<span class="cell-status status-done">已完成</span>';
 }
 
+function getChannelGroups(links) {
+    var groups = [];  // 按频道分组下载链接,保持频道首次出现的顺序。
+    var index = {};
+    var i;
+    for (i = 0; i < links.length; i++) {
+        var channel = links[i].channel || UNGROUPED_NAME;
+        if (index[channel] === undefined) {
+            index[channel] = groups.length;
+            groups.push({channel: channel, name: '', links: []});
+        }
+        var group = groups[index[channel]];
+        var name = links[i].channel_name || channel;
+        if (name.length > group.name.length) {
+            group.name = name;  // 同一频道取信息最全的名称,"标题(ID)"比纯ID长。
+        }
+        group.links.push(links[i]);
+    }
+    for (i = 0; i < groups.length; i++) {
+        var channelGroup = groups[i];
+        channelGroup.count = channelGroup.links.length;
+        channelGroup.complete = 0;
+        channelGroup.member = 0;
+        channelGroup.remaining = 0;
+        channelGroup.failed = 0;
+        for (var j = 0; j < channelGroup.links.length; j++) {
+            channelGroup.complete += channelGroup.links[j].complete || 0;
+            channelGroup.member += channelGroup.links[j].member || 0;
+            channelGroup.remaining += channelGroup.links[j].remaining || 0;
+            channelGroup.failed += channelGroup.links[j].failed || 0;
+        }
+        channelGroup.percent = channelGroup.member ?
+            Math.round(channelGroup.complete / channelGroup.member * 1000) / 10 : 0;
+    }
+    return groups;
+}
+
+function channelBlock(group, live) {
+    var key = 'channel:' + group.channel;
+    var isCollapsed = collapsed[key] === undefined ? allCollapsed : collapsed[key];
+    var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '">' +
+        '<div class="group-head" data-channel="' + escAttr(key) + '">' +
+        '<span class="cell-name"><span class="arrow"></span>' +
+        '<span class="ficon">📺</span>' +
+        '<span class="gname" title="' + escAttr(group.name || group.channel) + '">' +
+        esc(group.name || group.channel) + '</span>' +
+        '<span class="gcount">' + group.count + ' 个链接</span></span>' +
+        progressCell(group.percent) +
+        '<span class="cell-size">' + group.complete + '/' + group.member + '</span>' +
+        '<span class="cell-speed">—</span>' +
+        '<span class="cell-remain">—</span>' +
+        linkStatusCell(group) +
+        '</div>' +
+        '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
+    for (var i = 0; i < group.links.length; i++) {
+        html += linkBlock(group.links[i], live);
+    }
+    return html + '</div></div>';
+}
+
 function linkBlock(link, live) {
     var key = 'link:' + link.link;
-    var isCollapsed = collapsed[key] === undefined ? allCollapsed : collapsed[key];
+    var isCollapsed = collapsed[key] === undefined ? true : collapsed[key];  // 链接默认折叠,避免一次性铺开。
     var members = link.queue || [];
     var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '">' +
         '<div class="group-head" data-channel="' + escAttr(key) + '">' +
@@ -282,9 +342,9 @@ function renderList(data) {
         live[data.tasks[i].id] = data.tasks[i];
     }
     var html = '';
-    var links = data.links || [];
-    for (i = 0; i < links.length; i++) {
-        html += linkBlock(links[i], live);
+    var groups = getChannelGroups(data.links || []);  // 频道 > 链接 > 下载信息,两级可折叠。
+    for (i = 0; i < groups.length; i++) {
+        html += channelBlock(groups[i], live);
     }
     document.getElementById('download').innerHTML = html ? html : '<div class="empty">暂无下载任务。</div>';
     syncToggleAll();

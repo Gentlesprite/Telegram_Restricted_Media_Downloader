@@ -276,6 +276,8 @@ class Web:
                 )
                 result.append({
                     'link': str(link),
+                    'channel': str(task.chat_id or ''),
+                    'channel_name': Web.format_channel(str(task.chat_id or '')),
                     'complete': complete_num,
                     'member': member_num,
                     'failed': fail_num,

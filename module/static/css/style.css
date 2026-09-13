@@ -439,8 +439,25 @@ h2 {
     transition: transform .15s ease;
 }
 
-.group.open .arrow {
+/* 只旋转当前分组自己的箭头,避免嵌套分组的箭头被父级影响。 */
+.group.open > .group-head .arrow {
     transform: rotate(90deg);
+}
+
+/* 嵌套分组(频道 > 链接),逐层缩进。 */
+.group-body .group-head {
+    padding-left: 30px;
+    font-weight: 500;
+    background: rgba(0, 0, 0, .16);
+}
+
+.group-body .group-body .task-row {
+    padding-left: 52px;
+    background: rgba(0, 0, 0, .24);
+}
+
+.group-body .group-body .more {
+    padding-left: 52px;
 }
 
 /* 单元格 */
