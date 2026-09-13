@@ -14,7 +14,7 @@
     <img src="https://img.shields.io/badge/Python-3.13.2-blue.svg?color=00B16A" alt="Python 3.13.2"/>
   </a>
   <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.25-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.25"/>
+    <img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.26-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.26"/>
   </a>
   <a style="text-decoration:none">
     <img src="https://img.shields.io/badge/Platform-Windows & Linux%20-blue?color=00B16A" alt="Platform Windows & Linux"/>
@@ -1227,11 +1227,11 @@ _**长参数与短参数最终结果一致。**_
     此处假设使用默认端口。
   
     ```bash
-    python3 -p
+    python3 main.py -p
     ```
   
     ```bash
-    python3 --port
+    python3 main.py --port
     ```
   
   - 对于Windows用户:
@@ -1312,83 +1312,35 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
 
 方式1：
 
-- _确保`git`、`docker`、`docker-compose`已安装并配置**环境变量。**_
-
-- 使用`git`克隆仓库:
-
-  ```bash
-  git clone https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader.git
-  ```
-
-- 进入项目文件夹：
-
-  ```bash
-  cd Telegram_Restricted_Media_Downloader
-  ```
-
-- 首次使用时需要配置文件：
-
-  ```bash
-  docker-compose run --rm trmd
-  ```
-
-- 已配置完成的情况下：
-
-  ```bash
-  docker-compose up -d
-  ```
-
-方式2：
-
 - _确保`docker`已安装并配置**环境变量。**_
 
-- 使用`docker`从远程仓库拉取镜像：
+- 使用`docker`从远程仓库拉取镜像，注意`TRMD`版本需要`≥2.0.2`：
 
   ```bash
   docker pull gentlesprite/telegram_restricted_media_downloader:latest
   ```
 
-
-- **需要使用**时，创建并启动容器：
+- 首次使用时需要进入容器配置文件：
 
   ```bash
-  docker run -it \
-    --name trmd \
+  docker run -it --rm \
     -v ./config:/app/TRMD \
     -v ./sessions:/app/sessions \
     -v ./downloads:/app/downloads \
     -v ./temp:/app/temp \
     -v ./form:/app/form \
     -e TZ=Asia/Shanghai \
-    --restart unless-stopped \
-    gentlesprite/telegram_restricted_media_downloader:latest
+    gentlesprite/telegram_restricted_media_downloader:latest \
+    python main.py --config /app/TRMD/config.yaml --port 2921
   ```
-
 
 - 如果是通过`Windows`使用`wsl2`运行`docker`：
 
-    ```bash
-    docker run -it --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -v ./form:/app/form -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest
-    ```
-
-
-- **不再使用**时，停止并删除容器：
-
   ```bash
-  docker stop trmd && docker rm trmd
+  docker run -it --rm -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -v ./form:/app/form -e TZ=Asia/Shanghai gentlesprite/telegram_restricted_media_downloader:latest python main.py --config /app/TRMD/config.yaml --port 2921
   ```
 
-方式3，使用网页面板运行（`≥1.9.3`）：
-
-- _确保`docker`已安装并配置**环境变量。**_
-
-- 使用`docker`从远程仓库拉取镜像，注意软件版本需要`≥1.9.3`：
-
-  ```bash
-  docker pull gentlesprite/telegram_restricted_media_downloader:latest
-  ```
-
-- 创建并启动容器，网页面板使用`2921`端口：
+- 如果已配置完成的情况下，直接创建并启动容器：
 
   ```bash
   docker run -d \
@@ -1412,16 +1364,50 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
   docker run -d --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -v ./form:/app/form -p 2921:2921 -w /app -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest python main.py --config /app/TRMD/config.yaml --port 2921
   ```
 
-- 启动后可在终端查看`Web配置`表格，也可在`Telegram`中向机器人发送`/help`查看`Web配置`（包含端口、账号、密码与访问链接），类似下表：
+方式2：
 
-  | 属性 | 内容                    |
-  |----| ----------------------- |
-  | 端口 | `2921`                  |
-  | 账号 | `cLJqKG3b`              |
-  | 密码 | `AiJaKSObcRCZ`          |
-  | 链接 | `http://127.0.0.1:2921` |
+- _确保`git`、`docker`、`docker-compose`已安装并配置**环境变量。**_
 
-  _账号密码由系统随机生成，使用浏览器打开[http://127.0.0.1:2921](http://127.0.0.1:2921)网页输入账号密码即可进入。_
+- 使用`git`克隆仓库:
+
+  ```bash
+  git clone https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader.git
+  ```
+
+- 进入项目文件夹：
+
+  ```bash
+  cd Telegram_Restricted_Media_Downloader
+  ```
+
+- 首次使用时需要进入容器配置文件：
+
+  ```bash
+  docker-compose run --rm trmd
+  ```
+
+- 如果已配置完成的情况下，直接创建并启动容器：
+
+  ```bash
+  docker-compose up -d
+  ```
+
+以上两种方式启动后，通过在终端或在`Telegram`中向机器人发送`/help`命令查看`Web配置`以访问网页面板（包含端口、账号、密码与访问链接），类似下表：
+
+| 属性 | 内容                    |
+|----| ----------------------- |
+| 端口 | `2921`                  |
+| 账号 | `cLJqKG3b`              |
+| 密码 | `AiJaKSObcRCZ`          |
+| 链接 | `http://127.0.0.1:2921` |
+
+_账号密码由系统随机生成，使用浏览器打开[http://127.0.0.1:2921](http://127.0.0.1:2921)网页输入账号密码即可进入。_
+
+- 首次通过账号密码登录成功后，面板会向**此浏览器**下发一个有效期`30`天的记名`Cookie`（名称`TRMD_WEB_SESSION`），之后通过**此浏览器**访问该页面**免密进入**。
+- 记名令牌持久化保存于`%APPDATA%\TRMD\.TRMD_WEB_SESSION`（`Linux`下为`~/.config/TRMD/.TRMD_WEB_SESSION`），因此**软件重启后依然免密**，无需重新输入随机账号密码。
+- 如需更换登录状态，删除该令牌文件并清除浏览器中对应站点的`Cookie`即可。
+
+其他命令：
 
 - 如需查看运行日志：
 
