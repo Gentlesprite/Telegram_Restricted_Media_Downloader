@@ -90,7 +90,6 @@ from module.path_tool import (
 from module.task import DownloadTask, UploadTask, ChatInfo
 from module.enums import QueueStatus
 from module.stdio import ProgressBar, Base64Image, MetaData
-from module.parser import PARSE_ARGS
 from module.web import Web
 from module.uploader import TelegramUploader
 from module.util import (
@@ -126,11 +125,11 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.cd: Union[CallbackData, None] = None
         self.web_remove_listen: set = set()  # 网页面板发起的移除监听命令,机器人识别后直接移除,不再发送二次确认按钮。
         self.my_id: int = 0
-        self.web: Union[Web, None] = Web(
+        self.web: Web = Web(
             progress=self.pb.progress,
             app=self.app,
             downloader=self
-        ) if PARSE_ARGS.web is not None else None
+        )  # 网页面板默认启用,端口由--port参数指定。
 
     def env_save_directory(
             self,
@@ -2642,7 +2641,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             MetaData.print_meta()
             self.app.print_env_table(self.app)
             self.app.print_config_table(self.app)
-            self.web.start() if self.web else None
+            self.web.start()
             self.loop.run_until_complete(self.__download_media_from_links())
         except KeyError as e:
             record_error: bool = True
@@ -2687,7 +2686,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         finally:
             self.is_running = False
             self.pb.progress.stop()
-            self.web.stop() if self.web else None
+            self.web.stop()
             if not record_error:
                 self.app.print_link_table(
                     link_tasks=DownloadTask.TASKS,

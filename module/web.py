@@ -202,7 +202,7 @@ class Web:
         self.credential: dict = gen_random_credential()
         self.protocol: str = 'http'
         self.ip: str = '0.0.0.0'
-        self.port: int = self.get_free_port(PARSE_ARGS.web)
+        self.port: int = self.get_free_port(PARSE_ARGS.port)
         self.username: str = self.credential.get(WebMeta.USERNAME)
         self.password: str = self.credential.get(WebMeta.PASSWORD)
         self.template_directory, self.static_directory = self.get_web_directory()

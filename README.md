@@ -955,7 +955,7 @@ _**设置命令行运行参数**需先在**软件目录**打开**终端**，或*
 | `-c` | `--config`  |   设置用户配置文件的路径   |
 | `-s` | `--session` |     设置会话文件的路径     |
 | `-t` |  `--temp`   |     设置运行缓存的路径     |
-| `-w` |   `--web`   |   通过浏览器查看下载进度   |
+| `-p` |  `--port`   |   设置网页面板的端口   |
 
 _**长参数与短参数最终结果一致。**_
 
@@ -1211,54 +1211,54 @@ _**长参数与短参数最终结果一致。**_
      ./TRMD --temp /home/username/files/temp
      ```
 
-7. `-w`、`--web`参数用法：
+7. `-p`、`--port`参数用法：
 
-   | 使用须知                                                         |
-   |--------------------------------------------------------------|
-   | _1.该参数用于启用网页面板，通过浏览器查看下载进度。_                                        |
-   | _2.该参数设置后会在后台启动网页服务，终端仍可正常操作。_ |
-   | _3.`Web配置`信息会在运行的终端提供，以便打开网页时输入账号密码。_                          |
-   | _4.**关闭浏览器窗口不会影响程序运行**，程序退出时面板自动关闭。_                          |
-   | _5.可在此参数后指定一个`0`~`65535`范围内的**端口号**，若不指定，将使用`2921`端口，端口被占用时自动分配。_       |
-   | _6.该参数为一次性设置，不记忆。_                                           |
-   
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
-   
-     此处假设使用默认端口。
-   
-     ```bash
-     python3 -w
-     ```
-   
-     ```bash
-     python3 --web
-     ```
-   
-   - 对于Windows用户:
-   
-     此处假设使用`1024`端口。
-   
-     ```bash
-     TRMD.exe -w 1024
-     ```
-   
-     ```bash
-     TRMD.exe --web 1024
-     ```
-   
-   - 对于Linux用户:
-   
-     此处假设使用默认端口。
-   
-     ```bash
-     ./TRMD -w
-     ```
-   
-     ```bash
-     ./TRMD --web
-     ```
-   
-   </details>
+  | 使用须知                                                         |
+  |--------------------------------------------------------------|
+  | _1.网页面板默认启用，通过浏览器查看下载进度。_                                        |
+  | _2.网页面板会在后台启动网页服务，终端仍可正常操作。_ |
+  | _3.`Web配置`信息会在运行的终端提供，以便打开网页时输入账号密码。_                          |
+  | _4.**关闭浏览器窗口不会影响程序运行**，程序退出时面板自动关闭。_                          |
+  | _5.该参数用于指定网页面板的**端口号**，范围为`0`~`65535`，若不指定，将使用`2921`端口，端口被占用时自动分配。_       |
+  | _6.该参数为一次性设置，不记忆。_                                           |
+  
+  - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+  
+    此处假设使用默认端口。
+  
+    ```bash
+    python3 -p
+    ```
+  
+    ```bash
+    python3 --port
+    ```
+  
+  - 对于Windows用户:
+  
+    此处假设使用`1024`端口。
+  
+    ```bash
+    TRMD.exe -p 1024
+    ```
+  
+    ```bash
+    TRMD.exe --port 1024
+    ```
+  
+  - 对于Linux用户:
+  
+    此处假设使用默认端口。
+  
+    ```bash
+    ./TRMD -p
+    ```
+  
+    ```bash
+    ./TRMD --port
+    ```
+  
+  </details>
 
 
 # 5.0.通过编译后运行:
@@ -1403,13 +1403,13 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
     -e TZ=Asia/Shanghai \
     --restart unless-stopped \
     gentlesprite/telegram_restricted_media_downloader:latest \
-    python main.py --config /app/TRMD/config.yaml --web 2921
+    python main.py --config /app/TRMD/config.yaml --port 2921
   ```
 
 - 如果是通过`Windows`使用`wsl2`运行`docker`：
 
   ```bash
-  docker run -d --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -v ./form:/app/form -p 2921:2921 -w /app -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest python main.py --config /app/TRMD/config.yaml --web 2921
+  docker run -d --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -v ./form:/app/form -p 2921:2921 -w /app -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest python main.py --config /app/TRMD/config.yaml --port 2921
   ```
 
 - 查看运行日志：

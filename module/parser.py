@@ -65,13 +65,13 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             help='设置运行缓存的路径'
         )
         self.add_argument(
-            '-w', '--web',
+            '-p', '--port',
             type=int,
             nargs='?',
             metavar='PORT',
             const=WebMeta.DEFAULT_PORT,
-            default=None,
-            help=f'通过浏览器查看下载进度(默认端口{WebMeta.DEFAULT_PORT})'
+            default=WebMeta.DEFAULT_PORT,
+            help='设置网页面板的端口'
         )
 
     def print_help(self, file=None):
