@@ -275,6 +275,7 @@ class Web:
                 unfinished: int = len(
                     [i for i in members if i.get('state') in Web.UNFINISHED_STATE]
                 )
+                base_num: int = max(member_num - fail_num, 0)  # 彻底失败的成员退出进度基数,避免进度永远到不了100%。
                 result.append({
                     'link': str(link),
                     'channel': str(task.chat_id or ''),
@@ -286,7 +287,7 @@ class Web:
                     'queue': members,
                     'queue_total': unfinished,
                     'total': len(members),
-                    'percent': round(complete_num / member_num * 100, 1) if member_num else 0.0
+                    'percent': round(complete_num / base_num * 100, 1) if base_num else 0.0
                 })
         except Exception as e:
             log.debug(f'获取链接进度时出错,{_t(KeyWord.REASON)}:"{e}"')
@@ -378,8 +379,9 @@ class Web:
     def get_summary(links: list, tasks: list) -> dict:
         """汇总所有任务的总体进度。
 
-        总量取所有链接成员的大小之和(包含排队、已完成、跳过、失败),
-        而不是只统计正在下载的任务,避免总进度随着任务开始下载而不断变大。
+        总量取未失败成员的字节之和(包含排队、已完成、跳过),
+        而不是只统计正在下载的任务,避免总进度随着任务开始下载而不断变大;
+        彻底失败(重试耗尽)的成员不再计入总量,避免进度被永久拉低。
 
         Args:
             links: get_link_progress返回的链接进度。
@@ -394,9 +396,11 @@ class Web:
         speed: float = 0.0
         for link in links:
             for member in link.get('queue') or []:
+                state: str = str(member.get('state') or '')
+                if state == DownloadStatus.FAILURE:
+                    continue  # 彻底失败的成员不再计入总量与速度,避免进度被拉低。
                 size: int = int(member.get('size_byte') or 0)
                 total += size
-                state: str = str(member.get('state') or '')
                 if state in (DownloadStatus.SUCCESS, DownloadStatus.SKIP):
                     completed += size
                     continue

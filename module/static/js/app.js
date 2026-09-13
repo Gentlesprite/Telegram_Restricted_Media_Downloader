@@ -217,8 +217,9 @@ function getChannelGroups(links) {
             channelGroup.failed += channelGroup.links[j].failed || 0;
             channelGroup.members = channelGroup.members.concat(channelGroup.links[j].queue || []);
         }
-        channelGroup.percent = channelGroup.member ?
-            Math.round(channelGroup.complete / channelGroup.member * 1000) / 10 : 0;
+        var base = channelGroup.member - channelGroup.failed;  // 彻底失败的成员退出进度基数,避免进度永远到不了100%。
+        channelGroup.percent = base ?
+            Math.round(channelGroup.complete / base * 1000) / 10 : 0;
     }
     return groups;
 }
