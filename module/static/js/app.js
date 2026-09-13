@@ -37,6 +37,8 @@ var STATE_ICON = {
     cancelled: '⏸'
 };
 
+var HEAD_LABELS = ['频道', '频道 / 链接', '频道 / 链接 / 名称'];  // 表头首列随当前展开的层级变化。
+var SIZE_LABELS = ['完成 / 总数', '完成 / 总数', '数量 / 大小'];  // 第三列同理,分组行是数量,成员行才是字节大小。
 var collapsed = {};
 var allCollapsed = false;
 var UNGROUPED_NAME = '未分组';
@@ -148,7 +150,7 @@ function getChannelGroups(links) {
 function channelBlock(group, live) {
     var key = 'channel:' + group.channel;
     var isCollapsed = collapsed[key] === undefined ? allCollapsed : collapsed[key];
-    var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '">' +
+    var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '" data-level="1">' +
         '<div class="group-head" data-channel="' + escAttr(key) + '">' +
         '<span class="cell-name"><span class="arrow"></span>' +
         '<span class="ficon">📺</span>' +
@@ -172,7 +174,7 @@ function linkBlock(link, live) {
     var key = 'link:' + link.link;
     var isCollapsed = collapsed[key] === undefined ? true : collapsed[key];  // 链接默认折叠,避免一次性铺开。
     var members = link.queue || [];
-    var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '">' +
+    var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '" data-level="2">' +
         '<div class="group-head" data-channel="' + escAttr(key) + '">' +
         '<span class="cell-name"><span class="arrow"></span>' +
         '<span class="ficon">🔗</span>' +
@@ -196,6 +198,28 @@ function linkBlock(link, live) {
     return html + '</div></div>';
 }
 
+function groupVisible(node) {
+    for (var parent = node.parentNode; parent; parent = parent.parentNode) {
+        if (parent.style && parent.style.display === 'none') {
+            return false;  // 任一层祖先被折叠,该分组即不可见。
+        }
+    }
+    return true;
+}
+
+function syncHeadLabel() {
+    var level = 1;
+    var nodes = document.querySelectorAll('#download .group.open');
+    for (var i = 0; i < nodes.length; i++) {
+        var depth = nodes[i].getAttribute('data-level') === '2' ? 3 : 2;
+        if (depth > level && groupVisible(nodes[i])) {
+            level = depth;  // 取当前可见的最深层级。
+        }
+    }
+    document.getElementById('headName').textContent = HEAD_LABELS[level - 1];
+    document.getElementById('headSize').textContent = SIZE_LABELS[level - 1];  // 分组行是条数,成员行才是字节。
+}
+
 function bindGroups() {
     var nodes = document.querySelectorAll('.group-head');
     for (var i = 0; i < nodes.length; i++) {
@@ -207,6 +231,7 @@ function bindGroups() {
             body.style.display = hide ? 'none' : '';
             group.className = hide ? 'group' : 'group open';
             collapsed[key] = hide;
+            syncHeadLabel();
         };
     }
 }
@@ -226,6 +251,7 @@ function toggleAll() {
         collapsed[key] = allCollapsed;
     }
     syncToggleAll();
+    syncHeadLabel();
 }
 
 function sectionOfTab(name) {
@@ -349,6 +375,7 @@ function renderList(data) {
     document.getElementById('download').innerHTML = html ? html : '<div class="empty">暂无下载任务。</div>';
     syncToggleAll();
     bindGroups();  // 页面渲染完成后统一绑定折叠事件。
+    syncHeadLabel();
 }
 
 function uploadList(tasks) {
