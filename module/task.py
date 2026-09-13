@@ -102,7 +102,7 @@ class DownloadTask:
         """将消息加入下载任务,已存在时重置为排队状态。"""
         task: DownloadTask = cls.get_or_create(link)
         messages: list = message if isinstance(message, list) else [message]
-        retry_dict: dict = retry if retry else {}
+        retry_dict: dict = retry if retry else {'id': -1, 'count': 0}
         retry_id: int = int(retry_dict.get('id') or -1)
         retry_count: int = int(retry_dict.get('count') or 0)
         for _message in messages:

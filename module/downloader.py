@@ -1666,7 +1666,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             'format_file_size': format_file_size
         }
 
-    async def download_scheduler(self) -> None:
+    async def __download_scheduler(self) -> None:
         """下载调度器,按最大并发数依次把排队中的消息派发为下载任务。"""
         while True:
             item: Union[dict, None] = None
@@ -2469,7 +2469,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
         self.is_running = True
         self.running_log.add(self.is_running)
-        self.scheduler = self.loop.create_task(self.download_scheduler())  # 启动下载调度器,由调度器统一派发排队中的任务。
+        self.scheduler = self.loop.create_task(self.__download_scheduler())  # 启动下载调度器,由调度器统一派发排队中的任务。
         links: Union[set, None] = self.__process_links(link=self.app.links)
         # 将初始任务添加到队列中。
         [await self.loop.create_task(self.create_download_task(message_ids=link, retry=None)) for link in
