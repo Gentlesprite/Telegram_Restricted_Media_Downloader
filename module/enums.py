@@ -96,6 +96,7 @@ class WebMeta:
     PORT: str = 'port'
     USERNAME: str = 'username'
     PASSWORD: str = 'password'
+    COOKIE_NAME: str = 'TRMD_WEB_SESSION'
     DEFAULT_PORT: int = 2921
 
 

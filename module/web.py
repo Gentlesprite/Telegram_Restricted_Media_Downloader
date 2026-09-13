@@ -37,6 +37,7 @@ from module.util import (
     is_frozen,
     gen_random_credential,
     get_work_directory,
+    get_web_remember_token,
     get_message_dtype
 )
 from module.enums import (
@@ -51,6 +52,7 @@ from module.enums import (
 class WebHandler(BaseHTTPRequestHandler):
     """处理网页面板的请求。"""
     server_version: str = 'TRMDWeb'
+    remember_session: bool = False  # 本次响应是否需要下发记名Cookie。
 
     def do_GET(self) -> None:
         if self.__check_auth() is False:
@@ -72,10 +74,13 @@ class WebHandler(BaseHTTPRequestHandler):
         """屏蔽默认的请求日志,避免污染终端输出。"""
 
     def __check_auth(self) -> bool:
-        """校验Basic认证。"""
+        """校验认证,已被记住的浏览器通过Cookie免密,否则回退到Basic认证。"""
+        self.remember_session = False
         web: Union[Web, None] = getattr(self.server, 'web', None)
         if web is None or not web.username:
             return True
+        if web.check_session(self.__get_cookie()):
+            return True  # 浏览器已被记住,无需重复输入密码。
         authorization: str = self.headers.get('Authorization', '')
         if not authorization.startswith('Basic '):
             self.__response_unauthorized()
@@ -88,7 +93,16 @@ class WebHandler(BaseHTTPRequestHandler):
         if credential != f'{web.username}:{web.password}':
             self.__response_unauthorized()
             return False
+        self.remember_session = True  # 首次认证成功,响应时下发记名Cookie。
         return True
+
+    def __get_cookie(self) -> str:
+        """读取请求头中指定名称的Cookie。"""
+        for item in self.headers.get('Cookie', '').split(';'):
+            name, _, value = item.strip().partition('=')
+            if name == WebMeta.COOKIE_NAME:
+                return value
+        return ''
 
     def __response_unauthorized(self) -> None:
         """返回需要认证的响应。"""
@@ -97,12 +111,24 @@ class WebHandler(BaseHTTPRequestHandler):
         self.send_header('Content-Length', '0')
         self.end_headers()
 
+    def __response_session_cookie(self) -> None:
+        """首次认证成功后下发记名Cookie,让浏览器在软件重启后依然免密。"""
+        web: Union[Web, None] = getattr(self.server, 'web', None)
+        if web is None or not self.remember_session:
+            return
+        cookie: str = (
+            f'{WebMeta.COOKIE_NAME}={web.token}; '
+            f'Max-Age={Web.REMEMBER_COOKIE_MAX_AGE}; Path=/; HttpOnly; SameSite=Lax'
+        )
+        self.send_header('Set-Cookie', cookie)
+
     def __response_body(self, body: bytes, content_type: str) -> None:
         """返回指定内容的响应。"""
         self.send_response(200)
         self.send_header('Content-Type', content_type)
         self.send_header('Content-Length', str(len(body)))
         self.send_header('Cache-Control', 'no-store')  # 禁用缓存,避免浏览器沿用旧页面。
+        self.__response_session_cookie()
         self.end_headers()
         self.wfile.write(body)
 
@@ -188,6 +214,7 @@ class Web:
     TEMPLATE_FILES: tuple = ('index.html',)  # 模板目录提供的页面,其余请求一律按静态资源处理。
     UNGROUPED: str = '未分组'
     REMOVE_LISTEN_TIMEOUT: int = 10  # 等待事件循环移除监听的超时时间,单位为秒。
+    REMEMBER_COOKIE_MAX_AGE: int = 30 * 24 * 3600  # 记名Cookie的有效期,单位为秒(30天)。
     UNFINISHED_STATE: tuple = (
         QueueStatus.PENDING,
         QueueStatus.WAITING,
@@ -205,6 +232,7 @@ class Web:
         self.port: int = self.get_free_port(PARSE_ARGS.port)
         self.username: str = self.credential.get(WebMeta.USERNAME)
         self.password: str = self.credential.get(WebMeta.PASSWORD)
+        self.token: str = get_web_remember_token()  # 记名令牌,使浏览器在软件重启后依然免密。
         self.template_directory, self.static_directory = self.get_web_directory()
         self.server: Union[ThreadingHTTPServer, None] = None
         self.thread: Union[threading.Thread, None] = None
@@ -288,6 +316,10 @@ class Web:
             ],
             show_lines=True
         ).print_meta()
+
+    def check_session(self, token: str) -> bool:
+        """校验浏览器提交的记名令牌是否有效,用于免密登录。"""
+        return bool(token) and token == self.token
 
     def get_count(self) -> dict:
         """聚合下载任务的成功、失败、跳过数量。"""
