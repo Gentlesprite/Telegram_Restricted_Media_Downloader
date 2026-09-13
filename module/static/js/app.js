@@ -305,8 +305,8 @@ function syncHeadLabel() {
             level = depth;  // 取当前可见的最深层级。
         }
     }
-    document.getElementById('headName').textContent = HEAD_LABELS[level - 1];
-    document.getElementById('headSize').textContent = SIZE_LABELS[level - 1];  // 分组行是条数,成员行才是字节。
+    document.getElementById('headName').querySelector('.htext').textContent = HEAD_LABELS[level - 1];
+    document.getElementById('headSize').querySelector('.htext').textContent = SIZE_LABELS[level - 1];  // 分组行是条数,成员行才是字节。
 }
 
 function bindGroups() {
@@ -698,8 +698,8 @@ function syncUploadHeads() {
             break;
         }
     }
-    head.querySelector('.h-name').textContent = UPLOAD_HEAD_NAME[level - 1];
-    head.querySelector('.h-size').textContent = UPLOAD_HEAD_SIZE[level - 1];
+    head.querySelector('.h-name .htext').textContent = UPLOAD_HEAD_NAME[level - 1];
+    head.querySelector('.h-size .htext').textContent = UPLOAD_HEAD_SIZE[level - 1];
 }
 
 function renderUpload(uploads) {
@@ -777,6 +777,133 @@ function bindListenRemove() {
     };
 }
 
+var COLS_KEY = 'trmd_cols';  // 各表列宽的本地存储键。
+var COLS_MIN = 48;  // 单列最小宽度,避免被拖到不可读。
+var colsCache = {};  // 表名 -> 非弹性列的像素宽度数组。
+var dragState = null;  // 拖拽过程中的临时状态。
+
+function readDefaultCols(list) {
+    var text = window.getComputedStyle(list).getPropertyValue('--cols');  // 自定义属性在隐藏元素上也可读取。
+    var matches = text.match(/(\d+(?:\.\d+)?)px/g) || [];
+    var widths = [];
+    for (var i = 0; i < matches.length; i++) {
+        widths.push(Math.round(parseFloat(matches[i])));
+    }
+    return widths.length ? widths : [COLS_MIN];
+}
+
+function applyCols(list, widths) {
+    var parts = ['minmax(0, 1fr)'];  // 首列始终弹性,自适应剩余宽度。
+    for (var i = 0; i < widths.length; i++) {
+        parts.push(widths[i] + 'px');
+    }
+    list.style.setProperty('--cols', parts.join(' '));
+}
+
+function buildGrips(list) {
+    var head = list.querySelector('.list-head');
+    var cells = head.children;
+    var table = list.getAttribute('data-table');
+    for (var i = 0; i < cells.length - 1; i++) {  // 末列格右侧为容器边界,不生成分隔条。
+        if (cells[i].querySelector('.grip')) {
+            continue;  // 已存在分隔条时不重复创建。
+        }
+        var grip = document.createElement('span');
+        grip.className = 'grip';
+        grip.setAttribute('data-table', table);
+        grip.setAttribute('data-index', i);
+        grip.onpointerdown = resizeStart;
+        cells[i].appendChild(grip);
+    }
+}
+
+function clampColsWidth(widths, index, value, maxFixed) {
+    var others = 0;
+    for (var i = 0; i < widths.length; i++) {
+        if (i !== index) {
+            others += widths[i];
+        }
+    }
+    var max = Math.max(COLS_MIN, maxFixed - others);
+    return Math.min(Math.max(value, COLS_MIN), max);
+}
+
+function resizeStart(event) {
+    var grip = event.currentTarget;
+    var list = grip.closest('.list');
+    var head = list.querySelector('.list-head');
+    var index = Number(grip.getAttribute('data-index'));
+    var table = list.getAttribute('data-table');
+    var widths = colsCache[table] || readDefaultCols(list);
+    var style = window.getComputedStyle(head);
+    var gap = parseFloat(style.columnGap) || 0;
+    var padding = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+    dragState = {
+        list: list,
+        table: table,
+        index: index,
+        col: index === 0 ? 0 : index - 1,  // 分隔条所属列格对应的固定列下标。
+        sign: index === 0 ? -1 : 1,  // 首个分隔条调整右侧列,其余调整左侧列。
+        origin: widths.slice(),
+        widths: widths.slice(),
+        startX: event.clientX,
+        maxFixed: Math.max(head.clientWidth - padding - gap * widths.length, 0)
+    };
+    event.preventDefault();
+    event.stopPropagation();
+    document.body.classList.add('resizing');
+    document.addEventListener('pointermove', resizeMove);
+    document.addEventListener('pointerup', resizeEnd);
+}
+
+function resizeMove(event) {
+    if (!dragState) {
+        return;
+    }
+    var delta = event.clientX - dragState.startX;
+    var value = dragState.origin[dragState.col] + delta * dragState.sign;
+    dragState.widths[dragState.col] = clampColsWidth(dragState.widths, dragState.col, value, dragState.maxFixed);
+    applyCols(dragState.list, dragState.widths);
+    event.preventDefault();
+}
+
+function resizeEnd() {
+    if (!dragState) {
+        return;
+    }
+    colsCache[dragState.table] = dragState.widths;
+    try {
+        localStorage.setItem(COLS_KEY, JSON.stringify(colsCache));  // 记住本次列宽,刷新后恢复。
+    } catch (e) {
+        // 隐私模式下写入失败可忽略。
+    }
+    document.body.classList.remove('resizing');
+    document.removeEventListener('pointermove', resizeMove);
+    document.removeEventListener('pointerup', resizeEnd);
+    dragState = null;
+}
+
+function initCols() {
+    try {
+        colsCache = JSON.parse(localStorage.getItem(COLS_KEY) || '{}') || {};
+    } catch (e) {
+        colsCache = {};
+    }
+    var lists = document.querySelectorAll('.list[data-table]');
+    for (var i = 0; i < lists.length; i++) {
+        var list = lists[i];
+        var table = list.getAttribute('data-table');
+        var head = list.querySelector('.list-head');
+        var widths = colsCache[table];
+        if (!widths || widths.length !== head.children.length - 1) {
+            widths = readDefaultCols(list);  // 列数变化或首次加载时回退到默认列宽。
+        }
+        colsCache[table] = widths;
+        applyCols(list, widths);
+        buildGrips(list);
+    }
+}
+
 var savedSection = '';
 var savedListen = '';
 try {
@@ -793,5 +920,6 @@ switchSection(savedSection);
 switchListen(savedListen);
 document.getElementById('toggleAll').onclick = toggleAll;
 document.getElementById('toggleUpload').onclick = toggleUploadAll;
+initCols();  // 恢复上次的列宽并生成拖拽分隔条。
 refresh();
 setInterval(refresh, 1000);

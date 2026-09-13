@@ -335,6 +335,7 @@ h2 {
 
 /* 列表 */
 .list {
+    --cols: minmax(0, 1fr) 210px 148px 92px 84px 64px;  /* 下载、上传表的列宽来源,首列为弹性列,其余列为可拖拽的固定列。 */
     border: 1px solid var(--border);
     border-radius: 12px;
     background: var(--panel);
@@ -351,6 +352,46 @@ h2 {
     background: var(--panel2);
     font-size: 12px;
     color: var(--muted);
+}
+
+/* 表头的每个列格作为分隔条的定位参照。 */
+.list-head > span {
+    position: relative;
+}
+
+/* 列宽拖拽分隔条,覆盖列间隙,常显一小段细线提示此处可拖拽,按下后左右拖动调整列宽。 */
+.grip {
+    position: absolute;
+    top: -8px;  /* 上下各外扩表头内边距,让拖拽热区覆盖整个表头高度。 */
+    bottom: -8px;
+    right: -6px;
+    width: 12px;
+    z-index: 5;
+    cursor: col-resize;
+    touch-action: none;
+}
+
+.grip::before {
+    content: '';
+    position: absolute;
+    top: 35%;
+    bottom: 35%;
+    left: 50%;
+    width: 2px;
+    transform: translateX(-50%);
+    border-radius: 2px;
+    background: var(--border);
+    transition: background .15s ease;
+}
+
+.grip:hover::before,
+body.resizing .grip::before {
+    background: var(--accent);  /* 悬停或拖拽时保持原高度,只高亮提示可拖拽。 */
+}
+
+body.resizing {
+    cursor: col-resize;
+    user-select: none;
 }
 
 .task-row {
@@ -373,14 +414,12 @@ h2 {
 }
 
 /* 监听页的列:转发为监听频道与转发频道两列,下载只有一列,末列固定为操作按钮。 */
-.listen-two .list-head,
-.listen-two .task-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 56px;
+.listen-two {
+    --cols: minmax(0, 1fr) 240px 56px;
 }
 
-.listen-one .list-head,
-.listen-one .task-row {
-    grid-template-columns: minmax(0, 1fr) 56px;
+.listen-one {
+    --cols: minmax(0, 1fr) 56px;
 }
 
 .h-action {
@@ -668,9 +707,26 @@ tbody tr:hover {
         display: none;
     }
 
-    .list-head,
-    .task-row,
-    .group-head {
+    .grip {
+        display: none;  /* 窄屏走隐藏列的适配逻辑,列宽拖拽不生效,直接隐藏分隔条。 */
+    }
+
+    .listen-two .list-head,
+    .listen-two .task-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 56px;
+    }
+
+    .listen-one .list-head,
+    .listen-one .task-row {
+        grid-template-columns: minmax(0, 1fr) 56px;
+    }
+
+    #page-download .list-head,
+    #page-download .task-row,
+    #page-download .group-head,
+    #page-upload .list-head,
+    #page-upload .task-row,
+    #page-upload .group-head {
         grid-template-columns: minmax(0, 1fr) 150px 110px 60px;
     }
 }
@@ -681,9 +737,12 @@ tbody tr:hover {
         display: none;
     }
 
-    .list-head,
-    .task-row,
-    .group-head {
+    #page-download .list-head,
+    #page-download .task-row,
+    #page-download .group-head,
+    #page-upload .list-head,
+    #page-upload .task-row,
+    #page-upload .group-head {
         grid-template-columns: minmax(0, 1fr) 120px 56px;
     }
 
