@@ -460,13 +460,15 @@ function getUploadGroups(tasks) {
         group.done_byte = 0;
         for (var j = 0; j < group.files.length; j++) {
             var file = group.files[j];
+            if (file.state === 'failure') {
+                group.failed += 1;
+                continue;  // 失败文件不计入分组进度基数,避免拖低进度。
+            }
             var size = Number(file.size_byte) || 0;
             group.total_byte += size;
             if (uploadDone(file)) {
                 group.complete += 1;
                 group.done_byte += size;
-            } else if (file.state === 'failure') {
-                group.failed += 1;
             } else {
                 group.done_byte += Math.min(Number(file.completed) || 0, size);  // 上传中的文件按已传字节计入。
             }
@@ -479,11 +481,14 @@ function getUploadGroups(tasks) {
 }
 
 function uploadSummary(tasks) {
-    var total = 0;  // 总量取所有上传文件的字节数,含排队、已完成与失败,与下载总进度口径一致。
+    var total = 0;  // 总量只统计未失败的上传文件,失败文件退出进度基数。
     var done = 0;
     var speed = 0;
     for (var i = 0; i < tasks.length; i++) {
         var file = tasks[i];
+        if (file.state === 'failure') {
+            continue;  // 失败文件不再计入总量与速度,避免进度被拉低。
+        }
         var size = Number(file.size_byte) || 0;
         total += size;
         if (uploadDone(file)) {
