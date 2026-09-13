@@ -37,7 +37,7 @@ from module.util import (
     is_frozen,
     gen_random_credential,
     get_work_directory,
-    get_web_remember_token,
+    get_web_session,
     get_message_dtype
 )
 from module.enums import (
@@ -232,7 +232,7 @@ class Web:
         self.port: int = self.get_free_port(PARSE_ARGS.port)
         self.username: str = self.credential.get(WebMeta.USERNAME)
         self.password: str = self.credential.get(WebMeta.PASSWORD)
-        self.token: str = get_web_remember_token()  # 记名令牌,使浏览器在软件重启后依然免密。
+        self.token: str = get_web_session()  # 记名令牌,使浏览器在软件重启后依然免密。
         self.template_directory, self.static_directory = self.get_web_directory()
         self.server: Union[ThreadingHTTPServer, None] = None
         self.thread: Union[threading.Thread, None] = None

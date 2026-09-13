@@ -21,7 +21,7 @@ from rich.text import Text
 from module import (
     log,
     REFERRAL_RECORD_PATH,
-    WEB_REMEMBER_PATH
+    TRMD_WEB_SESSION
 )
 from module.enums import (
     Link,
@@ -470,10 +470,10 @@ def gen_random_token(length: int = 32) -> str:
     return ''.join(random.choices(chars, k=length))
 
 
-def get_web_remember_token() -> str:
+def get_web_session() -> str:
     """读取网页面板的记名令牌,不存在时生成并持久化,以便浏览器在软件重启后依然免密。"""
     try:
-        with open(file=WEB_REMEMBER_PATH, mode='r', encoding='UTF-8') as f:
+        with open(file=TRMD_WEB_SESSION, mode='r', encoding='UTF-8') as f:
             token: str = f.read().strip()
         if token:
             return token
@@ -481,9 +481,9 @@ def get_web_remember_token() -> str:
         pass
     token: str = gen_random_token()
     try:
-        with open(file=WEB_REMEMBER_PATH, mode='w', encoding='UTF-8') as f:
+        with open(file=TRMD_WEB_SESSION, mode='w', encoding='UTF-8') as f:
             f.write(token)
-        log.info(f'已生成网页面板的记名令牌:"{WEB_REMEMBER_PATH}"。')
+        log.info(f'已生成网页面板的记名令牌:"{TRMD_WEB_SESSION}"。')
     except OSError as e:
         log.warning(f'保存网页面板的记名令牌失败,原因:"{e}"。')
     return token
