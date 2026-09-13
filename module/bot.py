@@ -905,7 +905,8 @@ class Bot:
             client: pyrogram.Client,
             message: pyrogram.types.Message,
             link: str,
-            command: str
+            command: str,
+            from_web: bool = False
     ):
         pass
 

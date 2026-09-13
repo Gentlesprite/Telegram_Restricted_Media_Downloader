@@ -466,7 +466,8 @@ function renderList(data) {
     syncHeadLabel();
 }
 
-function listenRow(source, target) {
+function listenRow(kind, source, target) {
+    var link = target ? source + ' ' + target : source;  // 与后端监听字典的键保持一致。
     var html = '<div class="task-row">' +
         '<span class="cell-name"><span class="ficon">🕵️</span>' +
         '<span class="fname" title="' + escAttr(source) + '">' + esc(source) + '</span></span>';
@@ -474,6 +475,8 @@ function listenRow(source, target) {
         html += '<span class="cell-name"><span class="ficon">➡️</span>' +
             '<span class="fname" title="' + escAttr(target) + '">' + esc(target) + '</span></span>';
     }
+    html += '<span class="cell-action"><button class="btn-del" type="button" title="移除该监听"' +
+        ' data-kind="' + kind + '" data-link="' + escAttr(link) + '">✖</button></span>';
     return html + '</div>';
 }
 
@@ -484,15 +487,35 @@ function renderListeners(listeners) {
     var html = '';
     var i;
     for (i = 0; i < forward.length; i++) {
-        html += listenRow(forward[i].source, forward[i].target);
+        html += listenRow('forward', forward[i].source, forward[i].target);
     }
     document.getElementById('listenForward').innerHTML = html ? html : '<div class="empty">暂无监听转发。</div>';
     html = '';
     for (i = 0; i < download.length; i++) {
-        html += listenRow(download[i]);
+        html += listenRow('download', download[i]);
     }
     document.getElementById('listenDownload').innerHTML = html ? html : '<div class="empty">暂无监听下载。</div>';
     return forward.length + download.length;
+}
+
+async function removeListener(kind, link) {
+    if (!link) {
+        return;
+    }
+    try {
+        var res = await fetch('/api/listener/remove', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({kind: kind, link: link})
+        });
+        var data = await res.json();
+        if (!data.status) {
+            window.alert('移除失败:' + (data.e_code || '未知错误。'));
+        }
+    } catch (e) {
+        window.alert('移除失败:无法连接程序。');
+    }
+    refresh();  // 移除后立即刷新,无需等待下一次轮询。
 }
 
 function uploadDone(file) {
@@ -736,6 +759,17 @@ function bindListenTabs() {
     }
 }
 
+function bindListenRemove() {
+    var box = document.getElementById('page-listener');  // 用事件委托,避免每次轮询重新绑定。
+    box.onclick = function (event) {
+        var target = event.target;
+        if (!target || !target.classList || !target.classList.contains('btn-del')) {
+            return;
+        }
+        removeListener(target.getAttribute('data-kind'), target.getAttribute('data-link'));
+    };
+}
+
 var savedSection = '';
 var savedListen = '';
 try {
@@ -747,6 +781,7 @@ try {
 }
 bindSections();
 bindListenTabs();
+bindListenRemove();
 switchSection(savedSection);
 switchListen(savedListen);
 document.getElementById('toggleAll').onclick = toggleAll;

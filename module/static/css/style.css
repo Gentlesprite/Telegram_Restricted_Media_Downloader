@@ -372,15 +372,45 @@ h2 {
     border-bottom: none;
 }
 
-/* 监听页的列:转发为监听频道与转发频道两列,下载只有一列。 */
+/* 监听页的列:转发为监听频道与转发频道两列,下载只有一列,末列固定为操作按钮。 */
 .listen-two .list-head,
 .listen-two .task-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 56px;
 }
 
 .listen-one .list-head,
 .listen-one .task-row {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 56px;
+}
+
+.h-action {
+    text-align: right;
+}
+
+.cell-action {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.btn-del {
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+
+.btn-del:hover {
+    border-color: var(--danger);
+    background: rgba(255, 92, 122, .12);
+    color: var(--danger);
 }
 
 /* 分组 */

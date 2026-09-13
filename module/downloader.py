@@ -124,6 +124,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.pb: ProgressBar = ProgressBar()
         self.uploader: Union[TelegramUploader, None] = None
         self.cd: Union[CallbackData, None] = None
+        self.web_remove_listen: set = set()  # 网页面板发起的移除监听命令,机器人识别后直接移除,不再发送二次确认按钮。
         self.my_id: int = 0
         self.web: Union[Web, None] = Web(
             progress=self.pb.progress,
@@ -1290,18 +1291,49 @@ class TelegramRestrictedMediaDownloader(Bot):
             client: pyrogram.Client,
             message: pyrogram.types.Message,
             link: str,
-            command: str
+            command: str,
+            from_web: bool = False
     ):
+        args: list = link.split()
+        forward_emoji = ' ➡️ '
+        named_link: str = link if len(args) == 1 else forward_emoji.join(args)
+        if from_web:  # 网页面板发起的移除,直接删除监听,不再发送二次确认按钮。
+            if command == '/listen_download':
+                self.app.client.remove_handler(self.listen_download_chat.get(link))
+                self.listen_download_chat.pop(link, None)
+                p: str = f'已删除监听下载,频道链接:"{link}"。'
+                log.info(f'{p}当前的监听下载信息:{self.listen_download_chat}')
+            else:
+                self.app.client.remove_handler(self.listen_forward_chat.get(link))
+                self.listen_forward_chat.pop(link, None)
+                rule: str = ' -> '.join(args)
+                p: str = f'已删除监听转发,转发规则:"{rule}"。'
+                log.info(f'{p}当前的监听转发信息:{self.listen_forward_chat}')
+            console.log(p, style='#FF4689')
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text=f'{named_link}',
+                link_preview_options=LINK_PREVIEW_OPTIONS,
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton(
+                            BotButton.ALREADY_REMOVE,
+                            callback_data=BotCallbackText.NULL
+                        )
+                    ]
+                ]
+                )
+            )
+            return None
         if command == '/listen_forward':
             self.cd.data = {
                 'link': link
             }
-        args: list = link.split()
-        forward_emoji = ' ➡️ '
         await client.send_message(
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
-            text=f'`{link if len(args) == 1 else forward_emoji.join(args)}`\n🚛已经在监听列表中。',
+            text=f'`{named_link}`\n🚛已经在监听列表中。',
             link_preview_options=LINK_PREVIEW_OPTIONS,
             reply_markup=InlineKeyboardMarkup([
                 [
@@ -1313,6 +1345,44 @@ class TelegramRestrictedMediaDownloader(Bot):
             ]
             )
         )
+
+    async def cancel_listen_from_web(
+            self,
+            kind: str,
+            link: str
+    ) -> dict:
+        """按网页面板的请求移除已注册的监听下载或监听转发。
+
+        网页面板没有内联按钮可点,因此复用机器人命令:让用户端向机器人发送与注册监听
+        完全一致的命令,机器人检测到监听已存在时直接移除,不再发送二次确认按钮。
+
+        Args:
+            kind: 监听类型,`download`为监听下载,`forward`为监听转发。
+            link: 监听下载为频道链接;监听转发为"监听频道 转发频道"。
+
+        Returns:
+            dict: status为是否移除成功,失败时e_code为失败原因。
+        """
+        if not link:
+            return {'status': False, 'e_code': '缺少要移除的链接。'}
+        if not self.is_bot_running or self.bot is None:
+            return {'status': False, 'e_code': '机器人未运行,无法移除监听。'}
+        if kind == 'download':
+            if link not in self.listen_download_chat:
+                return {'status': False, 'e_code': '该监听下载不存在。'}
+            text: str = f'/listen_download {link}'
+        elif kind == 'forward':
+            if link not in self.listen_forward_chat:
+                return {'status': False, 'e_code': '该监听转发不存在。'}
+            text: str = f'/listen_forward {link}'
+        else:
+            return {'status': False, 'e_code': '未知的监听类型。'}
+        self.web_remove_listen.add(text)  # 先登记,确保机器人处理该命令时能识别为网页面板发起的移除。
+        result = await self.send_message_to_bot(text=text)
+        if isinstance(result, Exception) or result is None:
+            self.web_remove_listen.discard(text)
+            return {'status': False, 'e_code': f'发送移除命令失败:"{result}"'}
+        return {'status': True}
 
     async def on_listen(
             self,
@@ -1375,7 +1445,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                     log.error(f'读取频道"{_link}"时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
                     return False
             else:
-                await self.cancel_listen(client, message, _link, command)
+                text: str = f'{command} {_link}'
+                from_web: bool = text in self.web_remove_listen
+                if from_web:
+                    self.web_remove_listen.discard(text)
+                await self.cancel_listen(client, message, _link, command, from_web=from_web)
                 return False
 
         links: list = meta.get('links')

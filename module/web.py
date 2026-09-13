@@ -8,10 +8,12 @@ import sys
 import json
 import base64
 import socket
+import asyncio
 import mimetypes
 import threading
 
 from typing import Union
+from asyncio import AbstractEventLoop
 from urllib.parse import unquote
 from http.server import (
     BaseHTTPRequestHandler,
@@ -57,6 +59,14 @@ class WebHandler(BaseHTTPRequestHandler):
             self.__response_progress()
         else:
             self.__response_static()
+
+    def do_POST(self) -> None:
+        if self.__check_auth() is False:
+            return
+        if self.path.startswith('/api/listener/remove'):
+            self.__response_remove_listener()
+        else:
+            self.send_error(404)
 
     def log_message(self, fmt, *args) -> None:
         """屏蔽默认的请求日志,避免污染终端输出。"""
@@ -105,6 +115,36 @@ class WebHandler(BaseHTTPRequestHandler):
             content_type='application/json; charset=utf-8'
         )
 
+    def __read_json(self) -> dict:
+        """读取请求体中的JSON数据,解析失败时返回空字典。"""
+        try:
+            length: int = int(self.headers.get('Content-Length') or 0)
+        except (TypeError, ValueError):
+            return {}
+        if length <= 0:
+            return {}
+        try:
+            return json.loads(self.rfile.read(length).decode('UTF-8'))
+        except Exception as e:
+            log.debug(f'解析请求数据失败,{_t(KeyWord.REASON)}:"{e}"')
+            return {}
+
+    def __response_remove_listener(self) -> None:
+        """处理移除监听下载与监听转发的请求。"""
+        web: Union[Web, None] = getattr(self.server, 'web', None)
+        payload: dict = self.__read_json()
+        if web is None:
+            body: dict = {'status': False, 'e_code': '网页面板未就绪。'}
+        else:
+            body: dict = web.remove_listener(
+                kind=str(payload.get('kind') or ''),
+                link=str(payload.get('link') or '')
+            )
+        self.__response_body(
+            body=json.dumps(body, ensure_ascii=False).encode('UTF-8'),
+            content_type='application/json; charset=utf-8'
+        )
+
     def __response_static(self) -> None:
         """返回网页模板与静态目录下的文件。"""
         web: Union[Web, None] = getattr(self.server, 'web', None)
@@ -147,6 +187,7 @@ class Web:
     INDEX_FILE: str = 'index.html'
     TEMPLATE_FILES: tuple = ('index.html',)  # 模板目录提供的页面,其余请求一律按静态资源处理。
     UNGROUPED: str = '未分组'
+    REMOVE_LISTEN_TIMEOUT: int = 10  # 等待事件循环移除监听的超时时间,单位为秒。
     UNFINISHED_STATE: tuple = (
         QueueStatus.PENDING,
         QueueStatus.WAITING,
@@ -358,6 +399,34 @@ class Web:
         except Exception as e:
             log.debug(f'获取监听信息时出错,{_t(KeyWord.REASON)}:"{e}"')
         return result
+
+    def remove_listener(self, kind: str, link: str) -> dict:
+        """按网页面板的请求移除已注册的监听下载或监听转发。
+
+        移除动作需要在下载器的事件循环中执行,才能安全地让用户端向机器人发送命令,
+        而网页面板运行在独立的HTTP服务线程中,因此把协程投递到事件循环并等待结果。
+
+        Args:
+            kind: 监听类型,`download`为监听下载,`forward`为监听转发。
+            link: 监听下载为频道链接;监听转发为"监听频道 转发频道"。
+
+        Returns:
+            dict: status为是否移除成功,失败时e_code为失败原因。
+        """
+        if self.downloader is None:
+            return {'status': False, 'e_code': '网页面板未关联下载器。'}
+        loop: Union[AbstractEventLoop, None] = self.downloader.loop
+        if loop is None or not loop.is_running():
+            return {'status': False, 'e_code': '下载器未运行,无法移除监听。'}
+        future = asyncio.run_coroutine_threadsafe(
+            self.downloader.cancel_listen_from_web(kind=kind, link=link),
+            loop
+        )
+        try:
+            return future.result(timeout=Web.REMOVE_LISTEN_TIMEOUT)
+        except Exception as e:
+            log.debug(f'移除监听失败,{_t(KeyWord.REASON)}:"{e}"')
+            return {'status': False, 'e_code': '移除监听超时,请稍后重试。'}
 
     def get_upload_tasks(self, tasks: Union[list, None] = None) -> list:
         """获取上传任务的概要信息,并按进度条任务ID补全上传进度。"""
