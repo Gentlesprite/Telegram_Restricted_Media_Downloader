@@ -1354,7 +1354,6 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
     -v ./form:/app/form \
     -p 2921:2921 \
     -e TZ=Asia/Shanghai \
-    --restart unless-stopped \
     gentlesprite/telegram_restricted_media_downloader:latest \
     python main.py --config /app/TRMD/config.yaml --port 2921
   ```
@@ -1362,7 +1361,7 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
 - 如果是通过`Windows`使用`wsl2`运行`docker`：
 
   ```bash
-  docker run -d --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -v ./form:/app/form -p 2921:2921 -w /app -e TZ=Asia/Shanghai --restart unless-stopped gentlesprite/telegram_restricted_media_downloader:latest python main.py --config /app/TRMD/config.yaml --port 2921
+  docker run -d --name trmd -v ./config:/app/TRMD -v ./sessions:/app/sessions -v ./downloads:/app/downloads -v ./temp:/app/temp -v ./form:/app/form -p 2921:2921 -w /app -e TZ=Asia/Shanghai gentlesprite/telegram_restricted_media_downloader:latest python main.py --config /app/TRMD/config.yaml --port 2921
   ```
 
 方式2：
@@ -1384,7 +1383,7 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
 - 首次使用时需要进入容器配置文件：
 
   ```bash
-  docker-compose run --rm trmd
+  docker-compose run --rm --service-ports --name trmd trmd
   ```
 
 - 如果已配置完成的情况下，直接创建并启动容器：

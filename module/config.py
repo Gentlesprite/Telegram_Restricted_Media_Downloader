@@ -32,7 +32,10 @@ from module.enums import (
     GetStdioParams,
     ProcessConfig
 )
-from module.util import get_work_directory
+from module.util import (
+    ctrl_c,
+    get_work_directory
+)
 
 
 class BaseConfig:
@@ -533,7 +536,7 @@ class UserConfig(BaseConfig):
                 if n:
                     print('\n')
                     console.log('用户手动终止配置参数。')
-                self.ctrl_c()
+                ctrl_c()
                 exit_flag: bool = True
         if exit_flag:
             raise SystemExit(0)
@@ -575,15 +578,6 @@ class UserConfig(BaseConfig):
             log.info('配置文件已保存。')
         except Exception as e:
             log.error(f'保存配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
-
-    def ctrl_c(self):
-        if self.platform == 'Windows':
-            subprocess.run('pause', shell=True)
-        else:
-            try:
-                console.input('请按「Enter」键继续. . .')
-            except KeyboardInterrupt:
-                pass
 
 
 class GlobalConfig(BaseConfig):

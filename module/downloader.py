@@ -93,6 +93,7 @@ from module.stdio import ProgressBar, Base64Image, MetaData
 from module.web import Web
 from module.uploader import TelegramUploader
 from module.util import (
+    ctrl_c,
     is_docker,
     parse_link,
     format_chat_link,
@@ -2713,4 +2714,4 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
                 MetaData.pay()
                 self.app.process_shutdown(60) if len(self.running_log) == 2 else None  # v1.2.8如果并未打开客户端执行任何下载,则不执行关机。
-            self.app.ctrl_c()
+            ctrl_c()

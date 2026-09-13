@@ -2,7 +2,7 @@ services:
   trmd:
     image: gentlesprite/telegram_restricted_media_downloader:latest
     container_name: trmd
-    restart: unless-stopped
+    restart: 'no'
     stdin_open: true
     tty: true
     ports:

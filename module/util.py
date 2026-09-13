@@ -8,6 +8,7 @@ import re
 import sys
 import string
 import random
+import subprocess
 
 from typing import Tuple, List, Union, Optional
 
@@ -20,8 +21,11 @@ from rich.text import Text
 
 from module import (
     log,
+    console,
+    TRMD_WEB_SESSION,
+    PLATFORM,
     REFERRAL_RECORD_PATH,
-    TRMD_WEB_SESSION
+
 )
 from module.enums import (
     Link,
@@ -531,6 +535,18 @@ def is_docker() -> bool:
 
     log.info('未检测到容器标识,当前运行于非"Docker"环境。')
     return False
+
+
+def ctrl_c():
+    if PLATFORM == 'Windows':
+        subprocess.run('pause', shell=True)
+    elif is_docker():
+        return None
+    else:
+        try:
+            console.input('请按「Enter」键继续. . .')
+        except KeyboardInterrupt:
+            pass
 
 
 def get_message_dtype(message, download_type: Optional[list] = None) -> Union[str, None]:
