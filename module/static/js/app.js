@@ -65,6 +65,57 @@ function progressCell(percent) {
         '<span class="pct">' + percent + '%</span></span>';
 }
 
+var SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];  // 与终端的十进制单位保持一致。
+
+function sizeText(bytes) {
+    var value = Number(bytes) || 0;
+    var index = 0;
+    while (value >= 1000 && index < SIZE_UNITS.length - 1) {
+        value = value / 1000;
+        index++;
+    }
+    return value.toFixed(2) + SIZE_UNITS[index];
+}
+
+function secondsText(seconds) {
+    var total = Math.floor(Number(seconds) || 0);
+    if (total < 60) {
+        return total + '秒';
+    }
+    if (total < 3600) {
+        return Math.floor(total / 60) + '分' + (total % 60) + '秒';
+    }
+    return Math.floor(total / 3600) + '时' + Math.floor(total % 3600 / 60) + '分' + (total % 60) + '秒';
+}
+
+function groupStat(members, live) {
+    var speed = 0;
+    var left = 0;
+    for (var i = 0; i < members.length; i++) {
+        var member = members[i];
+        var task = live[member.task_id];
+        if (member.state === 'success' || member.state === 'skip') {
+            continue;  // 已完成与已跳过的成员不再计入速度与剩余。
+        }
+        if (task && task.speed_value) {
+            speed += Number(task.speed_value) || 0;
+        }
+        if (member.state === 'downloading' && task) {
+            left += Math.max((Number(member.size_byte) || 0) - (Number(task.completed) || 0), 0);
+        } else {
+            left += Number(member.size_byte) || 0;  // 尚未开始下载的成员按整份大小预估剩余。
+        }
+    }
+    return {speed: speed, remaining: speed && left > 0 ? left / speed : null};
+}
+
+function groupStatCells(stat) {
+    var speed = stat.speed ? sizeText(stat.speed) + '/s' : '—';
+    var remain = stat.remaining === null ? '—' : secondsText(stat.remaining);
+    return '<span class="cell-speed">' + speed + '</span>' +
+        '<span class="cell-remain">' + remain + '</span>';
+}
+
 function taskRow(task) {
     var done = task.percent >= 100;
     return '<div class="task-row">' +
@@ -135,11 +186,13 @@ function getChannelGroups(links) {
         channelGroup.member = 0;
         channelGroup.remaining = 0;
         channelGroup.failed = 0;
+        channelGroup.members = [];  // 汇总该频道下所有链接的成员,用于计算频道级速度与剩余时间。
         for (var j = 0; j < channelGroup.links.length; j++) {
             channelGroup.complete += channelGroup.links[j].complete || 0;
             channelGroup.member += channelGroup.links[j].member || 0;
             channelGroup.remaining += channelGroup.links[j].remaining || 0;
             channelGroup.failed += channelGroup.links[j].failed || 0;
+            channelGroup.members = channelGroup.members.concat(channelGroup.links[j].queue || []);
         }
         channelGroup.percent = channelGroup.member ?
             Math.round(channelGroup.complete / channelGroup.member * 1000) / 10 : 0;
@@ -150,6 +203,7 @@ function getChannelGroups(links) {
 function channelBlock(group, live) {
     var key = 'channel:' + group.channel;
     var isCollapsed = collapsed[key] === undefined ? allCollapsed : collapsed[key];
+    var stat = groupStat(group.members || [], live);
     var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '" data-level="1">' +
         '<div class="group-head" data-channel="' + escAttr(key) + '">' +
         '<span class="cell-name"><span class="arrow"></span>' +
@@ -159,8 +213,7 @@ function channelBlock(group, live) {
         '<span class="gcount">' + group.count + ' 个链接</span></span>' +
         progressCell(group.percent) +
         '<span class="cell-size">' + group.complete + '/' + group.member + '</span>' +
-        '<span class="cell-speed">—</span>' +
-        '<span class="cell-remain">—</span>' +
+        groupStatCells(stat) +
         linkStatusCell(group) +
         '</div>' +
         '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
@@ -174,6 +227,7 @@ function linkBlock(link, live) {
     var key = 'link:' + link.link;
     var isCollapsed = collapsed[key] === undefined ? true : collapsed[key];  // 链接默认折叠,避免一次性铺开。
     var members = link.queue || [];
+    var stat = groupStat(members, live);
     var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '" data-level="2">' +
         '<div class="group-head" data-channel="' + escAttr(key) + '">' +
         '<span class="cell-name"><span class="arrow"></span>' +
@@ -182,8 +236,7 @@ function linkBlock(link, live) {
         '<span class="gcount">' + (link.queue_total || 0) + ' 条未完成 / 共 ' + (link.total || 0) + ' 条</span></span>' +
         progressCell(link.percent) +
         '<span class="cell-size">' + link.complete + '/' + link.member + '</span>' +
-        '<span class="cell-speed">—</span>' +
-        '<span class="cell-remain">—</span>' +
+        groupStatCells(stat) +
         linkStatusCell(link) +
         '</div>' +
         '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
