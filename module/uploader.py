@@ -544,6 +544,7 @@ class TelegramUploader:
             info=f'0.00B/{format_file_size}',
             total=file_size
         )
+        upload_task.task_id = task_id  # 记录进度条任务ID,网页面板据此关联该上传任务的实时进度。
         _task = self.loop.create_task(
             self.resume_upload(
                 upload_task=upload_task,

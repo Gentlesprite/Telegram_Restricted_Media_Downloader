@@ -45,11 +45,20 @@
             <div class="stat" id="stat"></div>
         </div>
 
-        <nav class="tabs" id="tabs" hidden>
-            <button class="tab active" data-section="upload" data-tab="uploading" type="button">上传中<b class="badge" id="badgeUploading">0</b></button>
-            <button class="tab" data-section="upload" data-tab="uploaded" type="button">上传完成<b class="badge" id="badgeUploaded">0</b></button>
-            <button class="tab" data-section="upload" data-tab="upload_failed" type="button">上传失败<b class="badge" id="badgeUploadFailed">0</b></button>
-        </nav>
+        <div id="uploadSummary" hidden>
+            <div class="panel overall">
+                <div class="overall-top">
+                    <span class="label">总进度</span>
+                    <span class="big" id="uploadPercent">0%</span>
+                    <span class="muted" id="uploadInfo">0.00B / 0.00B</span>
+                    <span class="muted" id="uploadExtra">暂无速度</span>
+                </div>
+                <div class="track track-lg">
+                    <div class="fill" id="uploadFill"></div>
+                </div>
+            </div>
+            <div class="stat" id="uploadStat"></div>
+        </div>
 
         <div class="page" id="page-download">
             <div class="section-head">
@@ -69,16 +78,22 @@
             </div>
         </div>
 
-        <div class="page" id="page-uploading" hidden>
-            <div class="list" id="uploading"></div>
-        </div>
-
-        <div class="page" id="page-uploaded" hidden>
-            <div class="list" id="uploaded"></div>
-        </div>
-
-        <div class="page" id="page-upload_failed" hidden>
-            <div class="list" id="upload_failed"></div>
+        <div class="page" id="page-upload" hidden>
+            <div class="section-head">
+                <span class="gcount">进行中 <b id="badgeUpload">0</b> 个任务</span>
+                <button class="toggle" id="toggleUpload" type="button">全部折叠</button>
+            </div>
+            <div class="list">
+                <div class="list-head">
+                    <span class="h-name">频道</span>
+                    <span>进度</span>
+                    <span class="h-size">完成 / 总数</span>
+                    <span class="h-speed">速度</span>
+                    <span class="h-remain">剩余时间</span>
+                    <span class="h-status">状态</span>
+                </div>
+                <div id="upload"></div>
+            </div>
         </div>
     </main>
 </div>

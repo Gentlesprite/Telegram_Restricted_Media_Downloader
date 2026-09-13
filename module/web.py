@@ -41,6 +41,7 @@ from module.enums import (
     WebMeta,
     KeyWord,
     QueueStatus,
+    UploadStatus,
     DownloadStatus
 )
 
@@ -336,18 +337,37 @@ class Web:
             log.debug(f'解析排队消息时出错,{_t(KeyWord.REASON)}:"{e}"')
         return result
 
-    def get_upload_tasks(self) -> list:
-        """获取上传任务的概要信息。"""
+    def get_upload_tasks(self, tasks: Union[list, None] = None) -> list:
+        """获取上传任务的概要信息,并按进度条任务ID补全上传进度。"""
         result: list = []
+        live: dict = {}
+        for item in tasks if tasks is not None else self.get_tasks():
+            live[item.get('id')] = item
         try:
             for task in list(UploadTask.TASKS):
                 status = getattr(task.status, 'value', task.status)
+                done: bool = status in (UploadStatus.SUCCESS, UploadStatus.SENT)
+                progress: dict = live.get(getattr(task, 'task_id', None)) or {}
+                size: str = MetaData.suitable_units_display(task.file_size)
+                info: str = progress.get('info', '')
+                if not info and done:
+                    info = f'{size}/{size}'  # 进度条任务已在完成时移除,用文件自身大小回填。
                 result.append({
                     'file': task.file_name,
-                    'chat': Web.format_channel(str(task.chat_id)) if task.chat_id else '',
-                    'size': MetaData.suitable_units_display(task.file_size),
+                    'path': task.file_path,
+                    'chat': Web.format_channel(str(task.chat_id)) if task.chat_id else Web.UNGROUPED,
+                    'channel': str(task.chat_id) if task.chat_id else Web.UNGROUPED,
+                    'size': size,
+                    'size_byte': int(task.file_size),
                     'status': _t(str(status)),
                     'state': str(status),  # 原始状态,供网页面板区分上传中、已完成、失败。
+                    'task_id': getattr(task, 'task_id', None),
+                    'completed': progress.get('completed', task.file_size if done else 0),
+                    'percent': progress.get('percent', 100.0 if done else 0.0),
+                    'info': info,
+                    'speed': progress.get('speed', ''),
+                    'speed_value': progress.get('speed_value', 0),
+                    'remaining': progress.get('remaining', ''),
                     'error': task.error_msg if task.error_msg else ''
                 })
         except Exception as e:
@@ -428,7 +448,10 @@ class Web:
     def snapshot(self) -> dict:
         """生成供网页面板展示的进度数据。"""
         try:
-            tasks: list = self.get_tasks()
+            all_tasks: list = self.get_tasks()
+            uploads: list = self.get_upload_tasks(tasks=all_tasks)
+            upload_ids: set = {item.get('task_id') for item in uploads if item.get('task_id') is not None}
+            tasks: list = [item for item in all_tasks if item.get('id') not in upload_ids]  # 上传进度条任务不纳入下载统计。
             links: list = self.get_link_progress()
             return {
                 'count': self.get_count(),
@@ -436,7 +459,7 @@ class Web:
                 'queue': sum(link.get('remaining', 0) for link in links),  # 所有链接待下载的消息总数。
                 'tasks': tasks,
                 'links': links,
-                'uploads': self.get_upload_tasks()
+                'uploads': uploads
             }
         except Exception as e:
             log.debug(f'生成进度数据时出错,{_t(KeyWord.REASON)}:"{e}"')

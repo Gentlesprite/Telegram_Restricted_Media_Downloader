@@ -2,12 +2,14 @@ const EMPTY_SUMMARY = {percent: 0, info: '0.00B / 0.00B', speed: '', remaining: 
 
 var SECTIONS = {
     download: ['download'],
-    upload: ['uploading', 'uploaded', 'upload_failed']
+    upload: ['upload']
 };
-var PAGES = SECTIONS.download.concat(SECTIONS.upload);  // 所有页面,下载页不再有分页标签。
-var TABS = SECTIONS.upload;  // 顶部分页标签只保留上传的三个页面。
+var PAGES = SECTIONS.download.concat(SECTIONS.upload);  // 下载、上传各一个页面,均不再有分页标签。
+var SUMMARY_IDS = {
+    download: {fill: 'overallFill', percent: 'overallPercent', info: 'overallInfo', extra: 'overallExtra'},
+    upload: {fill: 'uploadFill', percent: 'uploadPercent', info: 'uploadInfo', extra: 'uploadExtra'}
+};  // 下载与上传各自独立的总进度面板,避免相互覆盖。
 var SECTION_KEY = 'trmd_section';
-var TAB_KEY = 'trmd_tab';
 
 var STATE_TEXT = {
     pending: '排队中',
@@ -39,11 +41,36 @@ var STATE_ICON = {
 
 var HEAD_LABELS = ['频道', '频道 / 链接', '频道 / 链接 / 名称'];  // 表头首列随当前展开的层级变化。
 var SIZE_LABELS = ['完成 / 总数', '完成 / 总数', '数量 / 大小'];  // 第三列同理,分组行是数量,成员行才是字节大小。
+var UPLOAD_HEAD_NAME = ['频道', '频道 / 文件路径'];  // 上传页只有频道与文件两级。
+var UPLOAD_HEAD_SIZE = ['完成 / 总数', '大小'];
+var UPLOAD_TEXT = {
+    pending: '排队中',
+    uploading: '上传中',
+    success: '已完成',
+    sent: '已完成',
+    failure: '失败'
+};
+var UPLOAD_CLASS = {
+    pending: 'status-pending',
+    uploading: 'status-running',
+    success: 'status-done',
+    sent: 'status-done',
+    failure: 'status-failed'
+};
+var UPLOAD_ICON = {
+    pending: '⏳',
+    uploading: '📤',
+    success: '✅',
+    sent: '✅',
+    failure: '❌'
+};
 var collapsed = {};
 var allCollapsed = false;
+var uploadAllCollapsed = false;
 var UNGROUPED_NAME = '未分组';
 var currentSection = 'download';
-var currentTab = 'download';
+var lastDownloadActive = 0;
+var lastUploadActive = 0;
 
 function esc(text) {
     var div = document.createElement('div');
@@ -93,18 +120,14 @@ function groupStat(members, live) {
     var left = 0;
     for (var i = 0; i < members.length; i++) {
         var member = members[i];
-        var task = live[member.task_id];
-        if (member.state === 'success' || member.state === 'skip') {
-            continue;  // 已完成与已跳过的成员不再计入速度与剩余。
+        var task = live[member.task_id] || member;  // 上传成员自带进度字段,查不到进度条任务时回退到自身。
+        if (member.state === 'success' || member.state === 'skip' || member.state === 'sent') {
+            continue;  // 已完成、已跳过、已发送的成员不再计入速度与剩余。
         }
         if (task && task.speed_value) {
             speed += Number(task.speed_value) || 0;
         }
-        if (member.state === 'downloading' && task) {
-            left += Math.max((Number(member.size_byte) || 0) - (Number(task.completed) || 0), 0);
-        } else {
-            left += Number(member.size_byte) || 0;  // 尚未开始下载的成员按整份大小预估剩余。
-        }
+        left += Math.max((Number(member.size_byte) || 0) - (Number(task && task.completed) || 0), 0);
     }
     return {speed: speed, remaining: speed && left > 0 ? left / speed : null};
 }
@@ -285,6 +308,7 @@ function bindGroups() {
             group.className = hide ? 'group' : 'group open';
             collapsed[key] = hide;
             syncHeadLabel();
+            syncUploadHeads();
         };
     }
 }
@@ -293,27 +317,33 @@ function syncToggleAll() {
     document.getElementById('toggleAll').textContent = allCollapsed ? '全部展开' : '全部折叠';
 }
 
-function toggleAll() {
-    var nodes = document.querySelectorAll('#download .group');  // 只切换下载页的分组。
-    allCollapsed = !allCollapsed;
+function syncToggleUpload() {
+    document.getElementById('toggleUpload').textContent = uploadAllCollapsed ? '全部展开' : '全部折叠';
+}
+
+function setAllGroups(selector, hide) {
+    var nodes = document.querySelectorAll(selector + ' .group');
     for (var i = 0; i < nodes.length; i++) {
         var key = nodes[i].getAttribute('data-channel');
         var body = nodes[i].querySelector('.group-body');
-        body.style.display = allCollapsed ? 'none' : '';
-        nodes[i].className = allCollapsed ? 'group' : 'group open';
-        collapsed[key] = allCollapsed;
+        body.style.display = hide ? 'none' : '';
+        nodes[i].className = hide ? 'group' : 'group open';
+        collapsed[key] = hide;
     }
+}
+
+function toggleAll() {
+    allCollapsed = !allCollapsed;
+    setAllGroups('#download', allCollapsed);
     syncToggleAll();
     syncHeadLabel();
 }
 
-function sectionOfTab(name) {
-    for (var key in SECTIONS) {
-        if (SECTIONS[key].indexOf(name) !== -1) {
-            return key;
-        }
-    }
-    return 'download';
+function toggleUploadAll() {
+    uploadAllCollapsed = !uploadAllCollapsed;
+    setAllGroups('#upload', uploadAllCollapsed);
+    syncToggleUpload();
+    syncUploadHeads();
 }
 
 function saveState(key, value) {
@@ -330,19 +360,12 @@ function applySection() {
         var active = items[i].getAttribute('data-section') === currentSection;
         items[i].className = active ? 'side-item active' : 'side-item';
     }
-    document.getElementById('tabs').hidden = currentSection !== 'upload';  // 只有上传区有分页标签。
     document.getElementById('downloadSummary').hidden = currentSection !== 'download';
-}
-
-function applyTab() {
-    var tabs = document.querySelectorAll('.tab');
-    for (var i = 0; i < tabs.length; i++) {
-        var active = tabs[i].getAttribute('data-tab') === currentTab;
-        tabs[i].className = active ? 'tab active' : 'tab';
-    }
+    document.getElementById('uploadSummary').hidden = currentSection !== 'upload';  // 两个板块各自独立的总进度。
     for (i = 0; i < PAGES.length; i++) {
-        document.getElementById('page-' + PAGES[i]).hidden = PAGES[i] !== currentTab;
+        document.getElementById('page-' + PAGES[i]).hidden = PAGES[i] !== currentSection;
     }
+    renderStatus();
 }
 
 function switchSection(name) {
@@ -350,25 +373,8 @@ function switchSection(name) {
         name = 'download';
     }
     currentSection = name;
-    if (SECTIONS[currentSection].indexOf(currentTab) === -1) {
-        currentTab = SECTIONS[currentSection][0];  // 切区后当前子页不属于该区时回到首个子页。
-    }
     applySection();
-    applyTab();
     saveState(SECTION_KEY, currentSection);
-    saveState(TAB_KEY, currentTab);
-}
-
-function switchTab(name) {
-    if (PAGES.indexOf(name) === -1) {
-        name = PAGES[0];
-    }
-    currentSection = sectionOfTab(name);
-    currentTab = name;
-    applySection();
-    applyTab();
-    saveState(SECTION_KEY, currentSection);
-    saveState(TAB_KEY, currentTab);
 }
 
 function extraText(item) {
@@ -382,36 +388,34 @@ function extraText(item) {
     return extra;
 }
 
-function renderOverall(summary, taskCount) {
+function renderOverall(summary, taskCount, ids) {
     var data = summary || EMPTY_SUMMARY;
-    document.getElementById('overallFill').style.width = data.percent + '%';
-    document.getElementById('overallPercent').textContent = data.percent + '%';
-    document.getElementById('overallInfo').textContent = data.info;
-    document.getElementById('overallExtra').textContent =
+    document.getElementById(ids.fill).style.width = data.percent + '%';
+    document.getElementById(ids.percent).textContent = data.percent + '%';
+    document.getElementById(ids.info).textContent = data.info;
+    document.getElementById(ids.extra).textContent =
         extraText(data) ? extraText(data) : (taskCount ? '正在测速' : '暂无速度');
-    if (taskCount > 0) {
+}
+
+function statCell(label, value, cls) {
+    return '<div><span>' + label + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' +
+        value + '</b></div>';
+}
+
+function renderStat(id, cells) {
+    document.getElementById(id).innerHTML = cells.join('');
+}
+
+function renderStatus() {
+    var count = currentSection === 'upload' ? lastUploadActive : lastDownloadActive;
+    if (count > 0) {
         document.getElementById('dot').className = 'dot active';
-        document.getElementById('statusText').textContent = '下载中 · ' + taskCount + ' 个任务';
+        document.getElementById('statusText').textContent =
+            (currentSection === 'upload' ? '上传中 · ' : '下载中 · ') + count + ' 个任务';
     } else {
         document.getElementById('dot').className = 'dot';
         document.getElementById('statusText').textContent = '空闲 · 等待任务';
     }
-}
-
-function renderStat(data) {
-    document.getElementById('stat').innerHTML =
-        '<div><span>成功</span><b class="ok">' + data.count.success + '</b></div>' +
-        '<div><span>失败</span><b class="bad">' + data.count.failure + '</b></div>' +
-        '<div><span>跳过</span><b class="skip">' + data.count.skip + '</b></div>' +
-        '<div><span>进行中</span><b>' + data.tasks.length + '</b></div>' +
-        '<div><span>队列中</span><b class="queue">' + (data.queue || 0) + '</b></div>';
-}
-
-function renderBadges(data, counted) {
-    document.getElementById('badgeDownload').textContent = data.tasks.length;
-    document.getElementById('badgeUploading').textContent = counted.uploading;
-    document.getElementById('badgeUploaded').textContent = counted.uploaded;
-    document.getElementById('badgeUploadFailed').textContent = counted.failed;
 }
 
 function renderList(data) {
@@ -431,44 +435,210 @@ function renderList(data) {
     syncHeadLabel();
 }
 
+function uploadDone(file) {
+    return file.state === 'success' || file.state === 'sent';
+}
+
+function getUploadGroups(tasks) {
+    var groups = [];  // 按频道分组上传任务,保持频道首次出现的顺序。
+    var index = {};
+    var i;
+    for (i = 0; i < tasks.length; i++) {
+        var channel = tasks[i].channel || UNGROUPED_NAME;
+        if (index[channel] === undefined) {
+            index[channel] = groups.length;
+            groups.push({channel: channel, name: tasks[i].chat || channel, files: []});
+        }
+        groups[index[channel]].files.push(tasks[i]);
+    }
+    for (i = 0; i < groups.length; i++) {
+        var group = groups[i];
+        group.count = group.files.length;
+        group.complete = 0;
+        group.failed = 0;
+        group.total_byte = 0;
+        group.done_byte = 0;
+        for (var j = 0; j < group.files.length; j++) {
+            var file = group.files[j];
+            var size = Number(file.size_byte) || 0;
+            group.total_byte += size;
+            if (uploadDone(file)) {
+                group.complete += 1;
+                group.done_byte += size;
+            } else if (file.state === 'failure') {
+                group.failed += 1;
+            } else {
+                group.done_byte += Math.min(Number(file.completed) || 0, size);  // 上传中的文件按已传字节计入。
+            }
+        }
+        group.percent = group.total_byte ?
+            Math.round(group.done_byte / group.total_byte * 1000) / 10 : 0;
+        group.stat = groupStat(group.files, {});
+    }
+    return groups;
+}
+
+function uploadSummary(tasks) {
+    var total = 0;  // 总量取所有上传文件的字节数,含排队、已完成与失败,与下载总进度口径一致。
+    var done = 0;
+    var speed = 0;
+    for (var i = 0; i < tasks.length; i++) {
+        var file = tasks[i];
+        var size = Number(file.size_byte) || 0;
+        total += size;
+        if (uploadDone(file)) {
+            done += size;
+        } else if (file.state === 'uploading') {
+            done += Math.min(Number(file.completed) || 0, size);  // 上传中的文件按已传字节计入。
+        }
+        speed += Number(file.speed_value) || 0;
+    }
+    var remaining = speed && total > done ? (total - done) / speed : null;
+    return {
+        percent: total ? Math.round(done / total * 1000) / 10 : 0,
+        info: sizeText(done) + '/' + sizeText(total),
+        speed: speed ? sizeText(speed) + '/s' : '',
+        remaining: remaining === null ? '' : secondsText(remaining)
+    };
+}
+
+function uploadCount(tasks) {
+    var count = {success: 0, failure: 0, uploading: 0, pending: 0, active: 0};
+    for (var i = 0; i < tasks.length; i++) {
+        var state = tasks[i].state;
+        if (state === 'failure') {
+            count.failure += 1;
+        } else if (uploadDone(tasks[i])) {
+            count.success += 1;
+        } else {
+            count.active += 1;
+            if (state === 'uploading') {
+                count.uploading += 1;
+            } else {
+                count.pending += 1;
+            }
+        }
+    }
+    return count;
+}
+
+function uploadRow(file) {
+    var state = file.state || 'pending';
+    var text = UPLOAD_TEXT[state] || '排队中';
+    var cls = UPLOAD_CLASS[state] || 'status-pending';
+    var progress;
+    if (uploadDone(file)) {
+        progress = progressCell(100);
+    } else if (state === 'uploading') {
+        progress = progressCell(file.percent || 0);
+    } else {
+        progress = '<span class="cell-progress"><span class="pct' +
+            (state === 'pending' ? ' pending' : '') + '">' + text + '</span></span>';
+    }
+    return '<div class="task-row member-row">' +
+        '<span class="cell-name"><span class="ficon">' + (UPLOAD_ICON[state] || '⏳') + '</span>' +
+        '<span class="fname" title="' + escAttr(file.path || file.file) + '">' + esc(file.path || file.file) + '</span></span>' +
+        progress +
+        '<span class="cell-size">' + dash(file.size) + '</span>' +
+        '<span class="cell-speed">' + dash(file.speed) + '</span>' +
+        '<span class="cell-remain">' + dash(file.remaining) + '</span>' +
+        '<span class="cell-status ' + cls + '" title="' + escAttr(file.error) + '">' + text + '</span>' +
+        '</div>';
+}
+
+function uploadStatusCell(group) {
+    if (group.failed) {
+        return '<span class="cell-status status-failed">失败 ' + group.failed + ' 个</span>';
+    }
+    if (group.complete === group.count) {
+        return '<span class="cell-status status-done">已完成</span>';
+    }
+    return '<span class="cell-status status-running">上传中</span>';
+}
+
+function uploadBlock(group) {
+    var key = 'upload:' + group.channel;
+    var isCollapsed = collapsed[key] === undefined ? uploadAllCollapsed : collapsed[key];  // 上传分组默认展开。
+    var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '" data-level="1">' +
+        '<div class="group-head" data-channel="' + escAttr(key) + '">' +
+        '<span class="cell-name"><span class="arrow"></span>' +
+        '<span class="ficon">📺</span>' +
+        '<span class="gname" title="' + escAttr(group.name) + '">' + esc(group.name) + '</span>' +
+        '<span class="gcount">' + group.count + ' 个文件</span></span>' +
+        progressCell(group.percent) +
+        '<span class="cell-size">' + group.complete + '/' + group.count + '</span>' +
+        groupStatCells(group.stat) +
+        uploadStatusCell(group) +
+        '</div>' +
+        '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
+    for (var i = 0; i < group.files.length; i++) {
+        html += uploadRow(group.files[i]);
+    }
+    return html + '</div></div>';
+}
+
 function uploadList(tasks) {
     if (tasks.length === 0) {
         return '<div class="empty">暂无上传任务。</div>';
     }
-    var html = '<table><thead><tr><th>文件</th><th>频道</th><th>大小</th><th>状态</th><th>错误信息</th></tr></thead><tbody>';
-    for (var i = 0; i < tasks.length; i++) {
-        var task = tasks[i];
-        html += '<tr><td>' + esc(task.file) + '</td><td>' + esc(task.chat) + '</td><td>' +
-            esc(task.size) + '</td><td>' + esc(task.status) + '</td><td>' + esc(task.error) + '</td></tr>';
+    var html = '';
+    var groups = getUploadGroups(tasks);  // 频道 > 文件完整路径,一级可折叠。
+    for (var i = 0; i < groups.length; i++) {
+        html += uploadBlock(groups[i]);
     }
-    return html + '</tbody></table>';
+    return html;
 }
 
-function renderUploads(uploads) {
-    var uploading = [];
-    var uploaded = [];
-    var failed = [];
-    for (var i = 0; i < uploads.length; i++) {
-        var state = uploads[i].state;
-        if (state === 'failure') {
-            failed.push(uploads[i]);
-        } else if (state === 'success' || state === 'sent') {
-            uploaded.push(uploads[i]);
-        } else {
-            uploading.push(uploads[i]);
+function syncUploadHeads() {
+    var list = document.getElementById('upload');
+    if (!list || !list.parentNode) {
+        return;
+    }
+    var head = list.parentNode.querySelector('.list-head');
+    var level = 1;
+    var nodes = list.querySelectorAll('.group.open');
+    for (var i = 0; i < nodes.length; i++) {
+        if (groupVisible(nodes[i])) {
+            level = 2;  // 有任意频道展开时,最内层即为文件行。
+            break;
         }
     }
-    document.getElementById('uploading').innerHTML = uploadList(uploading);
-    document.getElementById('uploaded').innerHTML = uploadList(uploaded);
-    document.getElementById('upload_failed').innerHTML = uploadList(failed);
-    return {uploading: uploading.length, uploaded: uploaded.length, failed: failed.length};
+    head.querySelector('.h-name').textContent = UPLOAD_HEAD_NAME[level - 1];
+    head.querySelector('.h-size').textContent = UPLOAD_HEAD_SIZE[level - 1];
+}
+
+function renderUpload(uploads) {
+    var count = uploadCount(uploads);
+    document.getElementById('upload').innerHTML = uploadList(uploads);
+    document.getElementById('badgeUpload').textContent = count.active;
+    syncToggleUpload();
+    syncUploadHeads();
+    bindGroups();  // 上传列表渲染完成后统一绑定折叠事件。
+    renderOverall(uploadSummary(uploads), count.active, SUMMARY_IDS.upload);
+    renderStat('uploadStat', [
+        statCell('成功', count.success, 'ok'),
+        statCell('失败', count.failure, 'bad'),
+        statCell('上传中', count.uploading),
+        statCell('待上传', count.pending, 'skip'),
+        statCell('文件总数', uploads.length, 'queue')
+    ]);
+    return count.active;
 }
 
 function render(data) {
-    renderOverall(data.summary, data.tasks.length);
-    renderStat(data);
-    var counted = renderUploads(data.uploads);
-    renderBadges(data, counted);
+    var downloads = (data.tasks || []).length;
+    lastDownloadActive = downloads;
+    document.getElementById('badgeDownload').textContent = downloads;
+    renderOverall(data.summary, downloads, SUMMARY_IDS.download);
+    renderStat('stat', [
+        statCell('成功', data.count.success, 'ok'),
+        statCell('失败', data.count.failure, 'bad'),
+        statCell('跳过', data.count.skip, 'skip'),
+        statCell('进行中', downloads),
+        statCell('队列中', data.queue || 0, 'queue')
+    ]);
+    lastUploadActive = renderUpload(data.uploads || []);
+    renderStatus();
     renderList(data);
 }
 
@@ -491,31 +661,15 @@ function bindSections() {
     }
 }
 
-function bindTabs() {
-    var tabs = document.querySelectorAll('.tab');
-    for (var i = 0; i < tabs.length; i++) {
-        tabs[i].onclick = function () {
-            switchTab(this.getAttribute('data-tab'));
-        };
-    }
-}
-
 var savedSection = '';
-var savedTab = '';
 try {
     savedSection = localStorage.getItem(SECTION_KEY) || '';
-    savedTab = localStorage.getItem(TAB_KEY) || '';
 } catch (e) {
     savedSection = '';
-    savedTab = '';
 }
 bindSections();
-bindTabs();
-if (savedTab && PAGES.indexOf(savedTab) !== -1) {
-    switchTab(savedTab);
-} else {
-    switchSection(savedSection);
-}
+switchSection(savedSection);
 document.getElementById('toggleAll').onclick = toggleAll;
+document.getElementById('toggleUpload').onclick = toggleUploadAll;
 refresh();
 setInterval(refresh, 1000);

@@ -347,6 +347,7 @@ class UploadTask:
         self.send_as_media_group: bool = send_as_media_group
         self.sha256: str = calc_sha256(file_path=self.file_path)
         self.prompt: str = ''
+        self.task_id: Union[int, None] = None  # 进度条任务ID,供网页面板关联上传进度。
 
     def __setattr__(self, name, value):
         if name.startswith('_'):
