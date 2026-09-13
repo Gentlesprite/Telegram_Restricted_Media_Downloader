@@ -19,7 +19,8 @@ from pyrogram.errors import (
     BadMsgNotification,
     FileReferenceExpired,
     FloodWait,
-    FloodPremiumWait
+    FloodPremiumWait,
+    AuthBytesInvalid
 )
 from pyrogram.errors.exceptions.bad_request_400 import (
     MsgIdInvalid,
@@ -1623,6 +1624,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                         downloaded += len(chunk)
                         progress(downloaded, *progress_args)
                     break
+                except AuthBytesInvalid as e:
+                    log.warning(f'提供的授权字节无效(可能是短暂的问题),{_t(KeyWord.REASON)}:"{e}"')
+                    break
                 except FileReferenceExpired as e:
                     chat_id = message.chat.id
                     message_id = message.id
@@ -2478,9 +2482,11 @@ class TelegramRestrictedMediaDownloader(Bot):
         [await self.loop.create_task(self.create_download_task(message_ids=link, retry=None)) for link in
          sorted(links)] if links else None
         # 处理队列中的任务与机器人事件。
-        while (not self.queue.empty()
-               or self.is_bot_running
-               or DownloadTask.has_task()):
+        while (
+                not self.queue.empty()
+                or self.is_bot_running
+                or DownloadTask.has_task()
+        ):
             if self.queue.empty():
                 await asyncio.sleep(0.5)  # 队列为空时等待调度器派发任务,避免阻塞在队列获取上。
                 continue
@@ -2495,7 +2501,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     '3.由于软件设计缺陷,没有考虑到不同频道文件名相同的情况(若调整将会导致部分用户更新后重复下载已有文件),当保存路径下文件过多时,可能恰巧存在相同文件名的文件,导致相同文件名无法正常移动,故请定期整理归档下载链接与保存路径下的文件。'
                     f'{_t(KeyWord.REASON)}:"{e}"')
             except Exception as e:
-                log.error(f'处理队列时出错,{_t(KeyWord.REASON)}:"{e}"')
+                log.error(f'处理队列时出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
         # 等待所有任务完成。
         await self.queue.join()
         if self.scheduler:  # 停止下载调度器。
