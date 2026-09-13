@@ -39,7 +39,9 @@ from module.util import (
 )
 from module.enums import (
     WebMeta,
-    KeyWord
+    KeyWord,
+    QueueStatus,
+    DownloadStatus
 )
 
 
@@ -133,8 +135,13 @@ class WebHandler(BaseHTTPRequestHandler):
 class Web:
     WEB_DIRECTORY: str = os.path.join('res', 'web')
     INDEX_FILE: str = 'index.html'
-    MAX_DONE_TASK: int = 20
     UNGROUPED: str = '未分组'
+    UNFINISHED_STATE: tuple = (
+        QueueStatus.PENDING,
+        QueueStatus.WAITING,
+        QueueStatus.DOWNLOADING,
+        QueueStatus.CANCELLED
+    )  # 尚未出结果的消息状态。
 
     def __init__(self, progress, app=None):
         self.progress = progress
@@ -148,9 +155,6 @@ class Web:
         self.web_directory: str = self.get_web_directory()
         self.server: Union[ThreadingHTTPServer, None] = None
         self.thread: Union[threading.Thread, None] = None
-        self.last_tasks: dict = {}
-        self.done_tasks: list = []
-        self.done_ids: set = set()  # 已登记到完成记录的任务ID,避免重复登记。
 
     @staticmethod
     def __bind_port(port: int) -> int:
@@ -249,26 +253,50 @@ class Web:
         return count
 
     def get_link_progress(self) -> list:
-        """获取每个下载链接的完成进度。"""
+        """获取每个下载链接的进度与该链接下所有消息成员(含已完成、跳过、失败)。"""
         result: list = []
         try:
             for link, task in list(DownloadTask.TASKS.items()):
                 member_num: int = int(task.member_num or 0)
                 complete_num: int = int(task.complete_num or 0)
                 fail_num: int = int(task.fail_num or 0)
-                queue: dict = task.get_unfinished_items()
+                members: list = self.get_members(task=task)
+                unfinished: int = len(
+                    [i for i in members if i.get('state') in Web.UNFINISHED_STATE]
+                )
                 result.append({
                     'link': str(link),
                     'complete': complete_num,
                     'member': member_num,
                     'failed': fail_num,
                     'remaining': max(member_num - complete_num - fail_num, 0),
-                    'queue': [self.format_queue_message(item, item.get('status')) for item in queue.get('items')],
-                    'queue_total': queue.get('total'),
+                    'queue': members,
+                    'queue_total': unfinished,
+                    'total': len(members),
                     'percent': round(complete_num / member_num * 100, 1) if member_num else 0.0
                 })
         except Exception as e:
             log.debug(f'获取链接进度时出错,{_t(KeyWord.REASON)}:"{e}"')
+        return result
+
+    def get_members(self, task: DownloadTask) -> list:
+        """获取链接下所有消息成员的展示信息。
+
+        仍在队列中的消息可以取到原始消息,用于补全文件名与大小;
+        已完成或失败的消息已被移出队列,使用登记时保存的信息。
+        """
+        result: list = []
+        for message_id, member in list(task.member_info.items()):
+            item: dict = task.items.get(message_id) or {}
+            meta: dict = self.format_queue_message(item, member.get('state')) if item else {}
+            result.append({
+                'name': member.get('name') or meta.get('name') or f'消息 {message_id}',
+                'size': member.get('size') or meta.get('size') or '',
+                'size_byte': int(member.get('size_byte') or 0),
+                'date': member.get('date') or meta.get('date') or '',
+                'state': member.get('state') or QueueStatus.PENDING,
+                'task_id': member.get('task_id')
+            })
         return result
 
     def format_queue_message(self, item: dict, state: Union[str, None] = None) -> dict:
@@ -296,22 +324,6 @@ class Web:
             log.debug(f'解析排队消息时出错,{_t(KeyWord.REASON)}:"{e}"')
         return result
 
-    def get_pending(self) -> list:
-        """获取排队中(尚未开始下载)的任务。"""
-        result: list = []
-        try:
-            for item in DownloadTask.queued_items():
-                channel: str = str(item.get('chat_id'))
-                result.append({
-                    'channel': channel,
-                    'channel_name': Web.format_channel(channel),
-                    'name': '消息 ' + str(getattr(item.get('message'), 'id', '')),
-                    'link': item.get('link')
-                })
-        except Exception as e:
-            log.debug(f'获取等待下载槽位的任务时出错,{_t(KeyWord.REASON)}:"{e}"')
-        return result
-
     def get_upload_tasks(self) -> list:
         """获取上传任务的概要信息。"""
         result: list = []
@@ -331,14 +343,34 @@ class Web:
         return result
 
     @staticmethod
-    def get_summary(tasks: list) -> dict:
-        """汇总所有进行中任务的总体进度。"""
+    def get_summary(links: list, tasks: list) -> dict:
+        """汇总所有任务的总体进度。
+
+        总量取所有链接成员的大小之和(包含排队、已完成、跳过、失败),
+        而不是只统计正在下载的任务,避免总进度随着任务开始下载而不断变大。
+
+        Args:
+            links: get_link_progress返回的链接进度。
+            tasks: 进度条中正在下载的任务。
+
+        Returns:
+            dict: 总体进度。
+        """
+        live: dict = {task.get('id'): task for task in tasks}
         completed: int = 0
         total: int = 0
         speed: float = 0.0
+        for link in links:
+            for member in link.get('queue') or []:
+                size: int = int(member.get('size_byte') or 0)
+                total += size
+                state: str = str(member.get('state') or '')
+                if state in (DownloadStatus.SUCCESS, DownloadStatus.SKIP):
+                    completed += size
+                    continue
+                if state == QueueStatus.DOWNLOADING:
+                    completed += int(live.get(member.get('task_id'), {}).get('completed') or 0)
         for task in tasks:
-            completed += task.get('completed', 0)
-            total += task.get('total', 0)
             speed += task.get('speed_value', 0)
         remaining: Union[float, None] = None
         if speed and total > completed:
@@ -360,33 +392,9 @@ class Web:
         title: str = ChatInfo.get(channel)
         return f'{title}({channel})' if title else channel
 
-    @staticmethod
-    def get_groups(tasks: list) -> list:
-        """按频道对任务分组,并汇总每组的进度。"""
-        groups: dict = {}
-        order: list = []
-        for task in tasks:
-            channel: str = task.get('channel') or Web.UNGROUPED
-            if channel not in groups:
-                groups[channel] = []
-                order.append(channel)  # 保持频道首次出现的顺序。
-            groups[channel].append(task)
-        result: list = []
-        for channel in order:
-            group_tasks: list = groups[channel]
-            result.append({
-                'channel': channel,
-                'name': Web.format_channel(channel),
-                'count': len(group_tasks),
-                'summary': Web.get_summary(group_tasks),
-                'tasks': group_tasks
-            })
-        return result
-
     def get_tasks(self) -> list:
-        """读取进度条的任务,并将已移除的完成任务转入完成记录。"""
+        """读取进度条中正在下载的任务。"""
         tasks: list = []
-        current: dict = {}
         for task in self.progress.tasks:
             item: dict = {
                 'id': task.id,
@@ -402,51 +410,8 @@ class Web:
                 'speed_value': task.speed if task.speed else 0,
                 'remaining': self.format_seconds(task.time_remaining)
             }
-            current[task.id] = item
             tasks.append(item)
-        for task_id, item in self.last_tasks.items():
-            if task_id not in current and item.get('percent', 0) >= 100:
-                self.__append_done_task(task_id=task_id, item=item)
-        self.last_tasks = current
         return tasks
-
-    def __append_done_task(self, task_id: int, item: dict) -> None:
-        """登记已完成的任务,并只保留最近的任务记录。"""
-        if task_id in self.done_ids:
-            return
-        self.done_ids.add(task_id)
-        self.done_tasks.append(item)
-        self.done_tasks = self.done_tasks[-Web.MAX_DONE_TASK:]
-
-    def add_done_task(self, task_id: int, filename: str, channel: str, size: str) -> None:
-        """主动登记已完成的下载任务。
-
-        进度条任务在下载完成后会被立即移除,轮询可能来不及采集到100%的进度,
-        因此由下载器在移除进度条任务前主动登记。
-
-        Args:
-            task_id: 进度条的任务ID,用于去重。
-            filename: 文件名。
-            channel: 频道ID。
-            size: 已格式化的文件大小。
-        """
-        self.__append_done_task(
-            task_id=task_id,
-            item={
-                'id': task_id,
-                'type': '📥',
-                'channel': channel,
-                'channel_name': Web.format_channel(channel),
-                'filename': filename,
-                'info': f'{size}/{size}',
-                'completed': 0,
-                'total': 0,
-                'percent': 100,
-                'speed': '',
-                'speed_value': 0,
-                'remaining': ''
-            }
-        )
 
     def snapshot(self) -> dict:
         """生成供网页面板展示的进度数据。"""
@@ -455,12 +420,9 @@ class Web:
             links: list = self.get_link_progress()
             return {
                 'count': self.get_count(),
-                'summary': self.get_summary(tasks),
-                'groups': self.get_groups(tasks),
-                'pending': self.get_pending(),
+                'summary': self.get_summary(links=links, tasks=tasks),
                 'queue': sum(link.get('remaining', 0) for link in links),  # 所有链接待下载的消息总数。
                 'tasks': tasks,
-                'done': list(reversed(self.done_tasks)),
                 'links': links,
                 'uploads': self.get_upload_tasks()
             }
@@ -468,12 +430,9 @@ class Web:
             log.debug(f'生成进度数据时出错,{_t(KeyWord.REASON)}:"{e}"')
             return {
                 'count': {'success': 0, 'failure': 0, 'skip': 0},
-                'summary': self.get_summary([]),
-                'groups': [],
-                'pending': [],
+                'summary': self.get_summary(links=[], tasks=[]),
                 'queue': 0,
                 'tasks': [],
-                'done': [],
                 'links': [],
                 'uploads': []
             }

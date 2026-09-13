@@ -315,7 +315,8 @@ h1 {
     color: var(--accent);
 }
 
-.page[hidden] {
+.page[hidden],
+.tabs[hidden] {
     display: none;
 }
 
@@ -528,6 +529,14 @@ h2 {
 
 .status-failed {
     color: var(--danger);
+}
+
+.status-skip {
+    color: var(--muted);
+}
+
+.member-row {
+    opacity: .9;
 }
 
 .more {

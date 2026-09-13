@@ -1787,6 +1787,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                         info=f'0.00B/{format_file_size}',
                         total=sever_file_size
                     )
+                    task.update_member(
+                        message_id=message.id,
+                        status=QueueStatus.DOWNLOADING,
+                        name=file_name,
+                        size=format_file_size,
+                        size_byte=sever_file_size,
+                        date=str(getattr(message, 'date', '') or '')[:10],
+                        task_id=task_id
+                    )
                     _task = self.loop.create_task(
                         self.resume_download(
                             message=message,
@@ -1825,7 +1834,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 task.remove_item(message_id=message.id)  # 被忽略的类型直接出队。
                 _error = '不支持或被忽略的类型(已取消)。'
                 try:
-                    _, __, ___, file_name, ____, format_file_size = self.get_media_meta(
+                    _, __, sever_file_size, file_name, ____, format_file_size = self.get_media_meta(
                         message=message,
                         dtype=valid_dtype
                     ).values()
@@ -1838,10 +1847,19 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。'
                         )
                         task.set_error(key=file_name, value=_error.replace('。', ''))
+                        task.update_member(
+                            message_id=message.id,
+                            status=DownloadStatus.SKIP,
+                            name=file_name,
+                            size=format_file_size,
+                            size_byte=sever_file_size,
+                            date=str(getattr(message, 'date', '') or '')[:10]
+                        )
                     else:
                         raise Exception('不支持或被忽略的类型。')
                 except Exception as _:
                     task.set_error(value=_error.replace('。', ''))
+                    task.update_member(message_id=message.id, status=DownloadStatus.SKIP)
                     console.log(
                         f'{_t(KeyWord.DOWNLOAD_TASK)}'
                         f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
@@ -1923,6 +1941,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。', style='#e6db74'
                 )
                 DownloadTask.COMPLETE_LINK.add(link)
+                if download_task is not None:
+                    download_task.update_member(  # 文件已存在,标记为跳过。
+                        message_id=message.id,
+                        status=DownloadStatus.SKIP,
+                        name=file_name,
+                        size=format_file_size,
+                        size_byte=sever_file_size,
+                        date=str(getattr(message, 'date', '') or '')[:10]
+                    )
                 if self.uploader:
                     if with_upload and isinstance(with_upload, dict):
                         try:
@@ -1952,13 +1979,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if download_task is not None:
                     download_task.clear_error(key=file_name)  # 下载成功(含重试成功),清除该文件此前的失败记录。
                     download_task.remove_fail(message_id=message.id)
-                if self.web is not None:
-                    # 进度条任务会被立即移除,直接登记到网页面板,避免轮询来不及采集100%的任务。
-                    self.web.add_done_task(
-                        task_id=task_id,
-                        filename=file_name,
-                        channel=str(getattr(getattr(message, 'chat', None), 'id', '') or ''),
-                        size=format_file_size
+                    download_task.update_member(
+                        message_id=message.id,
+                        status=DownloadStatus.SUCCESS,
+                        name=file_name,
+                        size=format_file_size,
+                        size_byte=sever_file_size,
+                        date=str(getattr(message, 'date', '') or '')[:10]
                     )
                 if self.uploader:
                     if with_upload and isinstance(with_upload, dict):
@@ -2003,6 +2030,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     download_task.set_error(key=file_name, value=_error.replace('。', ''))
                     download_task.add_fail(message_id=message.id)  # 重试耗尽,记录为彻底失败,不再计入排队数量。
+                    download_task.update_member(
+                        message_id=message.id,
+                        status=DownloadStatus.FAILURE,
+                        name=file_name,
+                        size=format_file_size,
+                        size_byte=sever_file_size
+                    )
                     self.bot_task_link.discard(link)
                     self.queue.task_done()
                 link, file_name = None, None

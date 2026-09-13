@@ -46,58 +46,27 @@
             <div class="stat" id="stat"></div>
         </div>
 
-        <nav class="tabs" id="tabs">
-            <button class="tab active" data-section="download" data-tab="running" type="button">下载中<b class="badge" id="badgeRunning">0</b></button>
-            <button class="tab" data-section="download" data-tab="done" type="button">已完成<b class="badge" id="badgeDone">0</b></button>
-            <button class="tab" data-section="download" data-tab="links" type="button">链接进度<b class="badge" id="badgeLinks">0</b></button>
-            <button class="tab" data-section="upload" data-tab="uploading" type="button" hidden>上传中<b class="badge" id="badgeUploading">0</b></button>
-            <button class="tab" data-section="upload" data-tab="uploaded" type="button" hidden>已完成<b class="badge" id="badgeUploaded">0</b></button>
-            <button class="tab" data-section="upload" data-tab="upload_failed" type="button" hidden>失败<b class="badge" id="badgeUploadFailed">0</b></button>
+        <nav class="tabs" id="tabs" hidden>
+            <button class="tab active" data-section="upload" data-tab="uploading" type="button">上传中<b class="badge" id="badgeUploading">0</b></button>
+            <button class="tab" data-section="upload" data-tab="uploaded" type="button">上传完成<b class="badge" id="badgeUploaded">0</b></button>
+            <button class="tab" data-section="upload" data-tab="upload_failed" type="button">上传失败<b class="badge" id="badgeUploadFailed">0</b></button>
         </nav>
 
-        <div class="page" id="page-running">
+        <div class="page" id="page-download">
             <div class="section-head">
-                <h2>下载中</h2>
+                <span class="gcount">进行中 <b id="badgeDownload">0</b> 个任务</span>
                 <button class="toggle" id="toggleAll" type="button">全部折叠</button>
             </div>
             <div class="list">
                 <div class="list-head">
-                    <span>名称</span>
+                    <span>链接/名称</span>
                     <span>进度</span>
                     <span class="h-size">大小</span>
                     <span class="h-speed">速度</span>
                     <span class="h-remain">剩余时间</span>
                     <span class="h-status">状态</span>
                 </div>
-                <div id="running"></div>
-            </div>
-        </div>
-
-        <div class="page" id="page-done" hidden>
-            <div class="list">
-                <div class="list-head">
-                    <span>名称</span>
-                    <span>进度</span>
-                    <span class="h-size">大小</span>
-                    <span class="h-speed">速度</span>
-                    <span class="h-remain">剩余时间</span>
-                    <span class="h-status">状态</span>
-                </div>
-                <div id="done"></div>
-            </div>
-        </div>
-
-        <div class="page" id="page-links" hidden>
-            <div class="list">
-                <div class="list-head">
-                    <span>链接</span>
-                    <span>进度</span>
-                    <span class="h-size">完成/总数</span>
-                    <span class="h-speed">速度</span>
-                    <span class="h-remain">剩余时间</span>
-                    <span class="h-status">状态</span>
-                </div>
-                <div id="links"></div>
+                <div id="download"></div>
             </div>
         </div>
 

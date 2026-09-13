@@ -1,17 +1,46 @@
 const EMPTY_SUMMARY = {percent: 0, info: '0.00B / 0.00B', speed: '', remaining: ''};
 
 var SECTIONS = {
-    download: ['running', 'done', 'links'],
+    download: ['download'],
     upload: ['uploading', 'uploaded', 'upload_failed']
 };
-var TABS = SECTIONS.download.concat(SECTIONS.upload);
+var PAGES = SECTIONS.download.concat(SECTIONS.upload);  // 所有页面,下载页不再有分页标签。
+var TABS = SECTIONS.upload;  // 顶部分页标签只保留上传的三个页面。
 var SECTION_KEY = 'trmd_section';
 var TAB_KEY = 'trmd_tab';
+
+var STATE_TEXT = {
+    pending: '排队中',
+    waiting: '等待中',
+    downloading: '下载中',
+    success: '已完成',
+    skip: '已跳过',
+    failure: '失败',
+    cancelled: '已取消'
+};
+var STATE_CLASS = {
+    pending: 'status-pending',
+    waiting: 'status-pending',
+    downloading: 'status-running',
+    success: 'status-done',
+    skip: 'status-skip',
+    failure: 'status-failed',
+    cancelled: 'status-pending'
+};
+var STATE_ICON = {
+    pending: '⏳',
+    waiting: '⏳',
+    downloading: '📥',
+    success: '✅',
+    skip: '⏭',
+    failure: '❌',
+    cancelled: '⏸'
+};
 
 var collapsed = {};
 var allCollapsed = false;
 var currentSection = 'download';
-var currentTab = 'running';
+var currentTab = 'download';
 
 function esc(text) {
     var div = document.createElement('div');
@@ -47,93 +76,24 @@ function taskRow(task) {
         '</div>';
 }
 
-function pendingRow(item) {
-    return '<div class="task-row pending-row">' +
-        '<span class="cell-name"><span class="ficon">⏳</span>' +
-        '<span class="fname" title="' + escAttr(item.link) + '">' + esc(item.name) + '</span>' +
-        (item.channel_name ? '<span class="gcount">' + esc(item.channel_name) + '</span>' : '') +
-        '</span>' +
-        '<span class="cell-progress"><span class="pct pending">排队中</span></span>' +
-        '<span class="cell-size">—</span>' +
-        '<span class="cell-speed">—</span>' +
-        '<span class="cell-remain">—</span>' +
-        '<span class="cell-status status-pending">排队中</span>' +
-        '</div>';
-}
-
-function groupBlock(group) {
-    var key = group.channel;
-    var isCollapsed = collapsed[key] === undefined ? allCollapsed : collapsed[key];
-    var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '">' +
-        '<div class="group-head" data-channel="' + escAttr(key) + '">' +
-        '<span class="cell-name"><span class="arrow"></span>' +
-        '<span class="gname" title="' + escAttr(group.name || key) + '">' + esc(group.name || key) + '</span>' +
-        '<span class="gcount">' + group.count + ' 个任务</span></span>' +
-        progressCell(group.summary.percent) +
-        '<span class="cell-size">' + dash(group.summary.info) + '</span>' +
-        '<span class="cell-speed">' + dash(group.summary.speed) + '</span>' +
-        '<span class="cell-remain">' + dash(group.summary.remaining) + '</span>' +
-        '<span class="cell-status status-running">' + group.count + ' 项</span>' +
-        '</div>' +
-        '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
-    for (var i = 0; i < group.tasks.length; i++) {
-        html += taskRow(group.tasks[i]);
-    }
-    return html + '</div></div>';
-}
-
-function doneRow(task) {
-    return '<div class="task-row">' +
-        '<span class="cell-name"><span class="ficon">' + esc(task.type || '📄') + '</span>' +
-        '<span class="fname" title="' + escAttr(task.filename) + '">' + esc(task.filename) + '</span>' +
-        (task.channel_name ? '<span class="gcount">' + esc(task.channel_name) + '</span>' : '') +
-        '</span>' +
-        progressCell(100) +
-        '<span class="cell-size">' + dash(task.info) + '</span>' +
-        '<span class="cell-speed">—</span>' +
-        '<span class="cell-remain">—</span>' +
-        '<span class="cell-status status-done">已完成</span>' +
-        '</div>';
-}
-
-function queueRow(item) {
-    var downloading = item.state === 'downloading';
-    var text = downloading ? '下载中' : '排队中';
-    return '<div class="task-row pending-row">' +
-        '<span class="cell-name"><span class="ficon">' + (downloading ? '📥' : '⏳') + '</span>' +
+function memberRow(item) {
+    var state = item.state || 'pending';
+    var text = STATE_TEXT[state] || '排队中';
+    var cls = STATE_CLASS[state] || 'status-pending';
+    var pending = state === 'pending' || state === 'waiting';
+    var progress = state === 'success' ? progressCell(100) :
+        '<span class="cell-progress"><span class="pct' + (pending ? ' pending' : '') + '">' + text + '</span></span>';
+    return '<div class="task-row member-row">' +
+        '<span class="cell-name"><span class="ficon">' + (STATE_ICON[state] || '⏳') + '</span>' +
         '<span class="fname" title="' + escAttr(item.name) + '">' + esc(item.name) + '</span>' +
         (item.date ? '<span class="gcount">' + esc(item.date) + '</span>' : '') +
         '</span>' +
-        '<span class="cell-progress"><span class="pct' + (downloading ? '' : ' pending') + '">' + text + '</span></span>' +
+        progress +
         '<span class="cell-size">' + dash(item.size) + '</span>' +
         '<span class="cell-speed">—</span>' +
         '<span class="cell-remain">—</span>' +
-        '<span class="cell-status ' + (downloading ? 'status-running' : 'status-pending') + '">' + text + '</span>' +
+        '<span class="cell-status ' + cls + '">' + text + '</span>' +
         '</div>';
-}
-
-function pendingBlock(items) {
-    if (!items || items.length === 0) {
-        return '';
-    }
-    var key = 'pending';
-    var isCollapsed = collapsed[key] === undefined ? allCollapsed : collapsed[key];
-    var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '">' +
-        '<div class="group-head" data-channel="' + escAttr(key) + '">' +
-        '<span class="cell-name"><span class="arrow"></span>' +
-        '<span class="gname">排队中</span>' +
-        '<span class="gcount">' + items.length + ' 条等待下载</span></span>' +
-        '<span class="cell-progress"><span class="pct pending">等待下载</span></span>' +
-        '<span class="cell-size">—</span>' +
-        '<span class="cell-speed">—</span>' +
-        '<span class="cell-remain">—</span>' +
-        '<span class="cell-status status-pending">' + items.length + ' 条</span>' +
-        '</div>' +
-        '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
-    for (var i = 0; i < items.length; i++) {
-        html += pendingRow(items[i]);
-    }
-    return html + '</div></div>';
 }
 
 function linkStatusCell(link) {
@@ -148,30 +108,16 @@ function linkStatusCell(link) {
     return '<span class="cell-status status-done">已完成</span>';
 }
 
-function linkRow(link) {
-    return '<div class="task-row">' +
-        '<span class="cell-name"><span class="ficon">🔗</span>' +
-        '<span class="fname" title="' + escAttr(link.link) + '">' + esc(link.link) + '</span></span>' +
-        progressCell(link.percent) +
-        '<span class="cell-size">' + link.complete + '/' + link.member + '</span>' +
-        '<span class="cell-speed">—</span>' +
-        '<span class="cell-remain">—</span>' +
-        linkStatusCell(link) +
-        '</div>';
-}
-
-function linkBlock(link) {
-    var queue = link.queue || [];
-    if (queue.length === 0) {
-        return linkRow(link);
-    }
+function linkBlock(link, live) {
     var key = 'link:' + link.link;
-    var isCollapsed = collapsed[key] === undefined ? true : collapsed[key];  // 默认折叠,避免一次性铺开。
+    var isCollapsed = collapsed[key] === undefined ? allCollapsed : collapsed[key];
+    var members = link.queue || [];
     var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '">' +
         '<div class="group-head" data-channel="' + escAttr(key) + '">' +
         '<span class="cell-name"><span class="arrow"></span>' +
+        '<span class="ficon">🔗</span>' +
         '<span class="fname" title="' + escAttr(link.link) + '">' + esc(link.link) + '</span>' +
-        '<span class="gcount">' + link.queue_total + ' 条排队</span></span>' +
+        '<span class="gcount">' + (link.queue_total || 0) + ' 条未完成 / 共 ' + (link.total || 0) + ' 条</span></span>' +
         progressCell(link.percent) +
         '<span class="cell-size">' + link.complete + '/' + link.member + '</span>' +
         '<span class="cell-speed">—</span>' +
@@ -179,11 +125,13 @@ function linkBlock(link) {
         linkStatusCell(link) +
         '</div>' +
         '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
-    for (var i = 0; i < queue.length; i++) {
-        html += queueRow(queue[i]);
+    for (var i = 0; i < members.length; i++) {
+        var member = members[i];
+        var task = member.state === 'downloading' ? live[member.task_id] : null;
+        html += task ? taskRow(task) : memberRow(member);  // 下载中的成员直接复用进度条任务行。
     }
-    if (link.queue_total > queue.length) {
-        html += '<div class="more">…… 还有 ' + (link.queue_total - queue.length) + ' 条未显示</div>';
+    if (members.length === 0) {
+        html += '<div class="more">该链接暂无消息。</div>';
     }
     return html + '</div></div>';
 }
@@ -208,7 +156,7 @@ function syncToggleAll() {
 }
 
 function toggleAll() {
-    var nodes = document.querySelectorAll('#running .group');  // 只切换下载中页的分组。
+    var nodes = document.querySelectorAll('#download .group');  // 只切换下载页的分组。
     allCollapsed = !allCollapsed;
     for (var i = 0; i < nodes.length; i++) {
         var key = nodes[i].getAttribute('data-channel');
@@ -243,10 +191,7 @@ function applySection() {
         var active = items[i].getAttribute('data-section') === currentSection;
         items[i].className = active ? 'side-item active' : 'side-item';
     }
-    var tabs = document.querySelectorAll('.tab');
-    for (i = 0; i < tabs.length; i++) {
-        tabs[i].hidden = tabs[i].getAttribute('data-section') !== currentSection;  // 上边栏只显示当前分区的子页。
-    }
+    document.getElementById('tabs').hidden = currentSection !== 'upload';  // 只有上传区有分页标签。
     document.getElementById('downloadSummary').hidden = currentSection !== 'download';
 }
 
@@ -256,8 +201,8 @@ function applyTab() {
         var active = tabs[i].getAttribute('data-tab') === currentTab;
         tabs[i].className = active ? 'tab active' : 'tab';
     }
-    for (i = 0; i < TABS.length; i++) {
-        document.getElementById('page-' + TABS[i]).hidden = TABS[i] !== currentTab;
+    for (i = 0; i < PAGES.length; i++) {
+        document.getElementById('page-' + PAGES[i]).hidden = PAGES[i] !== currentTab;
     }
 }
 
@@ -276,8 +221,8 @@ function switchSection(name) {
 }
 
 function switchTab(name) {
-    if (TABS.indexOf(name) === -1) {
-        name = TABS[0];
+    if (PAGES.indexOf(name) === -1) {
+        name = PAGES[0];
     }
     currentSection = sectionOfTab(name);
     currentTab = name;
@@ -324,36 +269,26 @@ function renderStat(data) {
 }
 
 function renderBadges(data, counted) {
-    document.getElementById('badgeRunning').textContent = data.tasks.length;
-    document.getElementById('badgeDone').textContent = data.done.length;
-    document.getElementById('badgeLinks').textContent = data.links.length;
+    document.getElementById('badgeDownload').textContent = data.tasks.length;
     document.getElementById('badgeUploading').textContent = counted.uploading;
     document.getElementById('badgeUploaded').textContent = counted.uploaded;
     document.getElementById('badgeUploadFailed').textContent = counted.failed;
 }
 
 function renderList(data) {
-    var html = '';
-    var body = '';
+    var live = {};  // 进度条任务ID -> 任务,供下载中的成员复用实时进度。
     var i;
-    html += pendingBlock(data.pending);
-    for (i = 0; i < data.groups.length; i++) {
-        body += groupBlock(data.groups[i]);
+    for (i = 0; i < (data.tasks || []).length; i++) {
+        live[data.tasks[i].id] = data.tasks[i];
     }
-    html += body;
-    document.getElementById('running').innerHTML = html ? html : '<div class="empty">暂无进行中的任务。</div>';
+    var html = '';
+    var links = data.links || [];
+    for (i = 0; i < links.length; i++) {
+        html += linkBlock(links[i], live);
+    }
+    document.getElementById('download').innerHTML = html ? html : '<div class="empty">暂无下载任务。</div>';
     syncToggleAll();
-    html = '';
-    for (i = 0; i < data.done.length; i++) {
-        html += doneRow(data.done[i]);
-    }
-    document.getElementById('done').innerHTML = html ? html : '<div class="empty">暂无已完成的任务。</div>';
-    html = '';
-    for (i = 0; i < data.links.length; i++) {
-        html += linkBlock(data.links[i]);
-    }
-    document.getElementById('links').innerHTML = html ? html : '<div class="empty">暂无链接任务。</div>';
-    bindGroups();  // 所有页面渲染完成后统一绑定折叠事件。
+    bindGroups();  // 页面渲染完成后统一绑定折叠事件。
 }
 
 function uploadList(tasks) {
@@ -436,7 +371,7 @@ try {
 }
 bindSections();
 bindTabs();
-if (savedTab && TABS.indexOf(savedTab) !== -1) {
+if (savedTab && PAGES.indexOf(savedTab) !== -1) {
     switchTab(savedTab);
 } else {
     switchSection(savedSection);

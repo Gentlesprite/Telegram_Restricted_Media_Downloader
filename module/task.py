@@ -67,6 +67,7 @@ class DownloadTask:
         self.error_msg: dict = {}
         self.fail_id: set = set()  # 已彻底失败(重试耗尽)的消息ID。
         self.items: dict = {}  # 消息ID -> 待下载消息(dict,字段见add_item)。
+        self.member_info: dict = {}  # 消息ID -> 该链接下消息的展示信息与状态,完成后不移除。
 
     @property
     def fail_num(self) -> int:
@@ -119,6 +120,11 @@ class DownloadTask:
             if retry_count != 0 and key != retry_id:
                 continue  # 重试时只保留需要重试的那条消息,避免整个媒体组被重复排队。
             task.remove_fail(message_id=key)  # 重新排队(含重试)时,清除该消息的失败记录。
+            task.update_member(  # 登记链接成员,包括下载完成后仍需展示的消息。
+                message_id=key,
+                status=QueueStatus.PENDING,
+                date=str(getattr(_message, 'date', '') or '')[:10]
+            )
             item: Union[dict, None] = task.items.get(key)
             if item is None:
                 task.items[key] = {
@@ -137,10 +143,45 @@ class DownloadTask:
                 item['status'] = QueueStatus.PENDING  # 重试时重置状态。
 
     def set_item_status(self, message_id: Union[int, str], status: str) -> None:
-        """设置指定消息的排队状态。"""
+        """设置指定消息的排队状态,并同步到链接成员。"""
         item: Union[dict, None] = self.items.get(int(message_id))
         if item is not None:
             item['status'] = status
+        self.update_member(message_id=message_id, status=status)
+
+    def update_member(
+            self,
+            message_id: Union[int, str],
+            status: Optional[str] = None,
+            name: Optional[str] = None,
+            size: Optional[str] = None,
+            size_byte: Optional[int] = None,
+            date: Optional[str] = None,
+            task_id: Optional[int] = None
+    ) -> None:
+        """登记或更新链接下某个消息成员的展示信息与状态。"""
+        key: int = int(message_id)
+        member: dict = self.member_info.get(key) or {
+            'name': f'消息 {key}',
+            'size': '',
+            'size_byte': 0,
+            'date': '',
+            'state': QueueStatus.PENDING,
+            'task_id': None
+        }
+        if status:
+            member['state'] = status
+        if name:
+            member['name'] = name
+        if size:
+            member['size'] = size
+        if size_byte is not None:
+            member['size_byte'] = int(size_byte)
+        if date is not None:
+            member['date'] = date
+        if task_id is not None:
+            member['task_id'] = task_id
+        self.member_info[key] = member
 
     def remove_item(self, message_id: Union[int, str]) -> None:
         """从下载任务中移除指定的消息。"""
@@ -151,15 +192,7 @@ class DownloadTask:
         items: list = [item for item in self.items.values() if item.get('status') == QueueStatus.PENDING]
         return {'items': items[:limit], 'total': len(items)}
 
-    def get_unfinished_items(self, limit: int = 50) -> dict:
-        """获取该下载任务中未完成(排队中或下载中)的消息。
 
-        同时包含DOWNLOADING的消息,避免消息一开始下载就从排队列表消失,
-        导致网页面板的链接项在展开与折叠之间反复切换。
-        """
-        status: tuple = (QueueStatus.PENDING, QueueStatus.WAITING, QueueStatus.DOWNLOADING)
-        items: list = [item for item in self.items.values() if item.get('status') in status]
-        return {'items': items[:limit], 'total': len(items)}
 
     @classmethod
     def queued_items(cls, limit: int = 50) -> list:
