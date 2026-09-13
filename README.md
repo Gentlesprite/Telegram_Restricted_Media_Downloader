@@ -1224,14 +1224,14 @@ _**长参数与短参数最终结果一致。**_
   
   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
   
-    此处假设使用默认端口。
+    此处假设使用`1024`端口。
   
     ```bash
-    python3 main.py -p
+    python3 main.py -p 1024
     ```
   
     ```bash
-    python3 main.py --port
+    python3 main.py --port 1024
     ```
   
   - 对于Windows用户:
@@ -1248,14 +1248,14 @@ _**长参数与短参数最终结果一致。**_
   
   - 对于Linux用户:
   
-    此处假设使用默认端口。
+    此处假设使用`1024`端口。
   
     ```bash
-    ./TRMD -p
+    ./TRMD -p 1024
     ```
   
     ```bash
-    ./TRMD --port
+    ./TRMD --port 1024
     ```
   
   </details>
