@@ -1610,6 +1610,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         with open(file=temp_path, mode=mode) as f:
             skip_chunks: int = downloaded // chunk_size  # 计算要跳过的块数。
             f.seek(downloaded)
+            log.info(
+                f'处理"{temp_path}"需要跳过的块:{downloaded}//{chunk_size}={skip_chunks},文件指针已移动到{downloaded}。')
             while True:
                 try:
                     async for chunk in self.app.client.stream_media(
@@ -1622,16 +1624,17 @@ class TelegramRestrictedMediaDownloader(Bot):
                         progress(downloaded, *progress_args)
                     break
                 except FileReferenceExpired as e:
-                    log.warning(
-                        f'文件引用已过期,正在重新获取消息以刷新引用,{_t(KeyWord.REASON)}:"{e}"')
                     chat_id = message.chat.id
                     message_id = message.id
+                    log.warning(
+                        f'"{message_id}"文件引用已过期,正在重新获取消息以刷新引用,{_t(KeyWord.REASON)}:"{e}"')
                     try:
                         message = await self.app.client.get_messages(chat_id=chat_id, message_ids=message_id)
+                        log.info(f'"{message_id}"已重新获取文件引用。')
                         skip_chunks: int = downloaded // chunk_size
                         f.seek(downloaded)
                     except Exception as refresh_error:
-                        log.error(f'重新获取消息失败,{_t(KeyWord.REASON)}:"{refresh_error}"')
+                        log.error(f'重新获取文件引用失败,{_t(KeyWord.REASON)}:"{refresh_error}"')
                         break
                 except (FloodWait, FloodPremiumWait) as e:
                     amount = e.value
@@ -2484,8 +2487,15 @@ class TelegramRestrictedMediaDownloader(Bot):
             result = await self.queue.get()
             try:
                 await result
+            except PermissionError as e:
+                log.error(
+                    '临时文件无法移动至下载路径:\n'
+                    '1.可能存在使用网络路径、挂载硬盘行为(本软件不支持);\n'
+                    '2.可能存在多开软件时,同时操作同一文件或目录导致冲突;\n'
+                    '3.由于软件设计缺陷,没有考虑到不同频道文件名相同的情况(若调整将会导致部分用户更新后重复下载已有文件),当保存路径下文件过多时,可能恰巧存在相同文件名的文件,导致相同文件名无法正常移动,故请定期整理归档下载链接与保存路径下的文件。'
+                    f'{_t(KeyWord.REASON)}:"{e}"')
             except Exception as e:
-                log.exception(f'处理队列时出错,{_t(KeyWord.REASON)}:"{e}"')
+                log.error(f'处理队列时出错,{_t(KeyWord.REASON)}:"{e}"')
         # 等待所有任务完成。
         await self.queue.join()
         if self.scheduler:  # 停止下载调度器。
