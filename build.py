@@ -9,7 +9,7 @@ import sys
 import subprocess
 
 from pathlib import Path
-from shutil import which
+from shutil import which, rmtree
 
 from module import (
     AUTHOR,
@@ -275,6 +275,14 @@ def main():
                 log.warning(f'清理中间产物失败:"{file_path}",原因:"{error}"。')
                 continue
             log.info(f'已清理中间产物:"{file_path}"。')
+        # 构建目录体积较大,构建结束后清理。
+        if os.path.isdir(work_directory):
+            try:
+                rmtree(work_directory)
+            except OSError as error:
+                log.warning(f'清理构建目录失败:"{work_directory}",原因:"{error}"。')
+            else:
+                log.info(f'已清理构建目录:"{work_directory}"。')
 
 
 if __name__ == '__main__':
