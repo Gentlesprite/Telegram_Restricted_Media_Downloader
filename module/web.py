@@ -105,14 +105,18 @@ class WebHandler(BaseHTTPRequestHandler):
         )
 
     def __response_static(self) -> None:
-        """返回网页目录下的静态文件。"""
+        """返回网页模板与静态目录下的文件。"""
         web: Union[Web, None] = getattr(self.server, 'web', None)
         if web is None:
             self.send_error(404)
             return
-        root: str = os.path.abspath(web.web_directory)
         name: str = unquote(self.path.split('?')[0].lstrip('/'))
-        file_path: str = os.path.abspath(os.path.join(root, name or Web.INDEX_FILE))
+        if not name or name in Web.TEMPLATE_FILES:  # 根路径返回首页,登记的模板名称从模板目录取。
+            root: str = os.path.abspath(web.template_directory)
+            file_path: str = os.path.join(root, name or Web.INDEX_FILE)
+        else:
+            root = os.path.abspath(web.static_directory)
+            file_path = os.path.abspath(os.path.join(root, name))
         if os.path.commonpath([root, file_path]) != root:  # 禁止访问网页目录之外的文件。
             self.send_error(403)
             return
@@ -133,8 +137,14 @@ class WebHandler(BaseHTTPRequestHandler):
 
 
 class Web:
-    WEB_DIRECTORY: str = os.path.join('res', 'web')
+    # 网页面板资源的目录约定。
+    # templates:存放HTML页面,新增页面时需在此登记模板名称以便路由。
+    # static:存放静态资源,按类型分子目录(css、js、img、fonts、vendor),
+    # 页面里用相对于站点根的路径引用,如"css/style.css"。
+    TEMPLATE_DIRECTORY: str = os.path.join('module', 'templates')
+    STATIC_DIRECTORY: str = os.path.join('module', 'static')
     INDEX_FILE: str = 'index.html'
+    TEMPLATE_FILES: tuple = ('index.html',)  # 模板目录提供的页面,其余请求一律按静态资源处理。
     UNGROUPED: str = '未分组'
     UNFINISHED_STATE: tuple = (
         QueueStatus.PENDING,
@@ -152,7 +162,7 @@ class Web:
         self.port: int = self.get_free_port(PARSE_ARGS.web)
         self.username: str = self.credential.get(WebMeta.USERNAME)
         self.password: str = self.credential.get(WebMeta.PASSWORD)
-        self.web_directory: str = self.get_web_directory()
+        self.template_directory, self.static_directory = self.get_web_directory()
         self.server: Union[ThreadingHTTPServer, None] = None
         self.thread: Union[threading.Thread, None] = None
 
@@ -174,16 +184,15 @@ class Web:
             return Web.__bind_port(0)
 
     @staticmethod
-    def get_web_directory() -> str:
-        """获取网页静态资源的目录,打包环境取资源解压目录。"""
+    def get_web_directory() -> tuple:
+        """获取网页模板目录与静态资源目录,打包环境取资源解压目录。"""
+        base_directory: str = get_work_directory()
         if is_frozen():
-            resource_directory: str = getattr(sys, '_MEIPASS', sys.prefix)
-            path: str = os.path.join(resource_directory, Web.WEB_DIRECTORY)
-            log.info(f'在打包环境获取网页目录:"{path}"。')
-            return path
-        path: str = os.path.join(get_work_directory(), Web.WEB_DIRECTORY)
-        log.info(f'在生产环境获取网页目录:"{path}"。')
-        return path
+            base_directory = getattr(sys, '_MEIPASS', sys.prefix)
+        template_directory: str = os.path.join(base_directory, Web.TEMPLATE_DIRECTORY)
+        static_directory: str = os.path.join(base_directory, Web.STATIC_DIRECTORY)
+        log.info(f'获取网页模板目录:"{template_directory}",静态资源目录:"{static_directory}"。')
+        return template_directory, static_directory
 
     @staticmethod
     def format_seconds(seconds: Union[int, float, None]) -> str:
@@ -199,9 +208,10 @@ class Web:
 
     def start(self) -> bool:
         """在后台线程启动网页面板。"""
-        if not os.path.isdir(self.web_directory):
-            log.error(f'网页面板启动失败,未找到网页目录:"{self.web_directory}"。')
-            return False
+        for directory in (self.template_directory, self.static_directory):
+            if not os.path.isdir(directory):
+                log.error(f'网页面板启动失败,未找到网页目录:"{directory}"。')
+                return False
         try:
             self.server = ThreadingHTTPServer((self.ip, self.port), WebHandler)
         except OSError as e:

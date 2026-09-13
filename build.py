@@ -95,12 +95,16 @@ def ready_pymediainfo() -> tuple:
         sys.exit(1)
 
 
-def ready_web() -> str:
-    path = str(Path('res/web').resolve())
-    if os.path.isdir(path):
-        return path
-    log.error('未找到网页面板的静态资源目录。')
-    sys.exit(1)
+def ready_web() -> list:
+    """定位网页面板的资源目录,返回(源目录, 打包内相对目录)。"""
+    web_directories: list = []
+    for relative_directory in ('module/templates', 'module/static'):
+        path = str(Path(relative_directory).resolve())
+        if not os.path.isdir(path):
+            log.error(f'未找到网页面板的资源目录:"{path}"。')
+            sys.exit(1)
+        web_directories.append((path, relative_directory))
+    return web_directories
 
 
 def check_python_version():
@@ -217,7 +221,7 @@ def main():
     check_python_version()
     pyinstaller_version: str = ready_pyinstaller()
     media_info_lib_filename, media_info_lib_path = ready_pymediainfo()
-    web_directory: str = ready_web()
+    web_directories: list = ready_web()
 
     # 使用绝对路径,避免PyInstaller执行spec文件时相对路径解析错误(如output/output/version_info.txt)。
     ico_path: str = os.path.abspath('res/icon.ico')
@@ -252,8 +256,9 @@ def main():
     # 资源文件打包到解压目录根目录,运行时通过sys._MEIPASS定位。
     for resource in (media_info_lib_path,):
         command += f'--add-data "{resource}{separator}." '
-    # 网页静态资源需保留"res/web"目录结构,运行时按该相对路径查找。
-    command += f'--add-data "{web_directory}{separator}{os.path.join("res", "web")}" '
+    # 网页资源需保留"module/templates"与"module/static"目录结构,运行时按该相对路径查找。
+    for web_directory, relative_directory in web_directories:
+        command += f'--add-data "{web_directory}{separator}{relative_directory}" '
     command += 'main.py'
 
     log.info(f'{GRID}\nPyInstaller版本:{pyinstaller_version}\n{GRID}')

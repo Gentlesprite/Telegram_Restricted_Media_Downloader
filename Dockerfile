@@ -27,9 +27,6 @@ RUN mkdir -p /app/TRMD /app/downloads /app/sessions /app/temp /app/form
 COPY main.py .
 COPY module/ ./module/
 
-# 复制网页面板的静态资源。
-COPY res/web/ ./res/web/
-
 # 设置挂载点。
 VOLUME ["/app/TRMD", "/app/downloads", "/app/sessions", "/app/temp", "/app/form"]
 
