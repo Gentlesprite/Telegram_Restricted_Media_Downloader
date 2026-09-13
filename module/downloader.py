@@ -1686,7 +1686,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                 f'{_t(KeyWord.ERROR_SIZE)}:{MetaData.suitable_units_display(downloaded)}。')
         with open(file=temp_path, mode=mode) as f:
             skip_chunks: int = downloaded // chunk_size  # 计算要跳过的块数。
-            f.seek(downloaded)
+            aligned_size: int = skip_chunks * chunk_size  # 与服务端offset单位(1MiB)对齐,丢弃未对齐的尾部。
+            if aligned_size != downloaded:
+                f.truncate(aligned_size)  # 截断错位的尾巴,避免续传后文件尺寸偏大。
+                log.warning(
+                    f'缓存文件"{temp_path}"字节未对齐块边界,"{downloaded}"->"{aligned_size}",已截断。')
+                downloaded = aligned_size
+            f.seek(aligned_size)
             log.info(
                 f'处理"{temp_path}"需要跳过的块:"{downloaded}//{chunk_size}={skip_chunks}",文件指针已移动到"{downloaded}"。')
             while True:
@@ -1712,7 +1718,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                         message = await self.app.client.get_messages(chat_id=chat_id, message_ids=message_id)
                         log.info(f'"{message_id}"已重新获取文件引用。')
                         skip_chunks: int = downloaded // chunk_size
-                        f.seek(downloaded)
+                        aligned_size: int = skip_chunks * chunk_size
+                        if aligned_size != downloaded:
+                            f.truncate(aligned_size)
+                            log.warning(
+                                f'缓存文件"{temp_path}"字节未对齐块边界,"{downloaded}"->"{aligned_size}",已截断。')
+                            downloaded = aligned_size
+                        f.seek(aligned_size)
                     except Exception as refresh_error:
                         log.error(f'重新获取文件引用失败,{_t(KeyWord.REASON)}:"{refresh_error}"')
                         break
