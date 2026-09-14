@@ -25,3 +25,4 @@ Pipfile
 # include files
 !rar.exe
 !requirements.txt
+!module/static/img/
