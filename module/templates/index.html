@@ -14,9 +14,12 @@
         <div class="brand">
             <span class="logo">TRMD</span>
         </div>
-        <div class="status">
-            <span class="dot" id="dot"></span>
-            <span id="statusText">空闲 · 等待任务</span>
+        <div class="top-actions">
+            <button class="support-btn" id="supportBtn" type="button">支持作者</button>
+            <div class="status">
+                <span class="dot" id="dot"></span>
+                <span id="statusText">空闲 · 等待任务</span>
+            </div>
         </div>
     </div>
 </header>
@@ -120,6 +123,17 @@
         </div>
     </main>
 </div>
+</div>
+
+<div class="modal-mask" id="supportModal" hidden>
+    <div class="modal-card">
+        <div class="modal-head">
+            <span class="modal-title">支持作者</span>
+            <button class="modal-close" id="supportClose" type="button" title="关闭">✖</button>
+        </div>
+        <img class="modal-pay" src="img/pay.png" alt="收款码">
+        <div class="modal-tip">微信或支付宝扫码支持作者，您的支持是我持续更新的动力。</div>
+    </div>
 </div>
 <script src="js/app.js"></script>
 </body>

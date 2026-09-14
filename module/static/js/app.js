@@ -802,6 +802,33 @@ function bindListenRemove() {
     };
 }
 
+function openSupport() {
+    document.getElementById('supportModal').hidden = false;
+}
+
+function closeSupport() {
+    document.getElementById('supportModal').hidden = true;
+}
+
+function supportMaskClick(event) {
+    if (event.target === this) {  // 点击遮罩空白处关闭弹窗。
+        closeSupport();
+    }
+}
+
+function supportEscape(event) {
+    if (event.key === 'Escape' && !document.getElementById('supportModal').hidden) {
+        closeSupport();
+    }
+}
+
+function bindSupport() {
+    document.getElementById('supportBtn').onclick = openSupport;
+    document.getElementById('supportClose').onclick = closeSupport;
+    document.getElementById('supportModal').onclick = supportMaskClick;
+    document.addEventListener('keydown', supportEscape);
+}
+
 var COLS_KEY = 'trmd_cols';  // 各表列宽的本地存储键。
 var COLS_MIN = 48;  // 单列最小宽度,避免被拖到不可读。
 var colsCache = {};  // 表名 -> 非弹性列的像素宽度数组。
@@ -951,6 +978,7 @@ try {
 bindSections();
 bindListenTabs();
 bindListenRemove();
+bindSupport();
 switchSection(savedSection);
 switchListen(savedListen);
 document.getElementById('toggleAll').onclick = toggleAll;

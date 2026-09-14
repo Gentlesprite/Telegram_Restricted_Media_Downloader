@@ -125,6 +125,101 @@ h1 {
     color: var(--muted);
 }
 
+/* 顶栏右侧:支持作者入口与连接状态。 */
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.support-btn {
+    padding: 5px 13px;
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+
+.support-btn:hover {
+    border-color: var(--accent);
+    background: rgba(56, 249, 215, .12);
+    color: var(--accent);
+}
+
+/* 收款码弹窗 */
+.modal-mask {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(5, 7, 11, .74);
+}
+
+.modal-card {
+    width: min(480px, 100%);
+    max-height: 100%;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--panel);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
+}
+
+.modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel2);
+}
+
+.modal-title {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.modal-close {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+
+.modal-close:hover {
+    border-color: var(--danger);
+    background: rgba(255, 92, 122, .12);
+    color: var(--danger);
+}
+
+.modal-pay {
+    display: block;
+    width: 100%;
+}
+
+.modal-tip {
+    padding: 10px 16px 14px;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+}
+
 .dot {
     width: 8px;
     height: 8px;
