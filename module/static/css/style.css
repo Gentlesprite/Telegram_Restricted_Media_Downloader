@@ -102,6 +102,8 @@ body {
 }
 
 .logo {
+    position: relative;
+    display: inline-block;
     padding: 4px 9px;
     border-radius: 8px;
     background: linear-gradient(135deg, var(--accent2), var(--accent));
@@ -109,6 +111,53 @@ body {
     font-size: 12px;
     font-weight: 800;
     letter-spacing: .5px;
+}
+
+/* 鼠标悬停在logo上时滑出版本信息,纯CSS实现,无需点击。 */
+.logo-tip {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 156px;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel2);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, .42);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity .16s ease, transform .16s ease;
+}
+
+.logo:hover .logo-tip {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.tip-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.tip-key {
+    color: var(--muted);
+}
+
+.tip-val {
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
 }
 
 h1 {

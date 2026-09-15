@@ -1020,11 +1020,21 @@ try {
     lastLinkCollapsed = true;
     lastUploadCollapsed = false;
 }
+function initVersion() {
+    var tip = document.getElementById('logoVersion');
+    var trmd = document.getElementById('tipTrmd');
+    var pyrogram = document.getElementById('tipPyrogram');
+    if (trmd.textContent.indexOf('__') === 0 || pyrogram.textContent.indexOf('__') === 0) {
+        tip.hidden = true;  // 占位符未被服务端替换时隐藏,避免显示原始占位文本。
+    }
+}
+
 bindSections();
 bindListenTabs();
 bindListenRemove();
 bindSupport();
 bindMenu();
+initVersion();
 switchSection(savedSection);
 switchListen(savedListen);
 document.getElementById('toggleAll').onclick = toggleAll;
