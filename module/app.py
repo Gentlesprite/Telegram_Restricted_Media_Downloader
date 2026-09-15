@@ -8,8 +8,8 @@ import time
 import datetime
 import subprocess
 
-from functools import wraps
 from typing import Union
+from functools import wraps
 
 import pyrogram
 
@@ -25,16 +25,17 @@ from module.stdio import StatisticalTable
 from module.client import TelegramRestrictedMediaDownloaderClient
 
 from module.enums import (
+    KeyWord,
     DownloadType,
     DownloadStatus,
-    KeyWord
+
 )
 from module.path_tool import (
     validate_title,
-    truncate_filename,
     get_extension,
+    truncate_filename,
+    is_compressed_file,
     extract_full_extension,
-    is_compressed_file
 )
 from module.util import get_message_dtype
 
