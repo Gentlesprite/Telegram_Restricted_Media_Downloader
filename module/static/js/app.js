@@ -1029,129 +1029,127 @@ function initVersion() {
     }
 }
 
-/* ===== 动画渐变背景,逐行移植自 Telegram Web K 的 gradientRenderer.ts ===== */
-var BG_GRADIENT_SIZE = 50;  // 画布分辨率,与 Telegram Web 一致,靠 CSS 拉伸获得柔和观感。
-var BG_GRADIENT_TAILS = 90;  // 相邻两个色点位置之间的过渡帧数,数值越大漂移越慢。
-var BG_GRADIENT_FPS = 15;  // 动画帧率上限,与原版脚本一致,开销极低且足够平滑。
-var BG_GRADIENT_POSITIONS = [  // 8 个色点的归一化坐标,渲染时按相位轮换参与,与原版一致。
-    {x: 0.80, y: 0.10},
-    {x: 0.60, y: 0.20},
-    {x: 0.35, y: 0.25},
-    {x: 0.25, y: 0.60},
-    {x: 0.20, y: 0.90},
-    {x: 0.40, y: 0.80},
-    {x: 0.65, y: 0.75},
-    {x: 0.75, y: 0.40}
+/* ===== 渐变背景,逐行移植自官方 web.telegram.org/a(telegram-tt)的 util/gradientBackground.ts =====
+   注意:官方 Web A 与 Web K(tweb)的渐变是两套实现,色点坐标、混色公式、颜色顺序都不同。 */
+var BG_GRADIENT_SIZE = 100;  // 官方 useGradientBackground 的 CANVAS_SIZE = 100,靠 CSS 拉伸获得柔和观感。
+var BG_GRADIENT_SPEED = 0.1;  // 官方 ANIMATION_SPEED:色点向目标点移动的每帧插值系数。
+var BG_GRADIENT_EPSILON = 0.01;  // 官方 POSITION_EPSILON:色点与目标的距离小于该值视为到位。
+var BG_GRADIENT_BLEND_POWER = 3;  // 官方 BLEND_POWER:按"与最近色点的距离差"加权的幂次。
+var BG_GRADIENT_STEP = 2;  // 官方 KEY_POINT_STEP:每个颜色点每次前进 2 个索引。
+var BG_GRADIENT_POINTS = [  // 官方 KEY_POINTS:8 个色点的归一化坐标。
+    [0.265, 0.582],
+    [0.176, 0.918],
+    [0.415, 0.836],
+    [0.644, 0.755],
+    [0.735, 0.418],
+    [0.824, 0.082],
+    [0.585, 0.164],
+    [0.356, 0.245]
 ];
 var bgCanvas = null;
 var bgCtx = null;
-var bgHelperCanvas = null;  // 隐藏的 50×50 画布,先写入 ImageData 再拷贝到主画布,与原版一致。
+var bgHelperCanvas = null;  // 隐藏的小画布,先写入 ImageData 再拷贝到主画布,与官方两级结构一致。
 var bgHelperCtx = null;
 var bgColors = [];
-var bgPhase = 0;
-var bgTail = 0;
-var bgLastFrame = 0;
+var bgKeyShift = 0;
+var bgCurrentPositions = [];
+var bgTargetPositions = [];
+var bgAnimating = false;
 
 function bgHexToRgb(hex) {  // 把 #rrggbb 颜色解析为 [r, g, b] 数组。
     var value = parseInt(hex.slice(1, 7), 16);
     return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
 }
 
-function bgGetPositions(shift) {  // 把色点数组按 shift 旋转后隔一取一,得到本相位参与渲染的 4 个点。
-    var positions = BG_GRADIENT_POSITIONS.slice();
-    positions.push.apply(positions, positions.splice(0, shift));
+function bgGetPositions(shift) {  // 官方 buildTargetPositions:取 keyPoints[(shift + i × 2) % 8] 的 4 个点。
     var result = [];
-    for (var i = 0; i < positions.length; i += 2) {
-        result.push(positions[i]);
+    for (var i = 0; i < 4; i++) {
+        var point = BG_GRADIENT_POINTS[(shift + i * BG_GRADIENT_STEP) % BG_GRADIENT_POINTS.length];
+        result.push([point[0], point[1]]);
     }
     return result;
 }
 
-function bgPositionsForPhase(phase) {  // 取某相位渲染用的 4 个色点,Y 轴翻转与原版一致。
-    var result = [];
-    for (var i = 0; i != 4; ++i) {
-        var point = BG_GRADIENT_POSITIONS[(phase + i * 2) % BG_GRADIENT_POSITIONS.length];
-        result.push({x: point.x, y: 1.0 - point.y});
-    }
-    return result;
-}
-
-function bgGetGradientImageData(phase, tail) {  // 按 Telegram 的漩涡算法逐像素混合 4 个色点颜色,生成 ImageData。
+function bgGetGradientImageData() {  // 官方 drawStaticGradient:按与最近色点的距离差 3 次幂加权混合四色。
     var id = bgHelperCtx.createImageData(BG_GRADIENT_SIZE, BG_GRADIENT_SIZE);
     var pixels = id.data;
-    var colorsLength = bgColors.length;
-    var previous = bgPositionsForPhase((phase + 1) % BG_GRADIENT_POSITIONS.length);
-    var current = bgPositionsForPhase(phase);
-    var progress = 1 - tail / BG_GRADIENT_TAILS;
     var offset = 0;
-    for (var y = 0; y < BG_GRADIENT_SIZE; ++y) {
-        var directPixelY = y / BG_GRADIENT_SIZE;
-        var centerDistanceY = directPixelY - 0.5;
-        var centerDistanceY2 = centerDistanceY * centerDistanceY;
-        for (var x = 0; x < BG_GRADIENT_SIZE; ++x) {
-            var directPixelX = x / BG_GRADIENT_SIZE;
-            var centerDistanceX = directPixelX - 0.5;
-            var centerDistance = Math.sqrt(centerDistanceX * centerDistanceX + centerDistanceY2);
-            var swirlFactor = 0.35 * centerDistance;
-            var theta = swirlFactor * swirlFactor * 0.8 * 8.0;
-            var sinTheta = Math.sin(theta);
-            var cosTheta = Math.cos(theta);
-            var pixelX = Math.max(0.0, Math.min(1.0, 0.5 + centerDistanceX * cosTheta - centerDistanceY * sinTheta));
-            var pixelY = Math.max(0.0, Math.min(1.0, 0.5 + centerDistanceX * sinTheta + centerDistanceY * cosTheta));
-            var distanceSum = 0.0;
-            var r = 0.0;
-            var g = 0.0;
-            var b = 0.0;
-            for (var i = 0; i < colorsLength; ++i) {
-                var colorX = previous[i].x + (current[i].x - previous[i].x) * progress;
-                var colorY = previous[i].y + (current[i].y - previous[i].y) * progress;
-                var distanceX = pixelX - colorX;
-                var distanceY = pixelY - colorY;
-                var distance = Math.max(0.0, 0.9 - Math.sqrt(distanceX * distanceX + distanceY * distanceY));
-                distance = distance * distance * distance * distance;
-                distanceSum += distance;
-                r += distance * bgColors[i][0];
-                g += distance * bgColors[i][1];
-                b += distance * bgColors[i][2];
+    for (var y = 0; y < BG_GRADIENT_SIZE; y++) {
+        var yRatio = y / BG_GRADIENT_SIZE;
+        for (var x = 0; x < BG_GRADIENT_SIZE; x++) {
+            var xRatio = x / BG_GRADIENT_SIZE;
+            var distances = [0, 0, 0, 0];
+            var minDistance = Infinity;
+            for (var i = 0; i < 4; i++) {
+                var dx = xRatio - bgCurrentPositions[i][0];
+                var dy = yRatio - bgCurrentPositions[i][1];
+                distances[i] = Math.sqrt(dx * dx + dy * dy);
+                if (distances[i] < minDistance) {
+                    minDistance = distances[i];
+                }
             }
-            pixels[offset++] = r / distanceSum;
-            pixels[offset++] = g / distanceSum;
-            pixels[offset++] = b / distanceSum;
-            pixels[offset++] = 0xFF;
+            var weights = [0, 0, 0, 0];
+            var total = 0;
+            for (i = 0; i < 4; i++) {
+                weights[i] = Math.pow(1 - (distances[i] - minDistance), BG_GRADIENT_BLEND_POWER);
+                total += weights[i];
+            }
+            total = Math.abs(total);
+            var r = 0;
+            var g = 0;
+            var b = 0;
+            for (i = 0; i < 4; i++) {
+                var weight = weights[i] / total;
+                r += bgColors[i][0] * weight;
+                g += bgColors[i][1] * weight;
+                b += bgColors[i][2] * weight;
+            }
+            pixels[offset++] = r;
+            pixels[offset++] = g;
+            pixels[offset++] = b;
+            pixels[offset++] = 255;
         }
     }
     return id;
 }
 
-function bgDrawImageData(id) {  // 先写入隐藏画布再拷贝到主画布,与原版的 hc/hctx 两级结构一致。
+function bgDrawImageData(id) {  // 先写入隐藏画布再拷贝到主画布,与官方两级结构一致。
     bgHelperCtx.putImageData(id, 0, 0);
     bgCtx.drawImage(bgHelperCanvas, 0, 0, BG_GRADIENT_SIZE, BG_GRADIENT_SIZE);
 }
 
-function bgChangeTail(diff) {  // 推进过渡进度,跨越尾数时切换相位,与原版 changeTail 一致。
-    bgTail += diff;
-    while (bgTail >= BG_GRADIENT_TAILS) {
-        bgTail -= BG_GRADIENT_TAILS;
-        if (++bgPhase >= BG_GRADIENT_POSITIONS.length) {
-            bgPhase -= BG_GRADIENT_POSITIONS.length;
+function bgStepPositions() {  // 官方 stepPositions:色点向目标点做 0.1 线性插值,到位后停止。
+    var moving = false;
+    for (var i = 0; i < 4; i++) {
+        var current = bgCurrentPositions[i];
+        var target = bgTargetPositions[i];
+        if (Math.abs(current[0] - target[0]) > BG_GRADIENT_EPSILON
+            || Math.abs(current[1] - target[1]) > BG_GRADIENT_EPSILON) {
+            moving = true;
         }
+        current[0] = current[0] * (1 - BG_GRADIENT_SPEED) + target[0] * BG_GRADIENT_SPEED;
+        current[1] = current[1] * (1 - BG_GRADIENT_SPEED) + target[1] * BG_GRADIENT_SPEED;
     }
-    while (bgTail < 0) {
-        bgTail += BG_GRADIENT_TAILS;
-        if (--bgPhase < 0) {
-            bgPhase += BG_GRADIENT_POSITIONS.length;
-        }
+    return moving;
+}
+
+function bgAnimate() {  // 官方 animate:仅在色点移动期间逐帧重绘,静止后自动停止,开销几乎为零。
+    var moving = bgStepPositions();
+    bgDrawImageData(bgGetGradientImageData());
+    if (moving) {
+        requestAnimationFrame(bgAnimate);
+    } else {
+        bgAnimating = false;
     }
 }
 
-function bgAnimateLoop(now) {  // 持续漂移动画:每帧推进一格尾数,带焦点检测与帧率限制,与原版 doAnimate 一致。
-    requestAnimationFrame(bgAnimateLoop);
-    if (!document.hasFocus() || (now - bgLastFrame) < 1000 / BG_GRADIENT_FPS) {
-        return;
+function bgAdvancePosition() {  // 官方 advancePosition:推进到下一个目标位并启动补间;官方在发送消息时调用。
+    bgTargetPositions = bgGetPositions(bgKeyShift);
+    bgKeyShift = (bgKeyShift + 1) % BG_GRADIENT_POINTS.length;
+    if (!bgAnimating) {
+        bgAnimating = true;
+        requestAnimationFrame(bgAnimate);
     }
-    bgLastFrame = now;
-    bgChangeTail(1);
-    bgDrawImageData(bgGetGradientImageData(bgPhase, bgTail));
 }
 
 function initBackgroundGradient() {
@@ -1173,13 +1171,13 @@ function initBackgroundGradient() {
     if (!bgColors.length) {
         return;
     }
+    // 官方初始布点为 keyPoints[0,2,4,6],首个目标与当前位置相同,因此加载后与官方静止状态一致。
+    bgCurrentPositions = bgGetPositions(0);
+    bgTargetPositions = bgGetPositions(0);
+    bgKeyShift = 1;
     bgCtx = bgCanvas.getContext('2d', {alpha: false});
-    bgDrawImageData(bgGetGradientImageData(0, 0));  // 先绘制一帧静态渐变,避免脚本异常时背景空白。
+    bgDrawImageData(bgGetGradientImageData());
     bgCanvas.classList.add('on');
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        return;  // 用户偏好减少动效时只保留静态渐变。
-    }
-    requestAnimationFrame(bgAnimateLoop);
 }
 
 bindSections();

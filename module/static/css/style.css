@@ -1,11 +1,9 @@
 :root {
-    --bg: #0e1621;  /* Telegram Web 深色主题的底色。 */
+    --bg: #000;  /* 官方 night 带图案时底层是纯黑(tweb 的 .Slot.IsPattern 背景色),渐变只在涂鸦线条里透出。 */
     --panel: rgba(19, 23, 31, .68);  /* 面板半透明,配合毛玻璃让底层涂鸦隐约透出,接近 Telegram Web 的观感。 */
     --panel2: rgba(28, 33, 43, .78);
     --border: #242b39;
-    --pattern-intensity: .38;  /* 涂鸦浓度,与 Telegram 深色主题(intensity 38)一致,调大更明显。 */
-    --pattern-tile-height: calc(500px + 100vh / 2.5);  /* 官方图案平铺单元高度:patternRenderer 的 500 + 视口高 / 2.5。 */
-    --pattern-tile-width: calc(var(--pattern-tile-height) * .4865);  /* 按官方 pattern.svg 的 1440:2960 比例推出宽度。 */
+    --pattern-intensity: .375;  /* 涂鸦浓度,取官方 --pattern-intensity 的值(画布不透明度)。 */
     --text: #e7eaf0;
     --muted: #8a93a6;
     --accent: #38f9d7;
@@ -39,45 +37,30 @@ body {
 
 /* Telegram 风格的动画渐变背景:50×50 低分辨率画布由脚本逐帧绘制,CSS 拉伸铺满视口。
    高度 150%、上移 25% 与 Telegram Web 的 GradientCanvas 样式一致,避免边缘露底。 */
+/* 官方 web.telegram.org/a 的背景:黑底 + 渐变画布被涂鸦图案遮罩,画布不透明度取 --pattern-intensity。
+   逐条对应官方 CSS(.hrXj504d.WOInNdza ._4fgy3GBs):
+   inset:0 铺满、mask-image 用 pattern.svg、mask-position:50%、mask-size:26.875rem、mask-repeat:repeat。 */
 .bg-gradient {
     position: fixed;
-    left: 0;
-    top: -25%;
+    inset: 0;
     z-index: -2;
     width: 100%;
-    height: 150%;
-    object-fit: cover;
+    height: 100%;
     opacity: 0;
-    transition: opacity 1s ease;
+    transition: opacity .3s;
     pointer-events: none;
+    -webkit-mask-image: url('../img/pattern.svg');
+    -webkit-mask-position: center;
+    -webkit-mask-size: 26.875rem auto;
+    -webkit-mask-repeat: repeat;
+    mask-image: url('../img/pattern.svg');
+    mask-position: center;
+    mask-size: 26.875rem auto;
+    mask-repeat: repeat;
 }
 
 .bg-gradient.on {
-    opacity: 1;
-}
-
-/* Telegram 风格的涂鸦背景:固定铺满视口的图案层,不随页面滚动,位于渐变之上。
-   与官方实现一致的三点:
-   1. 官方 pattern.svg 是"黑涂鸦 + 透明底",深色主题下等价反相(invert)为白涂鸦;
-   2. 用 soft-light 叠加到渐变上,只提亮涂鸦区域,颜色取自下方渐变而不是固定色;
-   3. 平铺单元高度按官方公式 500 + 视口高 / 2.5,并从垂直居中处向上下平铺。 */
-body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-color: #fff;
-    -webkit-mask-image: url('../img/pattern.svg');
-    -webkit-mask-repeat: repeat;
-    -webkit-mask-position: 0 50%;
-    -webkit-mask-size: var(--pattern-tile-width) var(--pattern-tile-height);
-    mask-image: url('../img/pattern.svg');
-    mask-repeat: repeat;
-    mask-position: 0 50%;
-    mask-size: var(--pattern-tile-width) var(--pattern-tile-height);
-    mix-blend-mode: soft-light;
-    opacity: var(--pattern-intensity);
-    pointer-events: none;
+    opacity: var(--pattern-intensity);  /* 官方 [data-ready] 的 opacity:var(--pattern-intensity,.5)。 */
 }
 
 .wrap {
