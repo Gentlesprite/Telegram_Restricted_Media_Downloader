@@ -4,15 +4,15 @@
 # Time:2026/1/23 17:47
 # File:parser.py
 from argparse import (
-    ArgumentParser,
-    SUPPRESS
+    SUPPRESS,
+    ArgumentParser
 )
 
 from pyrogram import __version__ as pyrogram_version
 
 from module import (
-    __version__,
-    console
+    console,
+    __version__
 )
 from module.enums import (
     Banner,
