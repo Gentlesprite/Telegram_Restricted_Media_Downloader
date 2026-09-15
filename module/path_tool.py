@@ -13,7 +13,11 @@ import mimetypes
 import unicodedata
 
 from io import BytesIO
-from typing import Optional, Union, List
+from typing import (
+    Optional,
+    Union,
+    List
+)
 
 from pyrogram.file_id import (
     FILE_REFERENCE_FLAG,
