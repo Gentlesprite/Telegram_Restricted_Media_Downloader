@@ -1,8 +1,10 @@
 :root {
-    --bg: #0b0d12;
-    --panel: #151922;
-    --panel2: #1b2029;
+    --bg: #0e1621;  /* Telegram Web 深色主题的底色。 */
+    --panel: rgba(19, 23, 31, .68);  /* 面板半透明,配合毛玻璃让底层涂鸦隐约透出,接近 Telegram Web 的观感。 */
+    --panel2: rgba(28, 33, 43, .78);
     --border: #242b39;
+    --doodle-opacity: .07;  /* 涂鸦图案的整体浓度,调大更明显,调小更低调。 */
+    --doodle-size: 500px;  /* 单个图案单元的宽度(高度按原图比例自适应)。用固定 px 平铺,所以浏览器缩放越小、视口 CSS 像素越多、容纳的单元越多;放大页面则单元变少变大,与 Telegram 一致。 */
     --text: #e7eaf0;
     --muted: #8a93a6;
     --accent: #38f9d7;
@@ -29,10 +31,25 @@ body {
     color: var(--text);
     font-family: system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
     background:
-        radial-gradient(1100px 520px at 12% -12%, #1a2b3b 0%, rgba(26, 43, 59, 0) 60%),
-        radial-gradient(900px 460px at 100% 0%, #2a1b33 0%, rgba(42, 27, 51, 0) 55%),
+        radial-gradient(1200px 560px at 10% -12%, #173a52 0%, rgba(23, 58, 82, 0) 62%),
+        radial-gradient(900px 480px at 100% 0%, #123c46 0%, rgba(18, 60, 70, 0) 58%),
+        radial-gradient(1000px 620px at 50% 120%, #14263c 0%, rgba(20, 38, 60, 0) 60%),
         var(--bg);
     background-attachment: fixed;
+}
+
+/* Telegram 风格的涂鸦背景:固定铺满视口的图案层,不随页面滚动,位于内容之下。 */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: url('../img/doodle.svg');
+    background-repeat: repeat;
+    background-position: 0 0;
+    background-size: var(--doodle-size) auto;
+    opacity: var(--doodle-opacity);
+    pointer-events: none;
 }
 
 .wrap {
@@ -310,6 +327,8 @@ h1 {
     justify-content: center;
     padding: 20px;
     background: rgba(5, 7, 11, .74);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
 }
 
 .modal-card {
@@ -396,6 +415,19 @@ h1 {
     border: 1px solid var(--border);
     border-radius: 12px;
     background: var(--panel);
+}
+
+/* 半透明面板统一加毛玻璃,让底层的涂鸦背景模糊透出,避免图案干扰文字阅读。 */
+.panel,
+.list,
+.side-item,
+.tab,
+.stat div,
+.menu-dropdown,
+.logo-tip,
+.modal-card {
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: blur(10px) saturate(120%);
 }
 
 .overall-top {
