@@ -11,10 +11,20 @@ import datetime
 
 from functools import partial
 from sqlite3 import OperationalError
-from typing import Union, Callable, Optional, Dict, Set
+from typing import (
+    Union,
+    Callable,
+    Optional,
+    Dict,
+    Set
+)
 
 import pyrogram
+
+from pyrogram.handlers import MessageHandler
 from pyrogram.enums.parse_mode import ParseMode
+from pyrogram.types.messages_and_media import ReplyParameters
+from pyrogram.errors.exceptions.forbidden_403 import ChatWriteForbidden
 from pyrogram.errors import (
     BadMsgNotification,
     FileReferenceExpired,
@@ -43,9 +53,6 @@ from pyrogram.errors.exceptions.unauthorized_401 import (
     SessionExpired,
     Unauthorized
 )
-from pyrogram.errors.exceptions.forbidden_403 import ChatWriteForbidden
-from pyrogram.handlers import MessageHandler
-from pyrogram.types.messages_and_media import ReplyParameters
 from pyrogram.types.bots_and_keyboards import (
     InlineKeyboardButton,
     InlineKeyboardMarkup
@@ -54,12 +61,25 @@ from pyrogram.types.bots_and_keyboards import (
 from module import (
     log,
     console,
-    LINK_PREVIEW_OPTIONS,
-    SLEEP_THRESHOLD
+    SLEEP_THRESHOLD,
+    LINK_PREVIEW_OPTIONS
 )
+from module.web import Web
 from module.remote import rc
+from module.language import _t
 from module.filter import Filter
 from module.app import Application
+from module.uploader import TelegramUploader
+from module.task import (
+    DownloadTask,
+    UploadTask,
+    ChatInfo
+)
+from module.stdio import (
+    ProgressBar,
+    Base64Image,
+    MetaData
+)
 from module.bot import (
     Bot,
     KeyboardButton,
@@ -69,43 +89,38 @@ from module.enums import (
     DownloadStatus,
     LinkType,
     KeyWord,
-    BotCallbackText,
     BotButton,
     BotMessage,
+    QueueStatus,
     DownloadType,
+    BotCallbackText,
     CalenderKeyboard,
     SaveDirectoryPrefix
 )
-from module.language import _t
 from module.path_tool import (
-    is_file_duplicate,
-    safe_delete,
-    get_file_size,
     split_path,
-    compare_file_size,
-    move_to_save_directory,
+    safe_delete,
     safe_replace,
-    validate_title
+    get_file_size,
+    validate_title,
+    compare_file_size,
+    is_file_duplicate,
+    move_to_save_directory
 )
-from module.task import DownloadTask, UploadTask, ChatInfo
-from module.enums import QueueStatus
-from module.stdio import ProgressBar, Base64Image, MetaData
-from module.web import Web
-from module.uploader import TelegramUploader
 from module.util import (
+    Issues,
     ctrl_c,
+    get_my_id,
     is_docker,
     parse_link,
+    js_referral,
+    safe_message,
     format_chat_link,
-    get_my_id,
+    get_message_dtype,
+    safe_delete_message,
     get_message_by_link,
     get_chat_with_notify,
-    safe_message,
-    safe_delete_message,
     truncate_display_filename,
-    Issues,
-    get_message_dtype,
-    js_referral
 )
 
 
