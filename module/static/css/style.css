@@ -3,8 +3,9 @@
     --panel: rgba(19, 23, 31, .68);  /* 面板半透明,配合毛玻璃让底层涂鸦隐约透出,接近 Telegram Web 的观感。 */
     --panel2: rgba(28, 33, 43, .78);
     --border: #242b39;
-    --doodle-opacity: .07;  /* 涂鸦图案的整体浓度,调大更明显,调小更低调。 */
-    --doodle-size: 500px;  /* 单个图案单元的宽度(高度按原图比例自适应)。用固定 px 平铺,所以浏览器缩放越小、视口 CSS 像素越多、容纳的单元越多;放大页面则单元变少变大,与 Telegram 一致。 */
+    --pattern-intensity: .38;  /* 涂鸦浓度,与 Telegram 深色主题(intensity 38)一致,调大更明显。 */
+    --pattern-tile-height: calc(500px + 100vh / 2.5);  /* 官方图案平铺单元高度:patternRenderer 的 500 + 视口高 / 2.5。 */
+    --pattern-tile-width: calc(var(--pattern-tile-height) * .4865);  /* 按官方 pattern.svg 的 1440:2960 比例推出宽度。 */
     --text: #e7eaf0;
     --muted: #8a93a6;
     --accent: #38f9d7;
@@ -25,30 +26,57 @@
     display: none !important;
 }
 
+html {
+    background: var(--bg);  /* 底色放在根元素上,避免自身背景遮住负层级的画布与图案层。 */
+}
+
 body {
     min-height: 100vh;
     padding: 24px 16px 48px;
     color: var(--text);
     font-family: system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-    background:
-        radial-gradient(1200px 560px at 10% -12%, #173a52 0%, rgba(23, 58, 82, 0) 62%),
-        radial-gradient(900px 480px at 100% 0%, #123c46 0%, rgba(18, 60, 70, 0) 58%),
-        radial-gradient(1000px 620px at 50% 120%, #14263c 0%, rgba(20, 38, 60, 0) 60%),
-        var(--bg);
-    background-attachment: fixed;
 }
 
-/* Telegram 风格的涂鸦背景:固定铺满视口的图案层,不随页面滚动,位于内容之下。 */
+/* Telegram 风格的动画渐变背景:50×50 低分辨率画布由脚本逐帧绘制,CSS 拉伸铺满视口。
+   高度 150%、上移 25% 与 Telegram Web 的 GradientCanvas 样式一致,避免边缘露底。 */
+.bg-gradient {
+    position: fixed;
+    left: 0;
+    top: -25%;
+    z-index: -2;
+    width: 100%;
+    height: 150%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 1s ease;
+    pointer-events: none;
+}
+
+.bg-gradient.on {
+    opacity: 1;
+}
+
+/* Telegram 风格的涂鸦背景:固定铺满视口的图案层,不随页面滚动,位于渐变之上。
+   与官方实现一致的三点:
+   1. 官方 pattern.svg 是"黑涂鸦 + 透明底",深色主题下等价反相(invert)为白涂鸦;
+   2. 用 soft-light 叠加到渐变上,只提亮涂鸦区域,颜色取自下方渐变而不是固定色;
+   3. 平铺单元高度按官方公式 500 + 视口高 / 2.5,并从垂直居中处向上下平铺。 */
 body::before {
     content: '';
     position: fixed;
     inset: 0;
     z-index: -1;
-    background-image: url('../img/doodle.svg');
-    background-repeat: repeat;
-    background-position: 0 0;
-    background-size: var(--doodle-size) auto;
-    opacity: var(--doodle-opacity);
+    background-color: #fff;
+    -webkit-mask-image: url('../img/pattern.svg');
+    -webkit-mask-repeat: repeat;
+    -webkit-mask-position: 0 50%;
+    -webkit-mask-size: var(--pattern-tile-width) var(--pattern-tile-height);
+    mask-image: url('../img/pattern.svg');
+    mask-repeat: repeat;
+    mask-position: 0 50%;
+    mask-size: var(--pattern-tile-width) var(--pattern-tile-height);
+    mix-blend-mode: soft-light;
+    opacity: var(--pattern-intensity);
     pointer-events: none;
 }
 
