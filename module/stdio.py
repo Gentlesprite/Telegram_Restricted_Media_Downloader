@@ -10,7 +10,10 @@ import base64
 import datetime
 
 from io import BytesIO
-from typing import Union, Callable
+from typing import (
+    Union,
+    Callable
+)
 
 import qrcode
 
@@ -19,11 +22,11 @@ from rich.table import Table
 from rich.markdown import Markdown
 from rich.progress import (
     Progress,
-    TextColumn,
     BarColumn,
+    TextColumn,
+    SpinnerColumn,
     TimeRemainingColumn,
-    TransferSpeedColumn,
-    SpinnerColumn
+    TransferSpeedColumn
 )
 from enum import Enum
 from pyrogram import __version__ as pyrogram_version
@@ -33,23 +36,23 @@ from module import (
     console,
     README,
     __version__,
-    __copyright__,
-    __license__
+    __license__,
+    __copyright__
 )
 from module.remote import rc
 from module.language import _t
 from module.util import (
-    get_terminal_width,
     is_docker,
-    check_update
+    check_update,
+    get_terminal_width
 )
 from module.enums import (
+    Banner,
+    KeyWord,
     DownloadType,
     UploadStatus,
-    KeyWord,
-    GradientColor,
     ProcessConfig,
-    Banner
+    GradientColor
 )
 
 
