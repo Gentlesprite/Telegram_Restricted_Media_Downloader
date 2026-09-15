@@ -8,12 +8,14 @@ import sys
 import atexit
 import logging
 import platform
+
 from logging.handlers import RotatingFileHandler
 
 import yaml
-from pyrogram.types.messages_and_media import LinkPreviewOptions
+
 from rich.console import Console
 from rich.logging import RichHandler
+from pyrogram.types.messages_and_media import LinkPreviewOptions
 
 
 def read_input_history(history_path: str, max_record_len: int, **kwargs) -> None:
