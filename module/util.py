@@ -10,7 +10,12 @@ import string
 import random
 import subprocess
 
-from typing import Tuple, List, Union, Optional
+from typing import (
+    Tuple,
+    List,
+    Union,
+    Optional
+)
 
 import pyrogram
 from pyrogram import raw, utils
