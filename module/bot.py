@@ -35,7 +35,7 @@ from module import (
     __license__,
     console,
     log,
-    SOFTWARE_FULL_NAME,
+    SOFTWARE_SHORT_NAME,
     LINK_PREVIEW_OPTIONS
 )
 from module.remote import rc
@@ -49,7 +49,8 @@ from module.util import (
     safe_index,
     safe_message,
     is_allow_upload,
-    get_valid_chat_id
+    get_valid_chat_id,
+    check_update
 )
 from module.enums import (
     CalenderKeyboard,
@@ -459,6 +460,11 @@ class Bot:
                 f'🔗 链接: {web.protocol}://127.0.0.1:{web.port}\n\n'
             )
         config: dict = rc.cached_config()
+        update_version: str = check_update(  # 远程版本更高时返回该版本号,用于提示可更新。
+            remote_version=config.get('version', __version__),
+            local_version=__version__
+        )
+        version: str = f'v{__version__}({update_version}⬆)' if update_version else f'v{__version__}'
         keyboard = InlineKeyboardMarkup(
             [
                 [
@@ -491,7 +497,7 @@ class Bot:
         )
 
         text = (
-            f'`\n💎 {SOFTWARE_FULL_NAME} v{__version__} 💎\n'
+            f'`\n💎 {SOFTWARE_SHORT_NAME} {version} 💎\n'
             f'©️ {__copyright__.replace(" <https://github.com/Gentlesprite>", ".")}\n'
             f'📖 Licensed under the terms of the {__license__}.`\n\n'
             f'🎮️ 可用命令:\n'
