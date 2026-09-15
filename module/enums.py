@@ -12,9 +12,17 @@ import platform
 
 from functools import wraps
 from dataclasses import dataclass
-from typing import Union, Optional, Callable, Any
+from typing import (
+    Union,
+    Optional,
+    Callable,
+    Any
+)
 
-from module import console, log
+from module import (
+    log,
+    console
+)
 from module.language import _t
 
 
@@ -67,8 +75,8 @@ class UploadStatus:
 
 
 class QueueStatus:
-    PENDING: str = 'pending'          # 排队中,尚未开始处理。
-    WAITING: str = 'waiting'          # 已开始处理,等待下载槽位。
+    PENDING: str = 'pending'  # 排队中,尚未开始处理。
+    WAITING: str = 'waiting'  # 已开始处理,等待下载槽位。
     DOWNLOADING: str = 'downloading'  # 正在下载。
     DONE: str = 'done'
     FAILED: str = 'failed'
@@ -1450,7 +1458,7 @@ class BotCallbackText:
     TOGGLE_FORWARD_DOCUMENT: str = 'toggle_forward_document'
     TOGGLE_FORWARD_TEXT: str = 'toggle_forward_text'
     TOGGLE_FORWARD_VIDEO_NOTE: str = 'toggle_forward_video_note'
-    TOGGLE_FORWARD_LIVE_PHOTO:str = 'toggle_forward_live_photo'
+    TOGGLE_FORWARD_LIVE_PHOTO: str = 'toggle_forward_live_photo'
     TOGGLE_DOWNLOAD_VIDEO: str = 'toggle_download_video'
     TOGGLE_DOWNLOAD_PHOTO: str = 'toggle_download_photo'
     TOGGLE_DOWNLOAD_AUDIO: str = 'toggle_download_audio'
@@ -1458,7 +1466,7 @@ class BotCallbackText:
     TOGGLE_DOWNLOAD_ANIMATION: str = 'toggle_download_animation'
     TOGGLE_DOWNLOAD_DOCUMENT: str = 'toggle_download_document'
     TOGGLE_DOWNLOAD_VIDEO_NOTE: str = 'toggle_download_video_note'
-    TOGGLE_DOWNLOAD_LIVE_PHOTO:str = 'toggle_download_live_photo'
+    TOGGLE_DOWNLOAD_LIVE_PHOTO: str = 'toggle_download_live_photo'
     EXPORT_TABLE: str = 'export_table'
     SHUTDOWN: str = 'shutdown'
     SETTING: str = 'setting'
@@ -1480,7 +1488,7 @@ class BotCallbackText:
     TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION: str = 'toggle_download_chat_animation'
     TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT: str = 'toggle_download_chat_document'
     TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE: str = 'toggle_download_chat_video_note'
-    TOGGLE_DOWNLOAD_CHAT_DTYPE_LIVE_PHOTO:str = 'toggle_download_chat_live_photo'
+    TOGGLE_DOWNLOAD_CHAT_DTYPE_LIVE_PHOTO: str = 'toggle_download_chat_live_photo'
     TOGGLE_DOWNLOAD_CHAT_COMMENT: str = 'toggle_download_chat_comment'
     CALENDAR_CONFIRM: str = 'calendar_confirm'
     FILTER_START_DATE: str = 'filter_start_date'
