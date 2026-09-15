@@ -12,11 +12,11 @@ import datetime
 from functools import partial
 from sqlite3 import OperationalError
 from typing import (
+    Set,
+    Dict,
     Union,
     Callable,
-    Optional,
-    Dict,
-    Set
+    Optional
 )
 
 import pyrogram
