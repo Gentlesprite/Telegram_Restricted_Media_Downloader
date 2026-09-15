@@ -14,18 +14,18 @@ import unicodedata
 
 from io import BytesIO
 from typing import (
-    Optional,
+    List,
     Union,
-    List
+    Optional
 )
 
 from pyrogram.file_id import (
-    FILE_REFERENCE_FLAG,
-    PHOTO_TYPES,
-    WEB_LOCATION_FLAG,
     FileType,
     b64_decode,
     rle_decode,
+    PHOTO_TYPES,
+    WEB_LOCATION_FLAG,
+    FILE_REFERENCE_FLAG
 )
 
 from module import log
