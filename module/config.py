@@ -6,7 +6,6 @@
 import os
 import logging
 import datetime
-import subprocess
 
 from typing import Union
 
