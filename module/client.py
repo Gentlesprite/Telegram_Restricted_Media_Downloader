@@ -5,50 +5,53 @@
 # File:client.py
 import math
 import asyncio
-import functools
 import inspect
+import functools
 
-from datetime import datetime
 from hashlib import sha256
+from datetime import datetime
 from typing import (
     AsyncIterator,
     AsyncGenerator,
-    Optional,
-    Union,
     List,
-    Callable
+    Union,
+    Callable,
+    Optional
 )
 
 import pyrogram
-from pyrogram.crypto import aes
+
+from pyrogram.types import User
 from pyrogram.qrlogin import QRLogin
 from pyrogram import raw, types, utils
-from pyrogram.errors.exceptions import PhoneNumberInvalid
 from pyrogram.raw.core import TLObject
 from pyrogram.session.session import Result
+from pyrogram.errors.exceptions import PhoneNumberInvalid
+from pyrogram.crypto import (
+    aes,
+    mtproto
+)
 from pyrogram.session import (
     Auth,
     Session
 )
-from pyrogram.crypto import mtproto
 from pyrogram.errors import (
-    FloodPremiumWait,
-    FloodWait,
-    FileReferenceExpired,
-    InternalServerError,
-    ServiceUnavailable,
-    AuthBytesInvalid,
-    BadMsgNotification,
     RPCError,
+    FloodWait,
+    FloodPremiumWait,
+    AuthBytesInvalid,
+    VolumeLocNotFound,
+    ServiceUnavailable,
+    BadMsgNotification,
     CDNFileHashMismatch,
-    VolumeLocNotFound
+    InternalServerError,
+    FileReferenceExpired,
 )
 from pyrogram.file_id import (
     FileId,
     FileType,
     ThumbnailSource
 )
-from pyrogram.types import User
 
 from module import (
     console,
