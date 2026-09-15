@@ -13,10 +13,10 @@ import platform
 from functools import wraps
 from dataclasses import dataclass
 from typing import (
+    Any,
     Union,
     Optional,
     Callable,
-    Any
 )
 
 from module import (
