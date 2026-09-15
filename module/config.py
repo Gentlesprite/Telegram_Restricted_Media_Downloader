@@ -28,8 +28,8 @@ from module.path_tool import (
 )
 from module.enums import (
     KeyWord,
-    GetStdioParams,
-    ProcessConfig
+    ProcessConfig,
+    GetStdioParams
 )
 from module.util import (
     ctrl_c,
