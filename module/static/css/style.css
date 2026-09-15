@@ -1,7 +1,11 @@
 :root {
     --bg: #000;  /* 官方 night 带图案时底层是纯黑(tweb 的 .Slot.IsPattern 背景色),渐变只在涂鸦线条里透出。 */
-    --panel: rgba(19, 23, 31, .68);  /* 面板半透明,配合毛玻璃让底层涂鸦隐约透出,接近 Telegram Web 的观感。 */
-    --panel2: rgba(28, 33, 43, .78);
+    --panel: rgba(26, 26, 30, .6);  /* 暗色玻璃:深色半透,不是白色叠加层(白层在黑底上会变灰膜)。 */
+    --panel2: rgba(34, 34, 39, .72);  /* 表头与分组条:比卡片略实一档。 */
+    --glass-blur: 26px;  /* 背景模糊半径,Safari/Telegram 顶栏那种强度。 */
+    --glass-saturate: 190%;  /* 放大透出来的涂鸦颜色,让玻璃有色彩而不是灰片。 */
+    --glass-brightness: 1;  /* 不提亮,保持暗色玻璃。 */
+    --glass-edge: rgba(255, 255, 255, .09);  /* 发丝级分隔线。 */
     --border: #242b39;
     --pattern-intensity: .375;  /* 涂鸦浓度,取官方 --pattern-intensity 的值(画布不透明度)。 */
     --text: #e7eaf0;
@@ -428,7 +432,8 @@ h1 {
     background: var(--panel);
 }
 
-/* 半透明面板统一加毛玻璃,让底层的涂鸦背景模糊透出,避免图案干扰文字阅读。 */
+/* iOS 26 Liquid Glass:主体几乎全透,靠强模糊 + 轻微提亮加饱和采样背景,
+   再用上沿发丝高光与下沿暗边表现厚度;描边与阴影都很淡,避免"塑料感"。 */
 .panel,
 .list,
 .side-item,
@@ -436,9 +441,16 @@ h1 {
 .stat div,
 .menu-dropdown,
 .logo-tip,
-.modal-card {
-    -webkit-backdrop-filter: blur(10px) saturate(120%);
-    backdrop-filter: blur(10px) saturate(120%);
+.modal-card,
+.list-head,
+th {
+    border-color: var(--glass-edge);
+    /* 只有上沿一条发丝高光和很淡的投影,不做整圈亮边与大块渐变,保持顶栏式毛玻璃的干净。 */
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .06),
+        0 4px 16px rgba(0, 0, 0, .28);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
 }
 
 .overall-top {
