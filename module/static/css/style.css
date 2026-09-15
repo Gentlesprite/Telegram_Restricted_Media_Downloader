@@ -168,7 +168,7 @@ h1 {
     animation: heartBeat 1.4s ease-in-out infinite;
 }
 
-/* 心跳缩放,配合红色心形强化入口的关注度。 */
+/* 心跳缩放,配合红色心形强化支持作者入口的关注度。 */
 @keyframes heartBeat {
     0%, 30%, 60%, 100% {
         transform: scale(1);
@@ -192,6 +192,59 @@ h1 {
     100% {
         box-shadow: 0 0 0 0 rgba(56, 249, 215, 0);
     }
+}
+
+/* 顶栏更多菜单:按钮保持低调,展开的下拉面板浮在内容之上。 */
+.menu-wrap {
+    position: relative;
+}
+
+.menu-btn {
+    width: 30px;
+    height: 26px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+
+.menu-btn:hover {
+    border-color: var(--accent);
+    background: rgba(56, 249, 215, .12);
+    color: var(--accent);
+}
+
+.menu-dropdown {
+    position: absolute;
+    top: 32px;
+    right: 0;
+    z-index: 40;
+    min-width: 132px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
+}
+
+.menu-item {
+    display: block;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.menu-item:hover {
+    background: rgba(56, 249, 215, .12);
+    color: var(--accent);
 }
 
 /* 收款码弹窗 */

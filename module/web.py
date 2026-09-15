@@ -40,6 +40,7 @@ from module.util import (
     get_web_session,
     get_message_dtype
 )
+from module.remote import rc
 from module.enums import (
     WebMeta,
     KeyWord,
@@ -327,6 +328,16 @@ class Web:
         """校验浏览器提交的记名令牌是否有效,用于免密登录。"""
         return bool(token) and token == self.token
 
+    @staticmethod
+    def get_outer_links() -> dict:
+        """读取顶栏菜单使用的外部链接,远程配置缺失时回退到内置默认值。"""
+        config: dict = rc.cached_config()
+        return {
+            'github': config.get('github', rc.DEFAULT_GITHUB) + '/releases',
+            'subscribe_channel': config.get('subscribe_channel', rc.DEFAULT_SUBSCRIBE_CHANNEL),
+            'video_tutorial': config.get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL)
+        }
+
     def get_count(self) -> dict:
         """聚合下载任务的成功、失败、跳过数量。"""
         count: dict = {'success': 0, 'failure': 0, 'skip': 0}
@@ -593,7 +604,8 @@ class Web:
                 'tasks': tasks,
                 'links': links,
                 'uploads': uploads,
-                'listeners': self.get_listeners()
+                'listeners': self.get_listeners(),
+                'outer_links': self.get_outer_links()  # 顶栏菜单使用的外部链接。
             }
         except Exception as e:
             log.debug(f'生成进度数据时出错,{_t(KeyWord.REASON)}:"{e}"')
@@ -604,5 +616,6 @@ class Web:
                 'tasks': [],
                 'links': [],
                 'uploads': [],
-                'listeners': {'download': [], 'forward': []}
+                'listeners': {'download': [], 'forward': []},
+                'outer_links': self.get_outer_links()
             }

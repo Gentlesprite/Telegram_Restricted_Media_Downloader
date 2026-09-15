@@ -458,22 +458,23 @@ class Bot:
                 f'🔑 密码: ||{web.password}||\n'
                 f'🔗 链接: {web.protocol}://127.0.0.1:{web.port}\n\n'
             )
+        config: dict = rc.cached_config()
         keyboard = InlineKeyboardMarkup(
             [
                 [
                     InlineKeyboardButton(
                         BotButton.GITHUB,
-                        url=rc.cached_config().get('github', rc.DEFAULT_GITHUB) + '/releases'
+                        url=config.get('github', rc.DEFAULT_GITHUB) + '/releases'
                     ),
                     InlineKeyboardButton(
                         BotButton.SUBSCRIBE_CHANNEL,
-                        url=rc.cached_config().get('subscribe_channel', rc.DEFAULT_SUBSCRIBE_CHANNEL)
+                        url=config.get('subscribe_channel', rc.DEFAULT_SUBSCRIBE_CHANNEL)
                     )
                 ],
                 [
                     InlineKeyboardButton(
                         BotButton.VIDEO_TUTORIAL,
-                        url=rc.cached_config().get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL)
+                        url=config.get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL)
                     ),
                     InlineKeyboardButton(
                         BotButton.PAY,

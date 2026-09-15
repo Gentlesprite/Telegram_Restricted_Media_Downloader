@@ -759,6 +759,7 @@ function render(data) {
     ]);
     lastUploadActive = renderUpload(data.uploads || []);
     lastListenCount = renderListeners(data.listeners);
+    renderOuterLinks(data.outer_links);
     renderStatus();
     renderList(data);
 }
@@ -820,6 +821,44 @@ function supportEscape(event) {
     if (event.key === 'Escape' && !document.getElementById('supportModal').hidden) {
         closeSupport();
     }
+}
+
+var OUTER_LINK_IDS = {github: 'linkGithub', subscribe_channel: 'linkChannel', video_tutorial: 'linkVideo'};
+
+function renderOuterLinks(links) {
+    Object.keys(OUTER_LINK_IDS).forEach(function (key) {
+        var node = document.getElementById(OUTER_LINK_IDS[key]);
+        var url = (links || {})[key];
+        node.href = url || '#';
+        node.hidden = !url;  // 后端未提供该链接时隐藏对应菜单项。
+    });
+}
+
+function setMenuOpen(open) {
+    document.getElementById('menuDropdown').hidden = !open;
+}
+
+function menuBtnClick(event) {
+    event.stopPropagation();  // 阻止冒泡,避免立刻被外部点击处理关闭。
+    setMenuOpen(document.getElementById('menuDropdown').hidden);
+}
+
+function menuOutsideClick(event) {
+    if (!document.getElementById('menuWrap').contains(event.target)) {
+        setMenuOpen(false);
+    }
+}
+
+function menuEscape(event) {
+    if (event.key === 'Escape') {
+        setMenuOpen(false);
+    }
+}
+
+function bindMenu() {
+    document.getElementById('menuBtn').onclick = menuBtnClick;
+    document.addEventListener('click', menuOutsideClick);
+    document.addEventListener('keydown', menuEscape);
 }
 
 function isFirstLogin() {
@@ -986,6 +1025,7 @@ bindSections();
 bindListenTabs();
 bindListenRemove();
 bindSupport();
+bindMenu();
 switchSection(savedSection);
 switchListen(savedListen);
 document.getElementById('toggleAll').onclick = toggleAll;
