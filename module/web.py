@@ -53,6 +53,8 @@ class WebHandler(BaseHTTPRequestHandler):
     """处理网页面板的请求。"""
     server_version: str = 'TRMDWeb'
     remember_session: bool = False  # 本次响应是否需要下发记名Cookie。
+    first_login: bool = False  # 本次请求是否属于未携带有效Cookie的首次登录。
+    FIRST_LOGIN_BODY: bytes = b'<body data-first-login="1">'  # 首次登录时写入首页的标记,供页面自动展示卡片。
 
     def do_GET(self) -> None:
         if self.__check_auth() is False:
@@ -76,6 +78,7 @@ class WebHandler(BaseHTTPRequestHandler):
     def __check_auth(self) -> bool:
         """校验认证,已被记住的浏览器通过Cookie免密,否则回退到Basic认证。"""
         self.remember_session = False
+        self.first_login = False
         web: Union[Web, None] = getattr(self.server, 'web', None)
         if web is None or not web.username:
             return True
@@ -94,6 +97,7 @@ class WebHandler(BaseHTTPRequestHandler):
             self.__response_unauthorized()
             return False
         self.remember_session = True  # 首次认证成功,响应时下发记名Cookie。
+        self.first_login = True  # 走到这里说明请求未携带有效Cookie,即本次为首次登录。
         return True
 
     def __get_cookie(self) -> str:
@@ -197,6 +201,8 @@ class WebHandler(BaseHTTPRequestHandler):
             log.warning(f'读取网页文件"{file_path}"失败,{_t(KeyWord.REASON)}:"{e}"')
             self.send_error(404)
             return
+        if self.first_login and os.path.basename(file_path) == Web.INDEX_FILE:  # 首次登录在首页写入标记。
+            body = body.replace(b'<body>', WebHandler.FIRST_LOGIN_BODY, 1)
         content_type: str = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
         if content_type.startswith('text/'):
             content_type: str = f'{content_type}; charset=utf-8'

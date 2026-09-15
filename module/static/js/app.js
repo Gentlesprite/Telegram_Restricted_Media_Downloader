@@ -822,11 +822,18 @@ function supportEscape(event) {
     }
 }
 
+function isFirstLogin() {
+    return document.body.getAttribute('data-first-login') === '1';  // 服务端在首次登录时写入该标记。
+}
+
 function bindSupport() {
     document.getElementById('supportBtn').onclick = openSupport;
     document.getElementById('supportClose').onclick = closeSupport;
     document.getElementById('supportModal').onclick = supportMaskClick;
     document.addEventListener('keydown', supportEscape);
+    if (isFirstLogin()) {
+        openSupport();
+    }
 }
 
 var COLS_KEY = 'trmd_cols';  // 各表列宽的本地存储键。
