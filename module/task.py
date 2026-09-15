@@ -10,11 +10,18 @@ import time
 import asyncio
 
 from functools import wraps
-from typing import Union, Optional, Callable
+from typing import (
+    Union,
+    Optional,
+    Callable
+)
 
 import pyrogram
 
-from module import console, log
+from module import (
+    log,
+    console
+)
 from module.language import _t
 from module.stdio import MetaData
 from module.parser import PARSE_ARGS
@@ -24,10 +31,10 @@ from module.path_tool import (
     calc_sha256,
 )
 from module.enums import (
-    DownloadStatus,
+    KeyWord,
     QueueStatus,
     UploadStatus,
-    KeyWord
+    DownloadStatus
 )
 
 
@@ -195,8 +202,6 @@ class DownloadTask:
         """获取该下载任务中排队(PENDING)的消息。"""
         items: list = [item for item in self.items.values() if item.get('status') == QueueStatus.PENDING]
         return {'items': items[:limit], 'total': len(items)}
-
-
 
     @classmethod
     def queued_items(cls, limit: int = 50) -> list:
