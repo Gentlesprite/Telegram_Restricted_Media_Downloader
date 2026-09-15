@@ -10,6 +10,7 @@
     --danger: #ff5c7a;
     --warn: #ffc857;
     --cols: minmax(0, 1fr) 210px 148px 92px 84px 64px;
+    --page-max: 100%;  /* 内容区最大宽度,默认跟随视口铺满;想恢复居中留白可改成一个像素值。 */
 }
 
 * {
@@ -35,7 +36,8 @@ body {
 }
 
 .wrap {
-    max-width: 1280px;
+    width: 100%;
+    max-width: var(--page-max);
     margin: 0 auto;
 }
 
@@ -926,6 +928,14 @@ tbody tr:hover {
 }
 
 /* 响应式 */
+
+/* 超宽屏:收回铺满策略限制最大宽度,避免表格行过长影响阅读。 */
+@media (min-width: 2400px) {
+    :root {
+        --page-max: 2200px;
+    }
+}
+
 @media (max-width: 760px) {
     .layout {
         grid-template-columns: 1fr;
