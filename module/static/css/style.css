@@ -133,21 +133,65 @@ h1 {
 }
 
 .support-btn {
-    padding: 5px 13px;
-    border: 1px solid var(--border);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border: none;
     border-radius: 99px;
-    background: transparent;
-    color: var(--muted);
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    color: #06231d;
     font-family: inherit;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .5px;
     cursor: pointer;
-    transition: border-color .15s ease, color .15s ease, background .15s ease;
+    animation: supportPulse 2.4s ease-out infinite;
+    transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
 }
 
 .support-btn:hover {
-    border-color: var(--accent);
-    background: rgba(56, 249, 215, .12);
-    color: var(--accent);
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+    animation-play-state: paused;
+    box-shadow: 0 6px 18px rgba(56, 249, 215, .35);
+}
+
+.support-btn:active {
+    transform: translateY(0);
+}
+
+.support-icon {
+    color: #ff3355;
+    font-size: 14px;
+    line-height: 1;
+    animation: heartBeat 1.4s ease-in-out infinite;
+}
+
+/* 心跳缩放,配合红色心形强化入口的关注度。 */
+@keyframes heartBeat {
+    0%, 30%, 60%, 100% {
+        transform: scale(1);
+    }
+    15% {
+        transform: scale(1.18);
+    }
+    45% {
+        transform: scale(1.1);
+    }
+}
+
+/* 呼吸光晕,让入口在顶栏中保持视觉焦点。 */
+@keyframes supportPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(56, 249, 215, .45);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(56, 249, 215, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(56, 249, 215, 0);
+    }
 }
 
 /* 收款码弹窗 */
