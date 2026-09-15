@@ -1,3 +1,8 @@
+/* TRMD Web UI — 前端脚本(含从 telegram-tt 移植的渐变背景实现)
+ * Copyright © 2024-2026 Gentlesprite
+ * SPDX-License-Identifier: GPL-3.0-only
+ * 本文件整体以 GNU GPL-3.0 授权;完整许可见仓库根目录 LICENCE。
+ */
 const EMPTY_SUMMARY = {percent: 0, info: '0.00B / 0.00B', speed: '', remaining: ''};
 
 var SECTIONS = {
@@ -1046,6 +1051,15 @@ function initVersion() {
     }
 }
 
+/*
+ * ===== 渐变背景实现 =====
+ * 移植自 telegram-tt(web.telegram.org/a)的 util/gradientBackground.ts;
+ * 该渐变算法改编自 http://useless.altervista.org/gradient.html(原脚本作者未知)。
+ * 原始代码以 GNU GPL-3.0 授权,版权归相应原作者所有。
+ * 移植并修改: Gentlesprite, 2026-09
+ * 修改内容: 将原 React/TS 实现改写为原生 JS,并适配本项目 DOM 结构。
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 /* ===== 渐变背景,逐行移植自官方 web.telegram.org/a(telegram-tt)的 util/gradientBackground.ts =====
    注意:官方 Web A 与 Web K(tweb)的渐变是两套实现,色点坐标、混色公式、颜色顺序都不同。 */
 var BG_GRADIENT_SIZE = 100;  // 官方 useGradientBackground 的 CANVAS_SIZE = 100,靠 CSS 拉伸获得柔和观感。

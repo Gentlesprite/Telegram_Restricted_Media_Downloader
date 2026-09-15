@@ -39,6 +39,13 @@ body {
     font-family: system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
 }
 
+/*
+ * 渐变背景与涂鸦遮罩样式
+ * 对应 telegram-tt(web.telegram.org/a)的官方背景实现,经改写适配本项目。
+ * 原始代码以 GNU GPL-3.0 授权,版权归相应原作者所有。
+ * 移植并修改: Gentlesprite, 2026-09
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 /* Telegram 风格的动画渐变背景:50×50 低分辨率画布由脚本逐帧绘制,CSS 拉伸铺满视口。
    高度 150%、上移 25% 与 Telegram Web 的 GradientCanvas 样式一致,避免边缘露底。 */
 /* 官方 web.telegram.org/a 的背景:黑底 + 渐变画布被涂鸦图案遮罩,画布不透明度取 --pattern-intensity。
