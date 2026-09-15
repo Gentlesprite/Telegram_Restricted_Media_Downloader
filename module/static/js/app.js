@@ -83,6 +83,7 @@ var currentListen = 'forward';
 var lastDownloadActive = 0;
 var lastUploadActive = 0;
 var lastListenCount = 0;
+var lastUploadFinished = 0;  // 上传已结束(成功 + 失败)的任务数,用于驱动背景渐变步进。
 
 function esc(text) {
     var div = document.createElement('div');
@@ -734,6 +735,7 @@ function renderUpload(uploads) {
     syncUploadHeads();
     bindGroups();  // 上传列表渲染完成后统一绑定折叠事件。
     renderOverall(uploadSummary(uploads), count.active, SUMMARY_IDS.upload);
+    lastUploadFinished = count.success + count.failure;
     renderStat('uploadStat', [
         statCell('成功', count.success, 'ok'),
         statCell('失败', count.failure, 'bad'),
@@ -761,6 +763,21 @@ function render(data) {
     renderOuterLinks(data.outer_links);
     renderStatus();
     renderList(data);
+    syncBackgroundProgress(data.count.success + data.count.failure + data.count.skip + lastUploadFinished);
+}
+
+function syncBackgroundProgress(finished) {  // 下载或上传每完成一个任务,背景渐变就推进一格,与官方发送消息时推进一致。
+    if (bgLastProgress < 0) {
+        bgLastProgress = finished;  // 首次只记录基数,不触发移动。
+        return;
+    }
+    if (finished > bgLastProgress) {
+        bgLastProgress = finished;
+        bgAdvancePosition();
+    }
+    if (finished < bgLastProgress) {
+        bgLastProgress = finished;  // 任务被清空或重置时同步基数,避免数字回退后误触发。
+    }
 }
 
 async function refresh() {
@@ -1055,6 +1072,7 @@ var bgKeyShift = 0;
 var bgCurrentPositions = [];
 var bgTargetPositions = [];
 var bgAnimating = false;
+var bgLastProgress = -1;  // 上一轮的已完成任务总数,-1 表示尚未记录基数。
 
 function bgHexToRgb(hex) {  // 把 #rrggbb 颜色解析为 [r, g, b] 数组。
     var value = parseInt(hex.slice(1, 7), 16);
