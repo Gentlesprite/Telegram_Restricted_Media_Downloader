@@ -9,7 +9,10 @@ import time
 import asyncio
 
 from functools import partial
-from urllib.request import Request, urlopen
+from urllib.request import (
+    Request,
+    urlopen
+)
 
 from module import (
     log,
