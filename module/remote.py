@@ -37,9 +37,15 @@ class RemoteConfig(object):
     PATH: str = os.path.join(APPDATA_PATH, '.REMOTE_CONFIG')
     DEFAULT_VERSION: str = __version__
     DEFAULT_REFERRAL: str = ''
+    DEFAULT_VIDEO_TUTORIAL: str = 'https://www.youtube.com/watch?v=ucwKJu-MrBw'
+    DEFAULT_SUBSCRIBE_CHANNEL: str = 'https://t.me/RestrictedMediaDownloader'
+    DEFAULT_GITHUB: str = 'https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader'
     CONFIG: dict = {
         'version': (DEFAULT_VERSION, str),
-        'referral': (DEFAULT_REFERRAL, str)
+        'referral': (DEFAULT_REFERRAL, str),
+        'video_tutorial': (DEFAULT_VIDEO_TUTORIAL, str),
+        'subscribe_channel': (DEFAULT_SUBSCRIBE_CHANNEL, str),
+        'github': (DEFAULT_GITHUB, str)
     }
 
     def default_config(self) -> dict:

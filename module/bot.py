@@ -38,6 +38,7 @@ from module import (
     SOFTWARE_FULL_NAME,
     LINK_PREVIEW_OPTIONS
 )
+from module.remote import rc
 from module.language import _t
 from module.stdio import MetaData
 from module.task import UploadTask
@@ -462,17 +463,17 @@ class Bot:
                 [
                     InlineKeyboardButton(
                         BotButton.GITHUB,
-                        url='https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases'
+                        url=rc.cached_config().get('github', rc.DEFAULT_GITHUB) + '/releases'
                     ),
                     InlineKeyboardButton(
                         BotButton.SUBSCRIBE_CHANNEL,
-                        url='https://t.me/RestrictedMediaDownloader'
+                        url=rc.cached_config().get('subscribe_channel', rc.DEFAULT_SUBSCRIBE_CHANNEL)
                     )
                 ],
                 [
                     InlineKeyboardButton(
                         BotButton.VIDEO_TUTORIAL,
-                        url='https://www.youtube.com/watch?v=ucwKJu-MrBw'
+                        url=rc.cached_config().get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL)
                     ),
                     InlineKeyboardButton(
                         BotButton.PAY,
