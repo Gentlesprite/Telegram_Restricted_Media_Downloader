@@ -464,21 +464,20 @@ function renderStat(id, cells) {
 }
 
 function renderStatus() {
-    var dot = document.getElementById('dot');
-    var text = document.getElementById('statusText');
-    if (currentSection === 'listener') {  // 监听页不跟随下载与上传的活跃任务数。
-        dot.className = lastListenCount ? 'dot active' : 'dot';
-        text.textContent = lastListenCount ? '监听中 · ' + lastListenCount + ' 个频道' : '空闲 · 等待任务';
-        return;
+    // 下载、上传、监听三个板块的活跃情况统一显示在顶栏左侧,不再跟随当前板块切换。
+    var parts = [];
+    if (lastDownloadActive) {
+        parts.push('下载 ' + lastDownloadActive);
     }
-    var count = currentSection === 'upload' ? lastUploadActive : lastDownloadActive;
-    if (count > 0) {
-        dot.className = 'dot active';
-        text.textContent = (currentSection === 'upload' ? '上传中 · ' : '下载中 · ') + count + ' 个任务';
-    } else {
-        dot.className = 'dot';
-        text.textContent = '空闲 · 等待任务';
+    if (lastUploadActive) {
+        parts.push('上传 ' + lastUploadActive);
     }
+    if (lastListenCount) {
+        parts.push('监听 ' + lastListenCount);
+    }
+    var active = parts.length > 0;
+    document.getElementById('dot').className = active ? 'dot active' : 'dot';
+    document.getElementById('statusText').textContent = active ? parts.join(' · ') : '空闲 · 等待任务';
 }
 
 function renderList(data) {

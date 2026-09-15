@@ -117,15 +117,17 @@ h1 {
     letter-spacing: .5px;
 }
 
+/* 顶栏左侧:统一下载、上传、监听三个板块的运行状态。 */
 .status {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     font-size: 13px;
     color: var(--muted);
+    white-space: nowrap;
 }
 
-/* 顶栏右侧:支持作者入口与连接状态。 */
+/* 顶栏右侧:支持作者入口与更多菜单。 */
 .top-actions {
     display: flex;
     align-items: center;
