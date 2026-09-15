@@ -16,8 +16,8 @@ from typing import Union
 from asyncio import AbstractEventLoop
 from urllib.parse import unquote
 from http.server import (
-    BaseHTTPRequestHandler,
-    ThreadingHTTPServer
+    ThreadingHTTPServer,
+    BaseHTTPRequestHandler
 )
 
 from pyrogram import __version__ as pyrogram_version
@@ -33,17 +33,17 @@ from module.stdio import (
 )
 from module.path_tool import split_path
 from module.task import (
-    DownloadTask,
+    ChatInfo,
     UploadTask,
-    ChatInfo
+    DownloadTask
 )
 
 from module.util import (
     is_frozen,
-    gen_random_credential,
-    get_work_directory,
     get_web_session,
-    get_message_dtype
+    get_message_dtype,
+    get_work_directory,
+    gen_random_credential
 )
 from module.enums import (
     WebMeta,
