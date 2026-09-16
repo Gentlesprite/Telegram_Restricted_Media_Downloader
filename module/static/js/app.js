@@ -912,7 +912,7 @@ function readDefaultCols(list) {
 }
 
 function applyCols(list, widths) {
-    var parts = ['minmax(0, 1fr)'];  // 首列始终弹性,自适应剩余宽度。
+    var parts = ['minmax(' + COLS_MIN + 'px, 1fr)'];  // 首列弹性列设最小宽度,避免被其它列拉满时挤压到文字重叠。
     for (var i = 0; i < widths.length; i++) {
         parts.push(widths[i] + 'px');
     }
@@ -943,7 +943,8 @@ function clampColsWidth(widths, index, value, maxFixed) {
             others += widths[i];
         }
     }
-    var max = Math.max(COLS_MIN, maxFixed - others);
+    // 预留首列弹性列的最小宽度,避免固定列被拉到超出可用空间后挤压首列文字。
+    var max = Math.max(COLS_MIN, maxFixed - others - COLS_MIN);
     return Math.min(Math.max(value, COLS_MIN), max);
 }
 

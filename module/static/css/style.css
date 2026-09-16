@@ -449,7 +449,6 @@ h1 {
 .menu-dropdown,
 .logo-tip,
 .modal-card,
-.list-head,
 th {
     border-color: var(--glass-edge);
     /* 只有上沿一条发丝高光和很淡的投影,不做整圈亮边与大块渐变,保持顶栏式毛玻璃的干净。 */
@@ -661,9 +660,20 @@ h2 {
     color: var(--muted);
 }
 
-/* 表头的每个列格作为分隔条的定位参照。 */
+/* 表头的每个列格作为分隔条的定位参照,并加圆角与内边距,使其呈现玻璃片折射质感。 */
 .list-head > span {
     position: relative;
+    padding: 3px 8px;
+    border-radius: 8px;
+    min-width: 0;  /* 允许列宽被压缩时文字省略而非撑开或竖排。 */
+}
+
+/* 列标题文字:宽度不足时以省略号截断,保持横向单行,不换行竖排。 */
+.list-head > span .htext {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* 列宽拖拽分隔条,覆盖列间隙,常显一小段细线提示此处可拖拽,按下后左右拖动调整列宽。 */
