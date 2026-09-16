@@ -624,7 +624,7 @@ class Web:
             for member in link.get('queue') or []:
                 state: str = str(member.get('state') or '')
                 note: str = str(member.get('note') or '')
-                if state in (DownloadStatus.FAILURE,):
+                if state == DownloadStatus.FAILURE:
                     continue  # 彻底失败的成员不再计入总量与速度,避免进度被拉低或无法归零。
                 if state == DownloadStatus.SKIP and note:
                     continue  # 不支持或被忽略的类型(已取消)的跳过成员不再计入总量,因为它们本就不会被下载;文件已存在(已下载)的跳过不带note,仍计入总量。
