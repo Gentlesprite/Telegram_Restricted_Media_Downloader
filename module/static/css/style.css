@@ -613,9 +613,10 @@ body.logged-out .wrap {
 
 /* iOS 26 Liquid Glass:主体几乎全透,靠强模糊 + 轻微提亮加饱和采样背景,
    再用上沿发丝高光与下沿暗边表现厚度;描边与阴影都很淡,避免"塑料感"。 */
-.panel,
-.list,
-.group-head,
+/* 不含 .panel / .list / .group-head:
+   这三类正是进度条所在的容器(总进度条、行进度条、分组进度条),
+   面积大且内容每秒变化,给它们加 backdrop-filter 会让这些大图层反复重新采样背景,
+   是 GPU 占用的主要来源。三者改用"半透明磨砂"底色模拟质感,不采样、不模糊。 */
 .side-item,
 .tab,
 .stat div,
@@ -728,6 +729,15 @@ th {
     border-color: var(--accent);
     background: rgba(56, 249, 215, .12);
     color: var(--accent);
+}
+
+/* 半透明磨砂:用略实的暗色半透底 + 发丝高光模拟毛玻璃观感,
+   不做 backdrop-filter 采样,因此进度条更新时不会触发任何重新模糊,GPU 开销几乎为零。 */
+.panel,
+.list {
+    background: rgba(26, 26, 30, .72);
+    border-color: var(--glass-edge);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 4px 16px rgba(0, 0, 0, .28);
 }
 
 .stat span {
