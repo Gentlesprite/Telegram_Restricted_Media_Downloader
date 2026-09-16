@@ -32,7 +32,6 @@ from module.path_tool import (
 )
 from module.enums import (
     KeyWord,
-    QueueStatus,
     UploadStatus,
     DownloadStatus
 )
@@ -129,7 +128,7 @@ class DownloadTask:
             task.remove_fail(message_id=key)  # 重新排队(含重试)时,清除该消息的失败记录。
             task.update_member(  # 登记链接成员,包括下载完成后仍需展示的消息。
                 message_id=key,
-                status=QueueStatus.PENDING,
+                status=DownloadStatus.PENDING,
                 date=str(getattr(_message, 'date', '') or '')[:10]
             )
             item: Union[dict, None] = task.items.get(key)
@@ -142,12 +141,12 @@ class DownloadTask:
                     'retry': retry_dict,
                     'with_upload': with_upload,
                     'diy_download_type': diy_download_type,
-                    'status': QueueStatus.PENDING,
+                    'status': DownloadStatus.PENDING,
                     'create_time': time.time(),
                     'meta': None  # 网页面板的展示信息缓存。
                 }
             else:
-                item['status'] = QueueStatus.PENDING  # 重试时重置状态。
+                item['status'] = DownloadStatus.PENDING  # 重试时重置状态。
 
     def set_item_status(self, message_id: Union[int, str], status: str) -> None:
         """设置指定消息的排队状态,并同步到链接成员。"""
@@ -174,7 +173,7 @@ class DownloadTask:
             'size': '',
             'size_byte': 0,
             'date': '',
-            'state': QueueStatus.PENDING,
+            'state': DownloadStatus.PENDING,
             'task_id': None,
             'note': ''
         }
@@ -200,16 +199,16 @@ class DownloadTask:
 
     def get_pending_items(self, limit: int = 50) -> dict:
         """获取该下载任务中排队(PENDING)的消息。"""
-        items: list = [item for item in self.items.values() if item.get('status') == QueueStatus.PENDING]
+        items: list = [item for item in self.items.values() if item.get('status') == DownloadStatus.PENDING]
         return {'items': items[:limit], 'total': len(items)}
 
     @classmethod
     def queued_items(cls, limit: int = 50) -> list:
-        """获取尚未开始下载(PENDING或WAITING)的消息。"""
+        """获取尚未开始下载(PENDING)的消息。"""
         result: list = []
         for task in cls.ordered_tasks():
             for item in task.items.values():
-                if item.get('status') in (QueueStatus.PENDING, QueueStatus.WAITING):
+                if item.get('status') == DownloadStatus.PENDING:
                     result.append(item)
         return result[:limit]
 
@@ -218,7 +217,7 @@ class DownloadTask:
         """按链接首次出现的顺序取出一个排队(PENDING)中的消息。"""
         for task in cls.ordered_tasks():
             for item in task.items.values():
-                if item.get('status') == QueueStatus.PENDING:
+                if item.get('status') == DownloadStatus.PENDING:
                     return item
         return None
 
@@ -227,7 +226,7 @@ class DownloadTask:
         """判断是否还存在未处理完毕或未开始的任务。"""
         for task in cls.ordered_tasks():
             for item in task.items.values():
-                if item.get('status') in (QueueStatus.PENDING, QueueStatus.WAITING, QueueStatus.DOWNLOADING):
+                if item.get('status') in (DownloadStatus.PENDING, DownloadStatus.DOWNLOADING):
                     return True
         return False
 

@@ -25,31 +25,25 @@ var UPLOAD_LAST_KEY = 'trmd_upload_last';  // 上传页频道层最后一次手�
 var LISTEN_TABS = ['forward', 'download'];  // 监听页的选项卡:转发、下载。
 
 var STATE_TEXT = {
-    pending: '队列中',  // 尚未开始处理,还排在队列里(对应后端 QueueStatus.PENDING)。
-    waiting: '等待中',  // 已开始处理,等待下载槽位(对应后端 QueueStatus.WAITING)。
+    pending: '队列中',  // 排队中,尚未开始处理(对应后端 DownloadStatus.PENDING)。
     downloading: '下载中',
     success: '已完成',
     skip: '已跳过',
-    failure: '失败',
-    cancelled: '已取消'
+    failure: '失败'
 };
 var STATE_CLASS = {
     pending: 'status-pending',
-    waiting: 'status-pending',
     downloading: 'status-running',
     success: 'status-done',
     skip: 'status-skip',
-    failure: 'status-failed',
-    cancelled: 'status-pending'
+    failure: 'status-failed'
 };
 var STATE_ICON = {
     pending: '⏳',
-    waiting: '⏳',
     downloading: '📥',
     success: '✅',
     skip: '⏭',
-    failure: '❌',
-    cancelled: '⏸'
+    failure: '❌'
 };
 
 var HEAD_LABELS = ['频道', '频道 / 链接', '频道 / 链接 / 名称'];  // 表头首列随当前展开的层级变化。
@@ -177,7 +171,7 @@ function memberRow(item) {
     var state = item.state || 'pending';
     var text = STATE_TEXT[state] || '队列中';
     var cls = STATE_CLASS[state] || 'status-pending';
-    var pending = state === 'pending' || state === 'waiting';
+    var pending = state === 'pending';
     var progress;
     if (state === 'success') {
         progress = progressCell(100);
@@ -510,12 +504,12 @@ function matchDownloadState(member) {
         return state === 'downloading';
     }
     if (filter === 'queue') {
-        return state === 'pending' || state === 'waiting';
+        return state === 'pending';
     }
     return true;
 }
 
-/* 统计"队列中"的成员数:只算排队中/等待中的,不含正在下载的。
+/* 统计"队列中"的成员数:只算排队中的,不含正在下载的。
    后端 data.queue 是"未完成总数"(含下载中),直接显示会导致队列数与进行中重复。 */
 function countQueueMembers(links) {
     var total = 0;
@@ -523,7 +517,7 @@ function countQueueMembers(links) {
         var members = links[i].queue || [];
         for (var j = 0; j < members.length; j++) {
             var state = members[j].state || 'pending';
-            if (state === 'pending' || state === 'waiting') {
+            if (state === 'pending') {
                 total += 1;
             }
         }

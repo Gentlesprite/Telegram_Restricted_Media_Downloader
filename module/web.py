@@ -49,7 +49,6 @@ from module.util import (
 from module.enums import (
     WebMeta,
     KeyWord,
-    QueueStatus,
     UploadStatus,
     DownloadStatus
 )
@@ -308,10 +307,8 @@ class Web:
     REMOVE_LISTEN_TIMEOUT: int = 10  # 等待事件循环移除监听的超时时间,单位为秒。
     REMEMBER_COOKIE_MAX_AGE: int = 30 * 24 * 3600  # 记名Cookie的有效期,单位为秒(30天)。
     UNFINISHED_STATE: tuple = (
-        QueueStatus.PENDING,
-        QueueStatus.WAITING,
-        QueueStatus.DOWNLOADING,
-        QueueStatus.CANCELLED
+        DownloadStatus.PENDING,
+        DownloadStatus.DOWNLOADING
     )  # 尚未出结果的消息状态。
 
     def __init__(self, progress, app=None, downloader=None):
@@ -488,7 +485,7 @@ class Web:
                 'size': member.get('size') or meta.get('size') or '',
                 'size_byte': int(member.get('size_byte') or 0),
                 'date': member.get('date') or meta.get('date') or '',
-                'state': member.get('state') or QueueStatus.PENDING,
+                'state': member.get('state') or DownloadStatus.PENDING,
                 'task_id': member.get('task_id'),
                 'note': member.get('note') or ''
             })
@@ -627,8 +624,8 @@ class Web:
             for member in link.get('queue') or []:
                 state: str = str(member.get('state') or '')
                 note: str = str(member.get('note') or '')
-                if state in (DownloadStatus.FAILURE, QueueStatus.CANCELLED):
-                    continue  # 彻底失败与已取消(用户取消)的成员不再计入总量与速度,避免进度被拉低或无法归零。
+                if state in (DownloadStatus.FAILURE,):
+                    continue  # 彻底失败的成员不再计入总量与速度,避免进度被拉低或无法归零。
                 if state == DownloadStatus.SKIP and note:
                     continue  # 不支持或被忽略的类型(已取消)的跳过成员不再计入总量,因为它们本就不会被下载;文件已存在(已下载)的跳过不带note,仍计入总量。
                 size: int = int(member.get('size_byte') or 0)
@@ -636,7 +633,7 @@ class Web:
                 if state in (DownloadStatus.SUCCESS, DownloadStatus.SKIP):
                     completed += size
                     continue
-                if state == QueueStatus.DOWNLOADING:
+                if state == DownloadStatus.DOWNLOADING:
                     completed += int(live.get(member.get('task_id'), {}).get('completed') or 0)
         for task in tasks:
             speed += task.get('speed_value', 0)

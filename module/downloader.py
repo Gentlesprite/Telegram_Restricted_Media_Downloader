@@ -91,7 +91,6 @@ from module.enums import (
     KeyWord,
     BotButton,
     BotMessage,
-    QueueStatus,
     DownloadType,
     BotCallbackText,
     CalenderKeyboard,
@@ -1789,7 +1788,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         break
                     task: DownloadTask = DownloadTask.get(item.get('link'))
                     message: pyrogram.types.Message = item.get('message')
-                    task.set_item_status(message_id=message.id, status=QueueStatus.DOWNLOADING)
+                    task.set_item_status(message_id=message.id, status=DownloadStatus.DOWNLOADING)
                     await self.__add_task(
                         chat_id=item.get('chat_id'),
                         link_type=item.get('link_type'),
@@ -1803,7 +1802,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             except asyncio.CancelledError:
                 if item is not None:
                     task: DownloadTask = DownloadTask.get(item.get('link'))
-                    task.set_item_status(message_id=item.get('message').id, status=QueueStatus.CANCELLED)
+                    task.set_item_status(message_id=item.get('message').id, status=DownloadStatus.PENDING)
                 raise
             except Exception as e:
                 log.exception(f'下载调度器派发任务时出错,{_t(KeyWord.REASON)}:"{e}"')
@@ -1851,7 +1850,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
                     f'{_t(KeyWord.LINK_TYPE)}:{_t(link_type)}。'  # 链接类型。
                 )
-                task.set_item_status(message_id=message.id, status=QueueStatus.DOWNLOADING)
+                task.set_item_status(message_id=message.id, status=DownloadStatus.DOWNLOADING)
                 file_id, temp_file_path, sever_file_size, file_name, save_directory, format_file_size = \
                     self.get_media_meta(
                         message=message,
@@ -1894,7 +1893,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     task.update_member(
                         message_id=message.id,
-                        status=QueueStatus.DOWNLOADING,
+                        status=DownloadStatus.DOWNLOADING,
                         name=file_name,
                         size=format_file_size,
                         size_byte=sever_file_size,
