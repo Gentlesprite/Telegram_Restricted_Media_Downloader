@@ -550,11 +550,11 @@ class Web:
         for link in links:
             for member in link.get('queue') or []:
                 state: str = str(member.get('state') or '')
-                if state == DownloadStatus.FAILURE:
-                    continue  # 彻底失败的成员不再计入总量与速度,避免进度被拉低。
+                if state in (DownloadStatus.FAILURE, DownloadStatus.SKIP, QueueStatus.CANCELLED):
+                    continue  # 彻底失败、跳过(不支持/忽略的类型)与已取消的成员不再计入总量与速度,避免总进度被拉高或无法归零。
                 size: int = int(member.get('size_byte') or 0)
                 total += size
-                if state in (DownloadStatus.SUCCESS, DownloadStatus.SKIP):
+                if state == DownloadStatus.SUCCESS:
                     completed += size
                     continue
                 if state == QueueStatus.DOWNLOADING:
