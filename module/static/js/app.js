@@ -252,7 +252,9 @@ function getChannelGroups(links) {
 
 function channelBlock(group, live) {
     var key = 'channel:' + group.channel;
-    var isCollapsed = collapsed[key] === undefined ? allCollapsed : collapsed[key];
+    var filtering = Boolean(statFilter.download);
+    // 筛选时强制展开,避免结果被折叠状态藏起来。
+    var isCollapsed = filtering ? false : (collapsed[key] === undefined ? allCollapsed : collapsed[key]);
     var stat = groupStat(group.members || [], live);
     var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '" data-level="1">' +
         '<div class="group-head" data-channel="' + escAttr(key) + '">' +
@@ -267,17 +269,30 @@ function channelBlock(group, live) {
         linkStatusCell(group) +
         '</div>' +
         '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
+    var body = '';
     for (var i = 0; i < group.links.length; i++) {
-        html += linkBlock(group.links[i], live);
+        body += linkBlock(group.links[i], live);
     }
-    return html + '</div></div>';
+    if (filtering && !body) {
+        return '';  // 筛选后该频道下没有任何匹配内容,整组不显示。
+    }
+    return html + body + '</div></div>';
 }
 
 function linkBlock(link, live) {
     var key = 'link:' + link.link;
-    var isCollapsed = collapsed[key] === undefined ? lastLinkCollapsed : collapsed[key];  // 无记录的链接沿用上次的链接层选择。
-    var members = link.queue || [];
-    var stat = groupStat(members, live);
+    var filtering = Boolean(statFilter.download);
+    var all = link.queue || [];
+    var members = all;
+    if (filtering) {
+        members = all.filter(matchDownloadState);
+        if (members.length === 0) {
+            return '';  // 筛选后无匹配成员,不再显示该链接。
+        }
+    }
+    // 筛选时强制展开,否则结果会被折叠状态藏起来。
+    var isCollapsed = filtering ? false : (collapsed[key] === undefined ? lastLinkCollapsed : collapsed[key]);
+    var stat = groupStat(all, live);
     var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '" data-level="2">' +
         '<div class="group-head" data-channel="' + escAttr(key) + '">' +
         '<span class="cell-name"><span class="arrow"></span>' +
@@ -461,9 +476,91 @@ function renderOverall(summary, taskCount, ids) {
         extraText(data) ? extraText(data) : (taskCount ? '正在测速' : '暂无速度');
 }
 
-function statCell(label, value, cls) {
-    return '<div><span>' + label + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' +
+/* 统计卡筛选:点击后只显示对应状态的条目,再次点击取消。 */
+var statFilter = {download: '', upload: ''};
+
+function statCell(label, value, cls, filter, scope) {
+    if (!filter || !scope) {
+        return '<div><span>' + label + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' +
+            value + '</b></div>';
+    }
+    var active = statFilter[scope] === filter;
+    return '<div class="' + (active ? 'active ' : '') + '"' +
+        ' data-filter="' + filter + '" data-scope="' + scope + '"' +
+        ' title="点击' + (active ? '取消筛选' : '只查看' + label) + '">' +
+        '<span>' + label + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' +
         value + '</b></div>';
+}
+
+// 判断下载成员是否命中当前筛选。
+function matchDownloadState(member) {
+    var state = member.state || 'pending';
+    var filter = statFilter.download;
+    if (filter === 'success') {
+        return state === 'success' || state === 'sent';
+    }
+    if (filter === 'failure') {
+        return state === 'failure';
+    }
+    if (filter === 'skip') {
+        return state === 'skip';
+    }
+    if (filter === 'active') {
+        return state === 'downloading';
+    }
+    if (filter === 'queue') {
+        return state === 'pending' || state === 'waiting';
+    }
+    return true;
+}
+
+/* 统计"队列中"的成员数:只算排队中/等待中的,不含正在下载的。
+   后端 data.queue 是"未完成总数"(含下载中),直接显示会导致队列数与进行中重复。 */
+function countQueueMembers(links) {
+    var total = 0;
+    for (var i = 0; i < (links || []).length; i++) {
+        var members = links[i].queue || [];
+        for (var j = 0; j < members.length; j++) {
+            var state = members[j].state || 'pending';
+            if (state === 'pending' || state === 'waiting') {
+                total += 1;
+            }
+        }
+    }
+    return total;
+}
+
+// 判断上传文件是否命中指定筛选,与 uploadCount 的分类口径保持一致。
+function matchUploadState(file, filter) {
+    var state = file.state || 'pending';
+    if (filter === 'success') {
+        return uploadDone(file);
+    }
+    if (filter === 'failure') {
+        return state === 'failure';
+    }
+    if (filter === 'uploading') {
+        return !uploadDone(file) && state === 'uploading';
+    }
+    if (filter === 'pending') {
+        return !uploadDone(file) && state !== 'failure' && state !== 'uploading';
+    }
+    return true;  // 文件总数等:不过滤。
+}
+
+
+
+function bindStatFilter() {
+    document.addEventListener('click', function (event) {
+        var cell = event.target && event.target.closest ? event.target.closest('[data-filter]') : null;
+        if (!cell) {
+            return;
+        }
+        var scope = cell.getAttribute('data-scope') || 'download';
+        var value = cell.getAttribute('data-filter') || '';
+        statFilter[scope] = statFilter[scope] === value ? '' : value;  // 再次点击取消筛选。
+        refresh();  // 立即按新筛选重绘,无需等待下一次轮询。
+    });
 }
 
 function renderStat(id, cells) {
@@ -899,7 +996,18 @@ function uploadStatusCell(group) {
 
 function uploadBlock(group) {
     var key = 'upload:' + group.channel;
-    var isCollapsed = collapsed[key] === undefined ? lastUploadCollapsed : collapsed[key];  // 无记录的上传分组沿用上次的频道层选择。
+    var filtering = Boolean(statFilter.upload);
+    var files = group.files;
+    if (filtering) {
+        files = files.filter(function (file) {
+            return matchUploadState(file, statFilter.upload);
+        });
+        if (files.length === 0) {
+            return '';  // 筛选后无匹配文件,不再显示该分组。
+        }
+    }
+    // 筛选时强制展开,否则结果会被折叠状态藏起来。
+    var isCollapsed = filtering ? false : (collapsed[key] === undefined ? lastUploadCollapsed : collapsed[key]);
     var html = '<div class="group' + (isCollapsed ? '' : ' open') + '" data-channel="' + escAttr(key) + '" data-level="1">' +
         '<div class="group-head" data-channel="' + escAttr(key) + '">' +
         '<span class="cell-name"><span class="arrow"></span>' +
@@ -912,8 +1020,8 @@ function uploadBlock(group) {
         uploadStatusCell(group) +
         '</div>' +
         '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
-    for (var i = 0; i < group.files.length; i++) {
-        html += uploadRow(group.files[i]);
+    for (var i = 0; i < files.length; i++) {
+        html += uploadRow(files[i]);
     }
     return html + '</div></div>';
 }
@@ -926,6 +1034,9 @@ function uploadList(tasks) {
     var groups = getUploadGroups(tasks);  // 频道 > 文件完整路径,一级可折叠。
     for (var i = 0; i < groups.length; i++) {
         html += uploadBlock(groups[i]);
+    }
+    if (statFilter.upload && !html) {
+        return '<div class="empty">没有符合条件的文件。</div>';
     }
     return html;
 }
@@ -958,11 +1069,11 @@ function renderUpload(uploads) {
     renderOverall(uploadSummary(uploads), count.active, SUMMARY_IDS.upload);
     lastUploadFinished = count.success + count.failure;
     renderStat('uploadStat', [
-        statCell('成功', count.success, 'ok'),
-        statCell('失败', count.failure, 'bad'),
-        statCell('上传中', count.uploading),
-        statCell('待上传', count.pending, 'skip'),
-        statCell('文件总数', uploads.length, 'queue')
+        statCell('成功', count.success, 'ok', 'success', 'upload'),
+        statCell('失败', count.failure, 'bad', 'failure', 'upload'),
+        statCell('上传中', count.uploading, '', 'uploading', 'upload'),
+        statCell('待上传', count.pending, 'skip', 'pending', 'upload'),
+        statCell('文件总数', uploads.length, 'queue', 'all', 'upload')
     ]);
     return count.active;
 }
@@ -973,11 +1084,11 @@ function render(data) {
     document.getElementById('badgeDownload').textContent = downloads;
     renderOverall(data.summary, downloads, SUMMARY_IDS.download);
     renderStat('stat', [
-        statCell('成功', data.count.success, 'ok'),
-        statCell('失败', data.count.failure, 'bad'),
-        statCell('跳过', data.count.skip, 'skip'),
-        statCell('进行中', downloads),
-        statCell('队列中', data.queue || 0, 'queue')
+        statCell('成功', data.count.success, 'ok', 'success', 'download'),
+        statCell('失败', data.count.failure, 'bad', 'failure', 'download'),
+        statCell('跳过', data.count.skip, 'skip', 'skip', 'download'),
+        statCell('进行中', downloads, '', 'active', 'download'),
+        statCell('队列中', countQueueMembers(data.links), 'queue', 'queue', 'download')
     ]);
     lastUploadActive = renderUpload(data.uploads || []);
     lastListenCount = renderListeners(data.listeners);
@@ -1626,6 +1737,7 @@ bindListenRemove();
 bindConfirm();
 bindLogin();
 initLogout();
+bindStatFilter();
 bindSupport();
 bindMenu();
 initVersion();
