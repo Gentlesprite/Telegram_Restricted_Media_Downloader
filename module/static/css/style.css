@@ -187,6 +187,39 @@ body {
     transform: translateY(0);
 }
 
+/* 文件名悬停提示(完整名称):与 TRMD 版本提示同一套玻璃质感。
+   不用 .fname 的子元素实现的原因:.fname 为了折行省略设了 overflow:hidden,
+   且是 -webkit-box,子元素提示会被裁掉;故改为独立的 fixed 元素由 JS 定位。
+   用 opacity/visibility 而非 hidden 属性:元素保留尺寸,液态玻璃的
+   ResizeObserver 才能在内容变化时重算滤镜。 */
+.name-tip {
+    position: fixed;
+    z-index: 60;
+    max-width: min(560px, 90vw);
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel2);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, .42);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    white-space: normal;  /* 长文件名换行,不像版本提示那样单行。 */
+    word-break: break-all;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: opacity .16s ease, transform .16s ease, visibility .16s ease;
+}
+
+.name-tip.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
 .tip-row {
     display: flex;
     align-items: center;
@@ -451,6 +484,7 @@ h1 {
 .stat div,
 .menu-dropdown,
 .logo-tip,
+.name-tip,
 .modal-card,
 th {
     border-color: var(--glass-edge);

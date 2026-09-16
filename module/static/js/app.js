@@ -1130,6 +1130,87 @@ function initVersion() {
     }
 }
 
+/* 文件名悬停提示:显示被折行省略的完整名称。
+   只绑定 .fname / .gname(叶子级文件名)——频道名、链接名所在的行点击会折叠展开,
+   不适合挂悬停提示;文件名是最后一级,不会与折叠操作冲突。 */
+var nameTipEl = null;
+var nameTipFor = null;
+
+function nameTipNode() {
+    if (!nameTipEl) {
+        nameTipEl = document.getElementById('nameTip');
+    }
+    return nameTipEl;
+}
+
+// 内容确实被折行/裁切时才需要提示;完整显示的名称不必弹窗。
+function nameTipNeeded(el) {
+    return el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1;
+}
+
+function showNameTip(el) {
+    // 原生 title 会与自定义提示同时弹出,首次悬停时迁移到 data-tip 后移除。
+    if (el.hasAttribute('title')) {
+        el.setAttribute('data-tip', el.getAttribute('title'));
+        el.removeAttribute('title');
+    }
+    var text = el.getAttribute('data-tip') || '';
+    var tip = nameTipNode();
+    if (!text || !tip) {
+        return;
+    }
+    tip.textContent = text;
+    tip.classList.add('show');  // 先显示以取得实际尺寸,再据此定位。
+    var rect = el.getBoundingClientRect();
+    var left = rect.left;
+    var top = rect.bottom + 8;
+    var width = tip.offsetWidth;
+    var height = tip.offsetHeight;
+    if (left + width > window.innerWidth - 8) {
+        left = Math.max(8, window.innerWidth - width - 8);
+    }
+    if (top + height > window.innerHeight - 8) {
+        top = Math.max(8, rect.top - height - 8);  // 下方放不下时翻到上方。
+    }
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+    nameTipFor = el;
+}
+
+function hideNameTip() {
+    if (nameTipEl) {
+        nameTipEl.classList.remove('show');
+    }
+    nameTipFor = null;
+}
+
+function initNameTip() {
+    document.addEventListener('mouseover', function (event) {
+        // 列表每秒重绘,悬停元素可能已被移除,先清理失效提示。
+        if (nameTipFor && !nameTipFor.isConnected) {
+            hideNameTip();
+        }
+        var el = event.target && event.target.closest ? event.target.closest('.fname, .gname') : null;
+        if (!el || nameTipFor === el || !nameTipNeeded(el)) {
+            return;
+        }
+        showNameTip(el);
+    });
+    document.addEventListener('mouseout', function (event) {
+        var el = event.target && event.target.closest ? event.target.closest('.fname, .gname') : null;
+        if (el && nameTipFor === el) {
+            hideNameTip();
+        }
+    });
+    window.addEventListener('scroll', hideNameTip, true);  // 滚动后位置失效,直接隐藏。
+    document.addEventListener('pointerdown', function (event) {
+        var el = event.target && event.target.closest ? event.target.closest('.fname, .gname') : null;
+        if (!el) {
+            hideNameTip();  // 点击提示以外的区域时关闭。
+        }
+    });
+}
+
 /*
  * ===== 渐变背景实现 =====
  * 移植自 telegram-tt(web.telegram.org/a)的 util/gradientBackground.ts;
@@ -1302,6 +1383,7 @@ switchListen(savedListen);
 document.getElementById('toggleAll').onclick = toggleAll;
 document.getElementById('toggleUpload').onclick = toggleUploadAll;
 initCols();  // 恢复上次的列宽并生成拖拽分隔条。
+initNameTip();  // 悬停文件名时显示完整名称。
 initBackgroundGradient();  // 启动 Telegram 风格的动画渐变背景。
 refresh();
 setInterval(refresh, 1000);
