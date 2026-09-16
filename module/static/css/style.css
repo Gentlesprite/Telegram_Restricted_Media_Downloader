@@ -867,7 +867,6 @@ body.resizing {
 
 /* 单元格 */
 .cell-name {
-    container-type: inline-size;  /* 供下方容器查询按名称列自身宽度切换折行行为。 */
     display: flex;
     align-items: center;
     gap: 8px;
@@ -880,11 +879,15 @@ body.resizing {
     font-size: 14px;
 }
 
+/* 文件名最多两行:放得下就只占一行,放不下才折到第二行并省略。
+   每个名称按自身长度与当前列宽独立自适应,不依赖任何固定宽度阈值。 */
 .fname,
 .gname {
     overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 .gcount {
@@ -894,18 +897,7 @@ body.resizing {
     color: var(--muted);
 }
 
-/* 名称列被拖窄时(不限屏幕尺寸),文件名同样改为最多两行折行,
-   避免窄列下单行省略后几乎看不到内容。
-   按 .cell-name 自身宽度判断:名称能单行放下时不受影响,桌面宽列保持原样。 */
-@container (max-width: 240px) {
-    .fname,
-    .gname {
-        white-space: normal;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-    }
-}
+
 
 /* 进度列的最小宽度:保证圆环/进度条与百分比都能完整显示,
    避免拖窄后百分比被裁切。由 measureColMins 读取 --col-min 参与列宽下限计算。 */
@@ -1098,18 +1090,16 @@ tbody tr:hover {
     }
 
     /* 窄屏优先保证文件名可见:
-       .gcount 是 flex:none(永不收缩),会硬占约 65px,让文件名只剩几十像素,故隐藏;
-       文件名改为最多两行折行——单行省略在窄屏几乎看不到内容。 */
+       .gcount 是 flex:none(永不收缩),会硬占约 65px,让文件名只剩几十像素,故隐藏。 */
     .cell-name .gcount {
         display: none;
     }
 
+    /* 移动端可用宽度更小,行数上限放宽到 3 行(基础规则为 2 行),
+       进一步减少文件名被省略。仍是内容自适应:短名称只占一行,放不下才逐行增加。 */
     .fname,
     .gname {
-        white-space: normal;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
     }
 }
 
