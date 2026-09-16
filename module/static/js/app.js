@@ -560,14 +560,28 @@ function closeConfirm(result) {
 /* 复用确认弹窗展示提示信息:只保留"确定"按钮(替代原生 alert)。 */
 function askAlert(text, title) {
     var card = document.querySelector('#confirmModal .modal-card');
+    var ok = document.getElementById('confirmOk');
     var cancel = document.getElementById('confirmCancel');
     card.classList.add('alert-card');  // 收窄到与登录卡片一致的比例。
+    ok.classList.remove('danger');  // 提示框不是危险操作,确定按钮不用红色悬停。
     cancel.hidden = true;  // 提示框无需取消按钮。
     return askConfirm(text, title).then(function (result) {
         card.classList.remove('alert-card');
-        cancel.hidden = false;  // 关闭后恢复,不影响后续确认框。
+        ok.classList.add('danger');  // 恢复,不影响后续"移除监听"的确认框。
+        cancel.hidden = false;
         return result;
     });
+}
+
+// ESC 关闭确认/提示弹窗,等同取消。
+function confirmEscape(event) {
+    if (event.key !== 'Escape') {
+        return;
+    }
+    if (document.getElementById('confirmModal').hidden) {
+        return;  // 未打开时不处理,避免影响其它弹窗。
+    }
+    closeConfirm(false);
 }
 
 function bindConfirm() {
@@ -585,6 +599,7 @@ function bindConfirm() {
             closeConfirm(false);  // 点击遮罩空白处等同取消。
         }
     };
+    document.addEventListener('keydown', confirmEscape);
 }
 
 /* 登录卡片:替代浏览器原生的 Basic 认证弹窗,沿用页面毛玻璃风格。 */
