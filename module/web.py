@@ -593,7 +593,8 @@ class Web:
                 'type': str(task.description),
                 'channel': str(task.fields.get('channel', '')) or Web.UNGROUPED,
                 'channel_name': Web.format_channel(str(task.fields.get('channel', ''))),
-                'filename': str(task.fields.get('filename', '')),
+                # 优先使用完整文件名;filename是按终端宽度截断的终端显示名,仅在缺少完整名时兜底。
+                'filename': str(task.fields.get('fullname') or task.fields.get('filename', '')),
                 'info': str(task.fields.get('info', '')),
                 'completed': int(task.completed),
                 'total': int(task.total) if task.total else 0,

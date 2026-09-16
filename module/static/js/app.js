@@ -911,8 +911,42 @@ function readDefaultCols(list) {
     return widths.length ? widths : [COLS_MIN];
 }
 
-function applyCols(list, widths) {
-    var parts = ['minmax(' + COLS_MIN + 'px, 1fr)'];  // 首列弹性列设最小宽度,避免被其它列拉满时挤压到文字重叠。
+var measureEl = null;  // 复用同一个隐藏元素测量文字宽度,避免频繁创建节点。
+
+function measureTextWidth(text, cs) {
+    if (!measureEl) {
+        measureEl = document.createElement('span');
+        measureEl.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;';
+        document.body.appendChild(measureEl);
+    }
+    measureEl.style.fontStyle = cs.fontStyle;
+    measureEl.style.fontWeight = cs.fontWeight;
+    measureEl.style.fontSize = cs.fontSize;
+    measureEl.style.fontFamily = cs.fontFamily;
+    measureEl.style.letterSpacing = cs.letterSpacing;
+    measureEl.textContent = text;
+    return measureEl.offsetWidth;
+}
+
+// 测量每列标题完整显示所需的宽度,作为该列不可被压缩的下限。
+// 返回数组与表头列格一一对应,首项为弹性列(频道/监听频道)的下限。
+function measureColMins(list) {
+    var cells = list.querySelector('.list-head').children;
+    var mins = [];
+    for (var i = 0; i < cells.length; i++) {
+        var cs = window.getComputedStyle(cells[i]);
+        var need = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0) + 4;  // 内边距 + 余量,避免标题贴边。
+        var text = cells[i].querySelector('.htext');
+        if (text && text.textContent) {
+            need += measureTextWidth(text.textContent, cs);
+        }
+        mins.push(Math.max(COLS_MIN, Math.ceil(need)));
+    }
+    return mins;
+}
+
+function applyCols(list, widths, flexMin) {
+    var parts = ['minmax(' + (flexMin || COLS_MIN) + 'px, 1fr)'];  // 首列弹性列不低于标题宽度,避免被其它列挤到看不见。
     for (var i = 0; i < widths.length; i++) {
         parts.push(widths[i] + 'px');
     }
@@ -936,16 +970,20 @@ function buildGrips(list) {
     }
 }
 
-function clampColsWidth(widths, index, value, maxFixed) {
+function clampColsWidth(widths, index, value, maxFixed, mins) {
     var others = 0;
     for (var i = 0; i < widths.length; i++) {
         if (i !== index) {
             others += widths[i];
         }
     }
+    // 下限取标题完整显示所需宽度,保证表头标题永不被压缩。
+    var floor = Math.max(COLS_MIN, (mins && mins[index + 1]) || COLS_MIN);
     // 预留首列弹性列的最小宽度,避免固定列被拉到超出可用空间后挤压首列文字。
-    var max = Math.max(COLS_MIN, maxFixed - others - COLS_MIN);
-    return Math.min(Math.max(value, COLS_MIN), max);
+    var flexMin = Math.max(COLS_MIN, (mins && mins[0]) || COLS_MIN);
+    var max = maxFixed - others - flexMin;
+    // 标题优先:空间不足时保留标题所需宽度,宁可让行溢出也不压缩表头文字。
+    return Math.max(floor, Math.min(value, max));
 }
 
 function resizeStart(event) {
@@ -962,12 +1000,13 @@ function resizeStart(event) {
         list: list,
         table: table,
         index: index,
-        col: index === 0 ? 0 : index - 1,  // 分隔条所属列格对应的固定列下标。
-        sign: index === 0 ? -1 : 1,  // 首个分隔条调整右侧列,其余调整左侧列。
+        col: index,  // 每个分隔条都是其右侧固定列的左边界,统一调整该列,保证每列都有且仅有一个分隔条。
+        sign: -1,  // 向右拖动缩小该列(空间让给首列弹性列),向左拖动加宽;分隔条始终跟随光标。
         origin: widths.slice(),
         widths: widths.slice(),
         startX: event.clientX,
-        maxFixed: Math.max(head.clientWidth - padding - gap * widths.length, 0)
+        maxFixed: Math.max(head.clientWidth - padding - gap * widths.length, 0),
+        mins: measureColMins(list)  // 各列标题所需的最小宽度,拖拽期间保持不变。
     };
     event.preventDefault();
     event.stopPropagation();
@@ -982,8 +1021,8 @@ function resizeMove(event) {
     }
     var delta = event.clientX - dragState.startX;
     var value = dragState.origin[dragState.col] + delta * dragState.sign;
-    dragState.widths[dragState.col] = clampColsWidth(dragState.widths, dragState.col, value, dragState.maxFixed);
-    applyCols(dragState.list, dragState.widths);
+    dragState.widths[dragState.col] = clampColsWidth(dragState.widths, dragState.col, value, dragState.maxFixed, dragState.mins);
+    applyCols(dragState.list, dragState.widths, dragState.mins[0]);
     event.preventDefault();
 }
 
@@ -1018,8 +1057,13 @@ function initCols() {
         if (!widths || widths.length !== head.children.length - 1) {
             widths = readDefaultCols(list);  // 列数变化或首次加载时回退到默认列宽。
         }
+        var mins = measureColMins(list);
+        var j;
+        for (j = 0; j < widths.length; j++) {
+            widths[j] = Math.max(widths[j], mins[j + 1]);  // 已保存的列宽也不得小于标题所需宽度。
+        }
         colsCache[table] = widths;
-        applyCols(list, widths);
+        applyCols(list, widths, mins[0]);
         buildGrips(list);
     }
 }

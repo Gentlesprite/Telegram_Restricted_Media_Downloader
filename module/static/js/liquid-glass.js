@@ -4,7 +4,22 @@
  * 将 SVG 位移贴图(displacement map)注入 backdrop-filter,
  * 让卡片边缘产生折射般的玻璃厚度感,而非普通毛玻璃的均匀模糊。
  * 实现方式:在 DOM 中维护内联 <svg> 滤镜,卡片通过 backdrop-filter: url(#id) 引用,
- * 该方式在 Chromium 内核浏览器中可靠生效(比整段滤镜塞进 data URI 更稳定)。 */
+ * 该方式在 Chromium 内核浏览器中可靠生效(比整段滤镜塞进 data URI 更稳定)。
+ *
+ * 性能约定:该滤镜开销较大,因此做了以下优化——
+ * 1) 滤镜按尺寸与参数缓存复用,尺寸相同的元素(如所有分组标题)共用同一个滤镜;
+ * 2) 重绘合并到下一帧,尺寸未变时直接跳过;
+ * 3) 无色散时只做一次位移,不做 RGB 三通道分离。
+ * 这样即使列表内部元素较多,也不会每次刷新都重新生成滤镜。 */
+
+const LG_NS = 'http://www.w3.org/2000/svg';
+const LG_STEP = 4;   // 尺寸取整步长,邻近尺寸复用同一滤镜,避免频繁重建。
+const LG_MAX_CACHE = 80;  // 滤镜缓存上限,超出后整体重建,避免节点无限增长。
+
+const lgCache = new Map();    // 参数 -> 已创建的滤镜 id。
+const lgPending = new Set();  // 待重绘元素,合并到下一帧统一处理。
+let lgFrame = 0;
+let lgSeq = 0;
 
 // 生成位移贴图:一张用于驱动 feDisplacementMap 的 RGB 渐变图,边缘形成玻璃斜面。
 function lgGetDisplacementMap(opts) {
@@ -32,11 +47,17 @@ function lgGetDisplacementMap(opts) {
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 }
 
-// 生成滤镜内部 SVG:以位移贴图驱动 feDisplacementMap 扭曲背景,并按通道做色散增强折射感。
+// 生成滤镜内部 SVG:以位移贴图驱动 feDisplacementMap 扭曲背景。
+// 无色散时只做一次位移;有色散时才分离 RGB 三通道分别位移再混合,避免默认配置下白跑两遍位移。
 function lgGetFilterInner(opts) {
     const { height, width, radius, depth, strength = 100, chromaticAberration = 0 } = opts;
     const map = lgGetDisplacementMap({ height, width, radius, depth });
-    return '<feImage x="0" y="0" height="' + height + '" width="' + width + '" href="' + map + '" result="displacementMap" />' +
+    const image = '<feImage x="0" y="0" height="' + height + '" width="' + width + '" href="' + map + '" result="displacementMap" />';
+    if (!chromaticAberration) {
+        return image +
+            '<feDisplacementMap in="SourceGraphic" in2="displacementMap" scale="' + strength + '" xChannelSelector="R" yChannelSelector="G" />';
+    }
+    return image +
         '<feDisplacementMap in="SourceGraphic" in2="displacementMap" scale="' + (strength + chromaticAberration * 2) + '" xChannelSelector="R" yChannelSelector="G" />' +
         '<feColorMatrix type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="displacedR" />' +
         '<feDisplacementMap in="SourceGraphic" in2="displacementMap" scale="' + (strength + chromaticAberration) + '" xChannelSelector="R" yChannelSelector="G" />' +
@@ -58,57 +79,40 @@ const lgSupportsUrl = (function () {
 function lgGetDefs() {
     let svg = document.getElementById('lg-svg');
     if (!svg) {
-        svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg = document.createElementNS(LG_NS, 'svg');
         svg.id = 'lg-svg';
         svg.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;');
-        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const defs = document.createElementNS(LG_NS, 'defs');
         svg.appendChild(defs);
         document.body.appendChild(svg);
     }
     return svg.querySelector('defs');
 }
 
-// 元素 -> 滤镜 id 的映射,避免重复创建。
-const lgMap = new WeakMap();
-let lgSeq = 0;
-
-// 根据元素尺寸与边框圆角,重算并应用液态玻璃的背景滤镜。
-function lgRedraw(glass) {
-    const rect = glass.getBoundingClientRect();
-    const width = Math.max(1, Math.round(rect.width));
-    const height = Math.max(1, Math.round(rect.height));
-    const cs = getComputedStyle(glass);
-    // 圆角限制在短边一半以内,避免胶囊形卡片折射过强。
-    const radius = Math.min(parseFloat(cs.borderRadius) || 0, Math.min(width, height) / 2);
-    const blur = parseFloat(glass.dataset.lgBlur || '2');
-    const depth = parseFloat(glass.dataset.lgDepth || '4');
-    const strength = parseFloat(glass.dataset.lgStrength || '140');
-    const cab = parseFloat(glass.dataset.lgCab || '0');
-    const saturate = parseFloat(glass.dataset.lgSaturate || '1.9');
-    const brightness = parseFloat(glass.dataset.lgBrightness || '1');
-    const bf =
-        'blur(' + (blur / 2) + 'px) saturate(' + saturate + ') brightness(' + brightness + ')';
-
-    if (!lgSupportsUrl) {
-        // 不支持时回退为普通毛玻璃,保留上沿高光与淡投影以维持质感。
-        glass.style.backdropFilter = bf;
-        glass.style.webkitBackdropFilter = bf;
-        glass.style.boxShadow = 'inset 0 1px 0 rgba(255, 255, 255, .06), 0 4px 16px rgba(0, 0, 0, .28)';
-        return;
-    }
-
-    // 为元素分配并重建专属滤镜。
-    let id = lgMap.get(glass);
-    if (!id) {
-        id = 'lg-glass-' + (++lgSeq);
-        lgMap.set(glass, id);
-    }
+// 清空滤镜缓存,并让已应用的元素在下一帧重新取用滤镜。
+function lgResetCache() {
+    lgCache.clear();
     const defs = lgGetDefs();
-    let filter = document.getElementById(id);
-    if (filter) {
-        filter.remove();
+    while (defs.firstChild) {
+        defs.removeChild(defs.firstChild);
     }
-    filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+    document.querySelectorAll('[data-lg-size]').forEach(function (el) {
+        el.removeAttribute('data-lg-size');
+    });
+}
+
+// 按参数取用共享滤镜:尺寸与参数相同的卡片共用同一个滤镜节点。
+function lgFilterId(opts) {
+    const key = [opts.width, opts.height, opts.radius, opts.depth, opts.strength, opts.cab].join('|');
+    const hit = lgCache.get(key);
+    if (hit) {
+        return hit;
+    }
+    if (lgCache.size >= LG_MAX_CACHE) {
+        lgResetCache();
+    }
+    const id = 'lg-glass-' + (++lgSeq);
+    const filter = document.createElementNS(LG_NS, 'filter');
     filter.id = id;
     filter.setAttribute('color-interpolation-filters', 'sRGB');
     // 扩张滤镜区域,避免边缘折射被裁切。
@@ -116,51 +120,115 @@ function lgRedraw(glass) {
     filter.setAttribute('y', '-20%');
     filter.setAttribute('width', '140%');
     filter.setAttribute('height', '140%');
-    filter.innerHTML = lgGetFilterInner({ height, width, radius, depth, strength, chromaticAberration: cab });
-    defs.appendChild(filter);
+    filter.innerHTML = lgGetFilterInner({
+        height: opts.height,
+        width: opts.width,
+        radius: opts.radius,
+        depth: opts.depth,
+        strength: opts.strength,
+        chromaticAberration: opts.cab
+    });
+    lgGetDefs().appendChild(filter);
+    lgCache.set(key, id);
+    return id;
+}
 
-    const value = 'blur(' + (blur / 2) + 'px) url(#' + id + ') ' + bf;
+// 根据元素尺寸与边框圆角,重算并应用液态玻璃的背景滤镜。
+function lgRedraw(glass) {
+    const rect = glass.getBoundingClientRect();
+    if (!rect.width || !rect.height) {
+        return;  // 未参与布局(如处于隐藏面板)时跳过,避免生成无效滤镜。
+    }
+    const width = Math.max(LG_STEP, Math.round(rect.width / LG_STEP) * LG_STEP);
+    const height = Math.max(LG_STEP, Math.round(rect.height / LG_STEP) * LG_STEP);
+    const sizeKey = width + 'x' + height;
+    if (glass.dataset.lgSize === sizeKey) {
+        return;  // 尺寸未变化,沿用现有滤镜,不重复生成。
+    }
+    glass.dataset.lgSize = sizeKey;
+
+    const cs = getComputedStyle(glass);
+    // 圆角限制在短边一半以内,避免胶囊形卡片折射过强。
+    const radius = Math.round(Math.min(parseFloat(cs.borderRadius) || 0, Math.min(width, height) / 2));
+    // 饱和度与亮度沿用主题变量,与页面其它毛玻璃同色;
+    // 模糊半径单独取 --liquid-blur,保持较小值,折射边缘才锐利(改大就会糊成普通毛玻璃)。
+    const root = getComputedStyle(document.documentElement);
+    const glassBlur = (root.getPropertyValue('--glass-blur') || '26px').trim();
+    const liquidBlur = parseFloat(glass.dataset.lgBlur || root.getPropertyValue('--liquid-blur')) || 2;
+    const saturate = (glass.dataset.lgSaturate || root.getPropertyValue('--glass-saturate') || '190%').trim();
+    const brightness = (glass.dataset.lgBrightness || root.getPropertyValue('--glass-brightness') || '1').trim();
+    const depth = parseFloat(glass.dataset.lgDepth || '4');
+    const strength = parseFloat(glass.dataset.lgStrength || '140');
+    const cab = parseFloat(glass.dataset.lgCab || '0');
+    const bf = 'saturate(' + saturate + ') brightness(' + brightness + ')';
+
+    if (!lgSupportsUrl) {
+        // 不支持时回退为普通毛玻璃,保留上沿高光与淡投影以维持质感。
+        glass.style.backdropFilter = 'blur(' + glassBlur + ') ' + bf;
+        glass.style.webkitBackdropFilter = 'blur(' + glassBlur + ') ' + bf;
+        glass.style.boxShadow = 'inset 0 1px 0 rgba(255, 255, 255, .06), 0 4px 16px rgba(0, 0, 0, .28)';
+        return;
+    }
+
+    // 位移前后各一次轻模糊:先柔化再折射、再收边,这是液态玻璃质感的关键。
+    const half = liquidBlur / 2;
+    const value = 'blur(' + half + 'px) url(#' + lgFilterId({
+        width: width, height: height, radius: radius,
+        depth: depth, strength: strength, cab: cab
+    }) + ') blur(' + half + 'px) ' + bf;
     glass.style.backdropFilter = value;
     glass.style.webkitBackdropFilter = value;
 }
 
-// 为单个元素应用效果并监听尺寸变化。
+// 把重绘合并到下一帧,避免同一帧内多次尺寸变化重复生成滤镜。
+function lgSchedule(glass) {
+    lgPending.add(glass);
+    if (lgFrame) {
+        return;
+    }
+    lgFrame = requestAnimationFrame(function () {
+        lgFrame = 0;
+        lgPending.forEach(function (item) {
+            lgRedraw(item);
+        });
+        lgPending.clear();
+    });
+}
+
+// 为单个元素应用效果并监听尺寸变化,已绑定过的元素直接跳过。
 function lgBind(glass) {
+    if (glass.dataset.lgBound) {
+        return;  // 避免数据刷新重建后重复绑定出多个 ResizeObserver。
+    }
+    glass.dataset.lgBound = '1';
     lgRedraw(glass);
     const ro = new ResizeObserver(function () {
-        lgRedraw(glass);
+        lgSchedule(glass);
     });
     ro.observe(glass);
 }
 
-// 仅对未绑定过的元素执行绑定,用于 MutationObserver 回调中避免重复。
-function lgBindIfNew(el) {
-    if (!el.dataset.lgBound) {
-        el.dataset.lgBound = '1';
-        lgBind(el);
-    }
-}
-
-// 初始化:对静态卡片直接应用,对动态生成的元素用 MutationObserver 追加。
+// 初始化:对界面的卡片与面板统一应用效果,使整体风格一致。
 function lgInit() {
-    // 侧边栏、总进度面板、监听选项卡、可折叠任务列表、表头各列标题均为静态元素,直接绑定。
-    const direct = document.querySelectorAll('.side-item, .panel, .tab, .list, .group-head, .list-head > span:not(.grip)');
-    direct.forEach(lgBind);
+    // 侧栏板块、总进度面板、监听选项卡、列表、分组标题、表头列格。
+    document.querySelectorAll(
+        '.side-item, .panel, .tab, .list, .group-head, .list-head > span:not(.grip)'
+    ).forEach(lgBind);
 
-    // 统计状态卡(.stat div)由脚本动态生成,统一通过容器监听追加,避免重复绑定。
+    // 统计状态卡(.stat div)由脚本动态生成,通过容器监听追加。
     document.querySelectorAll('.stat').forEach(function (container) {
-        container.querySelectorAll('.stat div').forEach(lgBindIfNew);
+        container.querySelectorAll('.stat div').forEach(lgBind);
         const mo = new MutationObserver(function () {
-            container.querySelectorAll('.stat div').forEach(lgBindIfNew);
+            container.querySelectorAll('.stat div').forEach(lgBind);
         });
         mo.observe(container, { childList: true });
     });
 
-    // 可折叠任务列表内的分组标题(.group-head)为动态生成,监听列表变化追加效果。
+    // 分组标题(.group-head)随数据刷新重建,监听列表变化追加效果。
     document.querySelectorAll('.list').forEach(function (list) {
-        list.querySelectorAll('.group-head').forEach(lgBindIfNew);
+        list.querySelectorAll('.group-head').forEach(lgBind);
         const mo = new MutationObserver(function () {
-            list.querySelectorAll('.group-head').forEach(lgBindIfNew);
+            list.querySelectorAll('.group-head').forEach(lgBind);
         });
         mo.observe(list, { childList: true, subtree: true });
     });

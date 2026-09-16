@@ -555,10 +555,12 @@ class TelegramUploader:
         upload_task.status = UploadStatus.UPLOADING
         console.log(f'{_t(KeyWord.UPLOAD_TASK)}{_t(KeyWord.RESUME)}:"{file_path}"。') if upload_task.file_part else None
         format_file_size: str = MetaData.suitable_units_display(file_size)
+        upload_file_name: str = split_path(file_path).get('file_name') or ''
         task_id = self.pb.progress.add_task(
             description='📤',
             channel=str(upload_task.chat_id) if upload_task.chat_id else '',
-            filename=truncate_display_filename(split_path(file_path).get('file_name')),
+            filename=truncate_display_filename(upload_file_name),
+            fullname=upload_file_name,  # 完整文件名供网页面板展示,filename按终端宽度截断仅供终端显示。
             info=f'0.00B/{format_file_size}',
             total=file_size
         )

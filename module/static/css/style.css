@@ -5,6 +5,7 @@
     --glass-blur: 26px;  /* 背景模糊半径,Safari/Telegram 顶栏那种强度。 */
     --glass-saturate: 190%;  /* 放大透出来的涂鸦颜色,让玻璃有色彩而不是灰片。 */
     --glass-brightness: 1;  /* 不提亮,保持暗色玻璃。 */
+    --liquid-blur: 2px;  /* 液态玻璃的模糊半径:越小折射越锐利(默认),调到 26px 则与背景普通毛玻璃完全一致。 */
     --glass-edge: rgba(255, 255, 255, .09);  /* 发丝级分隔线。 */
     --border: #242b39;
     --pattern-intensity: .375;  /* 涂鸦浓度,取官方 --pattern-intensity 的值(画布不透明度)。 */
@@ -725,6 +726,12 @@ body.resizing {
     background: rgba(56, 249, 215, .05);
 }
 
+/* 行内所有单元格:列宽被压缩到极限时允许收缩,由自身规则截断,绝不溢出覆盖相邻列。 */
+.task-row > *,
+.group-head > * {
+    min-width: 0;
+}
+
 .list > :last-child .task-row:last-child,
 .list > .task-row:last-child {
     border-bottom: none;
@@ -840,6 +847,7 @@ body.resizing {
     align-items: center;
     gap: 8px;
     min-width: 0;
+    overflow: hidden;  /* 列宽被压缩到极限时,图标与计数不得溢出覆盖右侧列。 */
 }
 
 .ficon {
@@ -866,6 +874,7 @@ body.resizing {
     align-items: center;
     gap: 8px;
     min-width: 0;
+    overflow: hidden;  /* 进度条有最小宽度,窄列时在此处截断而非溢出。 */
 }
 
 .cell-progress .track {
@@ -908,6 +917,9 @@ body.resizing {
 .cell-status {
     font-size: 12px;
     color: var(--muted);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .status-running {

@@ -1888,6 +1888,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         description='📥',
                         channel=str(chat_id),
                         filename=truncate_display_filename(file_name),
+                        fullname=file_name,  # 完整文件名供网页面板展示,filename按终端宽度截断仅供终端显示。
                         info=f'0.00B/{format_file_size}',
                         total=sever_file_size
                     )
