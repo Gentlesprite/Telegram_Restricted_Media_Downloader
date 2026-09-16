@@ -9,6 +9,7 @@
     --glass-edge: rgba(255, 255, 255, .09);  /* 发丝级分隔线。 */
     --border: #242b39;
     --pattern-intensity: .375;  /* 涂鸦浓度,取官方 --pattern-intensity 的值(画布不透明度)。 */
+    --p: 0%;  /* 圆环进度百分比默认值(带 %),实际由 JS 通过内联 style 按元素覆盖。 */
     --text: #e7eaf0;
     --muted: #8a93a6;
     --accent: #38f9d7;
@@ -803,8 +804,15 @@ body.resizing {
 }
 
 .group-body .task-row {
-    padding-left: 30px;
     background: rgba(0, 0, 0, .16);
+}
+
+/* 缩进放在名称单元格内,而不是整行:
+   行级 padding-left 会挤压名称列(1fr),令其后的固定列整体左移、与表头错位;
+   下沉到 .cell-name 后各行可用宽度一致,列位置对齐,缩进量保持不变(30-14=16)。 */
+.group-body .task-row > .cell-name,
+.group-body .group-head > .cell-name {
+    padding-left: 16px;
 }
 
 .group-body .task-row:last-child {
@@ -828,14 +836,17 @@ body.resizing {
 
 /* 嵌套分组(频道 > 链接),逐层缩进。 */
 .group-body .group-head {
-    padding-left: 30px;
     font-weight: 500;
     background: rgba(0, 0, 0, .16);
 }
 
 .group-body .group-body .task-row {
-    padding-left: 52px;
     background: rgba(0, 0, 0, .24);
+}
+
+/* 二级嵌套缩进(52-14=38),同样只作用于名称单元格。 */
+.group-body .group-body .task-row > .cell-name {
+    padding-left: 38px;
 }
 
 .group-body .group-body .more {
@@ -871,6 +882,7 @@ body.resizing {
 }
 
 .cell-progress {
+    --p: 0%;  /* 进度百分比,由 JS 通过内联 style 覆盖;此处为静态检查与缺省时的回退值。 */
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1035,55 +1047,41 @@ tbody tr:hover {
         flex: 1;
         text-align: center;
     }
-}
 
-@media (max-width: 900px) {
-    .h-speed,
-    .h-remain,
-    .cell-speed,
-    .cell-remain {
+    /* 移动端不再隐藏列,改为横向滚动,分隔条保持可拖拽调整列宽。
+       滚动交给内层 .list-scroll:backdrop-filter 与 overflow 加在同一元素上时,
+       滚动区域会丢失毛玻璃效果,故把"滚动"与"玻璃"拆到两个元素上。 */
+    .list-scroll {
+        overflow-x: auto;
+    }
+
+    /* 移动端收缩嵌套缩进,把宽度让给文件名(原 16/38,现 8/16)。 */
+    .group-body .task-row > .cell-name,
+    .group-body .group-head > .cell-name {
+        padding-left: 8px;
+    }
+
+    .group-body .group-body .task-row > .cell-name {
+        padding-left: 16px;
+    }
+
+    /* 窄屏优先保证文件名可见:
+       .gcount 是 flex:none(永不收缩),会硬占约 65px,让文件名只剩几十像素,故隐藏;
+       文件名改为最多两行折行——单行省略在窄屏几乎看不到内容。 */
+    .cell-name .gcount {
         display: none;
     }
 
-    .grip {
-        display: none;  /* 窄屏走隐藏列的适配逻辑,列宽拖拽不生效,直接隐藏分隔条。 */
-    }
-
-    .listen-two .list-head,
-    .listen-two .task-row {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 56px;
-    }
-
-    .listen-one .list-head,
-    .listen-one .task-row {
-        grid-template-columns: minmax(0, 1fr) 56px;
-    }
-
-    #page-download .list-head,
-    #page-download .task-row,
-    #page-download .group-head,
-    #page-upload .list-head,
-    #page-upload .task-row,
-    #page-upload .group-head {
-        grid-template-columns: minmax(0, 1fr) 150px 110px 60px;
+    .fname,
+    .gname {
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
     }
 }
 
 @media (max-width: 620px) {
-    .h-size,
-    .cell-size {
-        display: none;
-    }
-
-    #page-download .list-head,
-    #page-download .task-row,
-    #page-download .group-head,
-    #page-upload .list-head,
-    #page-upload .task-row,
-    #page-upload .group-head {
-        grid-template-columns: minmax(0, 1fr) 120px 56px;
-    }
-
     .stat {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -1104,7 +1102,7 @@ tbody tr:hover {
         min-width: 0;
         border-radius: 50%;
         overflow: visible;  /* 遮罩作用于自身,不再裁切横向填充。 */
-        background: conic-gradient(var(--accent) calc(var(--p) * 1%), rgba(255, 255, 255, .1) 0);
+        background: conic-gradient(var(--accent) var(--p, 0%), rgba(255, 255, 255, .1) 0);
         /* 掏空比例下移使环带更粗;过渡带收窄到 6%,避免过宽导致发糊。 */
         -webkit-mask: radial-gradient(transparent 36%, #000 42%);
         mask: radial-gradient(transparent 36%, #000 42%);

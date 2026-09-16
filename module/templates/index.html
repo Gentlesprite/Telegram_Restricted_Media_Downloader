@@ -84,15 +84,17 @@
                 <button class="toggle" id="toggleAll" type="button">全部折叠</button>
             </div>
             <div class="list" data-table="download">
-                <div class="list-head">
-                    <span id="headName"><span class="htext">频道</span></span>
-                    <span><span class="htext">进度</span></span>
-                    <span class="h-size" id="headSize"><span class="htext">完成 / 总数</span></span>
-                    <span class="h-speed"><span class="htext">速度</span></span>
-                    <span class="h-remain"><span class="htext">剩余时间</span></span>
-                    <span class="h-status"><span class="htext">状态</span></span>
+                <div class="list-scroll">
+                    <div class="list-head">
+                        <span id="headName"><span class="htext">频道</span></span>
+                        <span><span class="htext">进度</span></span>
+                        <span class="h-size" id="headSize"><span class="htext">完成 / 总数</span></span>
+                        <span class="h-speed"><span class="htext">速度</span></span>
+                        <span class="h-remain"><span class="htext">剩余时间</span></span>
+                        <span class="h-status"><span class="htext">状态</span></span>
+                    </div>
+                    <div id="download"></div>
                 </div>
-                <div id="download"></div>
             </div>
         </div>
 
@@ -102,15 +104,17 @@
                 <button class="toggle" id="toggleUpload" type="button">全部折叠</button>
             </div>
             <div class="list" data-table="upload">
-                <div class="list-head">
-                    <span class="h-name"><span class="htext">频道</span></span>
-                    <span><span class="htext">进度</span></span>
-                    <span class="h-size"><span class="htext">完成 / 总数</span></span>
-                    <span class="h-speed"><span class="htext">速度</span></span>
-                    <span class="h-remain"><span class="htext">剩余时间</span></span>
-                    <span class="h-status"><span class="htext">状态</span></span>
+                <div class="list-scroll">
+                    <div class="list-head">
+                        <span class="h-name"><span class="htext">频道</span></span>
+                        <span><span class="htext">进度</span></span>
+                        <span class="h-size"><span class="htext">完成 / 总数</span></span>
+                        <span class="h-speed"><span class="htext">速度</span></span>
+                        <span class="h-remain"><span class="htext">剩余时间</span></span>
+                        <span class="h-status"><span class="htext">状态</span></span>
+                    </div>
+                    <div id="upload"></div>
                 </div>
-                <div id="upload"></div>
             </div>
         </div>
 
@@ -120,19 +124,23 @@
                 <button class="tab" data-listen="download" type="button">下载</button>
             </div>
             <div class="list listen-two" id="listenForwardBox" data-table="forward">
-                <div class="list-head">
-                    <span><span class="htext">监听频道</span></span>
-                    <span><span class="htext">转发频道</span></span>
-                    <span class="h-action"><span class="htext">操作</span></span>
+                <div class="list-scroll">
+                    <div class="list-head">
+                        <span><span class="htext">监听频道</span></span>
+                        <span><span class="htext">转发频道</span></span>
+                        <span class="h-action"><span class="htext">操作</span></span>
+                    </div>
+                    <div id="listenForward"></div>
                 </div>
-                <div id="listenForward"></div>
             </div>
             <div class="list listen-one" id="listenDownloadBox" data-table="listen_download" hidden>
-                <div class="list-head">
-                    <span><span class="htext">监听频道</span></span>
-                    <span class="h-action"><span class="htext">操作</span></span>
+                <div class="list-scroll">
+                    <div class="list-head">
+                        <span><span class="htext">监听频道</span></span>
+                        <span class="h-action"><span class="htext">操作</span></span>
+                    </div>
+                    <div id="listenDownload"></div>
                 </div>
-                <div id="listenDownload"></div>
             </div>
         </div>
     </main>

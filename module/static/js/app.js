@@ -105,8 +105,8 @@ function dash(text) {
 }
 
 function progressCell(percent) {
-    // --p 供手机端把横向条换成圆环时使用;桌面端不读取,无副作用。
-    return '<span class="cell-progress" style="--p:' + percent + '">' +
+    // --p 供手机端把横向条换成圆环时使用(带 % 的完整角度值);桌面端不读取,无副作用。
+    return '<span class="cell-progress" style="--p:' + percent + '%">' +
         '<span class="track"><span class="fill" style="width:' + percent + '%"></span></span>' +
         '<span class="pct">' + percent + '%</span></span>';
 }
@@ -946,6 +946,20 @@ function measureColMins(list) {
     return mins;
 }
 
+// 移动端弹性列(名称列)的最小宽度保底:
+// 窄屏下固定列合计已超过视口,弹性列会退回到"标题文字宽度"(约百来像素),
+// 再被嵌套缩进吃掉一部分后文件名几乎完全看不见。故移动端强制留出可读宽度,
+// 超出的部分由横向滚动承载。
+var FLEX_MIN_MOBILE = 200;
+
+function flexColMin(measured) {
+    var min = Math.max(COLS_MIN, measured || COLS_MIN);
+    if (window.innerWidth <= 760) {
+        min = Math.max(min, FLEX_MIN_MOBILE);
+    }
+    return min;
+}
+
 function applyCols(list, widths, flexMin) {
     var parts = ['minmax(' + (flexMin || COLS_MIN) + 'px, 1fr)'];  // 首列弹性列不低于标题宽度,避免被其它列挤到看不见。
     for (var i = 0; i < widths.length; i++) {
@@ -981,8 +995,14 @@ function clampColsWidth(widths, index, value, maxFixed, mins) {
     // 下限取标题完整显示所需宽度,保证表头标题永不被压缩。
     var floor = Math.max(COLS_MIN, (mins && mins[index + 1]) || COLS_MIN);
     // 预留首列弹性列的最小宽度,避免固定列被拉到超出可用空间后挤压首列文字。
-    var flexMin = Math.max(COLS_MIN, (mins && mins[0]) || COLS_MIN);
-    var max = maxFixed - others - flexMin;
+    var flexMin = flexColMin(mins && mins[0]);
+    var max;
+    if (window.innerWidth <= 760) {
+        // 移动端允许横向滚动,不把列宽限制在视口内,用户可自由拖宽,超出部分滚动查看。
+        max = Math.max(value, 900);
+    } else {
+        max = Math.max(COLS_MIN, maxFixed - others - flexMin);
+    }
     // 标题优先:空间不足时保留标题所需宽度,宁可让行溢出也不压缩表头文字。
     return Math.max(floor, Math.min(value, max));
 }
@@ -1023,7 +1043,7 @@ function resizeMove(event) {
     var delta = event.clientX - dragState.startX;
     var value = dragState.origin[dragState.col] + delta * dragState.sign;
     dragState.widths[dragState.col] = clampColsWidth(dragState.widths, dragState.col, value, dragState.maxFixed, dragState.mins);
-    applyCols(dragState.list, dragState.widths, dragState.mins[0]);
+    applyCols(dragState.list, dragState.widths, flexColMin(dragState.mins[0]));
     event.preventDefault();
 }
 
@@ -1064,10 +1084,21 @@ function initCols() {
             widths[j] = Math.max(widths[j], mins[j + 1]);  // 已保存的列宽也不得小于标题所需宽度。
         }
         colsCache[table] = widths;
-        applyCols(list, widths, mins[0]);
+        applyCols(list, widths, flexColMin(mins[0]));
         buildGrips(list);
     }
 }
+
+// 跨断点(旋转屏幕、缩放窗口)时重新应用列宽,
+// 让移动端弹性列的保底最小宽度在进入/离开窄屏时正确生效或取消。
+var lastCompact = window.innerWidth <= 760;
+window.addEventListener('resize', function () {
+    var compact = window.innerWidth <= 760;
+    if (compact !== lastCompact) {
+        lastCompact = compact;
+        initCols();
+    }
+});
 
 var savedSection = '';
 var savedListen = '';
