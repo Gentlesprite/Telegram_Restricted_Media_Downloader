@@ -563,6 +563,13 @@ function bindStatFilter() {
         // 筛选状态属于界面状态、不在快照数据里,必须清空指纹强制重绘,
         // 否则会因"数据未变化"被跳过,导致点击无反应。
         lastRenderKey = '';
+        lastStructKey = '';
+        lastUploadStructKey = '';
+        // 列表重建有最小间隔节流(LIST_BUILD_MIN_MS),而结构指纹只反映数据、不含筛选状态。
+        // 因此仅清空指纹还不够:若本次点击落在节流期内,仍会走"就地更新进度"分支而不重建 DOM,
+        // 结果是筛选不生效、行与进度条错位。筛选是用户主动操作,必须立即生效,故一并清零时间戳。
+        lastListBuild = 0;
+        lastUploadBuild = 0;
         refresh();  // 立即按新筛选重绘,无需等待下一次轮询。
     });
 }
@@ -1145,7 +1152,9 @@ function updateUploadRows(uploads) {
         var percent = uploadDone(file) ? 100 : (Number(file.percent) || 0);
         var fill = row.querySelector('.fill');
         if (fill) {
-            fill.style.transform = 'scaleX(' + (percent / 100) + ')';
+            // 与 progressCell 一致用 width:进度条初始宽度已由它按百分比设好,
+            // 若再叠加 scaleX 会二次缩放,且缺少 transform-origin:left 会从中心展开。
+            fill.style.width = percent + '%';
         }
         var pct = row.querySelector('.pct');
         if (pct && fill) {
@@ -1179,7 +1188,7 @@ function structKeyOf(data) {
 }
 
 /* 结构未变化时,只就地更新"正在下载"的行:
-   改 transform 与文字,不触发任何 DOM 重建与整表重排。 */
+   改宽度与文字,避免整表 DOM 重建(仅这几行重排)。 */
 function updateTaskRows(data) {
     var tasks = data.tasks || [];
     var live = {};
@@ -1196,7 +1205,7 @@ function updateTaskRows(data) {
         }
         var fill = row.querySelector('.fill');
         if (fill) {
-            fill.style.transform = 'scaleX(' + (Number(task.percent) / 100) + ')';
+            fill.style.width = task.percent + '%';  // 同上:与 progressCell 保持一致。
         }
         var pct = row.querySelector('.pct');
         if (pct) {

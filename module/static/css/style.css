@@ -646,7 +646,9 @@ th {
     height: 100%;
     border-radius: 99px;
     background: linear-gradient(90deg, #43e97b, #38f9d7, #43e97b);
-    background-size: 200% 100%;
+    /* 原先的 background-size: 200% 100% 只为已删除的流光动画服务:
+       它让背景加宽一倍、靠滚动 background-position 露出不同段落。
+       动画移除后保留它会让渐变只显示左半段(绿→青),故去掉,使三色渐变完整呈现。 */
     box-shadow: 0 0 10px rgba(56, 249, 215, .35);
     transition: width .5s ease;
 }
