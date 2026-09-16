@@ -12,7 +12,7 @@
        仅在首次渲染时光栅化一次,此后背景渐变每帧推进都无需重算,GPU 开销几乎为零。
        页面背景本身是平滑渐变、没有细节需要模糊,所以观感与真毛玻璃非常接近。
        颗粒强度由 SVG 里的 opacity 控制(默认 0.05),想更明显可调到 0.08~0.1。 */
-    --frost-noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='128' height='128' filter='url(%23n)' opacity='0.05'/></svg>");
+    --frost-noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='128' height='128' filter='url(%23n)' opacity='0.01'/></svg>");
     --border: #242b39;
     --pattern-intensity: .375;  /* 涂鸦浓度,取官方 --pattern-intensity 的值(画布不透明度)。 */
     --p: 0%;  /* 圆环进度百分比默认值(带 %),实际由 JS 通过内联 style 按元素覆盖。 */
@@ -697,15 +697,23 @@ th {
    不做 backdrop-filter 采样,因此进度条更新时不会触发任何重新模糊,GPU 开销几乎为零。 */
 .panel,
 .list {
-    /* 低开销磨砂:半透明底色透出背景渐变,再叠一层静态噪点表现漫反射颗粒,
-       配合上沿发丝高光与投影表现玻璃厚度。
-       全程不采样背景、不做模糊,因此背景推进时这些大图层只需重新合成,无需重算。 */
+    /* 低开销磨砂玻璃:全部由静态图层构成,不采样背景、不做模糊。
+       自上而下依次是:斜向光泽带(表面反光)、柔光晕(模拟背景色透过玻璃的散射)、
+       噪点颗粒(漫反射磨砂);底色半透明,让背景渐变自然透出。
+       因此背景每帧推进时,这些图层只需重新合成,无需重新采样与模糊。 */
     background-color: rgba(26, 26, 30, .72);
-    background-image: var(--frost-noise);
-    background-repeat: repeat;
-    background-size: 128px 128px;
+    background-image:
+        linear-gradient(135deg, rgba(255, 255, 255, .01), rgba(255, 255, 255, 0) 40%),
+        radial-gradient(130% 90% at 15% 0%, rgba(130, 160, 255, .01), rgba(130, 160, 255, 0) 62%),
+        var(--frost-noise);
+    background-repeat: no-repeat, no-repeat, repeat;
+    background-size: auto, auto, 128px 128px;
     border-color: var(--glass-edge);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 4px 16px rgba(0, 0, 0, .28);
+    /* 上沿高光与下沿暗边共同表现玻璃厚度,外投影让面板浮起。 */
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .12),
+        inset 0 -1px 0 rgba(0, 0, 0, .22),
+        0 4px 16px rgba(0, 0, 0, .28);
 }
 
 .stat span {
@@ -823,7 +831,11 @@ h2 {
     align-items: center;
     padding: 8px 14px;
     border-bottom: 1px solid var(--border);
-    background: var(--panel2);
+    /* 与面板同一张静态噪点,保持磨砂质感统一;底色仍是半透明的 --panel2。 */
+    background-color: var(--panel2);
+    background-image: var(--frost-noise);
+    background-repeat: repeat;
+    background-size: 128px 128px;
     font-size: 12px;
     color: var(--muted);
 }
@@ -970,7 +982,11 @@ body.resizing {
     gap: 12px;
     align-items: center;
     padding: 9px 14px;
-    background: rgba(255, 255, 255, .03);
+    /* 同样叠一层静态噪点,使分组条与面板的磨砂质感一致。 */
+    background-color: rgba(255, 255, 255, .03);
+    background-image: var(--frost-noise);
+    background-repeat: repeat;
+    background-size: 128px 128px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
