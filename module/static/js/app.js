@@ -574,6 +574,78 @@ function bindConfirm() {
     };
 }
 
+/* 登录卡片:替代浏览器原生的 Basic 认证弹窗,沿用页面毛玻璃风格。 */
+var loginShown = false;
+
+function openLogin() {
+    if (loginShown) {
+        return;  // 每秒轮询都会触发,已展示时不再重复打开。
+    }
+    loginShown = true;
+    document.getElementById('loginError').hidden = true;
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginModal').hidden = false;
+    document.body.classList.add('logged-out');  // 未登录时隐藏页面卡片,只留渐变背景。
+    var user = document.getElementById('loginUser');
+    if (user.value) {
+        document.getElementById('loginPass').focus();
+    } else {
+        user.focus();
+    }
+}
+
+function closeLogin() {
+    loginShown = false;
+    document.getElementById('loginModal').hidden = true;
+    document.body.classList.remove('logged-out');  // 恢复页面内容。
+}
+
+async function submitLogin() {
+    var errorBox = document.getElementById('loginError');
+    errorBox.hidden = true;
+    try {
+        var res = await fetch('/api/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                username: document.getElementById('loginUser').value,
+                password: document.getElementById('loginPass').value,
+                remember: document.getElementById('loginRemember').checked
+            })
+        });
+        var data = await res.json();
+        if (!data.status) {
+            errorBox.textContent = '账号或密码不正确。';
+            errorBox.hidden = false;
+            return;
+        }
+        closeLogin();
+        if (data.first_login) {
+            openSupport();  // 保持原先"首次登录展示支持作者卡片"的行为。
+        }
+        refresh();
+    } catch (e) {
+        errorBox.textContent = '无法连接程序,请稍后重试。';
+        errorBox.hidden = false;
+    }
+}
+
+function bindLogin() {
+    document.getElementById('loginSubmit').onclick = submitLogin;
+    var user = document.getElementById('loginUser');
+    var pass = document.getElementById('loginPass');
+    user.onkeydown = function (event) {
+        if (event.key === 'Enter') {
+            pass.focus();
+        }
+    };
+    pass.onkeydown = function (event) {
+        if (event.key === 'Enter') {
+            submitLogin();
+        }
+    };
+}
+
 var removingListener = {};  // 正在等待确认或移除中的监听,避免重复点击被处理多次。
 
 async function removeListener(kind, link) {
@@ -836,6 +908,11 @@ function syncBackgroundProgress(finished) {  // 下载或上传每完成一个�
 async function refresh() {
     try {
         var res = await fetch('/api/progress', {cache: 'no-store'});
+        if (res.status === 401) {
+            openLogin();  // 未认证:前端展示登录卡片,不再触发浏览器原生弹窗。
+            return;
+        }
+        document.body.classList.remove('logged-out');  // 认证通过,显示页面内容。
         render(await res.json());
         refreshNameTip();  // 列表重绘后按当前鼠标位置重新定位提示。
         document.getElementById('offline').style.display = 'none';
@@ -1451,6 +1528,7 @@ bindSections();
 bindListenTabs();
 bindListenRemove();
 bindConfirm();
+bindLogin();
 bindSupport();
 bindMenu();
 initVersion();

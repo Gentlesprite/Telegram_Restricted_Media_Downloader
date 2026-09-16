@@ -174,6 +174,29 @@
         </div>
     </div>
 </div>
+<div class="modal-mask" id="loginModal" hidden>
+    <div class="modal-card login-card">
+        <div class="modal-head">
+            <span class="modal-title">需要登录</span>
+        </div>
+        <div class="modal-body">
+            <div class="login-row">
+                <label class="login-label" for="loginUser">账号：</label>
+                <input class="login-input" id="loginUser" type="text" autocomplete="username" placeholder="请输入账号">
+            </div>
+            <div class="login-row">
+                <label class="login-label" for="loginPass">密码：</label>
+                <input class="login-input" id="loginPass" type="password" autocomplete="current-password" placeholder="请输入密码">
+            </div>
+            <label class="login-remember">
+                <input id="loginRemember" type="checkbox" checked>
+                <span>30天内免登录</span>
+            </label>
+            <div class="login-error" id="loginError" hidden></div>
+            <button class="modal-btn login-submit" id="loginSubmit" type="button">登录</button>
+        </div>
+    </div>
+</div>
 <script src="js/liquid-glass.js"></script>
 <script src="js/app.js"></script>
 </body>

@@ -60,19 +60,28 @@ class WebHandler(BaseHTTPRequestHandler):
     remember_session: bool = False  # 本次响应是否需要下发记名Cookie。
     first_login: bool = False  # 本次请求是否属于未携带有效Cookie的首次登录。
     FIRST_LOGIN_BODY: bytes = b'<body data-first-login="1">'  # 首次登录时写入首页的标记,供页面自动展示卡片。
+    # 已设置账号密码时注入:首屏先隐藏页面内容,避免F5刷新时闪现一瞬间的已登录界面。
+    LOGIN_BODY: bytes = b'<body class="logged-out">'
     VERSION_PLACEHOLDER: bytes = b'__VERSION__'  # 首页模板中的TRMD版本占位符,返回页面时替换为实际版本号。
     # 首页模板中的Pyrogram版本占位符,返回页面时替换为实际版本号。
     PYROGRAM_PLACEHOLDER: bytes = b'__PYROGRAM_VERSION__'
 
     def do_GET(self) -> None:
-        if self.__check_auth() is False:
+        if self.path.startswith('/api/'):
+            # 接口需要认证;页面与静态资源放行,否则登录卡片自身无法加载。
+            if self.__check_auth() is False:
+                return
+            if self.path.startswith('/api/progress'):
+                self.__response_progress()
+            else:
+                self.send_error(404)
             return
-        if self.path.startswith('/api/progress'):
-            self.__response_progress()
-        else:
-            self.__response_static()
+        self.__response_static()
 
     def do_POST(self) -> None:
+        if self.path.startswith('/api/login'):
+            self.__response_login()  # 登录接口本身不能被认证拦截。
+            return
         if self.__check_auth() is False:
             return
         if self.path.startswith('/api/listener/remove'):
@@ -87,6 +96,7 @@ class WebHandler(BaseHTTPRequestHandler):
         """校验认证,已被记住的浏览器通过Cookie免密,否则回退到Basic认证。"""
         self.remember_session = False
         self.first_login = False
+        self.remember_long = True  # Basic 认证沿用长期有效的记名Cookie;登录卡片按勾选决定。
         web: Union[Web, None] = getattr(self.server, 'web', None)
         if web is None or not web.username:
             return True
@@ -117,26 +127,56 @@ class WebHandler(BaseHTTPRequestHandler):
         return ''
 
     def __response_unauthorized(self) -> None:
-        """返回需要认证的响应。"""
+        """返回需要认证的响应。
+        不下发 WWW-Authenticate:否则浏览器会弹出系统自带的账号密码框,
+        无法套用页面风格;改由前端展示毛玻璃登录卡片。"""
         self.send_response(401)
-        self.send_header('WWW-Authenticate', 'Basic realm="TRMD"')
         self.send_header('Content-Length', '0')
         self.end_headers()
+
+    def __response_login(self) -> None:
+        """校验登录卡片提交的账号密码,成功后下发记名Cookie。"""
+        web: Union[Web, None] = getattr(self.server, 'web', None)
+        payload: dict = self.__read_json()
+        ok: bool = False
+        if web is not None:
+            if not web.username:  # 未设置账号密码时直接放行。
+                ok = True
+            else:
+                username: str = str(payload.get('username') or '')
+                password: str = str(payload.get('password') or '')
+                ok = username == web.username and password == web.password
+        if ok:
+            self.remember_session = True  # 认证成功,响应时下发记名Cookie。
+            self.first_login = bool(web and web.username)
+            self.remember_long = bool(payload.get('remember'))  # 是否"30天内免登录"。
+        self.__response_body(
+            body=json.dumps(
+                {'status': ok, 'first_login': bool(ok and web and web.username)},
+                ensure_ascii=False
+            ).encode('UTF-8'),
+            content_type='application/json; charset=utf-8',
+            status=200 if ok else 401
+        )
 
     def __response_session_cookie(self) -> None:
         """首次认证成功后下发记名Cookie,让浏览器在软件重启后依然免密。"""
         web: Union[Web, None] = getattr(self.server, 'web', None)
         if web is None or not self.remember_session:
             return
-        cookie: str = (
-            f'{WebMeta.COOKIE_NAME}={web.token}; '
-            f'Max-Age={Web.REMEMBER_COOKIE_MAX_AGE}; Path=/; HttpOnly; SameSite=Lax'
-        )
+        if self.remember_long:
+            cookie: str = (
+                f'{WebMeta.COOKIE_NAME}={web.token}; '
+                f'Max-Age={Web.REMEMBER_COOKIE_MAX_AGE}; Path=/; HttpOnly; SameSite=Lax'
+            )
+        else:
+            # 未勾选"30天内免登录":不下发 Max-Age,退化为会话Cookie,关闭浏览器即失效。
+            cookie = f'{WebMeta.COOKIE_NAME}={web.token}; Path=/; HttpOnly; SameSite=Lax'
         self.send_header('Set-Cookie', cookie)
 
-    def __response_body(self, body: bytes, content_type: str) -> None:
-        """返回指定内容的响应。"""
-        self.send_response(200)
+    def __response_body(self, body: bytes, content_type: str, status: int = 200) -> None:
+        """返回指定内容的响应,status 用于登录失败时返回401。"""
+        self.send_response(status)
         self.send_header('Content-Type', content_type)
         self.send_header('Content-Length', str(len(body)))
         self.send_header('Cache-Control', 'no-store')  # 禁用缓存,避免浏览器沿用旧页面。
@@ -212,6 +252,9 @@ class WebHandler(BaseHTTPRequestHandler):
         if os.path.basename(file_path) == Web.INDEX_FILE:  # 首页需要替换标记与版本号。
             if self.first_login:
                 body = body.replace(b'<body>', WebHandler.FIRST_LOGIN_BODY, 1)
+            elif web and web.username:
+                # 需要认证:首屏即隐藏页面内容,认证通过后由前端移除该类,避免刷新时闪现已登录界面。
+                body = body.replace(b'<body>', WebHandler.LOGIN_BODY, 1)
             body = body.replace(WebHandler.VERSION_PLACEHOLDER, f'v{__version__}'.encode('UTF-8'))
             body = body.replace(
                 WebHandler.PYROGRAM_PLACEHOLDER,

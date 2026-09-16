@@ -487,6 +487,82 @@ h1 {
     color: var(--danger);
 }
 
+/* 登录卡片:替代浏览器原生的 Basic 认证弹窗,沿用弹窗的玻璃卡片。 */
+.login-card {
+    width: min(300px, 100%);  /* 收窄卡片,输入框不必过长。 */
+}
+
+/* 账号/密码:标签与输入框同行,标签定宽保证两行对齐。 */
+.login-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.login-label {
+    flex: none;
+    width: 44px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.login-input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 11px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, .2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    transition: border-color .15s ease;
+}
+
+.login-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* 30天内免登录 */
+.login-remember {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 2px 0 0;  /* 去掉底部间距,让登录按钮紧贴勾选行。 */
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.login-remember input {
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.login-error {
+    margin-bottom: 8px;
+    color: var(--danger);
+    font-size: 12px;
+}
+
+.login-submit {
+    display: block;
+    width: 100%;  /* 铺满卡片宽度:只有"登录"两字时右对齐会留下大片空白。 */
+    padding: 9px 16px;
+    border-width: 2px;  /* 边框加粗,按钮更厚实。 */
+    border-radius: 9px;
+    font-weight: 600;  /* 文字加粗。 */
+    text-align: center;
+}
+
+/* 未登录时只保留动态渐变背景:隐藏整个页面内容,登录卡片在 .wrap 之外不受影响。 */
+body.logged-out .wrap {
+    display: none;
+}
+
 .dot {
     width: 8px;
     height: 8px;
