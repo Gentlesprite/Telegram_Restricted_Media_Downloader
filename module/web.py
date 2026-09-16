@@ -93,16 +93,19 @@ class WebHandler(BaseHTTPRequestHandler):
         """屏蔽默认的请求日志,避免污染终端输出。"""
 
     def __check_auth(self) -> bool:
-        """校验认证,已被记住的浏览器通过Cookie免密,否则回退到Basic认证。"""
+        """校验认证:优先Cookie免密,其次前端持有的临时令牌,最后回退到Basic认证。"""
         self.remember_session = False
         self.first_login = False
-        self.remember_long = True  # Basic 认证沿用长期有效的记名Cookie;登录卡片按勾选决定。
         web: Union[Web, None] = getattr(self.server, 'web', None)
         if web is None or not web.username:
             return True
         if web.check_session(self.__get_cookie()):
             return True  # 浏览器已被记住,无需重复输入密码。
         authorization: str = self.headers.get('Authorization', '')
+        if authorization.startswith('Bearer '):
+            # 未勾选"30天内免登录"时不发Cookie,前端把令牌存sessionStorage并随请求带来,关闭标签页即失效。
+            if web.check_session(authorization.split(' ', 1)[1].strip()):
+                return True
         if not authorization.startswith('Basic '):
             self.__response_unauthorized()
             return False
@@ -135,7 +138,9 @@ class WebHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def __response_login(self) -> None:
-        """校验登录卡片提交的账号密码,成功后下发记名Cookie。"""
+        """校验登录卡片提交的账号密码。
+        勾选"30天内免登录"才下发长期Cookie;未勾选时不下发Cookie,
+        改为把令牌返回给前端存放在sessionStorage,关闭标签页即需重新登录。"""
         web: Union[Web, None] = getattr(self.server, 'web', None)
         payload: dict = self.__read_json()
         ok: bool = False
@@ -147,12 +152,16 @@ class WebHandler(BaseHTTPRequestHandler):
                 password: str = str(payload.get('password') or '')
                 ok = username == web.username and password == web.password
         if ok:
-            self.remember_session = True  # 认证成功,响应时下发记名Cookie。
+            # 未勾选时不置 remember_session,即不下发任何Cookie。
+            self.remember_session = bool(payload.get('remember'))
             self.first_login = bool(web and web.username)
-            self.remember_long = bool(payload.get('remember'))  # 是否"30天内免登录"。
         self.__response_body(
             body=json.dumps(
-                {'status': ok, 'first_login': bool(ok and web and web.username)},
+                {
+                    'status': ok,
+                    'first_login': bool(ok and web and web.username),
+                    'token': web.token if (ok and web is not None) else ''
+                },
                 ensure_ascii=False
             ).encode('UTF-8'),
             content_type='application/json; charset=utf-8',
@@ -160,18 +169,14 @@ class WebHandler(BaseHTTPRequestHandler):
         )
 
     def __response_session_cookie(self) -> None:
-        """首次认证成功后下发记名Cookie,让浏览器在软件重启后依然免密。"""
+        """下发记名Cookie:仅在登录时勾选了"30天内免登录"时调用(由 remember_session 控制)。"""
         web: Union[Web, None] = getattr(self.server, 'web', None)
         if web is None or not self.remember_session:
             return
-        if self.remember_long:
-            cookie: str = (
-                f'{WebMeta.COOKIE_NAME}={web.token}; '
-                f'Max-Age={Web.REMEMBER_COOKIE_MAX_AGE}; Path=/; HttpOnly; SameSite=Lax'
-            )
-        else:
-            # 未勾选"30天内免登录":不下发 Max-Age,退化为会话Cookie,关闭浏览器即失效。
-            cookie = f'{WebMeta.COOKIE_NAME}={web.token}; Path=/; HttpOnly; SameSite=Lax'
+        cookie: str = (
+            f'{WebMeta.COOKIE_NAME}={web.token}; '
+            f'Max-Age={Web.REMEMBER_COOKIE_MAX_AGE}; Path=/; HttpOnly; SameSite=Lax'
+        )
         self.send_header('Set-Cookie', cookie)
 
     def __response_body(self, body: bytes, content_type: str, status: int = 200) -> None:

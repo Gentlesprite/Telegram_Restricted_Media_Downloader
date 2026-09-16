@@ -575,6 +575,33 @@ function bindConfirm() {
 }
 
 /* 登录卡片:替代浏览器原生的 Basic 认证弹窗,沿用页面毛玻璃风格。 */
+
+/* 未勾选"30天内免登录"时,令牌只存放在 sessionStorage:
+   关闭标签页即被清空,下次必须重新登录。
+   Cookie 无法做到"关闭标签页即失效"(会话Cookie要整个浏览器退出才清),
+   所以未勾选时服务端不下发Cookie,改由前端持令牌随请求带来。 */
+function setSessionToken(token) {
+    try {
+        if (token) {
+            sessionStorage.setItem('trmd_token', token);
+        } else {
+            sessionStorage.removeItem('trmd_token');
+        }
+    } catch (e) {
+        // 隐私模式等 sessionStorage 不可用的场景直接忽略。
+    }
+}
+
+function authHeaders() {
+    var token = '';
+    try {
+        token = sessionStorage.getItem('trmd_token') || '';
+    } catch (e) {
+        token = '';
+    }
+    return token ? {Authorization: 'Bearer ' + token} : {};
+}
+
 var loginShown = false;
 
 function openLogin() {
@@ -602,6 +629,7 @@ function closeLogin() {
 
 async function submitLogin() {
     var errorBox = document.getElementById('loginError');
+    var remember = document.getElementById('loginRemember').checked;
     errorBox.hidden = true;
     try {
         var res = await fetch('/api/login', {
@@ -619,6 +647,8 @@ async function submitLogin() {
             errorBox.hidden = false;
             return;
         }
+        // 勾选"30天内免登录"时服务端已下发Cookie;未勾选则把令牌留在本标签页。
+        setSessionToken(remember ? '' : (data.token || ''));
         closeLogin();
         if (data.first_login) {
             openSupport();  // 保持原先"首次登录展示支持作者卡片"的行为。
@@ -670,7 +700,7 @@ async function removeListener(kind, link) {
     try {
         var res = await fetch('/api/listener/remove', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
             body: JSON.stringify({kind: kind, link: link})
         });
         var data = await res.json();
@@ -916,7 +946,7 @@ function syncBackgroundProgress(finished) {  // 下载或上传每完成一个�
 
 async function refresh() {
     try {
-        var res = await fetch('/api/progress', {cache: 'no-store'});
+        var res = await fetch('/api/progress', {cache: 'no-store', headers: authHeaders()});
         if (res.status === 401) {
             openLogin();  // 未认证:前端展示登录卡片,不再触发浏览器原生弹窗。
             return;
