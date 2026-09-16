@@ -57,7 +57,7 @@ var SIZE_LABELS = ['完成 / 总数', '完成 / 总数', '数量 / 大小'];  //
 var UPLOAD_HEAD_NAME = ['频道', '频道 / 文件路径'];  // 上传页只有频道与文件两级。
 var UPLOAD_HEAD_SIZE = ['完成 / 总数', '大小'];
 var UPLOAD_TEXT = {
-    pending: '排队中',
+    pending: '队列中',
     uploading: '上传中',
     success: '已完成',
     sent: '已完成',
@@ -980,7 +980,7 @@ function uploadCount(tasks) {
 
 function uploadRow(file) {
     var state = file.state || 'pending';
-    var text = UPLOAD_TEXT[state] || '排队中';
+    var text = UPLOAD_TEXT[state] || '队列中';
     var cls = UPLOAD_CLASS[state] || 'status-pending';
     var progress;
     if (uploadDone(file)) {
@@ -1108,8 +1108,7 @@ function renderUpload(uploads) {
         statCell('成功', count.success, 'ok', 'success', 'upload'),
         statCell('失败', count.failure, 'bad', 'failure', 'upload'),
         statCell('上传中', count.uploading, '', 'uploading', 'upload'),
-        statCell('待上传', count.pending, 'skip', 'pending', 'upload'),
-        statCell('文件总数', uploads.length, 'queue', 'all', 'upload')
+        statCell('队列', count.pending, 'skip', 'pending', 'upload')
     ]);
     return count.active;
 }
