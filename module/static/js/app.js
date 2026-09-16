@@ -536,8 +536,54 @@ function renderListeners(listeners) {
     return forward.length + download.length;
 }
 
+/* 与页面同风格的确认弹窗(替代原生 confirm),返回 Promise<boolean>。 */
+var confirmResolve = null;
+
+function askConfirm(text, title) {
+    return new Promise(function (resolve) {
+        document.getElementById('confirmTitle').textContent = title || '确认操作';
+        document.getElementById('confirmText').textContent = text || '';
+        confirmResolve = resolve;
+        document.getElementById('confirmModal').hidden = false;
+    });
+}
+
+function closeConfirm(result) {
+    document.getElementById('confirmModal').hidden = true;
+    if (confirmResolve) {
+        var resolve = confirmResolve;
+        confirmResolve = null;  // 先清空再回调,避免回调内再次触发时串台。
+        resolve(result);
+    }
+}
+
+function bindConfirm() {
+    document.getElementById('confirmOk').onclick = function () {
+        closeConfirm(true);
+    };
+    document.getElementById('confirmCancel').onclick = function () {
+        closeConfirm(false);
+    };
+    document.getElementById('confirmClose').onclick = function () {
+        closeConfirm(false);
+    };
+    document.getElementById('confirmModal').onclick = function (event) {
+        if (event.target === this) {
+            closeConfirm(false);  // 点击遮罩空白处等同取消。
+        }
+    };
+}
+
+var removingListener = {};  // 正在等待确认或移除中的监听,避免重复点击被处理多次。
+
 async function removeListener(kind, link) {
-    if (!link) {
+    if (!link || removingListener[link]) {
+        return;  // 同一监听已在确认或处理中,忽略重复点击。
+    }
+    removingListener[link] = true;
+    var ok = await askConfirm('确定移除该监听?\n' + link, '移除监听');
+    if (!ok) {
+        delete removingListener[link];
         return;
     }
     try {
@@ -553,6 +599,7 @@ async function removeListener(kind, link) {
     } catch (e) {
         window.alert('移除失败:无法连接程序。');
     }
+    delete removingListener[link];
     refresh();  // 移除后立即刷新,无需等待下一次轮询。
 }
 
@@ -1403,6 +1450,7 @@ function initBackgroundGradient() {
 bindSections();
 bindListenTabs();
 bindListenRemove();
+bindConfirm();
 bindSupport();
 bindMenu();
 initVersion();

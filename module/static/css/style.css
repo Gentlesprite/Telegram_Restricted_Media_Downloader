@@ -447,6 +447,46 @@ h1 {
     text-align: center;
 }
 
+/* 确认弹窗的正文与按钮,沿用弹窗的玻璃卡片。 */
+.modal-body {
+    padding: 16px;
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-line;  /* 保留提示文案里的换行。 */
+    word-break: break-all;
+}
+
+.modal-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 0 16px 14px;
+}
+
+.modal-btn {
+    padding: 7px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+
+.modal-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.modal-btn.danger:hover {
+    border-color: var(--danger);
+    background: rgba(255, 92, 122, .12);
+    color: var(--danger);
+}
+
 .dot {
     width: 8px;
     height: 8px;
