@@ -1075,12 +1075,18 @@ function renderUpload(uploads) {
     /* 与下载列表同样处理:只有结构变化(文件增减/状态改变)才重建 DOM,
        否则仅就地更新进度,避免每秒整表重建。 */
     var uploadKey = uploadStructKey(uploads);
+    var now = Date.now();
     if (uploadKey !== lastUploadStructKey) {
         lastUploadStructKey = uploadKey;
-        document.getElementById('upload').innerHTML = uploadList(uploads);
-        syncToggleUpload();
-        syncUploadHeads();
-        bindGroups();  // 上传列表渲染完成后统一绑定折叠事件。
+        if (now - lastUploadBuild >= LIST_BUILD_MIN_MS) {
+            lastUploadBuild = now;
+            document.getElementById('upload').innerHTML = uploadList(uploads);
+            syncToggleUpload();
+            syncUploadHeads();
+            bindGroups();  // 上传列表渲染完成后统一绑定折叠事件。
+        } else {
+            updateUploadRows(uploads);  // 节流期内先就地更新。
+        }
     } else {
         updateUploadRows(uploads);
     }
@@ -1099,6 +1105,14 @@ function renderUpload(uploads) {
 var lastRenderKey = '';  // 上次渲染的数据指纹,用于跳过无变化的重绘。
 var lastStructKey = '';  // 列表结构指纹,结构不变则不重建列表 DOM。
 var lastUploadStructKey = '';  // 上传列表结构指纹,同上。
+
+/* 列表全量重建的最小间隔(毫秒)。
+   任务密集完成时,结构几乎每次轮询都变,若每次都重建整棵列表,
+   会持续吃满 CPU(JS/DOM)与 GPU(重绘合成)。限制频率后可封顶这部分开销,
+   节流期内先就地更新进度,稍后再补一次完整重建。 */
+var LIST_BUILD_MIN_MS = 1500;
+var lastListBuild = 0;      // 上次重建下载列表的时间戳。
+var lastUploadBuild = 0;    // 上次重建上传列表的时间戳。
 
 /* 上传列表结构指纹:文件路径 + 状态,不含进度/速度等每秒变化的数值。 */
 function uploadStructKey(uploads) {
@@ -1225,9 +1239,15 @@ function render(data, force) {
     // 只有列表结构变化(成员增减/状态改变)才重建 DOM;
     // 否则仅就地更新正在下载的行,避免每秒整表重建带来的重排与重绘。
     var structKey = structKeyOf(data);
+    var now = Date.now();
     if (structKey !== lastStructKey) {
         lastStructKey = structKey;
-        renderList(data);
+        if (now - lastListBuild >= LIST_BUILD_MIN_MS) {
+            lastListBuild = now;
+            renderList(data);
+        } else {
+            updateTaskRows(data);  // 节流期内先就地更新,下一个间隔再完整重建。
+        }
     } else {
         updateTaskRows(data);
     }
