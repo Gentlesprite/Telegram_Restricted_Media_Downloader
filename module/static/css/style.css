@@ -504,11 +504,11 @@ h1 {
     width: min(300px, 100%);  /* 收窄卡片,输入框不必过长。 */
 }
 
-/* 提示弹窗宽度由提示词自身决定:先按文字撑开,达到上限后换行;
+/* 询问框/提示框宽度由文字自身决定:先按文字撑开,达到上限后换行,不再留大片空白。
    遮罩本身是 flex 居中,所以卡片自然保持居中。 */
-.modal-card.alert-card {
+#confirmModal .modal-card {
     width: fit-content;
-    max-width: min(320px, 90vw);
+    max-width: min(360px, 90vw);
 }
 
 .alert-card .modal-body {

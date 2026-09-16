@@ -632,6 +632,14 @@ function authHeaders() {
 
 /* 退出登录:通知服务端轮换令牌并清除Cookie,然后回到登录卡片。 */
 async function logout() {
+    var dropdown = document.getElementById('menuDropdown');
+    if (dropdown) {
+        dropdown.hidden = true;  // 先收起菜单,避免与询问框叠加。
+    }
+    var ok = await askConfirm('退出后需要重新输入账号密码。', '退出登录');
+    if (!ok) {
+        return;
+    }
     try {
         await fetch('/api/logout', {
             method: 'POST',
@@ -641,10 +649,6 @@ async function logout() {
         // 请求失败也要在本地清理,避免界面停留在已登录状态。
     }
     setSessionToken('');  // 清掉未勾选免登录时的临时令牌。
-    var dropdown = document.getElementById('menuDropdown');
-    if (dropdown) {
-        dropdown.hidden = true;  // 收起菜单。
-    }
     openLogin();  // 重新弹出登录卡片并隐藏页面内容。
 }
 
