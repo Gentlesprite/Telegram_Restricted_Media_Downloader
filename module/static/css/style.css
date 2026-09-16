@@ -677,6 +677,8 @@ th {
 }
 
 .fill {
+    position: relative;
+    overflow: hidden;  /* 裁切流光伪元素,使其不超出进度条范围。 */
     display: block;
     width: 0;
     height: 100%;
@@ -685,15 +687,39 @@ th {
     background-size: 200% 100%;
     box-shadow: 0 0 10px rgba(56, 249, 215, .35);
     transition: width .5s ease;
+}
+
+/* 流光:原先在 .fill 上直接动画 background-position,那是绘制属性,
+   每帧都必须重新光栅化,无法被合成器加速。
+   分组头也渲染进度条(progressCell),加上成员行共有几十个进度条同时跑;
+   折叠后分组头紧凑排列,视口内可见的进度条反而比展开时更多
+   (展开时大量行滚出视口,其动画会被浏览器剔除)——
+   这正是"折叠状态 GPU 占用更高"的原因。
+   改为伪元素 + transform 位移:由合成器处理,不产生重绘,观感一致。 */
+.fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(90deg, #43e97b, #38f9d7, #43e97b);
+    background-size: 50% 100%;
     animation: flow 2.4s linear infinite;
+}
+
+/* 彻底停掉流光(验证用):控制台执行
+   document.body.classList.add('perf-noflow') 即可实时对比。 */
+body.perf-noflow .fill::after {
+    animation: none;
 }
 
 @keyframes flow {
     from {
-        background-position: 0 50%;
+        transform: translateX(0);
     }
     to {
-        background-position: 200% 50%;
+        transform: translateX(-50%);
     }
 }
 
