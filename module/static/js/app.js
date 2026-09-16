@@ -1738,7 +1738,20 @@ function bgAnimate(now) {  // 官方 animate:仅在色点移动期间重绘,静�
     }
 }
 
-function bgAdvancePosition() {  // 官方 advancePosition:推进到下一个目标位并启动补间;官方在发送消息时调用。
+/* 两次背景推进的最小间隔(毫秒)。
+   任务高频完成时若每次都推进,背景会几乎持续重绘:每帧都要重画全屏遮罩层,
+   并让所有毛玻璃重新采样背景,GPU 长期被打满。
+   限制频率后背景的外观与流动方式完全不变,只是不再被连续触发。
+   想让背景动得更频繁就调小该值(如 2000),想更省就调大(如 10000)。 */
+var BG_MIN_ADVANCE_MS = 5000;
+var bgLastAdvance = 0;
+
+function bgAdvancePosition() {  // 官方 advancePosition:推进到下一个目标位并启动补间。
+    var now = Date.now();
+    if (now - bgLastAdvance < BG_MIN_ADVANCE_MS) {
+        return;  // 距离上次推进太近则跳过,避免背景被连续触发而持续重绘。
+    }
+    bgLastAdvance = now;
     bgTargetPositions = bgGetPositions(bgKeyShift);
     bgKeyShift = (bgKeyShift + 1) % BG_GRADIENT_POINTS.length;
     if (!bgAnimating) {
