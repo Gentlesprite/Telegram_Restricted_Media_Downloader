@@ -226,8 +226,12 @@ function lgInit() {
     // 以及悬停 TRMD 滑出的版本信息、右上角菜单展开的下拉面板、支持作者弹窗卡片。
     // 表头列格(.list-head > span)不在此列:它们位于表头自身的背景之上,
     // 再叠一层会折射出与表头不同的色块,导致字体后面的颜色与表头不一致。
+    /* 不含 .list 与 .group-head:
+       它们面积大(整个列表)或数量多(几十个频道/链接标题),
+       每个都挂一个 SVG 位移滤镜会显著推高 GPU 占用。
+       这两类改由 style.css 的通用 backdrop-filter 提供普通毛玻璃,观感接近但开销低得多。 */
     document.querySelectorAll(
-        '.side-item, .panel, .tab, .list, .group-head, .logo-tip, .name-tip, .menu-dropdown, .modal-card'
+        '.side-item, .panel, .tab, .logo-tip, .name-tip, .menu-dropdown, .modal-card'
     ).forEach(lgBind);
 
     // 统计状态卡(.stat div)由脚本动态生成,通过容器监听追加。
@@ -257,14 +261,6 @@ function lgInit() {
         mo.observe(mask, { attributes: true, attributeFilter: ['hidden'] });
     });
 
-    // 分组标题(.group-head)随数据刷新重建,监听列表变化追加效果。
-    document.querySelectorAll('.list').forEach(function (list) {
-        list.querySelectorAll('.group-head').forEach(lgBind);
-        const mo = new MutationObserver(function () {
-            list.querySelectorAll('.group-head').forEach(lgBind);
-        });
-        mo.observe(list, { childList: true, subtree: true });
-    });
 }
 
 if (document.readyState === 'loading') {

@@ -62,6 +62,8 @@ body {
     opacity: 0;
     transition: opacity .3s;
     pointer-events: none;
+    /* 提升为独立合成层:避免每次重绘都重新光栅化全屏 SVG 遮罩(外观不变)。 */
+    transform: translateZ(0);
     -webkit-mask-image: url('../img/pattern.svg');
     -webkit-mask-position: center;
     -webkit-mask-size: 26.875rem auto;
@@ -613,6 +615,7 @@ body.logged-out .wrap {
    再用上沿发丝高光与下沿暗边表现厚度;描边与阴影都很淡,避免"塑料感"。 */
 .panel,
 .list,
+.group-head,
 .side-item,
 .tab,
 .stat div,

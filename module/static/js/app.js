@@ -559,6 +559,9 @@ function bindStatFilter() {
         var scope = cell.getAttribute('data-scope') || 'download';
         var value = cell.getAttribute('data-filter') || '';
         statFilter[scope] = statFilter[scope] === value ? '' : value;  // 再次点击取消筛选。
+        // 筛选状态属于界面状态、不在快照数据里,必须清空指纹强制重绘,
+        // 否则会因"数据未变化"被跳过,导致点击无反应。
+        lastRenderKey = '';
         refresh();  // 立即按新筛选重绘,无需等待下一次轮询。
     });
 }
@@ -804,6 +807,7 @@ async function submitLogin() {
         }
         // 勾选"30天内免登录"时服务端已下发Cookie;未勾选则把令牌留在本标签页。
         setSessionToken(remember ? '' : (data.token || ''));
+        lastRenderKey = '';  // 清空指纹,确保登录后必定重绘一次(否则数据未变会被跳过)。
         closeLogin();
         if (data.first_login) {
             openSupport();  // 保持原先"首次登录展示支持作者卡片"的行为。
@@ -1078,7 +1082,17 @@ function renderUpload(uploads) {
     return count.active;
 }
 
-function render(data) {
+var lastRenderKey = '';  // 上次渲染的数据指纹,用于跳过无变化的重绘。
+
+function render(data, force) {
+    /* 数据未变化时直接跳过整页重绘。
+       原本每秒都会重建整个列表 DOM,导致所有毛玻璃图层失效并重新采样背景,
+       这是 GPU 占用的主要来源。空闲(无任务变化)时可完全省掉这部分开销。 */
+    var key = JSON.stringify(data);
+    if (!force && key === lastRenderKey) {
+        return;
+    }
+    lastRenderKey = key;
     var downloads = (data.tasks || []).length;
     lastDownloadActive = downloads;
     document.getElementById('badgeDownload').textContent = downloads;
@@ -1621,47 +1635,58 @@ function bgGetPositions(shift) {  // 官方 buildTargetPositions:取 keyPoints[(
     return result;
 }
 
+var bgImageData = null;  // 复用的 ImageData:每帧新建会产生大量 GC 压力。
+
 function bgGetGradientImageData() {  // 官方 drawStaticGradient:按与最近色点的距离差 3 次幂加权混合四色。
-    var id = bgHelperCtx.createImageData(BG_GRADIENT_SIZE, BG_GRADIENT_SIZE);
-    var pixels = id.data;
+    // 优化点:复用 ImageData、取消每像素的数组分配、用乘法替代 Math.pow,视觉结果完全一致。
+    if (!bgImageData) {
+        bgImageData = bgHelperCtx.createImageData(BG_GRADIENT_SIZE, BG_GRADIENT_SIZE);
+    }
+    var pixels = bgImageData.data;
     var offset = 0;
-    for (var y = 0; y < BG_GRADIENT_SIZE; y++) {
-        var yRatio = y / BG_GRADIENT_SIZE;
-        for (var x = 0; x < BG_GRADIENT_SIZE; x++) {
-            var xRatio = x / BG_GRADIENT_SIZE;
-            var distances = [0, 0, 0, 0];
-            var minDistance = Infinity;
-            for (var i = 0; i < 4; i++) {
-                var dx = xRatio - bgCurrentPositions[i][0];
-                var dy = yRatio - bgCurrentPositions[i][1];
-                distances[i] = Math.sqrt(dx * dx + dy * dy);
-                if (distances[i] < minDistance) {
-                    minDistance = distances[i];
-                }
-            }
-            var weights = [0, 0, 0, 0];
-            var total = 0;
-            for (i = 0; i < 4; i++) {
-                weights[i] = Math.pow(1 - (distances[i] - minDistance), BG_GRADIENT_BLEND_POWER);
-                total += weights[i];
-            }
-            total = Math.abs(total);
-            var r = 0;
-            var g = 0;
-            var b = 0;
-            for (i = 0; i < 4; i++) {
-                var weight = weights[i] / total;
-                r += bgColors[i][0] * weight;
-                g += bgColors[i][1] * weight;
-                b += bgColors[i][2] * weight;
-            }
-            pixels[offset++] = r;
-            pixels[offset++] = g;
-            pixels[offset++] = b;
+    var size = BG_GRADIENT_SIZE;
+    // 色点坐标与颜色提到循环外,避免每个像素重复读取数组。
+    var px0 = bgCurrentPositions[0][0], py0 = bgCurrentPositions[0][1];
+    var px1 = bgCurrentPositions[1][0], py1 = bgCurrentPositions[1][1];
+    var px2 = bgCurrentPositions[2][0], py2 = bgCurrentPositions[2][1];
+    var px3 = bgCurrentPositions[3][0], py3 = bgCurrentPositions[3][1];
+    var c0r = bgColors[0][0], c0g = bgColors[0][1], c0b = bgColors[0][2];
+    var c1r = bgColors[1][0], c1g = bgColors[1][1], c1b = bgColors[1][2];
+    var c2r = bgColors[2][0], c2g = bgColors[2][1], c2b = bgColors[2][2];
+    var c3r = bgColors[3][0], c3g = bgColors[3][1], c3b = bgColors[3][2];
+    for (var y = 0; y < size; y++) {
+        var yRatio = y / size;
+        // 行方向的差值在外层算一次,内层复用。
+        var ay = yRatio - py0, by = yRatio - py1, cy = yRatio - py2, dy = yRatio - py3;
+        var ay2 = ay * ay, by2 = by * by, cy2 = cy * cy, dy2 = dy * dy;
+        for (var x = 0; x < size; x++) {
+            var xRatio = x / size;
+            var ax = xRatio - px0, bx = xRatio - px1, cx = xRatio - px2, dx = xRatio - px3;
+            var d0 = Math.sqrt(ax * ax + ay2);
+            var d1 = Math.sqrt(bx * bx + by2);
+            var d2 = Math.sqrt(cx * cx + cy2);
+            var d3 = Math.sqrt(dx * dx + dy2);
+            var min = d0;
+            if (d1 < min) { min = d1; }
+            if (d2 < min) { min = d2; }
+            if (d3 < min) { min = d3; }
+            // 权重 = (1 - (距离 - 最近距离)) 的 BG_GRADIENT_BLEND_POWER(3) 次幂;
+            // 常数 3 用连乘代替 Math.pow,速度快一个量级。
+            var k0 = 1 - (d0 - min), k1 = 1 - (d1 - min);
+            var k2 = 1 - (d2 - min), k3 = 1 - (d3 - min);
+            var w0 = k0 * k0 * k0, w1 = k1 * k1 * k1;
+            var w2 = k2 * k2 * k2, w3 = k3 * k3 * k3;
+            var total = w0 + w1 + w2 + w3;
+            if (total < 0) { total = -total; }
+            if (total === 0) { total = 1; }  // 避免除零(原实现会产出 NaN)。
+            var n0 = w0 / total, n1 = w1 / total, n2 = w2 / total, n3 = w3 / total;
+            pixels[offset++] = c0r * n0 + c1r * n1 + c2r * n2 + c3r * n3;
+            pixels[offset++] = c0g * n0 + c1g * n1 + c2g * n2 + c3g * n3;
+            pixels[offset++] = c0b * n0 + c1b * n1 + c2b * n2 + c3b * n3;
             pixels[offset++] = 255;
         }
     }
-    return id;
+    return bgImageData;
 }
 
 function bgDrawImageData(id) {  // 先写入隐藏画布再拷贝到主画布,与官方两级结构一致。
@@ -1669,8 +1694,17 @@ function bgDrawImageData(id) {  // 先写入隐藏画布再拷贝到主画布,�
     bgCtx.drawImage(bgHelperCanvas, 0, 0, BG_GRADIENT_SIZE, BG_GRADIENT_SIZE);
 }
 
-function bgStepPositions() {  // 官方 stepPositions:色点向目标点做 0.1 线性插值,到位后停止。
+var bgLastFrame = 0;  // 上一帧的时间戳,用于节流与按时间插值。
+var BG_FRAME_INTERVAL = 1000 / 30;  // 限制到 30fps:渐变位移很慢,30fps 足够顺滑且省一半重绘。
+var BG_STEP_PER_MS = BG_GRADIENT_SPEED / (1000 / 60);  // 把"每帧 0.1"换算成每毫秒的插值量。
+
+function bgStepPositions(elapsed) {  // 官方 stepPositions:色点向目标点线性插值,到位后停止。
     var moving = false;
+    // 按经过时间计算插值量,使动画时长与帧率无关(节流后不会变慢)。
+    var step = BG_STEP_PER_MS * elapsed;
+    if (step > 1) {
+        step = 1;
+    }
     for (var i = 0; i < 4; i++) {
         var current = bgCurrentPositions[i];
         var target = bgTargetPositions[i];
@@ -1678,14 +1712,21 @@ function bgStepPositions() {  // 官方 stepPositions:色点向目标点做 0.1 
             || Math.abs(current[1] - target[1]) > BG_GRADIENT_EPSILON) {
             moving = true;
         }
-        current[0] = current[0] * (1 - BG_GRADIENT_SPEED) + target[0] * BG_GRADIENT_SPEED;
-        current[1] = current[1] * (1 - BG_GRADIENT_SPEED) + target[1] * BG_GRADIENT_SPEED;
+        current[0] = current[0] * (1 - step) + target[0] * step;
+        current[1] = current[1] * (1 - step) + target[1] * step;
     }
     return moving;
 }
 
-function bgAnimate() {  // 官方 animate:仅在色点移动期间逐帧重绘,静止后自动停止,开销几乎为零。
-    var moving = bgStepPositions();
+function bgAnimate(now) {  // 官方 animate:仅在色点移动期间重绘,静止后自动停止。
+    var elapsed = bgLastFrame ? now - bgLastFrame : (1000 / 60);
+    if (elapsed < BG_FRAME_INTERVAL) {
+        requestAnimationFrame(bgAnimate);  // 未到间隔则跳过本次绘制,只等下一帧。
+        return;
+    }
+    bgLastFrame = now;
+    // 页面不可见时浏览器本就不触发 rAF,无需额外处理。
+    var moving = bgStepPositions(elapsed);
     bgDrawImageData(bgGetGradientImageData());
     if (moving) {
         requestAnimationFrame(bgAnimate);
@@ -1699,6 +1740,7 @@ function bgAdvancePosition() {  // 官方 advancePosition:推进到下一个目�
     bgKeyShift = (bgKeyShift + 1) % BG_GRADIENT_POINTS.length;
     if (!bgAnimating) {
         bgAnimating = true;
+        bgLastFrame = 0;  // 重新计时,避免用上一段动画的旧时间戳。
         requestAnimationFrame(bgAnimate);
     }
 }
