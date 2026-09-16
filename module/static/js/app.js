@@ -550,7 +550,6 @@ function matchUploadState(file, filter) {
 }
 
 
-
 function bindStatFilter() {
     document.addEventListener('click', function (event) {
         var cell = event.target && event.target.closest ? event.target.closest('[data-filter]') : null;
@@ -1632,6 +1631,7 @@ try {
     lastLinkCollapsed = true;
     lastUploadCollapsed = false;
 }
+
 function initVersion() {
     var tip = document.getElementById('logoVersion');
     var trmd = document.getElementById('tipTrmd');
@@ -1832,9 +1832,15 @@ function bgGetGradientImageData() {  // 官方 drawStaticGradient:按与最近�
             var d2 = Math.sqrt(cx * cx + cy2);
             var d3 = Math.sqrt(dx * dx + dy2);
             var min = d0;
-            if (d1 < min) { min = d1; }
-            if (d2 < min) { min = d2; }
-            if (d3 < min) { min = d3; }
+            if (d1 < min) {
+                min = d1;
+            }
+            if (d2 < min) {
+                min = d2;
+            }
+            if (d3 < min) {
+                min = d3;
+            }
             // 权重 = (1 - (距离 - 最近距离)) 的 BG_GRADIENT_BLEND_POWER(3) 次幂;
             // 常数 3 用连乘代替 Math.pow,速度快一个量级。
             var k0 = 1 - (d0 - min), k1 = 1 - (d1 - min);
@@ -1842,8 +1848,12 @@ function bgGetGradientImageData() {  // 官方 drawStaticGradient:按与最近�
             var w0 = k0 * k0 * k0, w1 = k1 * k1 * k1;
             var w2 = k2 * k2 * k2, w3 = k3 * k3 * k3;
             var total = w0 + w1 + w2 + w3;
-            if (total < 0) { total = -total; }
-            if (total === 0) { total = 1; }  // 避免除零(原实现会产出 NaN)。
+            if (total < 0) {
+                total = -total;
+            }
+            if (total === 0) {
+                total = 1;
+            }  // 避免除零(原实现会产出 NaN)。
             var n0 = w0 / total, n1 = w1 / total, n2 = w2 / total, n3 = w3 / total;
             pixels[offset++] = c0r * n0 + c1r * n1 + c2r * n2 + c3r * n3;
             pixels[offset++] = c0g * n0 + c1g * n1 + c2g * n2 + c3g * n3;

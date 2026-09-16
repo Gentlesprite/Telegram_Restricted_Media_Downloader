@@ -422,6 +422,9 @@ h1 {
 .modal-pay {
     display: block;
     width: 100%;
+    box-sizing: border-box;  /* border 不额外撑宽,二维码保持原始尺寸、不被缩小。 */
+    margin: 14px 0 6px;
+    border: 1px solid var(--border);
 }
 
 .modal-tip {
