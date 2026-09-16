@@ -210,10 +210,13 @@ function lgBind(glass) {
 
 // 初始化:对界面的卡片与面板统一应用效果,使整体风格一致。
 function lgInit() {
-    // 侧栏板块、总进度面板、监听选项卡、列表、分组标题。
+    // 侧栏板块、总进度面板、监听选项卡、列表、分组标题,
+    // 以及悬停 TRMD 滑出的版本信息与右上角菜单展开的下拉面板。
     // 表头列格(.list-head > span)不在此列:它们位于表头自身的背景之上,
     // 再叠一层会折射出与表头不同的色块,导致字体后面的颜色与表头不一致。
-    document.querySelectorAll('.side-item, .panel, .tab, .list, .group-head').forEach(lgBind);
+    document.querySelectorAll(
+        '.side-item, .panel, .tab, .list, .group-head, .logo-tip, .menu-dropdown'
+    ).forEach(lgBind);
 
     // 统计状态卡(.stat div)由脚本动态生成,通过容器监听追加。
     document.querySelectorAll('.stat').forEach(function (container) {
@@ -222,6 +225,15 @@ function lgInit() {
             container.querySelectorAll('.stat div').forEach(lgBind);
         });
         mo.observe(container, { childList: true });
+    });
+
+    // 下拉菜单默认带 hidden(display:none),尺寸为 0;展开时监听属性变化,
+    // 在下一帧按实际尺寸补上液态玻璃,避免展开瞬间是普通背景。
+    document.querySelectorAll('.menu-dropdown').forEach(function (menu) {
+        const mo = new MutationObserver(function () {
+            lgSchedule(menu);
+        });
+        mo.observe(menu, { attributes: true, attributeFilter: ['hidden'] });
     });
 
     // 分组标题(.group-head)随数据刷新重建,监听列表变化追加效果。
