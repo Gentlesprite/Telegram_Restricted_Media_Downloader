@@ -1250,6 +1250,10 @@ var dragState = null;  // 拖拽过程中的临时状态。
 
 function readDefaultCols(list) {
     var text = window.getComputedStyle(list).getPropertyValue('--cols');  // 自定义属性在隐藏元素上也可读取。
+    /* 先去掉首列的 minmax(...):否则会把它里面的最小值(如 minmax(200px, 1fr) 的 200px)
+       也当成固定列宽提取出来,导致列数凭空多一列、网格轨道与表头单元格数不匹配。
+       缩放时反复重算还会让列数不断累加,最终表头错乱。 */
+    text = text.replace(/minmax\([^)]*\)/g, '');
     var matches = text.match(/(\d+(?:\.\d+)?)px/g) || [];
     var widths = [];
     for (var i = 0; i < matches.length; i++) {
@@ -1439,13 +1443,12 @@ function initCols() {
 
 // 跨断点(旋转屏幕、缩放窗口)时重新应用列宽,
 // 让移动端弹性列的保底最小宽度在进入/离开窄屏时正确生效或取消。
-var lastCompact = window.innerWidth <= 760;
+/* 缩放、窗口尺寸变化都会改变 innerWidth(CSS 像素),
+   统一防抖重算列宽,避免高缩放比例下残留旧宽度导致表头错乱。 */
+var resizeTimer = null;
 window.addEventListener('resize', function () {
-    var compact = window.innerWidth <= 760;
-    if (compact !== lastCompact) {
-        lastCompact = compact;
-        initCols();
-    }
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(initCols, 150);
 });
 
 var savedSection = '';
