@@ -739,6 +739,18 @@ body.resizing {
     border-bottom: none;
 }
 
+/* 横向滚动时,行与分组的盒子必须覆盖完整列宽。
+   网格轨道会溢出容器,但盒子本身只有容器宽度,其背景与边框只绘制到容器边缘;
+   滚动才能看到的那一段就没有行底色,导致"初始可见区"与"滚动可见区"配色不一致。
+   min-content 等于各列最小宽度之和,桌面端它小于可用宽度,故无副作用。 */
+.list-head,
+.task-row,
+.group-head,
+.group,
+.group-body {
+    min-width: min-content;
+}
+
 /* 监听页的列:转发为监听频道与转发频道两列,下载只有一列,末列固定为操作按钮。 */
 .listen-two {
     --cols: minmax(0, 1fr) 240px 56px;
