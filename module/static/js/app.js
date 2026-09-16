@@ -1844,17 +1844,8 @@ function bgDrawImageData(id) {  // 先写入隐藏画布再拷贝到主画布,�
     bgCtx.drawImage(bgHelperCanvas, 0, 0, BG_GRADIENT_SIZE, BG_GRADIENT_SIZE);
 }
 
-var bgLastFrame = 0;  // 上一帧的时间戳,用于节流与按时间插值。
-var BG_FRAME_INTERVAL = 1000 / 30;  // 限制到 30fps:渐变位移很慢,30fps 足够顺滑且省一半重绘。
-var BG_STEP_PER_MS = BG_GRADIENT_SPEED / (1000 / 60);  // 把"每帧 0.1"换算成每毫秒的插值量。
-
-function bgStepPositions(elapsed) {  // 官方 stepPositions:色点向目标点线性插值,到位后停止。
+function bgStepPositions() {  // 官方 stepPositions:色点向目标点做 0.1 线性插值,到位后停止。
     var moving = false;
-    // 按经过时间计算插值量,使动画时长与帧率无关(节流后不会变慢)。
-    var step = BG_STEP_PER_MS * elapsed;
-    if (step > 1) {
-        step = 1;
-    }
     for (var i = 0; i < 4; i++) {
         var current = bgCurrentPositions[i];
         var target = bgTargetPositions[i];
@@ -1862,21 +1853,14 @@ function bgStepPositions(elapsed) {  // 官方 stepPositions:色点向目标点�
             || Math.abs(current[1] - target[1]) > BG_GRADIENT_EPSILON) {
             moving = true;
         }
-        current[0] = current[0] * (1 - step) + target[0] * step;
-        current[1] = current[1] * (1 - step) + target[1] * step;
+        current[0] = current[0] * (1 - BG_GRADIENT_SPEED) + target[0] * BG_GRADIENT_SPEED;
+        current[1] = current[1] * (1 - BG_GRADIENT_SPEED) + target[1] * BG_GRADIENT_SPEED;
     }
     return moving;
 }
 
-function bgAnimate(now) {  // 官方 animate:仅在色点移动期间重绘,静止后自动停止。
-    var elapsed = bgLastFrame ? now - bgLastFrame : (1000 / 60);
-    if (elapsed < BG_FRAME_INTERVAL) {
-        requestAnimationFrame(bgAnimate);  // 未到间隔则跳过本次绘制,只等下一帧。
-        return;
-    }
-    bgLastFrame = now;
-    // 页面不可见时浏览器本就不触发 rAF,无需额外处理。
-    var moving = bgStepPositions(elapsed);
+function bgAnimate() {  // 官方 animate:仅在色点移动期间逐帧重绘,静止后自动停止,开销几乎为零。
+    var moving = bgStepPositions();
     bgDrawImageData(bgGetGradientImageData());
     if (moving) {
         requestAnimationFrame(bgAnimate);
@@ -1885,27 +1869,11 @@ function bgAnimate(now) {  // 官方 animate:仅在色点移动期间重绘,静�
     }
 }
 
-/* 两次背景推进的最小间隔(毫秒)。
-   任务高频完成时若每次都推进,背景会几乎持续重绘:每帧都要重画全屏遮罩层,
-   并让所有毛玻璃重新采样背景,GPU 长期被打满。
-   限制频率后背景的外观与流动方式完全不变,只是不再被连续触发。
-   想让背景动得更频繁就调小该值(如 2000),想更省就调大(如 30000)。
-   实测每次推进后色点补间约 1 秒(30fps)即静止,故开销取决于"动画占比":
-   5000 时约 20% 的时间在重绘,15000 时降到约 7%,而观感仍是缓慢流动。 */
-var BG_MIN_ADVANCE_MS = 15000;
-var bgLastAdvance = 0;
-
-function bgAdvancePosition() {  // 官方 advancePosition:推进到下一个目标位并启动补间。
-    var now = Date.now();
-    if (now - bgLastAdvance < BG_MIN_ADVANCE_MS) {
-        return;  // 距离上次推进太近则跳过,避免背景被连续触发而持续重绘。
-    }
-    bgLastAdvance = now;
+function bgAdvancePosition() {  // 官方 advancePosition:推进到下一个目标位并启动补间;官方在发送消息时调用。
     bgTargetPositions = bgGetPositions(bgKeyShift);
     bgKeyShift = (bgKeyShift + 1) % BG_GRADIENT_POINTS.length;
     if (!bgAnimating) {
         bgAnimating = true;
-        bgLastFrame = 0;  // 重新计时,避免用上一段动画的旧时间戳。
         requestAnimationFrame(bgAnimate);
     }
 }
