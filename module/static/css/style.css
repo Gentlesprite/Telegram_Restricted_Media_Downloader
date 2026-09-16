@@ -488,8 +488,25 @@ h1 {
 }
 
 /* 登录卡片:替代浏览器原生的 Basic 认证弹窗,沿用弹窗的玻璃卡片。 */
+/* 登录弹窗层级低于通用弹窗(.modal-mask 为 50),
+   保证登录失败时弹出的提示框能盖在登录卡片之上。 */
+#loginModal {
+    z-index: 40;
+}
+
 .login-card {
     width: min(300px, 100%);  /* 收窄卡片,输入框不必过长。 */
+}
+
+/* 提示弹窗宽度由提示词自身决定:先按文字撑开,达到上限后换行;
+   遮罩本身是 flex 居中,所以卡片自然保持居中。 */
+.modal-card.alert-card {
+    width: fit-content;
+    max-width: min(320px, 90vw);
+}
+
+.alert-card .modal-body {
+    padding: 14px;
 }
 
 /* 账号/密码:标签与输入框同行,标签定宽保证两行对齐。 */
@@ -497,7 +514,7 @@ h1 {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 1px;
 }
 
 .login-label {
@@ -530,7 +547,7 @@ h1 {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin: 2px 0 0;  /* 去掉底部间距,让登录按钮紧贴勾选行。 */
+    margin: -5px 0 0;  /* 去掉底部间距,让登录按钮紧贴勾选行。 */
     color: var(--muted);
     font-size: 12px;
     cursor: pointer;
@@ -542,13 +559,8 @@ h1 {
     cursor: pointer;
 }
 
-.login-error {
-    margin-bottom: 8px;
-    color: var(--danger);
-    font-size: 12px;
-}
-
 .login-submit {
+    margin-top: -5px;
     display: block;
     width: 100%;  /* 铺满卡片宽度:只有"登录"两字时右对齐会留下大片空白。 */
     padding: 9px 16px;

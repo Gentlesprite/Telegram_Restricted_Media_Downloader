@@ -557,6 +557,19 @@ function closeConfirm(result) {
     }
 }
 
+/* 复用确认弹窗展示提示信息:只保留"确定"按钮(替代原生 alert)。 */
+function askAlert(text, title) {
+    var card = document.querySelector('#confirmModal .modal-card');
+    var cancel = document.getElementById('confirmCancel');
+    card.classList.add('alert-card');  // 收窄到与登录卡片一致的比例。
+    cancel.hidden = true;  // 提示框无需取消按钮。
+    return askConfirm(text, title).then(function (result) {
+        card.classList.remove('alert-card');
+        cancel.hidden = false;  // 关闭后恢复,不影响后续确认框。
+        return result;
+    });
+}
+
 function bindConfirm() {
     document.getElementById('confirmOk').onclick = function () {
         closeConfirm(true);
@@ -609,7 +622,6 @@ function openLogin() {
         return;  // 每秒轮询都会触发,已展示时不再重复打开。
     }
     loginShown = true;
-    document.getElementById('loginError').hidden = true;
     document.getElementById('loginPass').value = '';
     document.getElementById('loginModal').hidden = false;
     document.body.classList.add('logged-out');  // 未登录时隐藏页面卡片,只留渐变背景。
@@ -628,9 +640,7 @@ function closeLogin() {
 }
 
 async function submitLogin() {
-    var errorBox = document.getElementById('loginError');
     var remember = document.getElementById('loginRemember').checked;
-    errorBox.hidden = true;
     try {
         var res = await fetch('/api/login', {
             method: 'POST',
@@ -643,8 +653,7 @@ async function submitLogin() {
         });
         var data = await res.json();
         if (!data.status) {
-            errorBox.textContent = '账号或密码不正确。';
-            errorBox.hidden = false;
+            await askAlert('账号或密码不正确，请重新输入。', '登录失败');
             return;
         }
         // 勾选"30天内免登录"时服务端已下发Cookie;未勾选则把令牌留在本标签页。
@@ -655,8 +664,7 @@ async function submitLogin() {
         }
         refresh();
     } catch (e) {
-        errorBox.textContent = '无法连接程序,请稍后重试。';
-        errorBox.hidden = false;
+        await askAlert('无法连接程序,请稍后重试。', '登录失败');
     }
 }
 
