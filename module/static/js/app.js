@@ -1114,6 +1114,11 @@ var LIST_BUILD_MIN_MS = 1500;
 var lastListBuild = 0;      // 上次重建下载列表的时间戳。
 var lastUploadBuild = 0;    // 上次重建上传列表的时间戳。
 
+/* 轮询间隔(毫秒)。默认 1 秒。
+   若设备压力明显,调大到 2000~3000 可直接砍掉一半以上的拉取与渲染开销,
+   代价只是数字更新变慢。 */
+var POLL_INTERVAL_MS = 1000;
+
 /* 上传列表结构指纹:文件路径 + 状态,不含进度/速度等每秒变化的数值。 */
 function uploadStructKey(uploads) {
     var parts = [];
@@ -1948,5 +1953,33 @@ document.getElementById('toggleUpload').onclick = toggleUploadAll;
 initCols();  // 恢复上次的列宽并生成拖拽分隔条。
 initNameTip();  // 悬停文件名时显示完整名称。
 initBackgroundGradient();  // 启动 Telegram 风格的动画渐变背景。
+
+/* 页面不可见(切到后台标签/最小化)时暂停轮询。
+   后台标签不会被合成显示,继续每秒拉取数据、比对指纹、重建 DOM 只是白白吃 CPU;
+   回到前台时立即补一次刷新,观感完全不受影响。 */
+var pollTimer = 0;
+
+function startPolling() {
+    if (!pollTimer) {
+        pollTimer = setInterval(refresh, POLL_INTERVAL_MS);
+    }
+}
+
+function stopPolling() {
+    if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = 0;
+    }
+}
+
+document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+        stopPolling();
+    } else {
+        refresh();  // 回到前台先补一次,避免看到后台期间滞留的旧数据。
+        startPolling();
+    }
+});
+
 refresh();
-setInterval(refresh, 1000);
+startPolling();
