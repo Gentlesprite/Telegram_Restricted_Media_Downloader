@@ -160,7 +160,8 @@ function groupStatCells(stat) {
 
 function taskRow(task) {
     var done = task.percent >= 100;
-    return '<div class="task-row">' +
+    // data-task-id 供"列表结构未变时就地更新进度",避免每秒整表重建。
+    return '<div class="task-row" data-task-id="' + escAttr(task.id) + '">' +
         '<span class="cell-name"><span class="ficon">' + esc(task.type || '📄') + '</span>' +
         '<span class="fname" title="' + escAttr(task.filename) + '">' + esc(task.filename) + '</span></span>' +
         progressCell(task.percent) +
@@ -807,7 +808,10 @@ async function submitLogin() {
         }
         // 勾选"30天内免登录"时服务端已下发Cookie;未勾选则把令牌留在本标签页。
         setSessionToken(remember ? '' : (data.token || ''));
-        lastRenderKey = '';  // 清空指纹,确保登录后必定重绘一次(否则数据未变会被跳过)。
+        // 清空指纹,确保登录后必定重绘一次并重建列表(否则数据未变会被跳过)。
+        lastRenderKey = '';
+        lastStructKey = '';
+        lastUploadStructKey = '';
         closeLogin();
         if (data.first_login) {
             openSupport();  // 保持原先"首次登录展示支持作者卡片"的行为。
@@ -977,7 +981,9 @@ function uploadRow(file) {
         progress = '<span class="cell-progress"><span class="pct' +
             (state === 'pending' ? ' pending' : '') + '">' + text + '</span></span>';
     }
-    return '<div class="task-row member-row">' +
+    // data-upload-id 供"上传列表结构未变时就地更新进度",避免每秒整表重建。
+    return '<div class="task-row member-row" data-upload-id="' +
+        escAttr(file.task_id || file.path || file.file) + '">' +
         '<span class="cell-name"><span class="ficon">' + (UPLOAD_ICON[state] || '⏳') + '</span>' +
         '<span class="fname" title="' + escAttr(file.path || file.file) + '">' + esc(file.path || file.file) + '</span></span>' +
         progress +
@@ -1065,11 +1071,19 @@ function syncUploadHeads() {
 
 function renderUpload(uploads) {
     var count = uploadCount(uploads);
-    document.getElementById('upload').innerHTML = uploadList(uploads);
     document.getElementById('badgeUpload').textContent = count.active;
-    syncToggleUpload();
-    syncUploadHeads();
-    bindGroups();  // 上传列表渲染完成后统一绑定折叠事件。
+    /* 与下载列表同样处理:只有结构变化(文件增减/状态改变)才重建 DOM,
+       否则仅就地更新进度,避免每秒整表重建。 */
+    var uploadKey = uploadStructKey(uploads);
+    if (uploadKey !== lastUploadStructKey) {
+        lastUploadStructKey = uploadKey;
+        document.getElementById('upload').innerHTML = uploadList(uploads);
+        syncToggleUpload();
+        syncUploadHeads();
+        bindGroups();  // 上传列表渲染完成后统一绑定折叠事件。
+    } else {
+        updateUploadRows(uploads);
+    }
     renderOverall(uploadSummary(uploads), count.active, SUMMARY_IDS.upload);
     lastUploadFinished = count.success + count.failure;
     renderStat('uploadStat', [
@@ -1083,6 +1097,106 @@ function renderUpload(uploads) {
 }
 
 var lastRenderKey = '';  // 上次渲染的数据指纹,用于跳过无变化的重绘。
+var lastStructKey = '';  // 列表结构指纹,结构不变则不重建列表 DOM。
+var lastUploadStructKey = '';  // 上传列表结构指纹,同上。
+
+/* 上传列表结构指纹:文件路径 + 状态,不含进度/速度等每秒变化的数值。 */
+function uploadStructKey(uploads) {
+    var parts = [];
+    for (var i = 0; i < (uploads || []).length; i++) {
+        parts.push((uploads[i].path || uploads[i].file || '') + '|' + uploads[i].state);
+    }
+    return parts.join(';');
+}
+
+/* 上传列表结构未变时,只就地更新各行的进度与速度文字,不重建 DOM。 */
+function updateUploadRows(uploads) {
+    var live = {};
+    var i;
+    for (i = 0; i < (uploads || []).length; i++) {
+        live[String(uploads[i].task_id || uploads[i].path || uploads[i].file)] = uploads[i];
+    }
+    var rows = document.querySelectorAll('#upload [data-upload-id]');
+    for (i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        var file = live[row.getAttribute('data-upload-id')];
+        if (!file) {
+            continue;
+        }
+        var percent = uploadDone(file) ? 100 : (Number(file.percent) || 0);
+        var fill = row.querySelector('.fill');
+        if (fill) {
+            fill.style.transform = 'scaleX(' + (percent / 100) + ')';
+        }
+        var pct = row.querySelector('.pct');
+        if (pct && fill) {
+            pct.textContent = percent + '%';
+        }
+        var speed = row.querySelector('.cell-speed');
+        if (speed) {
+            speed.textContent = dash(file.speed);
+        }
+        var remain = row.querySelector('.cell-remain');
+        if (remain) {
+            remain.textContent = dash(file.remaining);
+        }
+    }
+}
+
+/* 列表结构指纹:频道、链接、成员名称与状态。
+   刻意不包含进度/速度等每秒变化的数值,否则每次轮询都会触发重建。 */
+function structKeyOf(data) {
+    var parts = [];
+    var links = data.links || [];
+    for (var i = 0; i < links.length; i++) {
+        var members = links[i].queue || [];
+        var sig = [];
+        for (var j = 0; j < members.length; j++) {
+            sig.push(members[j].name + '|' + members[j].state);
+        }
+        parts.push(links[i].link + '#' + sig.join(','));
+    }
+    return parts.join(';');
+}
+
+/* 结构未变化时,只就地更新"正在下载"的行:
+   改 transform 与文字,不触发任何 DOM 重建与整表重排。 */
+function updateTaskRows(data) {
+    var tasks = data.tasks || [];
+    var live = {};
+    var i;
+    for (i = 0; i < tasks.length; i++) {
+        live[String(tasks[i].id)] = tasks[i];
+    }
+    var rows = document.querySelectorAll('#download [data-task-id]');
+    for (i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        var task = live[row.getAttribute('data-task-id')];
+        if (!task) {
+            continue;  // 该任务已结束,等结构变化时整行替换。
+        }
+        var fill = row.querySelector('.fill');
+        if (fill) {
+            fill.style.transform = 'scaleX(' + (Number(task.percent) / 100) + ')';
+        }
+        var pct = row.querySelector('.pct');
+        if (pct) {
+            pct.textContent = task.percent + '%';
+        }
+        var size = row.querySelector('.cell-size');
+        if (size) {
+            size.textContent = dash(task.info);
+        }
+        var speed = row.querySelector('.cell-speed');
+        if (speed) {
+            speed.textContent = dash(task.speed);
+        }
+        var remain = row.querySelector('.cell-remain');
+        if (remain) {
+            remain.textContent = dash(task.remaining);
+        }
+    }
+}
 
 function render(data, force) {
     /* 数据未变化时直接跳过整页重绘。
@@ -1108,7 +1222,15 @@ function render(data, force) {
     lastListenCount = renderListeners(data.listeners);
     renderOuterLinks(data.outer_links);
     renderStatus();
-    renderList(data);
+    // 只有列表结构变化(成员增减/状态改变)才重建 DOM;
+    // 否则仅就地更新正在下载的行,避免每秒整表重建带来的重排与重绘。
+    var structKey = structKeyOf(data);
+    if (structKey !== lastStructKey) {
+        lastStructKey = structKey;
+        renderList(data);
+    } else {
+        updateTaskRows(data);
+    }
     syncBackgroundProgress(data.count.success + data.count.failure + data.count.skip + lastUploadFinished);
 }
 
