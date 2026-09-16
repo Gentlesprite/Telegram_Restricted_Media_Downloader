@@ -790,6 +790,7 @@ async function refresh() {
     try {
         var res = await fetch('/api/progress', {cache: 'no-store'});
         render(await res.json());
+        refreshNameTip();  // 列表重绘后按当前鼠标位置重新定位提示。
         document.getElementById('offline').style.display = 'none';
     } catch (e) {
         document.getElementById('offline').style.display = 'block';
@@ -1130,11 +1131,12 @@ function initVersion() {
     }
 }
 
-/* 文件名悬停提示:显示被折行省略的完整名称。
-   只绑定 .fname / .gname(叶子级文件名)——频道名、链接名所在的行点击会折叠展开,
-   不适合挂悬停提示;文件名是最后一级,不会与折叠操作冲突。 */
+/* 统一接管原生 title 提示:任何带 title 的元素都改用自定义玻璃提示,
+   避免浏览器默认提示与自定义风格混杂(未截断的名称原本会冒出原生提示)。 */
 var nameTipEl = null;
 var nameTipFor = null;
+var tipMouseX = 0;
+var tipMouseY = 0;
 
 function nameTipNode() {
     if (!nameTipEl) {
@@ -1143,18 +1145,25 @@ function nameTipNode() {
     return nameTipEl;
 }
 
-// 内容确实被折行/裁切时才需要提示;完整显示的名称不必弹窗。
-function nameTipNeeded(el) {
-    return el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1;
+// 取最近的、带提示文案的元素(data-tip 或 title)。
+function nameTipTarget(node) {
+    if (!node || !node.closest) {
+        return null;
+    }
+    return node.closest('[data-tip], [title]');
 }
 
-function showNameTip(el) {
-    // 原生 title 会与自定义提示同时弹出,首次悬停时迁移到 data-tip 后移除。
+// 原生 title 会与自定义提示同时弹出,首次遇到时迁移为 data-tip 并移除 title。
+function takeTipText(el) {
     if (el.hasAttribute('title')) {
         el.setAttribute('data-tip', el.getAttribute('title'));
         el.removeAttribute('title');
     }
-    var text = el.getAttribute('data-tip') || '';
+    return el.getAttribute('data-tip') || '';
+}
+
+function showNameTip(el) {
+    var text = takeTipText(el);
     var tip = nameTipNode();
     if (!text || !tip) {
         return;
@@ -1184,28 +1193,47 @@ function hideNameTip() {
     nameTipFor = null;
 }
 
+// 列表每秒重绘会销毁悬停元素,重绘后按当前鼠标位置重新定位提示。
+function refreshNameTip() {
+    if (!nameTipFor || nameTipFor.isConnected) {
+        return;
+    }
+    var el = nameTipTarget(document.elementFromPoint(tipMouseX, tipMouseY));
+    if (el) {
+        showNameTip(el);
+    } else {
+        hideNameTip();
+    }
+}
+
 function initNameTip() {
+    document.addEventListener('mousemove', function (event) {
+        tipMouseX = event.clientX;
+        tipMouseY = event.clientY;
+    });
     document.addEventListener('mouseover', function (event) {
-        // 列表每秒重绘,悬停元素可能已被移除,先清理失效提示。
+        if (document.body.classList.contains('resizing')) {
+            return;  // 拖拽列宽时不弹提示,避免干扰。
+        }
         if (nameTipFor && !nameTipFor.isConnected) {
             hideNameTip();
         }
-        var el = event.target && event.target.closest ? event.target.closest('.fname, .gname') : null;
-        if (!el || nameTipFor === el || !nameTipNeeded(el)) {
+        var el = nameTipTarget(event.target);
+        if (!el || nameTipFor === el) {
             return;
         }
         showNameTip(el);
     });
     document.addEventListener('mouseout', function (event) {
-        var el = event.target && event.target.closest ? event.target.closest('.fname, .gname') : null;
-        if (el && nameTipFor === el) {
-            hideNameTip();
+        var el = nameTipTarget(event.target);
+        var to = nameTipTarget(event.relatedTarget);
+        if (el && nameTipFor === el && to !== el) {
+            hideNameTip();  // 仍在同一元素内移动时不隐藏,避免闪烁。
         }
     });
     window.addEventListener('scroll', hideNameTip, true);  // 滚动后位置失效,直接隐藏。
     document.addEventListener('pointerdown', function (event) {
-        var el = event.target && event.target.closest ? event.target.closest('.fname, .gname') : null;
-        if (!el) {
+        if (nameTipTarget(event.target) !== nameTipFor) {
             hideNameTip();  // 点击提示以外的区域时关闭。
         }
     });
