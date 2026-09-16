@@ -25,8 +25,8 @@ var UPLOAD_LAST_KEY = 'trmd_upload_last';  // 上传页频道层最后一次手�
 var LISTEN_TABS = ['forward', 'download'];  // 监听页的选项卡:转发、下载。
 
 var STATE_TEXT = {
-    pending: '排队中',
-    waiting: '等待中',
+    pending: '队列中',  // 尚未开始处理,还排在队列里(对应后端 QueueStatus.PENDING)。
+    waiting: '等待中',  // 已开始处理,等待下载槽位(对应后端 QueueStatus.WAITING)。
     downloading: '下载中',
     success: '已完成',
     skip: '已跳过',
@@ -175,7 +175,7 @@ function taskRow(task) {
 
 function memberRow(item) {
     var state = item.state || 'pending';
-    var text = STATE_TEXT[state] || '排队中';
+    var text = STATE_TEXT[state] || '队列中';
     var cls = STATE_CLASS[state] || 'status-pending';
     var pending = state === 'pending' || state === 'waiting';
     var progress;
@@ -1243,8 +1243,8 @@ function render(data, force) {
         statCell('成功', data.count.success, 'ok', 'success', 'download'),
         statCell('失败', data.count.failure, 'bad', 'failure', 'download'),
         statCell('跳过', data.count.skip, 'skip', 'skip', 'download'),
-        statCell('进行中', downloads, '', 'active', 'download'),
-        statCell('队列中', countQueueMembers(data.links), 'queue', 'queue', 'download')
+        statCell('下载中', downloads, '', 'active', 'download'),
+        statCell('队列', countQueueMembers(data.links), 'queue', 'queue', 'download')
     ]);
     lastUploadActive = renderUpload(data.uploads || []);
     lastListenCount = renderListeners(data.listeners);
