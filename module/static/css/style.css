@@ -361,12 +361,18 @@ h1 {
 
 .menu-item {
     display: block;
+    width: 100%;
     padding: 8px 10px;
+    border: none;  /* 清除 <button> 的默认边框(菜单里也用 button 元素)。 */
     border-radius: 8px;
+    background: transparent;  /* 清除 <button> 的默认底色,否则在深色菜单里出现反色。 */
     color: var(--text);
+    font-family: inherit;  /* button 不继承字体,需显式继承。 */
     font-size: 13px;
+    text-align: left;  /* button 默认居中,与链接保持一致。 */
     text-decoration: none;
     white-space: nowrap;
+    cursor: pointer;
 }
 
 .menu-item:hover {

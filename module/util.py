@@ -480,6 +480,17 @@ def gen_random_token(length: int = 32) -> str:
     return ''.join(random.choices(chars, k=length))
 
 
+def reset_web_session() -> str:
+    """重新生成并持久化网页面板的记名令牌,使此前下发的Cookie全部失效。"""
+    token: str = gen_random_token()
+    try:
+        with open(file=TRMD_WEB_SESSION, mode='w', encoding='UTF-8') as f:
+            f.write(token)
+    except OSError as e:
+        log.warning(f'重置网页面板的记名令牌失败,原因:"{e}"。')
+    return token
+
+
 def get_web_session() -> str:
     """读取网页面板的记名令牌,不存在时生成并持久化,以便浏览器在软件重启后依然免密。"""
     try:

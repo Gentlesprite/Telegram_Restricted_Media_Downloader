@@ -41,6 +41,7 @@ from module.task import (
 from module.util import (
     is_frozen,
     get_web_session,
+    reset_web_session,
     get_message_dtype,
     get_work_directory,
     gen_random_credential
@@ -58,10 +59,12 @@ class WebHandler(BaseHTTPRequestHandler):
     """处理网页面板的请求。"""
     server_version: str = 'TRMDWeb'
     remember_session: bool = False  # 本次响应是否需要下发记名Cookie。
+    expire_session: bool = False  # 本次响应是否需要清除记名Cookie(退出登录)。
     first_login: bool = False  # 本次请求是否属于未携带有效Cookie的首次登录。
-    FIRST_LOGIN_BODY: bytes = b'<body data-first-login="1">'  # 首次登录时写入首页的标记,供页面自动展示卡片。
+    # data-auth 表示已启用密码认证,前端据此显示"退出登录"入口。
+    FIRST_LOGIN_BODY: bytes = b'<body data-auth="1" data-first-login="1">'  # 首次登录时写入首页的标记,供页面自动展示卡片。
     # 已设置账号密码时注入:首屏先隐藏页面内容,避免F5刷新时闪现一瞬间的已登录界面。
-    LOGIN_BODY: bytes = b'<body class="logged-out">'
+    LOGIN_BODY: bytes = b'<body data-auth="1" class="logged-out">'
     VERSION_PLACEHOLDER: bytes = b'__VERSION__'  # 首页模板中的TRMD版本占位符,返回页面时替换为实际版本号。
     # 首页模板中的Pyrogram版本占位符,返回页面时替换为实际版本号。
     PYROGRAM_PLACEHOLDER: bytes = b'__PYROGRAM_VERSION__'
@@ -81,6 +84,9 @@ class WebHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         if self.path.startswith('/api/login'):
             self.__response_login()  # 登录接口本身不能被认证拦截。
+            return
+        if self.path.startswith('/api/logout'):
+            self.__response_logout()  # 退出登录同样不能被认证拦截。
             return
         if self.__check_auth() is False:
             return
@@ -169,15 +175,33 @@ class WebHandler(BaseHTTPRequestHandler):
         )
 
     def __response_session_cookie(self) -> None:
-        """下发记名Cookie:仅在登录时勾选了"30天内免登录"时调用(由 remember_session 控制)。"""
+        """下发或清除记名Cookie。
+        登录勾选"30天内免登录"时下发长期Cookie;退出登录时下发一个立即过期的Cookie以清除它。"""
         web: Union[Web, None] = getattr(self.server, 'web', None)
-        if web is None or not self.remember_session:
+        if web is None:
             return
-        cookie: str = (
-            f'{WebMeta.COOKIE_NAME}={web.token}; '
-            f'Max-Age={Web.REMEMBER_COOKIE_MAX_AGE}; Path=/; HttpOnly; SameSite=Lax'
-        )
+        if self.remember_session:
+            cookie: str = (
+                f'{WebMeta.COOKIE_NAME}={web.token}; '
+                f'Max-Age={Web.REMEMBER_COOKIE_MAX_AGE}; Path=/; HttpOnly; SameSite=Lax'
+            )
+        elif self.expire_session:
+            # Max-Age=0 让浏览器立即丢弃该Cookie(HttpOnly 无法由前端 JS 删除)。
+            cookie = f'{WebMeta.COOKIE_NAME}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax'
+        else:
+            return
         self.send_header('Set-Cookie', cookie)
+
+    def __response_logout(self) -> None:
+        """退出登录:轮换记名令牌使所有已下发的Cookie失效,并清除本浏览器的Cookie。"""
+        web: Union[Web, None] = getattr(self.server, 'web', None)
+        if web is not None:
+            web.logout()
+        self.expire_session = True
+        self.__response_body(
+            body=json.dumps({'status': True}, ensure_ascii=False).encode('UTF-8'),
+            content_type='application/json; charset=utf-8'
+        )
 
     def __response_body(self, body: bytes, content_type: str, status: int = 200) -> None:
         """返回指定内容的响应,status 用于登录失败时返回401。"""
@@ -388,6 +412,10 @@ class Web:
     def check_session(self, token: str) -> bool:
         """校验浏览器提交的记名令牌是否有效,用于免密登录。"""
         return bool(token) and token == self.token
+
+    def logout(self) -> None:
+        """退出登录:重新生成记名令牌并持久化,使所有已下发的Cookie失效。"""
+        self.token = reset_web_session()
 
     @staticmethod
     def get_outer_links() -> dict:

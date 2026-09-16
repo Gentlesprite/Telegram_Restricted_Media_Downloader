@@ -630,6 +630,36 @@ function authHeaders() {
     return token ? {Authorization: 'Bearer ' + token} : {};
 }
 
+/* 退出登录:通知服务端轮换令牌并清除Cookie,然后回到登录卡片。 */
+async function logout() {
+    try {
+        await fetch('/api/logout', {
+            method: 'POST',
+            headers: Object.assign({'Content-Type': 'application/json'}, authHeaders())
+        });
+    } catch (e) {
+        // 请求失败也要在本地清理,避免界面停留在已登录状态。
+    }
+    setSessionToken('');  // 清掉未勾选免登录时的临时令牌。
+    var dropdown = document.getElementById('menuDropdown');
+    if (dropdown) {
+        dropdown.hidden = true;  // 收起菜单。
+    }
+    openLogin();  // 重新弹出登录卡片并隐藏页面内容。
+}
+
+function initLogout() {
+    if (document.body.getAttribute('data-auth') !== '1') {
+        return;  // 未设置密码时无需退出登录入口。
+    }
+    var btn = document.getElementById('btnLogout');
+    if (!btn) {
+        return;
+    }
+    btn.hidden = false;
+    btn.onclick = logout;
+}
+
 var loginShown = false;
 
 function openLogin() {
@@ -1591,6 +1621,7 @@ bindListenTabs();
 bindListenRemove();
 bindConfirm();
 bindLogin();
+initLogout();
 bindSupport();
 bindMenu();
 initVersion();
