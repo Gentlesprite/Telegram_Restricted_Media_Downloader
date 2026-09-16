@@ -644,6 +644,15 @@ function bindLogin() {
             submitLogin();
         }
     };
+    // 每输入一个字符就推进一格渐变,复用官方"发送消息时推进"的同一套逻辑。
+    var advance = function () {
+        if (!bgCtx) {
+            return;  // 渐变背景未初始化成功时跳过。
+        }
+        bgAdvancePosition();
+    };
+    user.addEventListener('input', advance);
+    pass.addEventListener('input', advance);
 }
 
 var removingListener = {};  // 正在等待确认或移除中的监听,避免重复点击被处理多次。
