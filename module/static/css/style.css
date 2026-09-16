@@ -349,9 +349,10 @@ h1 {
     align-items: center;
     justify-content: center;
     padding: 20px;
-    background: rgba(5, 7, 11, .74);
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
+    /* 不要用 backdrop-filter:带它的元素会成为 backdrop root,
+       导致内部 .modal-card 的液态玻璃只能采样到这层纯平底色,折射完全看不出来。
+       改为只用半透明底色压暗,且浓度不宜过高,否则背景细节被压没、卡片折射无从体现。 */
+    background: rgba(5, 7, 11, .45);
 }
 
 .modal-card {
@@ -360,7 +361,7 @@ h1 {
     overflow: auto;
     border: 1px solid var(--border);
     border-radius: 14px;
-    background: var(--panel);
+    background: rgba(26, 26, 30, .42);  /* 比 --panel(.6)更透,让折射出的背景细节透出来。 */
     box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
 }
 

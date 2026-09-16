@@ -208,14 +208,26 @@ function lgBind(glass) {
     ro.observe(glass);
 }
 
+// 兜底补画:弹窗这类元素在打开前尺寸为 0、无法生成滤镜,
+// 打开后若因时序问题漏画,这里在用户交互后统一补一次(只处理尚未成功绘制的元素)。
+function lgCatchUp() {
+    document.querySelectorAll('[data-lg-bound]').forEach(function (el) {
+        if (!el.dataset.lgSize) {
+            lgSchedule(el);
+        }
+    });
+}
+
 // 初始化:对界面的卡片与面板统一应用效果,使整体风格一致。
 function lgInit() {
+    // 冒泡阶段监听:此时按钮的 onclick 已执行(弹窗已打开),补画能取到真实尺寸。
+    document.addEventListener('click', lgCatchUp);
     // 侧栏板块、总进度面板、监听选项卡、列表、分组标题,
-    // 以及悬停 TRMD 滑出的版本信息与右上角菜单展开的下拉面板。
+    // 以及悬停 TRMD 滑出的版本信息、右上角菜单展开的下拉面板、支持作者弹窗卡片。
     // 表头列格(.list-head > span)不在此列:它们位于表头自身的背景之上,
     // 再叠一层会折射出与表头不同的色块,导致字体后面的颜色与表头不一致。
     document.querySelectorAll(
-        '.side-item, .panel, .tab, .list, .group-head, .logo-tip, .menu-dropdown'
+        '.side-item, .panel, .tab, .list, .group-head, .logo-tip, .menu-dropdown, .modal-card'
     ).forEach(lgBind);
 
     // 统计状态卡(.stat div)由脚本动态生成,通过容器监听追加。
@@ -227,13 +239,22 @@ function lgInit() {
         mo.observe(container, { childList: true });
     });
 
-    // 下拉菜单默认带 hidden(display:none),尺寸为 0;展开时监听属性变化,
-    // 在下一帧按实际尺寸补上液态玻璃,避免展开瞬间是普通背景。
+    // 下拉菜单与支持作者弹窗默认都带 hidden(display:none),尺寸为 0;
+    // 展开时监听属性变化,在下一帧按实际尺寸补上液态玻璃,避免展开瞬间是普通背景。
     document.querySelectorAll('.menu-dropdown').forEach(function (menu) {
         const mo = new MutationObserver(function () {
             lgSchedule(menu);
         });
         mo.observe(menu, { attributes: true, attributeFilter: ['hidden'] });
+    });
+
+    document.querySelectorAll('.modal-mask').forEach(function (mask) {
+        const mo = new MutationObserver(function () {
+            mask.querySelectorAll('.modal-card').forEach(function (card) {
+                lgSchedule(card);
+            });
+        });
+        mo.observe(mask, { attributes: true, attributeFilter: ['hidden'] });
     });
 
     // 分组标题(.group-head)随数据刷新重建,监听列表变化追加效果。
