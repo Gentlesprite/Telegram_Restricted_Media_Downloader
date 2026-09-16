@@ -210,10 +210,10 @@ function lgBind(glass) {
 
 // 初始化:对界面的卡片与面板统一应用效果,使整体风格一致。
 function lgInit() {
-    // 侧栏板块、总进度面板、监听选项卡、列表、分组标题、表头列格。
-    document.querySelectorAll(
-        '.side-item, .panel, .tab, .list, .group-head, .list-head > span:not(.grip)'
-    ).forEach(lgBind);
+    // 侧栏板块、总进度面板、监听选项卡、列表、分组标题。
+    // 表头列格(.list-head > span)不在此列:它们位于表头自身的背景之上,
+    // 再叠一层会折射出与表头不同的色块,导致字体后面的颜色与表头不一致。
+    document.querySelectorAll('.side-item, .panel, .tab, .list, .group-head').forEach(lgBind);
 
     // 统计状态卡(.stat div)由脚本动态生成,通过容器监听追加。
     document.querySelectorAll('.stat').forEach(function (container) {
