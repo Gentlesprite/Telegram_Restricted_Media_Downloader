@@ -563,8 +563,8 @@ function bindStatFilter() {
         // 筛选状态属于界面状态、不在快照数据里,必须清空指纹强制重绘,
         // 否则会因"数据未变化"被跳过,导致点击无反应。
         lastRenderKey = '';
-        lastStructKey = '';
-        lastUploadStructKey = '';
+        lastStructKey = null;
+        lastUploadStructKey = null;
         // 列表重建有最小间隔节流(LIST_BUILD_MIN_MS),而结构指纹只反映数据、不含筛选状态。
         // 因此仅清空指纹还不够:若本次点击落在节流期内,仍会走"就地更新进度"分支而不重建 DOM,
         // 结果是筛选不生效、行与进度条错位。筛选是用户主动操作,必须立即生效,故一并清零时间戳。
@@ -606,7 +606,11 @@ function renderList(data) {
     for (i = 0; i < groups.length; i++) {
         html += channelBlock(groups[i], live);
     }
-    document.getElementById('download').innerHTML = html ? html : '<div class="empty">暂无下载任务。</div>';
+    /* 原 html ? html : empty 只在没有链接时才显示空态;
+       但只要添加过链接, data.links 永远非空, html 永远非空, empty 永远不触发。
+       加上"没有活跃任务"条件,与监听板块(条目为空即显示 empty)的行为一致。 */
+    var hasActive = (data.tasks || []).length > 0;
+    document.getElementById('download').innerHTML = (hasActive && html) ? html : '<div class="empty">暂无下载任务。</div>';
     syncToggleAll();
     bindGroups();  // 页面渲染完成后统一绑定折叠事件。
     syncHeadLabel();
@@ -817,8 +821,8 @@ async function submitLogin() {
         setSessionToken(remember ? '' : (data.token || ''));
         // 清空指纹,确保登录后必定重绘一次并重建列表(否则数据未变会被跳过)。
         lastRenderKey = '';
-        lastStructKey = '';
-        lastUploadStructKey = '';
+        lastStructKey = null;
+        lastUploadStructKey = null;
         closeLogin();
         if (data.first_login) {
             openSupport();  // 保持原先"首次登录展示支持作者卡片"的行为。
@@ -1087,7 +1091,9 @@ function renderUpload(uploads) {
         lastUploadStructKey = uploadKey;
         if (now - lastUploadBuild >= LIST_BUILD_MIN_MS) {
             lastUploadBuild = now;
-            document.getElementById('upload').innerHTML = uploadList(uploads);
+            /* 与下载列表同理:只要有上传文件(含已完成的),uploadList 就返回非空内容,
+               empty 永远不触发。加上 count.active 判断,让空态提示与监听板块一致。 */
+            document.getElementById('upload').innerHTML = count.active > 0 ? uploadList(uploads) : '<div class="empty">暂无上传任务。</div>';
             syncToggleUpload();
             syncUploadHeads();
             bindGroups();  // 上传列表渲染完成后统一绑定折叠事件。
@@ -1110,8 +1116,8 @@ function renderUpload(uploads) {
 }
 
 var lastRenderKey = '';  // 上次渲染的数据指纹,用于跳过无变化的重绘。
-var lastStructKey = '';  // 列表结构指纹,结构不变则不重建列表 DOM。
-var lastUploadStructKey = '';  // 上传列表结构指纹,同上。
+var lastStructKey = null;  // 列表结构指纹,结构不变则不重建列表 DOM。(初始为 null 而非 '',否则空链接时 structKeyOf 返回 '' 会被误判为"未变化",导致首次渲染跳过 renderList、列表区只剩表头)
+var lastUploadStructKey = null;  // 上传列表结构指纹,同上。
 
 /* 列表全量重建的最小间隔(毫秒)。
    任务密集完成时,结构几乎每次轮询都变,若每次都重建整棵列表,
