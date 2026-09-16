@@ -226,12 +226,15 @@ function lgInit() {
     // 以及悬停 TRMD 滑出的版本信息、右上角菜单展开的下拉面板、支持作者弹窗卡片。
     // 表头列格(.list-head > span)不在此列:它们位于表头自身的背景之上,
     // 再叠一层会折射出与表头不同的色块,导致字体后面的颜色与表头不一致。
-    /* 不含 .list 与 .group-head:
-       它们面积大(整个列表)或数量多(几十个频道/链接标题),
-       每个都挂一个 SVG 位移滤镜会显著推高 GPU 占用。
-       这两类改由 style.css 的通用 backdrop-filter 提供普通毛玻璃,观感接近但开销低得多。 */
+    /* 不含 .panel / .list / .group-head:
+       .list 面积大(整个列表)、.group-head 数量多(几十个频道/链接标题)、
+       .panel 是总进度面板(面积大且内容每秒变化)。
+       给它们挂 SVG 位移滤镜会让这些大图层反复重新采样背景并逐帧跑位移,
+       是 GPU 占用的主要来源;且这与 style.css 的约定冲突——
+       style.css 明确这三类不采样背景,改用半透明磨砂模拟质感。
+       这三类因此不在此处绑定,由 style.css 的通用样式提供观感接近但开销低得多的效果。 */
     document.querySelectorAll(
-        '.side-item, .panel, .tab, .logo-tip, .name-tip, .menu-dropdown, .modal-card'
+        '.side-item, .tab, .logo-tip, .name-tip, .menu-dropdown, .modal-card'
     ).forEach(lgBind);
 
     // 统计状态卡(.stat div)由脚本动态生成,通过容器监听追加。
