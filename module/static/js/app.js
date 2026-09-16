@@ -941,7 +941,9 @@ function measureColMins(list) {
         if (text && text.textContent) {
             need += measureTextWidth(text.textContent, cs);
         }
-        mins.push(Math.max(COLS_MIN, Math.ceil(need)));
+        // 单元格可通过 --col-min 声明额外下限(如进度列需保证百分比可见)。
+        var colMin = parseFloat(cs.getPropertyValue('--col-min')) || 0;
+        mins.push(Math.max(COLS_MIN, Math.ceil(need), colMin));
     }
     return mins;
 }
