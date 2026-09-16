@@ -105,7 +105,8 @@ function dash(text) {
 }
 
 function progressCell(percent) {
-    return '<span class="cell-progress">' +
+    // --p 供手机端把横向条换成圆环时使用;桌面端不读取,无副作用。
+    return '<span class="cell-progress" style="--p:' + percent + '">' +
         '<span class="track"><span class="fill" style="width:' + percent + '%"></span></span>' +
         '<span class="pct">' + percent + '%</span></span>';
 }

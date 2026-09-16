@@ -1088,3 +1088,29 @@ tbody tr:hover {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+/* 手机端:横向进度条在窄屏会显得过长,改用圆环(环形)展示进度。
+   圆环由 conic-gradient 按 --p 着色,再用径向遮罩掏空中心,背景透出即自然成环。 */
+@media (max-width: 760px) {
+    .cell-progress {
+        justify-content: flex-end;
+        gap: 6px;
+    }
+
+    .cell-progress .track {
+        flex: none;
+        width: 14px;          /* 继续缩小直径。 */
+        height: 14px;
+        min-width: 0;
+        border-radius: 50%;
+        overflow: visible;  /* 遮罩作用于自身,不再裁切横向填充。 */
+        background: conic-gradient(var(--accent) calc(var(--p) * 1%), rgba(255, 255, 255, .1) 0);
+        /* 掏空比例下移使环带更粗;过渡带收窄到 6%,避免过宽导致发糊。 */
+        -webkit-mask: radial-gradient(transparent 36%, #000 42%);
+        mask: radial-gradient(transparent 36%, #000 42%);
+    }
+
+    .cell-progress .track .fill {
+        display: none;  /* 环形已用 conic 表达,隐藏原横向填充块。 */
+    }
+}
