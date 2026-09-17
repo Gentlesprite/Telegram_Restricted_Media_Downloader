@@ -2616,6 +2616,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     sleep_threshold=SLEEP_THRESHOLD
                 )
             )
+            self.web.start()  # 配置机器人时,在打印"机器人启动成功"之前先启动网页面板(打印访问信息表格)。
             console.log(result, style='#B1DB74' if self.is_bot_running else '#FF4689')
             if self.is_bot_running:
                 self.uploader = TelegramUploader(download_object=self)
@@ -2634,9 +2635,9 @@ class TelegramRestrictedMediaDownloader(Bot):
         # 将初始任务添加到队列中。
         [await self.loop.create_task(self.create_download_task(message_ids=link, retry=None)) for link in
          sorted(links)] if links else None
-        # 网页面板在"有无有效链接/机器人"检测通过之后再启动:
+        # 未配置机器人时,网页面板在"有无有效链接"检测通过之后再启动,已配置机器人的情况已在上方"机器人启动成功"输出前启动了web。
         # 无机器人且无任何有效链接时__process_links会直接退出,此时不应白启动web。
-        self.web.start()
+        self.web.start() if not self.app.bot_token else None
         # 处理队列中的任务与机器人事件。
         while (
                 not self.queue.empty()
