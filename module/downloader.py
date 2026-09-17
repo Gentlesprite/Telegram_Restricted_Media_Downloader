@@ -2634,6 +2634,9 @@ class TelegramRestrictedMediaDownloader(Bot):
         # 将初始任务添加到队列中。
         [await self.loop.create_task(self.create_download_task(message_ids=link, retry=None)) for link in
          sorted(links)] if links else None
+        # 网页面板在"有无有效链接/机器人"检测通过之后再启动:
+        # 无机器人且无任何有效链接时__process_links会直接退出,此时不应白启动web。
+        self.web.start()
         # 处理队列中的任务与机器人事件。
         while (
                 not self.queue.empty()
@@ -2669,7 +2672,6 @@ class TelegramRestrictedMediaDownloader(Bot):
             MetaData.print_meta()
             self.app.print_env_table(self.app)
             self.app.print_config_table(self.app)
-            self.web.start()
             self.loop.run_until_complete(self.__download_media_from_links())
         except KeyError as e:
             record_error: bool = True
