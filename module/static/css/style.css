@@ -97,6 +97,11 @@ body {
     align-items: start;
 }
 
+/* 未配置机器人时隐藏侧边栏,布局退化为单栏,主内容占满整行。 */
+.layout-single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 /* 左侧边栏 */
 .sidebar {
     display: flex;

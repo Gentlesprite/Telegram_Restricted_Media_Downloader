@@ -61,12 +61,13 @@ class WebHandler(BaseHTTPRequestHandler):
     expire_session: bool = False  # 本次响应是否需要清除记名Cookie(退出登录)。
     first_login: bool = False  # 本次请求是否属于未携带有效Cookie的首次登录。
     # data-auth 表示已启用密码认证,前端据此显示"退出登录"入口。
-    FIRST_LOGIN_BODY: bytes = b'<body data-auth="1" data-first-login="1">'  # 首次登录时写入首页的标记,供页面自动展示卡片。
+    FIRST_LOGIN_BODY: bytes = b'<body data-auth="1" data-first-login="1" data-bot="__HAS_BOT__">'  # 首次登录时写入首页的标记,供页面自动展示卡片。
     # 已设置账号密码时注入:首屏先隐藏页面内容,避免F5刷新时闪现一瞬间的已登录界面。
-    LOGIN_BODY: bytes = b'<body data-auth="1" class="logged-out">'
+    LOGIN_BODY: bytes = b'<body data-auth="1" class="logged-out" data-bot="__HAS_BOT__">'
     VERSION_PLACEHOLDER: bytes = b'__VERSION__'  # 首页模板中的TRMD版本占位符,返回页面时替换为实际版本号。
     # 首页模板中的Pyrogram版本占位符,返回页面时替换为实际版本号。
     PYROGRAM_PLACEHOLDER: bytes = b'__PYROGRAM_VERSION__'
+    HAS_BOT_PLACEHOLDER: bytes = b'__HAS_BOT__'  # 是否配置了机器人(bot_token),前端据此隐藏上传与监听侧边栏。
 
     def do_GET(self) -> None:
         if self.path.startswith('/api/'):
@@ -288,6 +289,10 @@ class WebHandler(BaseHTTPRequestHandler):
                 WebHandler.PYROGRAM_PLACEHOLDER,
                 f'v{pyrogram_version}'.encode('UTF-8')
             )
+            body = body.replace(  # 注入是否配置机器人,前端据此隐藏上传与监听侧边栏。
+                WebHandler.HAS_BOT_PLACEHOLDER,
+                b'1' if (web and web.has_bot) else b'0'
+            )
         content_type: str = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
         if content_type.startswith('text/'):
             content_type: str = f'{content_type}; charset=utf-8'
@@ -315,6 +320,8 @@ class Web:
         self.progress = progress
         self.app = app
         self.downloader = downloader  # 下载器实例,用于读取已注册的监听信息。
+        # 是否配置了机器人,决定前端是否展示上传与监听侧边栏(无机器人时只有下载可用)。
+        self.has_bot = bool(app and getattr(app, 'bot_token', None))
         self.credential: dict = gen_random_credential()
         self.protocol: str = 'http'
         self.ip: str = '0.0.0.0'

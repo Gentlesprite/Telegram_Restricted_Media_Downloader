@@ -17,6 +17,7 @@ var SUMMARY_IDS = {
 };  // 下载与上传各自独立的总进度面板,避免相互覆盖。
 var SECTION_KEY = 'trmd_section';
 var LISTEN_KEY = 'trmd_listen';
+var HAS_BOT = document.body.getAttribute('data-bot') === '1';  // 是否配置了机器人,决定上传/监听侧边栏是否展示(无机器人时只有下载可用)。
 var COLLAPSE_KEY = 'trmd_collapsed';  // 各分组折叠状态的本地存储键。
 var ALL_KEY = 'trmd_all_collapsed';  // 下载页全部折叠开关的本地存储键。
 var UPLOAD_ALL_KEY = 'trmd_upload_all_collapsed';  // 上传页全部折叠开关的本地存储键。
@@ -415,21 +416,45 @@ function applySection() {
         var active = items[i].getAttribute('data-section') === currentSection;
         items[i].className = active ? 'side-item active' : 'side-item';
     }
+    var dlWasHidden = document.getElementById('downloadSummary').hidden;
     document.getElementById('downloadSummary').hidden = currentSection !== 'download';
     document.getElementById('uploadSummary').hidden = currentSection !== 'upload';  // 两个板块各自独立的总进度。
     for (i = 0; i < PAGES.length; i++) {
         document.getElementById('page-' + PAGES[i]).hidden = PAGES[i] !== currentSection;
     }
     renderStatus();
+    // 下载总进度卡片刚变为可见时,用最新数据强制重绘一次进度条,
+    // 避免首屏或切回下载页时它在隐藏态下渲染、进度条被跳过/未显示。
+    if (currentSection === 'download' && dlWasHidden) {
+        refresh(true);
+    }
 }
 
 function switchSection(name) {
     if (!SECTIONS[name]) {
         name = 'download';
     }
+    if (!HAS_BOT && name !== 'download') {  // 未配置机器人时仅允许下载页,避免停留在不可用的上传/监听页。
+        name = 'download';
+    }
     currentSection = name;
     applySection();
     saveState(SECTION_KEY, currentSection);
+}
+
+function applyBotVisibility() {
+    // 未配置机器人时只有下载一个功能,无需用侧边栏区分页面,直接隐藏整个侧边栏并将布局退化为单栏。
+    if (HAS_BOT) {
+        return;
+    }
+    var sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        sidebar.hidden = true;
+    }
+    var layout = document.querySelector('.layout');
+    if (layout && !layout.classList.contains('layout-single')) {
+        layout.classList.add('layout-single');
+    }
 }
 
 function applyListenTab() {
@@ -1280,7 +1305,7 @@ function syncBackgroundProgress(finished) {  // 下载或上传每完成一个�
     }
 }
 
-async function refresh() {
+async function refresh(force) {
     try {
         var res = await fetch('/api/progress', {cache: 'no-store', headers: authHeaders()});
         if (res.status === 401) {
@@ -1288,7 +1313,7 @@ async function refresh() {
             return;
         }
         document.body.classList.remove('logged-out');  // 认证通过,显示页面内容。
-        render(await res.json());
+        render(await res.json(), force);
         refreshNameTip();  // 列表重绘后按当前鼠标位置重新定位提示。
         document.getElementById('offline').style.display = 'none';
     } catch (e) {
@@ -1934,6 +1959,7 @@ bindStatFilter();
 bindSupport();
 bindMenu();
 initVersion();
+applyBotVisibility();  // 未配置机器人时隐藏整个侧边栏,随后switchSection会强制锁定到下载页。
 switchSection(savedSection);
 switchListen(savedListen);
 document.getElementById('toggleAll').onclick = toggleAll;
@@ -1969,5 +1995,5 @@ document.addEventListener('visibilitychange', function () {
     }
 });
 
-refresh();
+refresh(true);  // 首屏强制按最新数据渲染,跳过去重,确保进度条开局即正确显示。
 startPolling();
