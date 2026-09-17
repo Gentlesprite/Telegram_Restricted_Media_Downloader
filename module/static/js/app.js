@@ -1175,9 +1175,11 @@ function updateUploadRows(uploads) {
         var percent = uploadDone(file) ? 100 : (Number(file.percent) || 0);
         var fill = row.querySelector('.fill');
         if (fill) {
-            // 与 progressCell 一致用 width:进度条初始宽度已由它按百分比设好,
-            // 若再叠加 scaleX 会二次缩放,且缺少 transform-origin:left 会从中心展开。
-            fill.style.width = percent + '%';
+            fill.style.width = percent + '%';  // 桌面端横向条。
+            var cell = fill.closest('.cell-progress');  // 手机端圆环依赖 --p,需同步更新。
+            if (cell) {
+                cell.style.setProperty('--p', percent + '%');
+            }
         }
         var pct = row.querySelector('.pct');
         if (pct && fill) {
@@ -1228,7 +1230,12 @@ function updateTaskRows(data) {
         }
         var fill = row.querySelector('.fill');
         if (fill) {
-            fill.style.width = task.percent + '%';  // 同上:与 progressCell 保持一致。
+            var pct = task.percent + '%';
+            fill.style.width = pct;  // 桌面端横向条。
+            var cell = fill.closest('.cell-progress');  // 手机端圆环依赖 --p,需同步更新。
+            if (cell) {
+                cell.style.setProperty('--p', pct);
+            }
         }
         var pct = row.querySelector('.pct');
         if (pct) {
