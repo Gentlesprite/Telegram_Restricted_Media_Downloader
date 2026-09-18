@@ -1095,7 +1095,7 @@ function uploadList(tasks) {
         html += uploadBlock(groups[i]);
     }
     if (statFilter.upload && !html) {
-        return '<div class="empty">' + (UPLOAD_EMPTY_TEXT[statFilter.upload] || '没有符合条件的任务。') + '</div>';
+        return '<div class="empty">' + (UPLOAD_EMPTY_TEXT[statFilter.upload] || '没有符合条件的文件。') + '</div>';
     }
     return html;
 }
@@ -1126,8 +1126,8 @@ function renderUpload(uploads) {
     var uploadKey = uploadStructKey(uploads);
     var now = Date.now();
     if (uploadKey !== lastUploadStructKey) {
-        lastUploadStructKey = uploadKey;
         if (now - lastUploadBuild >= LIST_BUILD_MIN_MS) {
+            lastUploadStructKey = uploadKey;
             lastUploadBuild = now;
             /* 与下载列表同理:只要有上传文件(含已完成的),uploadList 就返回非空内容,
                empty 永远不触发。加上 count.active 判断,让空态提示与监听板块一致。 */
@@ -1141,6 +1141,8 @@ function renderUpload(uploads) {
             syncUploadHeads();
             bindGroups();  // 上传列表渲染完成后统一绑定折叠事件。
         } else {
+            // 节流期内不消费结构指纹:保留 lastUploadStructKey 为旧值,
+            // 待节流结束后的下一轮轮询再整表重建,否则新增/移除的文件会被"吞掉"直到手动刷新或切筛选。
             updateUploadRows(uploads);  // 节流期内先就地更新。
         }
     } else {
@@ -1310,12 +1312,14 @@ function render(data, force) {
     var structKey = structKeyOf(data);
     var now = Date.now();
     if (structKey !== lastStructKey) {
-        lastStructKey = structKey;
         if (now - lastListBuild >= LIST_BUILD_MIN_MS) {
+            lastStructKey = structKey;
             lastListBuild = now;
             renderList(data);
         } else {
-            updateTaskRows(data);  // 节流期内先就地更新,下一个间隔再完整重建。
+            // 节流期内不消费结构指纹:保留 lastStructKey 为旧值,
+            // 待节流结束后的下一轮轮询再整表重建,否则新增/移除的行会被"吞掉"直到手动刷新或切筛选。
+            updateTaskRows(data);  // 节流期内先就地更新已有行。
         }
     } else {
         updateTaskRows(data);
