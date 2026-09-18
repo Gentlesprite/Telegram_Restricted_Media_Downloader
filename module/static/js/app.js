@@ -499,6 +499,21 @@ function renderOverall(summary, taskCount, ids) {
 /* 统计卡筛选:点击后只显示对应状态的条目,再次点击取消。 */
 var statFilter = {download: '', upload: ''};
 
+// 筛选后无匹配项时的空态文案,与统计卡片的筛选口径保持一致。
+var DOWNLOAD_EMPTY_TEXT = {
+    success: '暂无成功的下载任务。',
+    failure: '暂无失败的下载任务。',
+    skip: '暂无跳过的下载任务。',
+    active: '暂无下载中的任务。',
+    queue: '暂无队列中的下载任务。'
+};
+var UPLOAD_EMPTY_TEXT = {
+    success: '暂无上传成功的任务。',
+    failure: '暂无上传失败的任务。',
+    uploading: '暂无上传中的任务。',
+    pending: '暂无队列中的上传任务。'
+};
+
 function statCell(label, value, cls, filter, scope) {
     if (!filter || !scope) {
         return '<div><span>' + label + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' +
@@ -628,7 +643,12 @@ function renderList(data) {
        但只要添加过链接, data.links 永远非空, html 永远非空, empty 永远不触发。
        加上"没有活跃任务"条件,与监听板块(条目为空即显示 empty)的行为一致。 */
     var hasActive = (data.tasks || []).length > 0;
-    document.getElementById('download').innerHTML = (hasActive && html) ? html : '<div class="empty">暂无下载任务。</div>';
+    // 处于筛选状态时,无匹配项应提示具体的筛选条件,而非笼统的"暂无下载任务。"。
+    var emptyText = '暂无下载任务。';
+    if (statFilter.download) {
+        emptyText = DOWNLOAD_EMPTY_TEXT[statFilter.download] || emptyText;
+    }
+    document.getElementById('download').innerHTML = (hasActive && html) ? html : '<div class="empty">' + emptyText + '</div>';
     syncToggleAll();
     bindGroups();  // 页面渲染完成后统一绑定折叠事件。
     syncHeadLabel();
@@ -1075,7 +1095,7 @@ function uploadList(tasks) {
         html += uploadBlock(groups[i]);
     }
     if (statFilter.upload && !html) {
-        return '<div class="empty">没有符合条件的文件。</div>';
+        return '<div class="empty">' + (UPLOAD_EMPTY_TEXT[statFilter.upload] || '没有符合条件的任务。') + '</div>';
     }
     return html;
 }
@@ -1111,7 +1131,12 @@ function renderUpload(uploads) {
             lastUploadBuild = now;
             /* 与下载列表同理:只要有上传文件(含已完成的),uploadList 就返回非空内容,
                empty 永远不触发。加上 count.active 判断,让空态提示与监听板块一致。 */
-            document.getElementById('upload').innerHTML = count.active > 0 ? uploadList(uploads) : '<div class="empty">暂无上传任务。</div>';
+            // 处于筛选状态时,无匹配项应提示具体的筛选条件,而非笼统的"暂无上传任务。"。
+            var uploadEmpty = '暂无上传任务。';
+            if (statFilter.upload) {
+                uploadEmpty = UPLOAD_EMPTY_TEXT[statFilter.upload] || uploadEmpty;
+            }
+            document.getElementById('upload').innerHTML = count.active > 0 ? uploadList(uploads) : '<div class="empty">' + uploadEmpty + '</div>';
             syncToggleUpload();
             syncUploadHeads();
             bindGroups();  // 上传列表渲染完成后统一绑定折叠事件。
