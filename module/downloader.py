@@ -131,6 +131,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.event: asyncio.Event = asyncio.Event()
         self.queue: asyncio.Queue = asyncio.Queue()
         self.scheduler: Union[asyncio.Task, None] = None  # 下载调度器。
+        self.pending_retry_tasks: Set[asyncio.Task] = set()  # 待执行的重试任务,避免主循环在重试重新入队前提前退出。
         self.app: Application = Application()
         self.is_running: bool = False
         self.running_log: Set[bool] = set()
@@ -2123,6 +2124,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             diy_download_type=diy_download_type
                         )
                     )
+                    self.pending_retry_tasks.add(task)  # 登记待执行的重试任务,防止主循环提前退出。
                     task.add_done_callback(
                         partial(
                             self.__retry_call,
@@ -2594,6 +2596,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             return None
 
     def __retry_call(self, notice, _future):
+        self.pending_retry_tasks.discard(_future)  # 重试任务已结束,从待执行集合中移除。
         self.queue.task_done()
         console.log(notice, style='#FF4689')
 
@@ -2648,6 +2651,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 not self.queue.empty()
                 or self.is_bot_running
                 or DownloadTask.has_task()
+                or self.pending_retry_tasks
         ):
             if self.queue.empty():
                 await asyncio.sleep(0.5)  # 队列为空时等待调度器派发任务,避免阻塞在队列获取上。
