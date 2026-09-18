@@ -4,6 +4,7 @@
 # Time:2026/9/10 12:00
 # File:web.py
 import os
+import re
 import sys
 import json
 import base64
@@ -60,6 +61,8 @@ class WebHandler(BaseHTTPRequestHandler):
     remember_session: bool = False  # 本次响应是否需要下发记名Cookie。
     expire_session: bool = False  # 本次响应是否需要清除记名Cookie(退出登录)。
     first_login: bool = False  # 本次请求是否属于未携带有效Cookie的首次登录。
+    # 首页<body>起始标签,用正则匹配,模板给<body>新增属性后替换依然生效。
+    BODY_TAG_PATTERN: bytes = rb'<body\b[^>]*>'
     # data-auth 表示已启用密码认证,前端据此显示"退出登录"入口。
     FIRST_LOGIN_BODY: bytes = b'<body data-auth="1" data-first-login="1" data-bot="__HAS_BOT__">'  # 首次登录时写入首页的标记,供页面自动展示卡片。
     # 已设置账号密码时注入:首屏先隐藏页面内容,避免F5刷新时闪现一瞬间的已登录界面。
@@ -94,6 +97,12 @@ class WebHandler(BaseHTTPRequestHandler):
             self.__response_remove_listener()
         else:
             self.send_error(404)
+
+    @staticmethod
+    def replace_body_tag(body: bytes, tag: bytes) -> bytes:
+        """替换首页的<body>起始标签,注入认证标记与机器人标记。
+        模板的<body>可能携带属性,直接按固定字符串替换会漏掉,故用正则匹配起始标签本身。"""
+        return re.sub(WebHandler.BODY_TAG_PATTERN, tag, body, count=1)
 
     def log_message(self, fmt, *args) -> None:
         """屏蔽默认的请求日志,避免污染终端输出。"""
@@ -280,10 +289,10 @@ class WebHandler(BaseHTTPRequestHandler):
             return
         if os.path.basename(file_path) == Web.INDEX_FILE:  # 首页需要替换标记与版本号。
             if self.first_login:
-                body = body.replace(b'<body>', WebHandler.FIRST_LOGIN_BODY, 1)
+                body = WebHandler.replace_body_tag(body, WebHandler.FIRST_LOGIN_BODY)
             elif web and web.username:
                 # 需要认证:首屏即隐藏页面内容,认证通过后由前端移除该类,避免刷新时闪现已登录界面。
-                body = body.replace(b'<body>', WebHandler.LOGIN_BODY, 1)
+                body = WebHandler.replace_body_tag(body, WebHandler.LOGIN_BODY)
             body = body.replace(WebHandler.VERSION_PLACEHOLDER, f'v{__version__}'.encode('UTF-8'))
             body = body.replace(
                 WebHandler.PYROGRAM_PLACEHOLDER,
