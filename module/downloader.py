@@ -1699,8 +1699,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                 f'{_t(KeyWord.DOWNLOAD_TASK)}'
                 f'{_t(KeyWord.RESUME)}:"{file_name}",'
                 f'{_t(KeyWord.ERROR_SIZE)}:{MetaData.suitable_units_display(downloaded)}。')
-        with open(file=temp_path, mode=mode) as f:
-            skip_chunks: int = downloaded // chunk_size  # 计算要跳过的块数。
+        try:
+            with open(file=temp_path, mode=mode) as f:
+                skip_chunks: int = downloaded // chunk_size  # 计算要跳过的块数。
             aligned_size: int = skip_chunks * chunk_size  # 与服务端offset单位(1MiB)对齐,丢弃未对齐的尾部。
             if aligned_size != downloaded:
                 f.truncate(aligned_size)  # 截断错位的尾巴,避免续传后文件尺寸偏大。
@@ -1750,6 +1751,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                         style='#FF4689'
                     )
                     await asyncio.sleep(amount)
+        except PermissionError as e:
+            log.error(
+                f'无法以"{mode}"模式打开临时文件"{temp_path}",{_t(KeyWord.REASON)}:"{e}"')
+            raise
         if compare_size is None or compare_file_size(a_size=downloaded, b_size=compare_size):
             __cache_temp_size: int = os.path.getsize(temp_path) if os.path.exists(temp_path) else 0
             result: str = safe_replace(origin_file=temp_path, overwrite_file=file_name).get('e_code')
@@ -2652,10 +2657,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await result
             except PermissionError as e:
                 log.error(
-                    '临时文件无法移动至下载路径:\n'
-                    '1.可能存在使用网络路径、挂载硬盘行为(本软件不支持);\n'
-                    '2.可能存在多开软件时,同时操作同一文件或目录导致冲突;\n'
-                    '3.由于软件设计缺陷,没有考虑到不同频道文件名相同的情况(若调整将会导致部分用户更新后重复下载已有文件),当保存路径下文件过多时,可能恰巧存在相同文件名的文件,导致相同文件名无法正常移动,故请定期整理归档下载链接与保存路径下的文件。'
+                    '处理下载任务时遇到文件权限错误:'
+                    '可能是临时文件/保存目录为只读、文件被其他进程占用锁定,或当前用户无写入权限。'
                     f'{_t(KeyWord.REASON)}:"{e}"')
             except Exception as e:
                 log.error(f'处理队列时出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
