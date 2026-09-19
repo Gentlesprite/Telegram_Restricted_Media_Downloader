@@ -598,11 +598,6 @@ function bindStatFilter() {
         lastRenderKey = '';
         lastStructKey = null;
         lastUploadStructKey = null;
-        // 列表重建有最小间隔节流(LIST_BUILD_MIN_MS),而结构指纹只反映数据、不含筛选状态。
-        // 因此仅清空指纹还不够:若本次点击落在节流期内,仍会走"就地更新进度"分支而不重建 DOM,
-        // 结果是筛选不生效、行与进度条错位。筛选是用户主动操作,必须立即生效,故一并清零时间戳。
-        lastListBuild = 0;
-        lastUploadBuild = 0;
         refresh();  // 立即按新筛选重绘,无需等待下一次轮询。
     });
 }
@@ -639,16 +634,15 @@ function renderList(data) {
     for (i = 0; i < groups.length; i++) {
         html += channelBlock(groups[i], live);
     }
-    /* 原 html ? html : empty 只在没有链接时才显示空态;
-       但只要添加过链接, data.links 永远非空, html 永远非空, empty 永远不触发。
-       加上"没有活跃任务"条件,与监听板块(条目为空即显示 empty)的行为一致。 */
-    var hasActive = (data.tasks || []).length > 0;
+    /* 空态以"该链接下是否还有成员(含已完成的)"判断,而非"是否有正在下载的任务"。
+       否则全部下载完成后 data.tasks 为空,已完成的成员会被空态整块隐藏,
+       需新建任务才重新出现。 */
     // 处于筛选状态时,无匹配项应提示具体的筛选条件,而非笼统的"暂无下载任务。"。
     var emptyText = '暂无下载任务。';
     if (statFilter.download) {
         emptyText = DOWNLOAD_EMPTY_TEXT[statFilter.download] || emptyText;
     }
-    document.getElementById('download').innerHTML = (hasActive && html) ? html : '<div class="empty">' + emptyText + '</div>';
+    document.getElementById('download').innerHTML = html ? html : '<div class="empty">' + emptyText + '</div>';
     syncToggleAll();
     bindGroups();  // 页面渲染完成后统一绑定折叠事件。
     syncHeadLabel();
@@ -1121,30 +1115,22 @@ function syncUploadHeads() {
 function renderUpload(uploads) {
     var count = uploadCount(uploads);
     document.getElementById('badgeUpload').textContent = count.active;
-    /* 与下载列表同样处理:只有结构变化(文件增减/状态改变)才重建 DOM,
-       否则仅就地更新进度,避免每秒整表重建。 */
+    /* 只有结构变化(文件增减/状态改变)才重建 DOM,否则仅就地更新进度,避免每秒整表重建。 */
     var uploadKey = uploadStructKey(uploads);
-    var now = Date.now();
     if (uploadKey !== lastUploadStructKey) {
-        if (now - lastUploadBuild >= LIST_BUILD_MIN_MS) {
-            lastUploadStructKey = uploadKey;
-            lastUploadBuild = now;
-            /* 与下载列表同理:只要有上传文件(含已完成的),uploadList 就返回非空内容,
-               empty 永远不触发。加上 count.active 判断,让空态提示与监听板块一致。 */
-            // 处于筛选状态时,无匹配项应提示具体的筛选条件,而非笼统的"暂无上传任务。"。
-            var uploadEmpty = '暂无上传任务。';
-            if (statFilter.upload) {
-                uploadEmpty = UPLOAD_EMPTY_TEXT[statFilter.upload] || uploadEmpty;
-            }
-            document.getElementById('upload').innerHTML = count.active > 0 ? uploadList(uploads) : '<div class="empty">' + uploadEmpty + '</div>';
-            syncToggleUpload();
-            syncUploadHeads();
-            bindGroups();  // 上传列表渲染完成后统一绑定折叠事件。
-        } else {
-            // 节流期内不消费结构指纹:保留 lastUploadStructKey 为旧值,
-            // 待节流结束后的下一轮轮询再整表重建,否则新增/移除的文件会被"吞掉"直到手动刷新或切筛选。
-            updateUploadRows(uploads);  // 节流期内先就地更新。
+        lastUploadStructKey = uploadKey;
+        /* 空态以"是否存在上传文件(含已完成的)"判断,而非"是否有活跃任务"。
+           否则全部上传结束后 count.active 为 0,已完成的文件会被空态整块隐藏,
+           需新建任务才重新出现。 */
+        // 处于筛选状态时,无匹配项应提示具体的筛选条件,而非笼统的"暂无上传任务。"。
+        var uploadEmpty = '暂无上传任务。';
+        if (statFilter.upload) {
+            uploadEmpty = UPLOAD_EMPTY_TEXT[statFilter.upload] || uploadEmpty;
         }
+        document.getElementById('upload').innerHTML = uploads.length > 0 ? uploadList(uploads) : '<div class="empty">' + uploadEmpty + '</div>';
+        syncToggleUpload();
+        syncUploadHeads();
+        bindGroups();  // 上传列表渲染完成后统一绑定折叠事件。
     } else {
         updateUploadRows(uploads);
     }
@@ -1162,14 +1148,6 @@ function renderUpload(uploads) {
 var lastRenderKey = '';  // 上次渲染的数据指纹,用于跳过无变化的重绘。
 var lastStructKey = null;  // 列表结构指纹,结构不变则不重建列表 DOM。(初始为 null 而非 '',否则空链接时 structKeyOf 返回 '' 会被误判为"未变化",导致首次渲染跳过 renderList、列表区只剩表头)
 var lastUploadStructKey = null;  // 上传列表结构指纹,同上。
-
-/* 列表全量重建的最小间隔(毫秒)。
-   任务密集完成时,结构几乎每次轮询都变,若每次都重建整棵列表,
-   会持续吃满 CPU(JS/DOM)与 GPU(重绘合成)。限制频率后可封顶这部分开销,
-   节流期内先就地更新进度,稍后再补一次完整重建。 */
-var LIST_BUILD_MIN_MS = 1500;
-var lastListBuild = 0;      // 上次重建下载列表的时间戳。
-var lastUploadBuild = 0;    // 上次重建上传列表的时间戳。
 
 /* 轮询间隔(毫秒)。默认 1 秒。
    若设备压力明显,调大到 2000~3000 可直接砍掉一半以上的拉取与渲染开销,
@@ -1310,17 +1288,9 @@ function render(data, force) {
     // 只有列表结构变化(成员增减/状态改变)才重建 DOM;
     // 否则仅就地更新正在下载的行,避免每秒整表重建带来的重排与重绘。
     var structKey = structKeyOf(data);
-    var now = Date.now();
     if (structKey !== lastStructKey) {
-        if (now - lastListBuild >= LIST_BUILD_MIN_MS) {
-            lastStructKey = structKey;
-            lastListBuild = now;
-            renderList(data);
-        } else {
-            // 节流期内不消费结构指纹:保留 lastStructKey 为旧值,
-            // 待节流结束后的下一轮轮询再整表重建,否则新增/移除的行会被"吞掉"直到手动刷新或切筛选。
-            updateTaskRows(data);  // 节流期内先就地更新已有行。
-        }
+        lastStructKey = structKey;
+        renderList(data);
     } else {
         updateTaskRows(data);
     }
