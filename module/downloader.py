@@ -400,24 +400,28 @@ class TelegramRestrictedMediaDownloader(Bot):
             _prompt_string: str = ''
             _false_text: str = ''
             _choice: str = ''
-            res: Union[bool, None] = None
+            res: Union[bool, None, str] = None
             if callback_data == BotCallbackText.LINK_TABLE:
                 _prompt_string: str = '链接统计表'
                 _false_text: str = '😵😵😵没有链接需要统计。'
                 _choice: str = BotCallbackText.EXPORT_LINK_TABLE
-                res: Union[bool, None] = self.app.print_link_table(DownloadTask.TASKS)
+                res: Union[bool, None, str] = self.app.print_link_table(DownloadTask.TASKS)
             elif callback_data == BotCallbackText.COUNT_TABLE:
                 _prompt_string: str = '计数统计表'
                 _false_text: str = '😵😵😵当前没有任何下载。'
                 _choice: str = BotCallbackText.EXPORT_COUNT_TABLE
-                res: Union[bool, None] = self.app.print_count_table()
+                res: Union[bool, None, str] = self.app.print_count_table()
             elif callback_data == BotCallbackText.UPLOAD_TABLE:
                 _prompt_string: str = '上传统计表'
                 _false_text: str = '😵😵😵当前没有任何上传。'
                 _choice: str = BotCallbackText.EXPORT_UPLOAD_TABLE
-                res: Union[bool, None] = self.app.print_upload_table(UploadTask.TASKS)
+                res: Union[bool, None, str] = self.app.print_upload_table(UploadTask.TASKS)
             if res:
-                await callback_query.message.edit_text(f'👌👌👌`{_prompt_string}`已发送至您的「终端」请注意查收。')
+                await self.bot.edit_message_text(
+                    chat_id=callback_query.message.chat.id,
+                    message_id=callback_query.message.id,
+                    rich_message=pyrogram.types.InputRichMessage(markdown=res)
+                )
                 await kb.choice_export_table_button(choice=_choice)
                 return None
             elif res is False:

@@ -71,7 +71,7 @@ class StatisticalTable:
                 'DownloadRecordForm',
                 'CountForm'
             )
-    ) -> Union[bool, None]:
+    ) -> Union[bool, None, str]:
         """打印统计的下载信息的表格。"""
         success_video: int = len(self.success_video)
         failure_video: int = len(self.failure_video)
@@ -159,13 +159,16 @@ class StatisticalTable:
                 if only_export:
                     return None
         try:
+            result: Union[bool, str] = True
             if only_export is False:
-                PanelTable(
+                panel = PanelTable(
                     title=title,
                     header=header,
                     data=table_data
-                ).print_meta()
-            return True
+                )
+                panel.print_meta()
+                result = panel.to_markdown()
+            return result
         except Exception as e:
             log.error(f'打印媒体计数统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
             return None
@@ -180,7 +183,7 @@ class StatisticalTable:
                 'DownloadRecordForm',
                 'LinkForm'
             )
-    ) -> Union[bool, None]:
+    ) -> Union[bool, None, str]:
         """打印统计的下载链接信息的表格。"""
         try:
             data: list = []
@@ -229,14 +232,17 @@ class StatisticalTable:
                     log.error(f'导出下载链接统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
                     if only_export:
                         return None
+            result: Union[bool, str] = True
             if only_export is False:
-                PanelTable(
+                panel = PanelTable(
                     title=title,
                     header=header,
                     data=data,
                     show_lines=True
-                ).print_meta()
-            return True
+                )
+                panel.print_meta()
+                result = panel.to_markdown()
+            return result
         except Exception as e:
             log.error(f'打印下载链接统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
             return None
@@ -251,7 +257,7 @@ class StatisticalTable:
                 'UploadRecordForm',
                 'Normal'
             )
-    ):
+    ) -> Union[bool, str, None]:
         """打印统计的上传信息的表格。"""
         tasks = list(upload_tasks)
         if not tasks:
@@ -351,20 +357,24 @@ class StatisticalTable:
                     return None
 
         try:
+            result: Union[bool, str] = True
             if only_export is False:
-                PanelTable(
+                meta_panel = PanelTable(
                     title=meta_table_title,
                     header=meta_table_header,
                     data=meta_table_data,
                     show_lines=True
-                ).print_meta()
-                PanelTable(
+                )
+                meta_panel.print_meta()
+                count_panel = PanelTable(
                     title=count_table_title,
                     header=count_table_header,
                     data=count_table_data,
                     show_lines=False
-                ).print_meta()
-            return True
+                )
+                count_panel.print_meta()
+                result = meta_panel.to_markdown() + '\n\n' + count_panel.to_markdown()
+            return result
 
         except Exception as e:
             log.error(f'打印上传任务统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
@@ -478,6 +488,9 @@ class StatisticalTable:
 
 class PanelTable:
     def __init__(self, title: str, header: tuple, data: list, styles: dict = None, show_lines: bool = False):
+        self.title: str = title
+        self.header: tuple = header
+        self.data: list = data
         self.table = Table(title=title, highlight=True, show_lines=show_lines)
         self.table.title_style = Style(color='white', bold=True)
         # 添加列。
@@ -491,6 +504,26 @@ class PanelTable:
 
     def print_meta(self):
         console.print(self.table, justify='center')
+
+    def to_markdown(self) -> str:
+        """将表格转换为 GitHub 风格的 Markdown 表格字符串。"""
+
+        def _cell(value) -> str:
+            text: str = str(value)
+            # 去除换行,避免破坏 Markdown 表格结构,并转义管道符。
+            text = text.replace('\n', ' ').replace('\r', ' ').replace('|', '\\|')
+            return text
+
+        header_cells: list = [_cell(h) for h in self.header]
+        lines: list = []
+        if self.title:
+            lines.append(f'## {self.title}')
+            lines.append('')
+        lines.append('| ' + ' | '.join(header_cells) + ' |')
+        lines.append('| ' + ' | '.join(['---'] * len(header_cells)) + ' |')
+        for row in self.data:
+            lines.append('| ' + ' | '.join(_cell(c) for c in row) + ' |')
+        return '\n'.join(lines)
 
 
 class QrcodeRender:
