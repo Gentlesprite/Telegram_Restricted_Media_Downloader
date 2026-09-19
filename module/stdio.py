@@ -11,8 +11,9 @@ import datetime
 
 from io import BytesIO
 from typing import (
+    List,
     Union,
-    Callable
+    Callable,
 )
 
 import qrcode
@@ -71,7 +72,7 @@ class StatisticalTable:
                 'DownloadRecordForm',
                 'CountForm'
             )
-    ) -> Union[bool, None, str]:
+    ) -> Union[bool, None, List[str]]:
         """打印统计的下载信息的表格。"""
         success_video: int = len(self.success_video)
         failure_video: int = len(self.failure_video)
@@ -167,7 +168,7 @@ class StatisticalTable:
                     data=table_data
                 )
                 panel.print_meta()
-                result = panel.to_markdown()
+                result = panel.to_markdown_chunks()
             return result
         except Exception as e:
             log.error(f'打印媒体计数统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
@@ -183,7 +184,7 @@ class StatisticalTable:
                 'DownloadRecordForm',
                 'LinkForm'
             )
-    ) -> Union[bool, None, str]:
+    ) -> Union[bool, None, List[str]]:
         """打印统计的下载链接信息的表格。"""
         try:
             data: list = []
@@ -241,7 +242,7 @@ class StatisticalTable:
                     show_lines=True
                 )
                 panel.print_meta()
-                result = panel.to_markdown()
+                result = panel.to_markdown_chunks()
             return result
         except Exception as e:
             log.error(f'打印下载链接统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
@@ -257,7 +258,7 @@ class StatisticalTable:
                 'UploadRecordForm',
                 'Normal'
             )
-    ) -> Union[bool, str, None]:
+    ) -> Union[bool, None, List[str]]:
         """打印统计的上传信息的表格。"""
         tasks = list(upload_tasks)
         if not tasks:
@@ -373,7 +374,8 @@ class StatisticalTable:
                     show_lines=False
                 )
                 count_panel.print_meta()
-                result = meta_panel.to_markdown() + '\n\n' + count_panel.to_markdown()
+                # 两张表各自分片后顺序拼接,保持元信息表在前、计数表在后。
+                result = meta_panel.to_markdown_chunks() + count_panel.to_markdown_chunks()
             return result
 
         except Exception as e:
@@ -506,7 +508,15 @@ class PanelTable:
         console.print(self.table, justify='center')
 
     def to_markdown(self) -> str:
-        """将表格转换为 GitHub 风格的 Markdown 表格字符串。"""
+        """将表格转换为 GitHub 风格的 Markdown 表格字符串(不分片)。"""
+        return '\n'.join(self.to_markdown_chunks(max_len=1 << 30))
+
+    def to_markdown_chunks(self, max_len: int = 30000) -> List[str]:
+        """将表格转换为若干 GitHub 风格 Markdown 表格字符串。
+
+        每个分片长度不超过 ``max_len``,且各自带有表头,以便单独发送时仍可阅读。
+        用于规避 Telegram 富文本消息的长度上限(约 32768 字符)。
+        """
 
         def _cell(value) -> str:
             text: str = str(value)
@@ -515,15 +525,39 @@ class PanelTable:
             return text
 
         header_cells: list = [_cell(h) for h in self.header]
-        lines: list = []
-        if self.title:
-            lines.append(f'## {self.title}')
-            lines.append('')
-        lines.append('| ' + ' | '.join(header_cells) + ' |')
-        lines.append('| ' + ' | '.join(['---'] * len(header_cells)) + ' |')
+        header_line: str = '| ' + ' | '.join(header_cells) + ' |'
+        sep_line: str = '| ' + ' | '.join(['---'] * len(header_cells)) + ' |'
+        title_lines: list = [f'## {self.title}', ''] if self.title else []
+
+        # 每个分片都要额外承载:标题 + 表头 + 分隔行,预留这部分开销。
+        overhead: int = len('\n'.join(title_lines + [header_line, sep_line])) + 2
+        budget: int = max(max_len - overhead, 200)  # 至少保证能放入一行数据。
+
+        chunks: List[str] = []
+        current_rows: List[str] = []
+        current_len: int = 0
+
+        def _flush() -> None:
+            nonlocal current_rows, current_len
+            if current_rows:
+                parts: list = title_lines + [header_line, sep_line] + current_rows
+                chunks.append('\n'.join(parts))
+                current_rows = []
+                current_len = 0
+
         for row in self.data:
-            lines.append('| ' + ' | '.join(_cell(c) for c in row) + ' |')
-        return '\n'.join(lines)
+            row_line: str = '| ' + ' | '.join(_cell(c) for c in row) + ' |'
+            row_len: int = len(row_line) + 1  # +1 代表行尾换行符。
+            # 已有数据且追加本行会超预算,则先将已有行成片。
+            if current_rows and current_len + row_len > budget:
+                _flush()
+            current_rows.append(row_line)
+            current_len += row_len
+            # 本片已达预算(含单行超限的情况),立即成片,避免后续行挤爆。
+            if current_len >= budget:
+                _flush()
+        _flush()
+        return chunks
 
 
 class QrcodeRender:

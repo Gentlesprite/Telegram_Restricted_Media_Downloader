@@ -1213,6 +1213,33 @@ class Bot:
             except Exception:
                 raise
 
+    async def send_rich_table(self, message: pyrogram.types.Message, chunks: list) -> None:
+        """通过机器人将统计表的 Markdown 分片以富文本消息发送给用户。
+
+        ``chunks`` 为 Markdown 字符串列表:首片编辑原消息(以便键盘挂接),
+        其余分片作为新消息发送,规避单条富文本消息的长度上限。
+        """
+        if self.bot is None or not chunks:
+            return None
+        chat_id: int = message.chat.id
+        first, *rest = chunks
+        try:
+            await self.bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=message.id,
+                rich_message=pyrogram.types.InputRichMessage(markdown=first)
+            )
+        except Exception as e:
+            log.error(f'通过机器人发送统计表(首片)失败,{_t(KeyWord.REASON)}:"{e}"')
+        for index, chunk in enumerate(rest, start=2):
+            try:
+                await self.bot.send_rich_message(
+                    chat_id=chat_id,
+                    rich_message=pyrogram.types.InputRichMessage(markdown=chunk)
+                )
+            except Exception as e:
+                log.error(f'通过机器人发送统计表(第{index}片)失败,{_t(KeyWord.REASON)}:"{e}"')
+
 
 class KeyboardButton:
     def __init__(self, callback_query: pyrogram.types.CallbackQuery):
