@@ -285,6 +285,11 @@ function linkBlock(link, live) {
         if (members.length === 0) {
             return '';  // 筛选后无匹配成员,不再显示该链接。
         }
+    } else {
+        // 无筛选卡片时按状态置顶:进行中 > 队列中 > 已完成/已跳过 > 失败,使活跃任务集中显示在最上方。
+        members = members.slice().sort(function (a, b) {
+            return stateRank(a.state) - stateRank(b.state);
+        });
     }
     // 筛选时强制展开,否则结果会被折叠状态藏起来。
     var isCollapsed = filtering ? false : (collapsed[key] === undefined ? lastLinkCollapsed : collapsed[key]);
@@ -923,6 +928,21 @@ function uploadDone(file) {
     return file.state === 'success' || file.state === 'sent';
 }
 
+// 无筛选时用于把活跃任务置顶的排序权重:进行中(downloading/uploading) > 队列中(pending) > 已完成/已跳过(success/sent/skip) > 失败(failure)。
+// 排序在数组副本上进行,不改动后端快照数据,且为稳定排序,同权重的任务保持原有顺序。
+function stateRank(state) {
+    if (state === 'downloading' || state === 'uploading') {
+        return 0;
+    }
+    if (state === 'pending') {
+        return 1;
+    }
+    if (state === 'success' || state === 'sent' || state === 'skip') {
+        return 2;
+    }
+    return 3;  // failure 等失败状态置底。
+}
+
 function getUploadGroups(tasks) {
     var groups = [];  // 按频道分组上传任务,保持频道首次出现的顺序。
     var index = {};
@@ -1058,6 +1078,11 @@ function uploadBlock(group) {
         if (files.length === 0) {
             return '';  // 筛选后无匹配文件,不再显示该分组。
         }
+    } else {
+        // 无筛选卡片时按状态置顶:进行中 > 队列中 > 已完成/已跳过 > 失败,使活跃任务集中显示在最上方。
+        files = files.slice().sort(function (a, b) {
+            return stateRank(a.state) - stateRank(b.state);
+        });
     }
     // 筛选时强制展开,否则结果会被折叠状态藏起来。
     var isCollapsed = filtering ? false : (collapsed[key] === undefined ? lastUploadCollapsed : collapsed[key]);
