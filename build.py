@@ -11,6 +11,7 @@ import subprocess
 from pathlib import Path
 from shutil import which, rmtree
 
+logging.disable(logging.CRITICAL)  # 导入module前禁用日志,避免其初始化日志写入文件。
 from module import (
     AUTHOR,
     log,
@@ -19,6 +20,13 @@ from module import (
     __update_date__,
     SOFTWARE_SHORT_NAME
 )
+
+logging.disable(logging.NOTSET)  # 恢复日志输出。
+# 构建日志仅输出到控制台,移除module配置的文件处理器。
+for handler in logging.getLogger().handlers[:]:
+    if getattr(handler, 'baseFilename', None):
+        logging.getLogger().removeHandler(handler)
+
 VERSION_INFO = sys.version_info
 PLATFORM: str = sys.platform
 UV: str = 'uv ' if which('uv') and os.path.exists('uv.lock') else ''
