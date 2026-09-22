@@ -115,6 +115,7 @@ body {
     font-size: 14px;
     font-weight: 600;
     text-align: left;
+    white-space: nowrap;  /* 短中文标签不折行,避免火狐里竖排。 */
     cursor: pointer;
     transition: border-color .15s ease, color .15s ease, background .15s ease;
 }
@@ -241,6 +242,9 @@ body {
     color: var(--accent);
     font-variant-numeric: tabular-nums;
 }
+
+/* 悬停提示统一由 app.js 的 .name-tip 接管:任何带 data-tip 或 title 的元素都显示同一套玻璃提示,
+   这里不要再给 [data-tip] 加伪元素提示,否则会与 JS 提示重复弹出两个。 */
 
 h1 {
     font-size: 18px;
@@ -395,6 +399,7 @@ h1 {
 .modal-title {
     font-size: 14px;
     font-weight: 600;
+    white-space: nowrap;  /* 同上:短中文标题不折行。 */
 }
 
 .modal-close {
@@ -505,7 +510,9 @@ h1 {
 
 .login-label {
     flex: none;
-    width: 44px;
+    min-width: 44px;  /* 用最小宽度而非定宽:定宽 44px 在火狐里会把"账号："逐字折行成竖排,
+                         最小宽度既保证两行标签对齐,也允许盒子随文字撑开。 */
+    white-space: nowrap;
     color: var(--muted);
     font-size: 13px;
 }
@@ -704,12 +711,16 @@ th {
 
 /* .panel 与 .list 已并入上方统一磨砂块,不再单独定义,避免两套样式互相覆盖。 */
 
+/* 统计卡的标签与数值都是两三个字,列宽被压缩时不允许折行:
+   火狐允许 CJK 逐字断行,一旦压缩就会竖排成"已跳/过"。 */
 .stat span {
     font-size: 12px;
     color: var(--muted);
+    white-space: nowrap;
 }
 
 .stat b {
+    white-space: nowrap;
     font-size: 17px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
@@ -752,6 +763,7 @@ th {
     font-family: inherit;
     font-size: 13px;
     font-weight: 600;
+    white-space: nowrap;  /* 同上:短中文标签不折行。 */
     cursor: pointer;
     transition: border-color .15s ease, color .15s ease, background .15s ease;
 }
@@ -1092,7 +1104,9 @@ body.resizing {
 
 .pct {
     flex: none;
-    width: 44px;
+    min-width: 44px;  /* 用最小宽度而非定宽:进度栏也会显示状态文字(已跳过/队列中),
+                         定宽 44px 在火狐里会被逐字折行成竖排,最小宽度可让盒子随文字撑开。 */
+    white-space: nowrap;
     text-align: right;
     font-size: 12px;
     color: var(--accent);
