@@ -1847,7 +1847,6 @@ var bgDoodleOffY = 0;       // 对应官方 mask-position:center 的平铺原点
 var BG_PATTERN_URL = 'img/pattern.svg';     // 官方涂鸦图案,与被移除的 CSS mask-image 同一文件。
 var BG_PATTERN_TILE = 430;                   // 官方 26.875rem(1rem=16px)对应的瓦片宽度(CSS px)。
 var BG_PATTERN_ASPECT = 2960 / 1440;         // 遮罩原图 viewBox 宽高比,取不到固有尺寸时兜底。
-var BG_DPR_MAX = 2;                          // 画布物理像素密度上限,兼顾高清屏锐度与弱机性能。
 
 function bgHexToRgb(hex) {  // 把 #rrggbb 颜色解析为 [r, g, b] 数组。
     var value = parseInt(hex.slice(1, 7), 16);
@@ -1965,7 +1964,7 @@ function bgBuildDoodle() {  // 把遮罩原图按当前设备像素密度光栅�
     if (!bgDoodleImg || !bgCtx) {
         return;
     }
-    var dpr = Math.min(window.devicePixelRatio || 1, BG_DPR_MAX);
+    var dpr = window.devicePixelRatio || 1;  // 不封顶:放大时浏览器 dpr 会升高,按真实值光栅化才 1:1 清晰。
     if (bgDoodlePattern && bgDoodleDpr === dpr) {
         return;  // 像素密度未变化无需重建,避免拖动窗口时反复光栅化 SVG。
     }
@@ -1985,7 +1984,7 @@ function bgUpdateDoodleGeometry() {  // 依据瓦片宽高比与画布尺寸计�
     if (!bgDoodleImg || !bgCanvas) {
         return;
     }
-    var dpr = Math.min(window.devicePixelRatio || 1, BG_DPR_MAX);
+    var dpr = window.devicePixelRatio || 1;  // 不封顶:与瓦片光栅化、画布分辨率保持一致,放大才清晰。
     bgDoodleTileW = BG_PATTERN_TILE * dpr;
     bgDoodleTileH = bgDoodleTileW * bgDoodleAspect();
     bgDoodleOffX = ((bgCanvas.width - bgDoodleTileW) / 2) % bgDoodleTileW;
@@ -1996,7 +1995,7 @@ function bgResizeCanvas() {  // 按视口设备分辨率设定主画布,并同�
     if (!bgCanvas || !bgCtx) {
         return;
     }
-    var dpr = Math.min(window.devicePixelRatio || 1, BG_DPR_MAX);
+    var dpr = window.devicePixelRatio || 1;  // 不封顶:画布按真实设备分辨率建立,放大时随 resize 重建且清晰。
     var width = Math.max(1, Math.round((bgCanvas.clientWidth || window.innerWidth || 1) * dpr));
     var height = Math.max(1, Math.round((bgCanvas.clientHeight || window.innerHeight || 1) * dpr));
     if (bgCanvas.width !== width || bgCanvas.height !== height) {
