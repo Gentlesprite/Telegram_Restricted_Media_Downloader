@@ -1834,6 +1834,20 @@ var bgCurrentPositions = [];
 var bgTargetPositions = [];
 var bgAnimating = false;
 var bgLastProgress = -1;  // 上一轮的已完成任务总数,-1 表示尚未记录基数。
+// 涂鸦遮罩烘焙相关:把 pattern.svg 光栅化后逐帧用 destination-in 烙进画布,取代 CSS mask-image,
+// 从而消除 Chrome 对「带遮罩的 canvas 每帧重绘」的分块闪烁(Edge 不触发此 bug)。
+var bgDoodleImg = null;     // 加载并补全尺寸的涂鸦原图。
+var bgDoodlePattern = null; // 由遮罩瓦片画布生成的重复图案,用于在设备像素空间 1:1 平铺。
+var bgDoodleLoader = null;  // 遮罩图加载器。
+var bgDoodleDpr = 0;        // 当前瓦片所用像素密度,用于判断是否需要重建。
+var bgDoodleTileW = 0;      // 遮罩瓦片宽(设备像素),对应官方 mask-size 的 26.875rem(430px)。
+var bgDoodleTileH = 0;      // 遮罩瓦片高(设备像素),按原图宽高比推算。
+var bgDoodleOffX = 0;       // 对应官方 mask-position:center 的平铺原点横向偏移(设备像素)。
+var bgDoodleOffY = 0;       // 对应官方 mask-position:center 的平铺原点纵向偏移(设备像素)。
+var BG_PATTERN_URL = 'img/pattern.svg';     // 官方涂鸦图案,与被移除的 CSS mask-image 同一文件。
+var BG_PATTERN_TILE = 430;                   // 官方 26.875rem(1rem=16px)对应的瓦片宽度(CSS px)。
+var BG_PATTERN_ASPECT = 2960 / 1440;         // 遮罩原图 viewBox 宽高比,取不到固有尺寸时兜底。
+var BG_DPR_MAX = 2;                          // 画布物理像素密度上限,兼顾高清屏锐度与弱机性能。
 
 function bgHexToRgb(hex) {  // 把 #rrggbb 颜色解析为 [r, g, b] 数组。
     var value = parseInt(hex.slice(1, 7), 16);
@@ -1913,9 +1927,129 @@ function bgGetGradientImageData() {  // 官方 drawStaticGradient:按与最近�
     return bgImageData;
 }
 
-function bgDrawImageData(id) {  // 先写入隐藏画布再拷贝到主画布,与官方两级结构一致。
+function bgDrawImageData(id) {  // 先写入隐藏画布,再拉伸拷贝到设备分辨率主画布,随后用 destination-in 烘焙涂鸦。
+    var viewW = bgCanvas.width || BG_GRADIENT_SIZE;
+    var viewH = bgCanvas.height || BG_GRADIENT_SIZE;
     bgHelperCtx.putImageData(id, 0, 0);
-    bgCtx.drawImage(bgHelperCanvas, 0, 0, BG_GRADIENT_SIZE, BG_GRADIENT_SIZE);
+    bgCtx.save();
+    bgCtx.globalCompositeOperation = 'source-over';
+    bgCtx.clearRect(0, 0, viewW, viewH);
+    bgCtx.imageSmoothingEnabled = true;
+    bgCtx.drawImage(bgHelperCanvas, 0, 0, BG_GRADIENT_SIZE, BG_GRADIENT_SIZE, 0, 0, viewW, viewH);
+    if (bgDoodlePattern) {
+        /* 用 destination-in 把涂鸦烘焙进画布像素,取代 CSS mask-image:遮罩不再由浏览器合成层处理,
+           每帧只剩两次全屏绘制,Chrome 不再有逐帧重合成遮罩导致的分块闪烁。
+           图案在设备像素空间 1:1 平铺,不缩放,清晰度与矢量遮罩一致。 */
+        bgCtx.globalCompositeOperation = 'destination-in';
+        bgCtx.setTransform(1, 0, 0, 1, 0, 0);
+        bgCtx.translate(bgDoodleOffX, bgDoodleOffY);
+        bgCtx.fillStyle = bgDoodlePattern;
+        bgCtx.fillRect(-bgDoodleOffX, -bgDoodleOffY, viewW, viewH);
+    }
+    bgCtx.restore();
+}
+
+function bgDoodleAspect() {  // 遮罩原图宽高比:优先取固有尺寸,退化成默认 300×150 等异常时按 viewBox 兜底。
+    var width = bgDoodleImg.naturalWidth;
+    var height = bgDoodleImg.naturalHeight;
+    if (width > 0 && height > 0) {
+        var ratio = height / width;
+        if (ratio > 1.2 && ratio < 3.0) {  // 合理涂鸦宽高比区间,排除浏览器默认 300×150 退化尺寸。
+            return ratio;
+        }
+    }
+    return BG_PATTERN_ASPECT;
+}
+
+function bgBuildDoodle() {  // 把遮罩原图按当前设备像素密度光栅化为瓦片画布,再生成重复图案。
+    if (!bgDoodleImg || !bgCtx) {
+        return;
+    }
+    var dpr = Math.min(window.devicePixelRatio || 1, BG_DPR_MAX);
+    if (bgDoodlePattern && bgDoodleDpr === dpr) {
+        return;  // 像素密度未变化无需重建,避免拖动窗口时反复光栅化 SVG。
+    }
+    bgDoodleDpr = dpr;
+    var tileW = Math.max(1, Math.round(BG_PATTERN_TILE * dpr));
+    var tileH = Math.max(1, Math.round(BG_PATTERN_TILE * bgDoodleAspect() * dpr));
+    var tile = document.createElement('canvas');
+    tile.width = tileW;
+    tile.height = tileH;
+    var tileCtx = tile.getContext('2d');
+    // 瓦片宽高比与 viewBox 一致,SVG 矢量按目标尺寸清晰光栅化,不会出现发虚或留白。
+    tileCtx.drawImage(bgDoodleImg, 0, 0, tileW, tileH);
+    bgDoodlePattern = bgCtx.createPattern(tile, 'repeat');
+}
+
+function bgUpdateDoodleGeometry() {  // 依据瓦片宽高比与画布尺寸计算居中平铺偏移(设备像素)。
+    if (!bgDoodleImg || !bgCanvas) {
+        return;
+    }
+    var dpr = Math.min(window.devicePixelRatio || 1, BG_DPR_MAX);
+    bgDoodleTileW = BG_PATTERN_TILE * dpr;
+    bgDoodleTileH = bgDoodleTileW * bgDoodleAspect();
+    bgDoodleOffX = ((bgCanvas.width - bgDoodleTileW) / 2) % bgDoodleTileW;
+    bgDoodleOffY = ((bgCanvas.height - bgDoodleTileH) / 2) % bgDoodleTileH;
+}
+
+function bgResizeCanvas() {  // 按视口设备分辨率设定主画布,并同步遮罩平铺偏移与图案,随后立即重绘。
+    if (!bgCanvas || !bgCtx) {
+        return;
+    }
+    var dpr = Math.min(window.devicePixelRatio || 1, BG_DPR_MAX);
+    var width = Math.max(1, Math.round((bgCanvas.clientWidth || window.innerWidth || 1) * dpr));
+    var height = Math.max(1, Math.round((bgCanvas.clientHeight || window.innerHeight || 1) * dpr));
+    if (bgCanvas.width !== width || bgCanvas.height !== height) {
+        bgCanvas.width = width;  // 重设宽高会清空画布并重置状态,需重建变换。
+        bgCanvas.height = height;
+    }
+    bgUpdateDoodleGeometry();
+    bgBuildDoodle();
+    bgDrawImageData(bgGetGradientImageData());
+}
+
+function bgEnsureSvgSize(text) {  // 给无固有尺寸的 SVG 补上与 viewBox 一致的 width/height,避免被缩放模糊。
+    return text.replace(/<svg([^>]*)>/i, function (match, attrs) {
+        if (/\bwidth\s*=/.test(attrs) && /\bheight\s*=/.test(attrs)) {
+            return match;
+        }
+        var box = attrs.match(/viewBox\s*=\s*["']\s*[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)/i);
+        if (!box) {
+            return match;
+        }
+        return '<svg' + attrs + ' width="' + box[1] + '" height="' + box[2] + '">';
+    });
+}
+
+function bgLoadDoodle() {  // 异步加载涂鸦遮罩,就绪后烘焙进画布并显示背景,失败则退化为纯渐变。
+    bgDoodleLoader = new Image();
+    bgDoodleLoader.onload = function () {
+        bgDoodleImg = bgDoodleLoader;
+        bgUpdateDoodleGeometry();
+        bgBuildDoodle();
+        bgDrawImageData(bgGetGradientImageData());
+        bgCanvas.classList.add('on');
+        if (bgDoodleLoader.src.indexOf('blob:') === 0) {
+            URL.revokeObjectURL(bgDoodleLoader.src);
+        }
+    };
+    bgDoodleLoader.onerror = function () {  // 遮罩加载失败:退化为无涂鸦的纯渐变背景,至少不再闪。
+        bgCanvas.classList.add('on');
+    };
+    // 直接加载无固有尺寸的 SVG 会让浏览器退化成 300×150 再放大,导致涂鸦模糊;
+    // 故先取文本、补上与 viewBox 一致的 width/height 再生成 Blob URL,确保按目标尺寸清晰光栅化。
+    if (typeof fetch === 'function') {
+        fetch(BG_PATTERN_URL).then(function (response) {
+            return response.text();
+        }).then(function (text) {
+            var blob = new Blob([bgEnsureSvgSize(text)], {type: 'image/svg+xml'});
+            bgDoodleLoader.src = URL.createObjectURL(blob);
+        }).catch(function () {
+            bgDoodleLoader.src = BG_PATTERN_URL;  // 取文本失败则退回直接加载(可能发虚,仅兜底)。
+        });
+    } else {
+        bgDoodleLoader.src = BG_PATTERN_URL;
+    }
 }
 
 function bgStepPositions() {  // 官方 stepPositions:色点向目标点做 0.1 线性插值,到位后停止。
@@ -1975,9 +2109,11 @@ function initBackgroundGradient() {
     bgCurrentPositions = bgGetPositions(0);
     bgTargetPositions = bgGetPositions(0);
     bgKeyShift = 1;
-    bgCtx = bgCanvas.getContext('2d', {alpha: false});
-    bgDrawImageData(bgGetGradientImageData());
-    bgCanvas.classList.add('on');
+    // 启用 alpha:涂鸦以外区域透明,露出页面底色,观感与原 CSS mask 一致。
+    bgCtx = bgCanvas.getContext('2d', {alpha: true});
+    bgResizeCanvas();  // 按设备分辨率建立主画布并完成首次绘制(此时尚无涂鸦,仅渐变)。
+    window.addEventListener('resize', bgResizeCanvas);
+    bgLoadDoodle();  // 遮罩就绪后再添加 on 类显示背景,避免未遮罩的全屏渐变闪现。
 }
 
 bindSections();

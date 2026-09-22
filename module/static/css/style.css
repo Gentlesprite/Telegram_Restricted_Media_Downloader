@@ -58,6 +58,10 @@ body {
 /* 官方 web.telegram.org/a 的背景:黑底 + 渐变画布被涂鸦图案遮罩,画布不透明度取 --pattern-intensity。
    逐条对应官方 CSS(.hrXj504d.WOInNdza ._4fgy3GBs):
    inset:0 铺满、mask-image 用 pattern.svg、mask-position:50%、mask-size:26.875rem、mask-repeat:repeat。 */
+/* Telegram 风格的动画渐变背景:画布由脚本按视口设备分辨率绘制并逐帧补间,涂鸦图案改由 JS 用
+   destination-in 烘焙进画布像素(不再用 CSS mask-image)。原因:Chrome 对「带 CSS mask 的 canvas
+   每帧重绘」会在重合成时先画出一帧未遮罩的渐变(左半边闪一下),Edge 的合成器不触发此 bug;
+   去掉 CSS mask 后只剩 canvas 自身绘制,跨浏览器都不闪,且动画/涂鸦样式与原来完全一致。 */
 .bg-gradient {
     position: fixed;
     inset: 0;
@@ -67,16 +71,6 @@ body {
     opacity: 0;
     transition: opacity .3s;
     pointer-events: none;
-    /* 提升为独立合成层:避免每次重绘都重新光栅化全屏 SVG 遮罩(外观不变)。 */
-    transform: translateZ(0);
-    -webkit-mask-image: url('../img/pattern.svg');
-    -webkit-mask-position: center;
-    -webkit-mask-size: 26.875rem auto;
-    -webkit-mask-repeat: repeat;
-    mask-image: url('../img/pattern.svg');
-    mask-position: center;
-    mask-size: 26.875rem auto;
-    mask-repeat: repeat;
 }
 
 .bg-gradient.on {
