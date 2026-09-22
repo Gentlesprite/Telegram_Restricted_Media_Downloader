@@ -120,7 +120,7 @@ from module.util import (
     safe_delete_message,
     get_message_by_link,
     get_chat_with_notify,
-    truncate_display_filename,
+    truncate_display_filename
 )
 
 
