@@ -28,17 +28,16 @@ from module import __version__
 from module.remote import rc
 from module.language import _t
 from module.parser import PARSE_ARGS
+from module.path_tool import split_path
 from module.stdio import (
     MetaData,
     PanelTable
 )
-from module.path_tool import split_path
 from module.task import (
     ChatInfo,
     UploadTask,
     DownloadTask
 )
-
 from module.util import (
     is_frozen,
     get_web_session,
