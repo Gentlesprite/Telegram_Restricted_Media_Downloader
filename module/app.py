@@ -21,14 +21,14 @@ from module import (
 )
 from module.language import _t
 from module.config import UserConfig
+from module.util import get_message_dtype
 from module.stdio import StatisticalTable
 from module.client import TelegramRestrictedMediaDownloaderClient
 
 from module.enums import (
     KeyWord,
     DownloadType,
-    DownloadStatus,
-
+    DownloadStatus
 )
 from module.path_tool import (
     validate_title,
@@ -37,7 +37,6 @@ from module.path_tool import (
     is_compressed_file,
     extract_full_extension,
 )
-from module.util import get_message_dtype
 
 
 class Application(UserConfig, StatisticalTable):
