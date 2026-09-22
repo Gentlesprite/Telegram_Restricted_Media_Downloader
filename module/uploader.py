@@ -30,12 +30,13 @@ from pyrogram.errors.exceptions.bad_request_400 import ChannelPrivate as Channel
 from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate as ChannelPrivate_406
 from pymediainfo import MediaInfo
 
-from module import console, log
+from module import (
+    log,
+    console
+)
 from module.language import _t
-
 from module.task import UploadTask
 from module.path_tool import get_mime_from_extension
-
 from module.stdio import (
     MetaData,
     ProgressBar
