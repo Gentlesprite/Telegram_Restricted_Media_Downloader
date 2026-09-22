@@ -45,7 +45,7 @@ from pyrogram.errors import (
     BadMsgNotification,
     CDNFileHashMismatch,
     InternalServerError,
-    FileReferenceExpired,
+    FileReferenceExpired
 )
 from pyrogram.file_id import (
     FileId,
