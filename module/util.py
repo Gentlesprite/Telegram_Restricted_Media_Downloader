@@ -515,14 +515,14 @@ def is_nuitka() -> bool:
     return '__compiled__' in globals()
 
 
-def is_pyinstaller():
+def is_pyinstaller() -> bool:
     """检查是否处于Pyinstaller编译环境。"""
     return bool(getattr(sys, 'frozen', False))
 
 
 def is_frozen() -> bool:
     """检查是否处于打包(冻结)环境,兼容Nuitka与Pyinstaller。"""
-    return bool(getattr(sys, 'frozen', False)) or '__compiled__' in globals()
+    return is_pyinstaller() or is_nuitka()
 
 
 def get_work_directory() -> str:
