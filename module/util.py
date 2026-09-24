@@ -511,8 +511,13 @@ def get_web_session() -> str:
 
 
 def is_nuitka() -> bool:
-    """检查是否处于Nuitka/Pyinstaller编译环境。"""
+    """检查是否处于Nuitka编译环境。"""
     return '__compiled__' in globals()
+
+
+def is_pyinstaller():
+    """检查是否处于Pyinstaller编译环境。"""
+    return bool(getattr(sys, 'frozen', False))
 
 
 def is_frozen() -> bool:
@@ -527,7 +532,6 @@ def get_work_directory() -> str:
             exe_path: str = sys.argv[0]
         else:
             exe_path: str = sys.executable  # PyInstaller单文件:sys.executable即原始exe真实路径(sys._MEIPASS才是临时目录)。
-
             if not os.path.dirname(exe_path):  # 经PATH启动导致sys.executable仅为命令名(无目录)时,回退到 sys.argv[0]。
                 exe_path = sys.argv[0]
         work_directory: str = os.path.dirname(os.path.abspath(exe_path))
