@@ -44,7 +44,6 @@ def ready_nuitka():
 
 
 def ready_web() -> list:
-    """定位网页面板的资源目录,返回(源目录, 打包内相对目录)。"""
     web_directories: list = []
     for relative_directory in ('module/templates', 'module/static'):
         path = str(Path(relative_directory).resolve())
@@ -62,12 +61,10 @@ def build(command):
 
 
 def check_python_version():
-    """检查Python版本是否满足：3.9.0 ≤ Python版本 < 3.14.0"""
-
     current_version = (VERSION_INFO.major, VERSION_INFO.minor, VERSION_INFO.micro)
 
     min_version = (3, 9, 0)
-    max_version = (3, 14, 0)
+    max_version = (3, 15, 0)
 
     version_valid = (
             VERSION_INFO.major == 3
@@ -76,7 +73,7 @@ def check_python_version():
 
     if not version_valid:
         print(
-            f'Python版本不满足要求\n当前版本:{sys.version}\n要求范围:3.9.0 ≤ Python 版本 < 3.14.0\n请安装符合要求的Python版本后重试。')
+            f'Python版本不满足要求\n当前版本:{sys.version}\n要求范围:{".".join(map(str, min_version))} ≤ Python 版本 < {".".join(map(str, max_version))}\n请安装符合要求的Python版本后重试。')
         sys.exit(1)
 
     print(f'{GRID}\nPython:\n{sys.version}\n{GRID}')
