@@ -43,51 +43,6 @@ def ready_nuitka():
         subprocess.run(f'{UV}pip install nuitka==4.2.1', shell=True)
 
 
-def ready_pymediainfo() -> tuple:
-    try:
-        import pymediainfo
-        mediainfo_lib_meta = None
-        mediainfo_lib_directory = os.path.dirname(pymediainfo.__file__)
-        if PLATFORM == 'win32':
-            file_name = 'MediaInfo.dll'
-            file_path = os.path.join(mediainfo_lib_directory, file_name)
-            if os.path.isfile(file_path):
-                mediainfo_lib_meta = {
-                    'file_name': file_name,
-                    'file_path': file_path
-                }
-        else:
-            file = 'libmediainfo.so'
-            milf = []
-            for i in os.listdir(mediainfo_lib_directory):
-                if i.startswith(file):
-                    milf.append(i)
-            if milf:
-                file_name = milf[0]
-                file_path = os.path.join(mediainfo_lib_directory, file_name)
-                if os.path.isfile(file_path):
-                    mediainfo_lib_meta = {
-                        'file_name': file_name,
-                        'file_path': file_path
-                    }
-        if mediainfo_lib_meta:
-            return mediainfo_lib_meta.get('file_name'), mediainfo_lib_meta.get('file_path')
-        file_name = 'MediaInfo.dll' if PLATFORM == 'win32' else 'libmediainfo.so.0'
-        path = str(Path(f'res/bin/{file_name}').resolve())
-        if os.path.isfile(path):
-            return file_name, path
-        print(f'缺少依赖,请使用pip install pymediainfo安装依赖后重试。')
-        sys.exit(1)
-    except (ImportError, ModuleNotFoundError, NameError):
-        if sys.version_info >= (3, 9):
-            subprocess.run(f'{UV}pip install pymediainfo==7.0.1', shell=True)
-            print(f'缺少pymediainfo依赖已自动安装,正在重启...')
-            subprocess.run([sys.executable] + sys.argv)
-        else:
-            print('python版本过低,请至少升级至3.9.x后重试。')
-        sys.exit(1)
-
-
 def ready_web() -> list:
     """定位网页面板的资源目录,返回(源目录, 打包内相对目录)。"""
     web_directories: list = []
@@ -132,7 +87,6 @@ if __name__ == '__main__':
     try:
         ready_nuitka()
         ready_zstandard()
-        media_info_lib_filename, media_info_lib_path = ready_pymediainfo()
         web_directories: list = ready_web()
         extension = '.exe' if PLATFORM == 'win32' else ''
         ico_path = 'res/icon.ico'
@@ -145,7 +99,6 @@ if __name__ == '__main__':
         command += f'--msvc=latest --windows-icon-from-ico="{ico_path}" --assume-yes-for-downloads ' if PLATFORM == 'win32' else ''
         command += f'--include-package-data=pyrogram '
         command += f'--include-module=pygments.lexers.data '
-        command += f'--include-data-file="{media_info_lib_path}"={media_info_lib_filename} '
         command += ''.join(map(lambda d: f'--include-data-dir="{d[0]}"="{d[1]}" ', web_directories))
         command += f'--output-dir={output} --output-filename="{SOFTWARE_SHORT_NAME}{extension}" --file-version={__version__} --product-version={__version__} --copyright="{copy_right}" '
         command += f'--script-name={main}'
