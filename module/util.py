@@ -521,10 +521,16 @@ def is_frozen() -> bool:
 
 
 def get_work_directory() -> str:
-    """获取软件工作目录,打包环境取可执行文件所在目录,源码环境取入口脚本所在目录。"""
-    if is_frozen():
-        # 打包后sys.argv[0]可能是命令名而非完整路径(如通过PATH启动),故必须使用sys.executable。
-        work_directory: str = os.path.dirname(os.path.abspath(sys.executable))
+    """获取软件工作目录,打包环境取原始可执行文件所在目录,源码环境取入口脚本所在目录。"""
+    if is_frozen():  # 单文件打包(Nuitka/Pyinstaller)会把文件解压到临时目录运行,sys.executable/__file__ 均可能指向临时目录。
+        if is_nuitka():  # Nuitka单文件:sys.executable指向临时解压目录,只有 sys.argv[0] 才是原始exe真实路径。
+            exe_path: str = sys.argv[0]
+        else:
+            exe_path: str = sys.executable  # PyInstaller单文件:sys.executable即原始exe真实路径(sys._MEIPASS才是临时目录)。
+
+            if not os.path.dirname(exe_path):  # 经PATH启动导致sys.executable仅为命令名(无目录)时,回退到 sys.argv[0]。
+                exe_path = sys.argv[0]
+        work_directory: str = os.path.dirname(os.path.abspath(exe_path))
     else:
         work_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
     log.info(f'获取软件工作目录:"{work_directory}"。')

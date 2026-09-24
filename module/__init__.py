@@ -77,9 +77,9 @@ LOG_TIME_FORMAT = '[%Y-%m-%d %H:%M:%S]'
 console = Console(log_path=False, log_time_format=LOG_TIME_FORMAT)
 SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
-__version__ = '2.0.7'
+__version__ = '2.0.8'
 __license__ = 'GPL-3.0-or-later'
-__update_date__ = '2026/09/23 00:57:35'
+__update_date__ = '2026/09/24 22:24:08'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/Gentlesprite>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
