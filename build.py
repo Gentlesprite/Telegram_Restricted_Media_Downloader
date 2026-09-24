@@ -14,14 +14,14 @@ from shutil import which
 try:
     import tomllib
 except ModuleNotFoundError:
-    import tomli as tomllib  # Python< 3.11回退。
+    import tomli as tomllib  # Python < 3.11回退。
 
-with open(Path(__file__).resolve().parent / 'pyproject.toml', 'rb') as _pyproject_file:
-    pyproject = tomllib.load(_pyproject_file)
+with open(Path(__file__).resolve().parent / 'pyproject.toml', 'rb') as f:
+    pyproject = tomllib.load(f)
 PROJECT = pyproject['project']
 AUTHOR = PROJECT['authors'][0]['name']
 __version__ = PROJECT['version']
-SOFTWARE_SHORT_NAME = ''.join(part[0].upper() for part in pyproject['name'].split('_') if part)
+SOFTWARE_SHORT_NAME = ''.join(part[0].upper() for part in PROJECT['name'].split('_') if part)
 
 VERSION_INFO = sys.version_info
 PLATFORM: str = sys.platform
