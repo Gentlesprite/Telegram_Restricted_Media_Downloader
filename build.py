@@ -5,17 +5,23 @@
 # File:build.py
 import os
 import sys
+import datetime
 import subprocess
 
 from pathlib import Path
 from shutil import which
 
-from module import (
-    AUTHOR,
-    SOFTWARE_SHORT_NAME,
-    __version__,
-    __update_date__
-)
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib  # Python< 3.11回退。
+
+with open(Path(__file__).resolve().parent / 'pyproject.toml', 'rb') as _pyproject_file:
+    pyproject = tomllib.load(_pyproject_file)
+PROJECT = pyproject['project']
+AUTHOR = PROJECT['authors'][0]['name']
+__version__ = PROJECT['version']
+SOFTWARE_SHORT_NAME = ''.join(part[0].upper() for part in pyproject['name'].split('_') if part)
 
 VERSION_INFO = sys.version_info
 PLATFORM: str = sys.platform
@@ -89,7 +95,7 @@ if __name__ == '__main__':
         ico_path = 'res/icon.ico'
         output = 'output'
         main = 'main.py'
-        years = __update_date__[:4]
+        years = str(datetime.datetime.now().year)
         copy_right = f'Copyright (C) 2024-{years} {AUTHOR}.All rights reserved.'
         command = f'nuitka --standalone --onefile '
         command += f'--no-deployment-flag=self-execution '
