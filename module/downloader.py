@@ -2365,7 +2365,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                             break
                         except FloodWait as e:
                             await asyncio.sleep(e.value)
-                        except Exception:
+                        except Exception as e:
+                            log.info(
+                                f'在/download_chat命令过程中,更新任务分配进度时失败,已跳过本次进度更新,{_t(KeyWord.REASON)}:"{e}"')
                             break
                 await self.create_download_task(
                     message_ids=link,
