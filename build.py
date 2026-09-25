@@ -104,6 +104,7 @@ if __name__ == '__main__':
         command += f'--include-module=pygments.lexers.data '
         command += ''.join(map(lambda d: f'--include-data-dir="{d[0]}"="{d[1]}" ', web_directories))
         command += f'--output-dir={output} --output-filename="{SOFTWARE_SHORT_NAME}{extension}" --file-version={__version__} --product-version={__version__} --copyright="{copy_right}" '
+        command += f'--remove-output ' if '--remove-output' in sys.argv else ''
         command += f'--script-name={main}'
         build(command)
     except KeyboardInterrupt:
