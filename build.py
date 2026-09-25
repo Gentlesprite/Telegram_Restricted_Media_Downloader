@@ -82,22 +82,21 @@ if __name__ == '__main__':
     check_python_version()
     try:
         ready_nuitka()
-        web_directories: list = ready_web()
         extension = '.exe' if PLATFORM == 'win32' else ''
         ico_path = 'res/icon.ico'
         output = 'output'
         main = 'main.py'
         years = str(datetime.datetime.now().year)
         copy_right = f'Copyright (C) 2024-{years} {AUTHOR}.All rights reserved.'
-        command = f'nuitka --standalone --onefile '
-        command += f'--no-deployment-flag=self-execution '
-        command += f'--msvc=latest --windows-icon-from-ico="{ico_path}" --assume-yes-for-downloads ' if PLATFORM == 'win32' else ''
-        command += f'--include-package-data=pyrogram '
-        command += f'--include-module=pygments.lexers.data '
-        command += ''.join(map(lambda d: f'--include-data-dir="{d[0]}"="{d[1]}" ', web_directories))
-        command += f'--output-dir={output} --output-filename="{SOFTWARE_SHORT_NAME}{extension}" --file-version={__version__} --product-version={__version__} --copyright="{copy_right}" '
-        command += f'--remove-output ' if '--remove-output' in sys.argv else ''
-        command += f'--script-name={main}'
-        build(command)
+        build_command = f'nuitka --standalone --onefile '
+        build_command += f'--no-deployment-flag=self-execution '
+        build_command += f'--msvc=latest --windows-icon-from-ico="{ico_path}" --assume-yes-for-downloads ' if PLATFORM == 'win32' else ''
+        build_command += f'--include-package-data=pyrogram '
+        build_command += f'--include-module=pygments.lexers.data '
+        build_command += ''.join(map(lambda d: f'--include-data-dir="{d[0]}"="{d[1]}" ', ready_web()))
+        build_command += f'--output-dir={output} --output-filename="{SOFTWARE_SHORT_NAME}{extension}" --file-version={__version__} --product-version={__version__} --copyright="{copy_right}" '
+        build_command += f'--remove-output ' if '--remove-output' in sys.argv else ''
+        build_command += f'--script-name={main}'
+        build(build_command)
     except KeyboardInterrupt:
         print('键盘中断。')
