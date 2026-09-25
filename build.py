@@ -90,8 +90,9 @@ if __name__ == '__main__':
         copy_right = f'Copyright (C) 2024-{years} {AUTHOR}.All rights reserved.'
         build_command = f'{sys.executable} -m '
         build_command += f'nuitka --standalone --onefile '
+        build_command += f'--zig '
         build_command += f'--no-deployment-flag=self-execution '
-        build_command += f'--msvc=latest --windows-icon-from-ico="{ico_path}" --assume-yes-for-downloads ' if PLATFORM == 'win32' else ''
+        build_command += f'--windows-icon-from-ico="{ico_path}" --assume-yes-for-downloads ' if PLATFORM == 'win32' else ''
         build_command += f'--include-package-data=pyrogram '
         build_command += f'--include-module=pygments.lexers.data '
         build_command += ''.join(map(lambda d: f'--include-data-dir="{d[0]}"="{d[1]}" ', ready_web()))

@@ -37,7 +37,7 @@ jobs:
       env:
         PYTHONIOENCODING: UTF-8
       run:
-        python build.py --low-memory --remove-output
+        python build.py --remove-output
 
     - name: Prepare release files
       shell: bash
