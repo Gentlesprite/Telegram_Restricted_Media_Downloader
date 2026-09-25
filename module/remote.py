@@ -63,7 +63,7 @@ class RemoteConfig(object):
             value = remote.get(name, default)
             # 字段缺失或类型不符时都退回默认值,避免单个脏字段导致整份配置失效。
             if not isinstance(value, expected_type):
-                log.debug(f'Unexpected field value: "{name}={value}", using default: "{default}"')
+                log.info(f'Unexpected field value: "{name}={value}", using default: "{default}"')
                 value = default
             config[name] = value
         return config
@@ -94,7 +94,7 @@ class RemoteConfig(object):
                 json.dump(config, f)
             log.info(f'Remote config cached successfully: {config}')
         except OSError as e:
-            log.debug(f'Failed to write to the remote config cache due to {e}')
+            log.info(f'Failed to write to the remote config cache due to {e}')
 
     async def fetch(self) -> dict:
         """依次尝试各个远程地址获取配置,全部失败时返回空字典。"""
@@ -125,7 +125,7 @@ class RemoteConfig(object):
                 with open(file=self.PATH, mode='r', encoding='UTF-8') as f:
                     return self.verify(json.load(f))
         except Exception as e:
-            log.debug(f'Failed to read the remote config cache due to {e}')
+            log.info(f'Failed to read the remote config cache due to {e}')
         return {}
 
 
