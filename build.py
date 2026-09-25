@@ -96,6 +96,7 @@ if __name__ == '__main__':
         build_command += f'--include-module=pygments.lexers.data '
         build_command += ''.join(map(lambda d: f'--include-data-dir="{d[0]}"="{d[1]}" ', ready_web()))
         build_command += f'--output-dir={output} --output-filename="{SOFTWARE_SHORT_NAME}{extension}" --file-version={__version__} --product-version={__version__} --copyright="{copy_right}" '
+        build_command += f'--low-memory ' if '--low-memory' in sys.argv else ''
         build_command += f'--remove-output ' if '--remove-output' in sys.argv else ''
         build_command += f'--script-name={main}'
         build(build_command)
