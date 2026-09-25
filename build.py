@@ -39,13 +39,6 @@ except OSError:
 GRID: str = GRID_CONTENT * TERMINAL_COLUMNS
 
 
-def ready_zstandard():
-    try:
-        import zstandard
-    except (ImportError, ModuleNotFoundError, NameError):
-        subprocess.run(f'{UV}pip install zstandard', shell=True)
-
-
 def ready_nuitka():
     subprocess.run(
         f'{UV}pip install -U --force-reinstall "Nuitka[app] @ https://github.com/Nuitka/Nuitka/archive/factory.zip"',
@@ -89,7 +82,6 @@ if __name__ == '__main__':
     check_python_version()
     try:
         ready_nuitka()
-        ready_zstandard()
         web_directories: list = ready_web()
         extension = '.exe' if PLATFORM == 'win32' else ''
         ico_path = 'res/icon.ico'
