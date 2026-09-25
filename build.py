@@ -41,7 +41,7 @@ GRID: str = GRID_CONTENT * TERMINAL_COLUMNS
 
 def ready_nuitka():
     subprocess.run(
-        f'{UV}pip install -U --force-reinstall "Nuitka[app] @ https://github.com/Nuitka/Nuitka/archive/factory.zip"',
+        f'{UV}pip install --upgrade --no-cache-dir "nuitka[app] @ https://github.com/Nuitka/Nuitka/archive/factory.zip"',
         shell=True)
 
 
@@ -88,7 +88,8 @@ if __name__ == '__main__':
         main = 'main.py'
         years = str(datetime.datetime.now().year)
         copy_right = f'Copyright (C) 2024-{years} {AUTHOR}.All rights reserved.'
-        build_command = f'nuitka --standalone --onefile '
+        build_command = f'{sys.executable} -m '
+        build_command += f'nuitka --standalone --onefile '
         build_command += f'--no-deployment-flag=self-execution '
         build_command += f'--msvc=latest --windows-icon-from-ico="{ico_path}" --assume-yes-for-downloads ' if PLATFORM == 'win32' else ''
         build_command += f'--include-package-data=pyrogram '

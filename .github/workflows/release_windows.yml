@@ -23,7 +23,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install -r requirements.txt
-        python -m pip install -U --force-reinstall "Nuitka[app] @ https://github.com/Nuitka/Nuitka/archive/factory.zip"
 
     - name: Extract metadata
       shell: bash
@@ -33,7 +32,7 @@ jobs:
         echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
         echo "CLEAN_VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
 
-    - name: Build with Nuitka
+    - name: Build
       shell: bash
       env:
         PYTHONIOENCODING: UTF-8
