@@ -1972,7 +1972,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         )
                     else:
                         raise Exception('不支持或被忽略的类型。')
-                except Exception as _:
+                except Exception as e:
                     task.set_error(value=_reason)
                     task.update_member(message_id=message.id, status=DownloadStatus.SKIP, note=_reason)
                     console.log(
@@ -1981,6 +1981,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
                         f'{_t(KeyWord.LINK_TYPE)}:{_error}'  # 链接类型。
                     )
+                    log.info(
+                        f'已跳过下载"{link}",不支持或被忽略的类型,{_t(KeyWord.REASON)}:"{str(e).replace("。", "")}"')
             self.queue.put_nowait(_task) if _task else None
 
     def __check_download_finish(
