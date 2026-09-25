@@ -46,7 +46,7 @@ def ready_nuitka():
     try:
         import nuitka
     except (ImportError, ModuleNotFoundError, NameError):
-        subprocess.run(f'{UV}pip install nuitka==4.2.1', shell=True)
+        subprocess.run(f'{UV}pip install nuitka==4.2.2', shell=True)
 
 
 def ready_web() -> list:
