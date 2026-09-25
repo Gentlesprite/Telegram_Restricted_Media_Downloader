@@ -99,6 +99,7 @@ if __name__ == '__main__':
         build_command += f'--output-dir={output} --output-filename="{SOFTWARE_SHORT_NAME}{extension}" --file-version={__version__} --product-version={__version__} --copyright="{copy_right}" '
         build_command += f'--low-memory ' if '--low-memory' in sys.argv else ''
         build_command += f'--remove-output ' if '--remove-output' in sys.argv else ''
+        build_command += f'--disable-cache=all ' if '--disable-cache=all' in sys.argv else ''
         build_command += f'--script-name={main}'
         build(build_command)
     except KeyboardInterrupt:

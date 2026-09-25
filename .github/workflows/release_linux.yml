@@ -35,7 +35,7 @@ jobs:
     - name: Build
       shell: bash
       run:
-        python3 build.py --remove-output
+        python3 build.py --disable-cache=all --remove-output
 
     - name: Prepare release files
       shell: bash
