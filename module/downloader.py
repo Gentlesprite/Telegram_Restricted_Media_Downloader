@@ -2508,7 +2508,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         '频道可能为私密频道或话题频道,当前账号可能已不在该频道,请让当前账号加入该频道后再重试'
                 }
             }
-        except ChannelPrivate_406 as e:
+        except ChannelPrivate_406 as e:  # noqa.
             return {
                 'chat_id': None,
                 'member_num': 0,

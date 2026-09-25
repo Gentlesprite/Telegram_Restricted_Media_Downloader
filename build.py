@@ -14,7 +14,7 @@ from shutil import which
 try:
     import tomllib
 except ModuleNotFoundError:
-    import tomli as tomllib  # Python < 3.11回退。
+    import tomli as tomllib  # noqa, Python < 3.11回退。
 
 with open(Path(__file__).resolve().parent / 'pyproject.toml', 'rb') as f:
     pyproject: dict = tomllib.load(f)
@@ -25,7 +25,7 @@ __version__: str = PROJECT['version']
 SOFTWARE_SHORT_NAME: str = ''.join(part[0].upper() for part in PROJECT['name'].split('_') if part)
 VERSION_INFO = sys.version_info
 PLATFORM: str = sys.platform
-UV: str = 'uv ' if which('uv') and os.path.exists('uv.lock') else ''
+UV: str = 'uv ' if which('uv') and os.path.exists('uv.lock') else ''  # noqa.
 MIN_PYTHON_VERSION: tuple = (3, 9, 0)
 MAX_PYTHON_VERSION: tuple = (3, 15, 0)
 MIN_NUITKA_VERSION: tuple = (4, 3, 0)
