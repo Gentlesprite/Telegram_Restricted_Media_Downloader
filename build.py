@@ -17,15 +17,19 @@ except ModuleNotFoundError:
     import tomli as tomllib  # Python < 3.11回退。
 
 with open(Path(__file__).resolve().parent / 'pyproject.toml', 'rb') as f:
-    pyproject = tomllib.load(f)
-PROJECT = pyproject['project']
-AUTHOR = PROJECT['authors'][0]['name']
-__version__ = PROJECT['version']
-SOFTWARE_SHORT_NAME = ''.join(part[0].upper() for part in PROJECT['name'].split('_') if part)
+    pyproject: dict = tomllib.load(f)
 
-VERSION_INFO = sys.version_info
+PROJECT: dict = pyproject['project']
+AUTHOR: str = PROJECT['authors'][0]['name']
+__version__: str = PROJECT['version']
+SOFTWARE_SHORT_NAME: str = ''.join(part[0].upper() for part in PROJECT['name'].split('_') if part)
+VERSION_INFO: tuple = sys.version_info
 PLATFORM: str = sys.platform
 UV: str = 'uv ' if which('uv') and os.path.exists('uv.lock') else ''
+MIN_PYTHON_VERSION: tuple = (3, 9, 0)
+MAX_PYTHON_VERSION: tuple = (3, 15, 0)
+MIN_NUITKA_VERSION: tuple = (4, 3, 0)
+
 try:
     TERMINAL_COLUMNS: int = os.get_terminal_size().columns
     GRID_CONTENT: str = '='
@@ -43,10 +47,9 @@ def ready_zstandard():
 
 
 def ready_nuitka():
-    try:
-        import nuitka
-    except (ImportError, ModuleNotFoundError, NameError):
-        subprocess.run(f'{UV}pip install nuitka==4.2.2', shell=True)
+    subprocess.run(
+        f'{UV}pip install -U --force-reinstall "Nuitka[app] @ https://github.com/Nuitka/Nuitka/archive/factory.zip"',
+        shell=True)
 
 
 def ready_web() -> list:
@@ -69,17 +72,14 @@ def build(command):
 def check_python_version():
     current_version = (VERSION_INFO.major, VERSION_INFO.minor, VERSION_INFO.micro)
 
-    min_version = (3, 9, 0)
-    max_version = (3, 15, 0)
-
     version_valid = (
             VERSION_INFO.major == 3
-            and min_version <= current_version < max_version
+            and MIN_PYTHON_VERSION <= current_version < MAX_PYTHON_VERSION
     )
 
     if not version_valid:
         print(
-            f'Python版本不满足要求\n当前版本:{sys.version}\n要求范围:{".".join(map(str, min_version))} ≤ Python 版本 < {".".join(map(str, max_version))}\n请安装符合要求的Python版本后重试。')
+            f'Python版本不满足要求\n当前版本:{sys.version}\n要求范围:{".".join(map(str, MIN_PYTHON_VERSION))} ≤ Python 版本 < {".".join(map(str, MAX_PYTHON_VERSION))}\n请安装符合要求的Python版本后重试。')
         sys.exit(1)
 
     print(f'{GRID}\nPython:\n{sys.version}\n{GRID}')
