@@ -399,19 +399,21 @@ class StatisticalTable:
         except Exception as e:
             log.error(f'打印代理配置表时出错,{_t(KeyWord.REASON)}:"{e}"')
         try:
-            # 展示链接内容表格。
-            with open(file=app.links, mode='r', encoding='UTF-8') as _:
-                res: list = [content.strip() for content in _.readlines() if content.strip()]
-            if res:
-                format_res: list = []
-                for i in enumerate(res, start=1):
-                    format_res.append(list(i))
-                link_table = PanelTable(
-                    title='链接内容',
-                    header=('编号', '链接'),
-                    data=format_res
-                )
-                link_table.print_meta()
+            if app.links and os.path.isdir(app.links):
+                log.warning(f'"{app.links}"是一个文件夹,并非.txt文本,请重新填写媒体链接文本文件的路径。')
+            else:
+                with open(file=app.links, mode='r', encoding='UTF-8') as _:
+                    res: list = [content.strip() for content in _.readlines() if content.strip()]
+                if res:
+                    format_res: list = []
+                    for i in enumerate(res, start=1):
+                        format_res.append(list(i))
+                    link_table = PanelTable(
+                        title='链接内容',
+                        header=('编号', '链接'),
+                        data=format_res
+                    )
+                    link_table.print_meta()
         except FileNotFoundError:
             log.warning('无法读取媒体链接文件,可能已被删除。')
         except (PermissionError, AttributeError) as e:  # v1.1.3 用户错误填写路径提示。
