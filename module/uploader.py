@@ -624,13 +624,18 @@ class TelegramUploader:
         upload_task.status = UploadStatus.UPLOADING
         try:
             await self.send_media(media, upload_task)
-        except Exception as e:
+        except Exception as e:  # send_media 自身吞异常,此处仅为兜底。
             log.error(f'[复用上传]发送失败,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
             upload_task.status = UploadStatus.FAILURE
             upload_task.error_msg = str(e)
-        else:
-            upload_task.status = UploadStatus.SUCCESS
-        UploadTask.TASKS.discard(upload_task)
+            return None
+        # send_media 内部只记录日志不抛异常,故以其是否把状态置为 SENT 判定成败。
+        if upload_task.status != UploadStatus.SENT:
+            upload_task.status = UploadStatus.FAILURE
+            upload_task.error_msg = '复用已上传媒体发送失败,详见日志。'
+            log.error(f'[复用上传]"{upload_task.file_path}"发送失败。')
+            return None
+        # 不做 UploadTask.TASKS.discard:与正常上传一致地保留在任务集中,供网页面板与统计表展示。
         return None
 
     def upload_complete_callback(
