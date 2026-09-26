@@ -32,8 +32,7 @@ from module import (
     console,
     TRMD_WEB_SESSION,
     PLATFORM,
-    REFERRAL_RECORD_PATH,
-
+    REFERRAL_RECORD_PATH
 )
 from module.enums import (
     Link,
@@ -608,6 +607,8 @@ class LimitCall:  # https://github.com/tangyoha/telegram_media_downloader/blob/m
 
     async def wait(self):
         """达到时间窗口内的最大调用次数时,等待至下一个时间窗口。"""
+        waiting = False
+        wait_time = 0.0
         while True:
             now = time.time()
             time_span = now - self.last_call_time
@@ -618,7 +619,21 @@ class LimitCall:  # https://github.com/tangyoha/telegram_media_downloader/blob/m
 
             if self.limit_call_times + 1 <= self.max_limit_call_times:
                 self.limit_call_times += 1
+                # 等待结束后提示一次,继续请求。
+                if waiting:
+                    console.log(
+                        f'已等待{int(now - wait_time)}秒,继续请求。',
+                        style='#FF4689'
+                    )
                 break
+
+            if not waiting:
+                waiting = True  # 达到上限时只提示一次,避免每秒重复打印。
+                wait_time = now
+                console.log(
+                    f'请求已达每分钟{self.max_limit_call_times}次的上限,等待{int(self.time_window - time_span) + 1}秒后继续。',
+                    style='#FF4689'
+                )
 
             await asyncio.sleep(1)
 
