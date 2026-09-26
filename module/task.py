@@ -62,6 +62,7 @@ class DownloadTask:
     TASKS: dict = {}  # 链接 -> DownloadTask。
     ORDER: list = []  # 链接首次出现的顺序,调度器按此顺序派发。
     COMPLETE_LINK: set = set()
+    DOWNLOADING_KEYS: set = set()  # (chat_id, message_id) -> 正在下载中的消息,防止不同链接(如媒体组与组内单条?single)并发下载同一消息导致数据竞争。
 
     def __init__(self, link: Union[str, int]):
         self.link: str = str(link)
@@ -214,11 +215,20 @@ class DownloadTask:
 
     @classmethod
     def pick_pending(cls) -> Union[dict, None]:
-        """按链接首次出现的顺序取出一个排队(PENDING)中的消息。"""
+        """按链接首次出现的顺序取出一个排队(PENDING)中的消息。
+
+        若消息已被其他任务占用(正在下载中),则跳过,避免相同消息被多个链接并发下载导致数据竞争。
+        """
         for task in cls.ordered_tasks():
             for item in task.items.values():
-                if item.get('status') == DownloadStatus.PENDING:
-                    return item
+                if item.get('status') != DownloadStatus.PENDING:
+                    continue
+                message = item.get('message')
+                if not isinstance(message, pyrogram.types.Message):
+                    continue
+                if (message.chat.id, message.id) in cls.DOWNLOADING_KEYS:
+                    continue
+                return item
         return None
 
     @classmethod
