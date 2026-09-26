@@ -333,7 +333,10 @@ class UploadTask:
     TASKS: set = set()
     TASK_COUNTER: int = 0
     NOTIFY: Optional[Callable] = None
-    UPLOADING_KEYS: set = set()  # 正在上传中的本地文件路径,防止不同链接(如媒体组与组内单条?single、重叠链接)并发上传同一文件导致上传缓存与源文件删除竞争。
+    # 正在上传中的本地文件路径 -> {'event': asyncio.Event, 'media': 已上传媒体的引用或None, 'success': bool}。
+    # 用于同一文件并发上传时,后续任务等待主导任务完成后复用其已上传的媒体引用。
+    # 直接发往自己的频道,避免重复上传与源文件删除竞争(源文件仅由主导任务删除)。
+    UPLOADING_KEYS: dict = {}
 
     def __init__(
             self,

@@ -21,7 +21,7 @@ from http.server import (
     BaseHTTPRequestHandler
 )
 
-from pyrogram import __version__ as pyrogram_version
+from pyrogram import __version__ as pyrogram_version # noqa
 
 from module import log
 from module import __version__

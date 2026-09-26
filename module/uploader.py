@@ -220,6 +220,12 @@ class TelegramUploader:
                 attributes=attributes,
                 mime_type=mime_type
             )
+        # 登记本文件的上传结果,供后续同文件任务(等待中的)复用其媒体引用直接发往各自频道。
+        entry = UploadTask.UPLOADING_KEYS.get(upload_task.file_path)
+        if entry is not None:
+            entry['media'] = media
+            entry['success'] = True
+            entry['event'].set()
         self.upload_queue.put_nowait((media, upload_task))
 
     async def send_media_worker(self):
@@ -549,11 +555,22 @@ class TelegramUploader:
             upload_task: UploadTask
     ):
         file_path = upload_task.file_path
-        # 同一本地文件已在上传中(如媒体组与组内单条?single、重叠链接导致同文件被重复触发),直接放弃本任务,避免并发上传竞争。
+        # 同一本地文件已在上传中:
+        # 等待主导任务完成,复用其已上传的媒体引用直接发往本任务频道,避免重复上传与源文件删除竞争。
         if file_path in UploadTask.UPLOADING_KEYS:
-            UploadTask.TASKS.discard(upload_task)
-            return None
-        UploadTask.UPLOADING_KEYS.add(file_path)
+            entry = UploadTask.UPLOADING_KEYS[file_path]
+            await entry['event'].wait()
+            if (entry['success']
+                    and entry['media'] is not None
+                    and not (upload_task.is_media_group and upload_task.send_as_media_group)):
+                return await self.reuse_upload(upload_task, entry['media'])
+            UploadTask.UPLOADING_KEYS.pop(file_path, None)  # 主导任务失败,或本任务为媒体组(避免错组):本任务转为新的主导任务重新上传。
+        # 成为该文件的主导上传任务,登记以便后续同文件任务复用。
+        UploadTask.UPLOADING_KEYS[file_path] = {
+            'event': asyncio.Event(),
+            'media': None,
+            'success': False
+        }
         file_size = upload_task.file_size
         while self.current_task_num >= self.max_upload_task:  # v1.0.7 增加下载任务数限制。
             await self.event.wait()
@@ -598,6 +615,24 @@ class TelegramUploader:
             )
             await _task
 
+    async def reuse_upload(
+            self,
+            upload_task: UploadTask,
+            media
+    ):
+        """复用主导任务已上传的媒体引用,直接发往本任务频道,避免重复上传与源文件删除竞争。"""
+        upload_task.status = UploadStatus.UPLOADING
+        try:
+            await self.send_media(media, upload_task)
+        except Exception as e:
+            log.error(f'[复用上传]发送失败,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+            upload_task.status = UploadStatus.FAILURE
+            upload_task.error_msg = str(e)
+        else:
+            upload_task.status = UploadStatus.SUCCESS
+        UploadTask.TASKS.discard(upload_task)
+        return None
+
     def upload_complete_callback(
             self,
             upload_task,
@@ -606,17 +641,23 @@ class TelegramUploader:
     ):
         try:
             _ = _future.result()
-        except Exception as e:
+        except (asyncio.CancelledError, Exception) as e:
             self.current_task_num -= 1
             self.pb.progress.remove_task(task_id=task_id)
             self.event.set()
-            UploadTask.UPLOADING_KEYS.discard(upload_task.file_path)
+            # 主导任务失败:通知等待者并清理,使后续同文件任务可重新上传。
+            entry = UploadTask.UPLOADING_KEYS.get(upload_task.file_path)
+            if entry is not None:
+                entry['success'] = False
+                entry['event'].set()
+            UploadTask.UPLOADING_KEYS.pop(upload_task.file_path, None)
             log.info(e)
             return
         file_path: str = upload_task.file_path
         self.current_task_num -= 1
         self.pb.progress.remove_task(task_id=task_id)
-        UploadTask.UPLOADING_KEYS.discard(file_path)
+        # 成功后保留 UPLOADING_KEYS 条目(含已上传媒体引用),供等待中的同文件任务复用;
+        # 源文件删除仅由主导任务执行,复用任务不重复删除。
         if upload_task.file_size < 10 * 1024 * 1024:
             if not safe_delete(os.path.join(UploadTask.DIRECTORY_NAME, f'{upload_task.sha256}.json')):
                 log.warning(f'无法删除"{os.path.basename(file_path)}"的上传缓存管理文件。')
