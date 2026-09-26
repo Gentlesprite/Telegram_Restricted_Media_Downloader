@@ -11,16 +11,16 @@
 </p>
 <p align="center">
   <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/Python-3.13.2-blue.svg?color=00B16A" alt="Python 3.13.2"/>
+<img src="https://img.shields.io/badge/Python-3.13.2-blue.svg?color=00B16A" alt="Python 3.13.2"/>
   </a>
   <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.26-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.26"/>
+<img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.26-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.26"/>
   </a>
   <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/Platform-Windows & Linux%20-blue?color=00B16A" alt="Platform Windows & Linux"/>
+<img src="https://img.shields.io/badge/Platform-Windows & Linux%20-blue?color=00B16A" alt="Platform Windows & Linux"/>
   </a>
-    <a href="https://deepwiki.com/Gentlesprite/Telegram_Restricted_Media_Downloader">
-    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+<a href="https://deepwiki.com/Gentlesprite/Telegram_Restricted_Media_Downloader">
+<img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
   </a>
 </p>
 
@@ -31,7 +31,7 @@
 > 如果你**遇到任何问题**，请先仔细**阅读**:[_"常见问题及解决方案汇总"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
 > **没有找到解决方案**再进群或私聊提问。
 
-# 免责声明:
+# 免责声明
 
 本项目以`GNU GPL-3.0`协议开源发布。
 
@@ -47,7 +47,7 @@
 | Telegram交流群  |          [点击加入](https://t.me/+6KKA-buFaixmNTE1)          |
 |  **支持作者**   | [点击跳转](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/tree/main?tab=readme-ov-file#80%E6%94%AF%E6%8C%81%E4%BD%9C%E8%80%85) |
 
-# 1.0.下载地址:
+# 1.0.下载地址
 
 |      平台      |                           下载地址                           |    备注    |
 | :------------: | :----------------------------------------------------------: | :--------: |
@@ -57,7 +57,7 @@
 |     Gitee      | [点击跳转](https://gitee.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases) | 仅发布源码 |
 | Telegram交流群 |          [点击加入](https://t.me/+6KKA-buFaixmNTE1)          |   群文件   |
 
-## 1.1.(选看)推荐终端:
+## 1.1.（选看）推荐终端
 <details>
 <summary><strong>点击展开</strong></summary>
 
@@ -80,9 +80,9 @@
 
 </details>
 
-# 2.0.快速开始:
+# 2.0.快速开始
 
-## 2.1.申请电报API:
+## 2.1.申请电报API
 
 1. 前往网站:**https://my.telegram.org/auth**
 
@@ -110,7 +110,7 @@
 
 5. 申请成功会得到一个`api_hash`和`api_id`保存下载，**切记不要泄露给任何人！**
 
-## 2.2.(选看)电报机器人(bot_token)申请及使用教程:
+## 2.2.（选看）电报机器人（bot_token）申请及使用教程
 > [!NOTE]
 > 如果配置了机器人，只要**保持软件运行**，就能实现**多端发送下载命令**并且**随时进行下载**。  
 > 故可以将软件部署在服务器上，无论是Windows还是Linux平台。  
@@ -121,11 +121,11 @@
 <details>
 <summary><strong>点击展开</strong></summary>
 
-### 	2.2.1.申请教程:
+### 2.2.1.申请教程
 
-1. 前往网站:https://t.me/BotFather 
+1. 前往网站：https://t.me/BotFather 
 
-2. 打开后会**提示**"要打开 Telegram Desktop 吗?"此时**点击**"打开Telegram Desktop"如下图所示：
+2. 打开后会**提示**"要打开 Telegram Desktop 吗？"此时**点击**"打开Telegram Desktop"如下图所示：
 
    ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_2_1.png)
 
@@ -143,7 +143,7 @@
 
    ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_2_4.png)
 
-5. 这个名字是显示名称 (display name)，并不是唯一识别码，随便设置一下即可，之后可以通过 `/setname`命令进行修改。
+5. 这个名字是显示名称（display name），并不是唯一识别码，随便设置一下即可，之后可以通过 `/setname`命令进行修改。
 
    ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_2_5.png)
 
@@ -159,9 +159,9 @@
 
    如果结果如**上图**所示，则代表`bot_token`申请成功了，箭头指的红框处就是你所申请的`bot_token`，**切记不要泄露给任何人！**
 
-### 	2.2.2.使用教程:
+### 2.2.2.使用教程
 
-1. 申请完成后，在软件配置时询问"是否启用「机器人」(需要提供bot_token)? - 「y|n」(默认n)"选择`y`代表**需要**使用，如下图所示：
+1. 申请完成后，在软件配置时询问"是否启用「机器人」（需要提供bot_token）？ - 「y|n」（默认n）"选择`y`代表**需要**使用，如下图所示：
 
    ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_2_8.png)
 
@@ -171,7 +171,7 @@
 
    ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_2_9.png)
 
-3. 在`Telegram`客户端中找到与`BotFather`的对话框，找到"2.2.1.申请教程"第7步对话的位置(或者用你自己的方式找到你的机器人的对话框)，如下图所示：
+3. 在`Telegram`客户端中找到与`BotFather`的对话框，找到"2.2.1.申请教程"第7步对话的位置（或者用你自己的方式找到你的机器人的对话框），如下图所示：
 
    ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_2_10.png)
 
@@ -192,35 +192,43 @@
    | 命令               | 用法                                                         | 解释                                                         |
    | :----------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
    | `/help`            | 向机器人发送发送`/help`即可。                                | 展示**可用**命令。                                           |
-   | `/download`        | `/download 链接1 链接2 链接3 链接n`或`/download 频道链接 1 100` | 分配**新的**下载任务，两种方式可选(**指定链接下载**和**范围下载**，具体使用方法请见下方说明)。 |
+   | `/download`        | `/download 链接1 链接2 链接3 链接n`或`/download 频道链接 1 100` | 分配**新的**下载任务，两种方式可选（**指定链接下载**和**范围下载**，具体使用方法请见下方说明）。 |
    | `/table`           | 向机器人发送`/table`即可。                                   | 在**终端**输出**当前**下载情况的**统计信息**。               |
    | `/forward`         | `/forward https://t.me/A https://t.me/B 1 100 `              | 将**频道A**的消息转发至**频道B**，其中`1`代表`起始ID`，`100`代表截止`ID`。 |
    | `/exit`            | 向机器人发送`/exit`即可。                                    | **退出**软件。                                               |
-   | `/listen_download` | `/listen_download https://t.me/A https://t.me/B https://t.me/n` | **实时**监听**频道A**、**频道B**和**频道n**的**最新消息**(视频和图片)进行下载。 |
-   | `/listen_forward`  | `/listen_forward https://t.me/A https://t.me/B`              | **实时**监听**频道A**的**最新消息**(任意消息)转发至**频道B**。但当**频道A**为**私密频道**时候无法转发。 |
+   | `/listen_download` | `/listen_download https://t.me/A https://t.me/B https://t.me/n` | **实时**监听**频道A**、**频道B**和**频道n**的**最新消息**（视频和图片）进行下载。 |
+   | `/listen_forward`  | `/listen_forward https://t.me/A https://t.me/B`              | **实时**监听**频道A**的**最新消息**（任意消息）转发至**频道B**。但当**频道A**为**私密频道**时候无法转发。 |
    | `/listen_info`     | 向机器人发送`/listen_info`即可。                             | 查看当前已经创建的监听信息。                                 |
    | `/upload`          | `/upload` `本地文件` `目标频道`                              | 上传**本地的文件**到**指定频道**。                           |
-   | `/upload_r`        | `/upload_r 本地文件夹 目标频道`                              | **递归**上传文件夹(**包含子文件夹**)到**指定频道**。         |
+   | `/upload_r`        | `/upload_r 本地文件夹 目标频道`                              | **递归**上传文件夹（**包含子文件夹**）到**指定频道**。         |
    | `/download_chat`   | `/download_chat 频道链接`                                    | 下载**指定频道**并支持**通过内联键盘自定义内容过滤**。       |
 
-   其他功能:
+   其他功能：
    - （`≥v1.8.7`）转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`类型的消息给机器人，即可创建下载任务。
       - 此项功能不受用户自定义下载类型限制，确保文件即时获取。
       - 转发的消息将按新消息处理，每次均生成独立文件命名。暂不支持重复文件识别，请妥善管理多次转发的相同内容。
       - 此功能仅用于便利用户日常使用，对于无法被转发、下载的消息，请根据实际需求使用对应的命令。
 
-6. `/help`命令使用教程，如下图所示：
+---
+
+### 2.2.3.命令
+
+#### /help
 
    ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_2_13.png)
 
-7. 点击**菜单**可以显示机器人可用的命令，如下图所示：
+---
+
+#### 菜单
 
    ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_2_14.png)
 
-8. `/download`命令使用教程，如下图所示：
-	> **⚠️ 注意：**  
-	> 自版本`≥v1.6.3`起：  
-	> 已全面支持下载时的断点续传功能（支持所有上传场景），增强了在较差网络环境下的传输稳定性与可靠性。  
+---
+
+#### /download
+> **⚠️ 注意：**  
+> 自版本`≥v1.6.3`起：  
+> 已全面支持下载时的断点续传功能（支持所有上传场景），增强了在较差网络环境下的传输稳定性与可靠性。  
 
    - 方式一：
      - ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_2_15.png)
@@ -239,11 +247,13 @@
        # 代表下载https://t.me/test从消息ID=1到结束ID=500的媒体。
        ```
 
-9. `/table`命令使用教程：
+---
+
+#### /table
 
    需要**注意**的是，这个表格是**实时**的**状态**，并不是**最终**下载完成的**结果**，每一次使用它都会随着**当前**的**下载记录**而更新。
 
-   **链接统计表**的使用，如下图所示:
+   **链接统计表**的使用，如下图所示：
 
    ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_2_17.png)
 
@@ -253,30 +263,32 @@
 
    - **链接统计表**仅会统计**所有支持的类型**，**并不会只统计**用户**当前所选择**的类型。
 
-   - **链接统计表**对于**评论区媒体**的统计，会出现**总数统计错误**的问题，体现在**总数**为`1`，**小于**当前的**下载数**，**完成率**`>>100%`的问题(该问题已在`≥v1.5.9`修复)。
+   - **链接统计表**对于**评论区媒体**的统计，会出现**总数统计错误**的问题，体现在**总数**为`1`，**小于**当前的**下载数**，**完成率**`>>100%`的问题（该问题已在`≥v1.5.9`修复）。
 
-   - 当用户**未选择**下载**所有支持的类型**时，在**用户所选择的类型**下载完成后(或使用机器人发送**链接统计表**)，尽管所有用户指定类型的文件已经下载完成，当**链接统计表**显示`完成率`不为`100%`时，代表该链接还存在其他用户未指定的文件类型，但实际用户所指定的类型已经下载完成了，是正常情况(该问题已在`≥v2.0.2`调整：在机器人设置或配置文件中被定义为跳过的下载类型与不支持的下载类型，统计时不再计入总数)。
+   - 当用户**未选择**下载**所有支持的类型**时，在**用户所选择的类型**下载完成后（或使用机器人发送**链接统计表**），尽管所有用户指定类型的文件已经下载完成，当**链接统计表**显示`完成率`不为`100%`时，代表该链接还存在其他用户未指定的文件类型，但实际用户所指定的类型已经下载完成了，是正常情况（该问题已在`≥v2.0.2`调整：在机器人设置或配置文件中被定义为跳过的下载类型与不支持的下载类型，统计时不再计入总数）。
    
    - 版本`≥v1.6.5`起已支持**导出表格**功能，通过该命令可在运行时控制**是否**在退出后**导出指定类型的表格**。
    
-   **计数统计表**的使用，如下图所示:
+   **计数统计表**的使用，如下图所示：
    
    ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_2_19.png)
    
    ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_2_20.png)
    
-10. `/forward`命令使用教程：
+---
 
-	> **⚠️ 注意：**  
-	> 消息能否转发，在于频道是否开启了`限制保存内容`功能。  
-	> 如果**无法转发**，**机器人**会在**聊天框**提供一个**下载按钮**与**下载后上传按钮(`≥v1.6.7`)**。  
-	> 自版本`≥v1.6.9`起：  
-	> `/forward`将支持过滤转发类型。  
-	> 可通过`[帮助页面]`->`[设置]`->`[转发设置]`进行修改。  
-	> 自版本`≥v1.7.5`起：  
-	> 为确保"受限转发"功能顺利完成，在**下载后上传**过程中，创建下载任务时将**忽略配置文件中设置的下载类型限制**，此时（指"受限转发"情况）`/forward`命令**无法按照**`[转发设置]`过滤类型。  
-	> 自版本`≥v1.8.5`起：  
-	> 为确保"受限转发"功能顺利完成，在**下载后上传**过程中，创建下载任务时将**忽略该链接是否被重复添加的判定**。
+#### /forward
+
+> **⚠️ 注意：**  
+> 消息能否转发，在于频道是否开启了`限制保存内容`功能。  
+> 如果**无法转发**，**机器人**会在**聊天框**提供一个**下载按钮**与**下载后上传按钮（`≥v1.6.7`）**。  
+> 自版本`≥v1.6.9`起：  
+> `/forward`将支持过滤转发类型。  
+> 可通过`[帮助页面]`->`[设置]`->`[转发设置]`进行修改。  
+> 自版本`≥v1.7.5`起：  
+> 为确保"受限转发"功能顺利完成，在**下载后上传**过程中，创建下载任务时将**忽略配置文件中设置的下载类型限制**，此时（指"受限转发"情况）`/forward`命令**无法按照**`[转发设置]`过滤类型。  
+> 自版本`≥v1.8.5`起：  
+> 为确保"受限转发"功能顺利完成，在**下载后上传**过程中，创建下载任务时将**忽略该链接是否被重复添加的判定**。
 
 - 转发消息语法：
     ```bash
@@ -331,56 +343,64 @@
    - 无论使用方式1或方式2，都代表转发**个人收藏夹**中从`消息ID=1`到结束`ID=500`的消息到`https://t.me/test` **频道**。
 
 
-11. `/exit`命令使用教程，如下图所示：
+---
+
+#### /exit
 
    ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_2_21.png)
 
-12. `/listen_download`命令使用教程：
+---
+
+#### /listen_download
 
 - `/listen_download`监听下载用于，实时监听该链接的最新消息进行下载。
    - 在用户发送了正确的监听命令后，会收到机器人的成功提示。
    - 当被监听的频道有可下载的内容时，就会自动发送命令下载。
 
-- ### 注册监听下载：
+##### 注册监听下载
 
-    ```bash
-    /listen_download https://t.me/A
-    ```
+```bash
+/listen_download https://t.me/A
+```
 
-- ### 注销监听下载：
+##### 注销监听下载
 
-    #### _再次向机器人发送创建监听时的命令，机器人将会提供给用户一个用于注销监听的内联键盘，点击确认即可。_
+###### 注销方法
 
-    ```bash
-    /listen_download https://t.me/A
-    ```
+_再次向机器人发送创建监听时的命令，机器人将会提供给用户一个用于注销监听的内联键盘，点击确认即可。_
 
-- ### 注册多个监听下载：
+```bash
+/listen_download https://t.me/A
+```
 
-    ```bash
-    /listen_download https://t.me/A https://t.me/B https://t.me/n
-    ```
+##### 注册多个监听下载
 
-- ### 注销多个监听下载：
+```bash
+/listen_download https://t.me/A https://t.me/B https://t.me/n
+```
 
-    ```bash
-    /listen_download https://t.me/A https://t.me/B https://t.me/n
-    ```
+##### 注销多个监听下载
 
-13. `/listen_forward`命令使用教程：
+```bash
+/listen_download https://t.me/A https://t.me/B https://t.me/n
+```
 
-	> **⚠️ 注意：**  
-	> 自版本`≥v1.6.7`起：  
-	> 当检测到"受限转发"时，自动采用"下载后上传"的方式(默认**开启**)。  
-	> 当**下载并完成上传**后，可选择**是否删除本地文件**(默认**关闭**)。  
-	> 并且可通过`[帮助页面]`->`[设置]`->`[上传设置]`进行修改。  
-	> 自版本`≥v1.6.9`起：  
-	> `/listen_forward`将支持过滤转发类型。  
-	> 可通过`[帮助页面]`->`[设置]`->`[转发设置]`进行修改。  
-	> 自版本`≥v1.7.5`起：  
-	> 为确保"受限转发"功能顺利完成，在**下载后上传**过程中，创建下载任务时将**忽略配置文件中设置的下载类型限制**。  
-	> 自版本`≥v1.8.5`起：  
-	> 为确保"受限转发"功能顺利完成，在**下载后上传**过程中，创建下载任务时将**忽略该链接是否被重复添加的判定**。
+---
+
+#### /listen_forward
+
+> **⚠️ 注意：**  
+> 自版本`≥v1.6.7`起：  
+> 当检测到"受限转发"时，自动采用"下载后上传"的方式（默认**开启**）。  
+> 当**下载并完成上传**后，可选择**是否删除本地文件**（默认**关闭**）。  
+> 并且可通过`[帮助页面]`->`[设置]`->`[上传设置]`进行修改。  
+> 自版本`≥v1.6.9`起：  
+> `/listen_forward`将支持过滤转发类型。  
+> 可通过`[帮助页面]`->`[设置]`->`[转发设置]`进行修改。  
+> 自版本`≥v1.7.5`起：  
+> 为确保"受限转发"功能顺利完成，在**下载后上传**过程中，创建下载任务时将**忽略配置文件中设置的下载类型限制**。  
+> 自版本`≥v1.8.5`起：  
+> 为确保"受限转发"功能顺利完成，在**下载后上传**过程中，创建下载任务时将**忽略该链接是否被重复添加的判定**。
 
 - `/listen_forward`监听转发用于，实时监听该链接的最新消息。
    - 与`/forward`命令一样，消息能否转发，在于频道是否开启了`限制保存内容`功能。
@@ -388,35 +408,39 @@
    - 在用户发送了正确的监听命令后，会收到机器人的成功提示。
    - 当被监听的频道有**任何**新内容时，就会自动转发至用户所指定的频道。
 
-- ### 监听行为说明：
+##### 监听行为说明
 
-    - **频道独占原则：**
-       - 每个频道**同一时间**只能激活一种监听模式（下载或转发）。
-       - 对于`/listen_forward`命令，"同一频道"特指**被监听**的源频道。
-       - 转发目标频道**不受此限制**，仍可通过`/listen_download`创建下载任务。
-    - **操作限制：**
-       - 当`频道A`正在监听转发`频道B`时：
-          - 可以**同时**在`频道B`设置监听下载。
-          - 但`频道B`的监听下载，不会响应来自`频道A`的监听转发。
-    - **监听切换流程：**
-       - 必须先通过**同一命令**(注册监听时的命令)来取消现有监听。
-       - 然后才能创建**新的监听**事件。
+- **频道独占原则：**
+   - 每个频道**同一时间**只能激活一种监听模式（下载或转发）。
+   - 对于`/listen_forward`命令，"同一频道"特指**被监听**的源频道。
+   - 转发目标频道**不受此限制**，仍可通过`/listen_download`创建下载任务。
+- **操作限制：**
+   - 当`频道A`正在监听转发`频道B`时：
+      - 可以**同时**在`频道B`设置监听下载。
+      - 但`频道B`的监听下载，不会响应来自`频道A`的监听转发。
+- **监听切换流程：**
+   - 必须先通过**同一命令**（注册监听时的命令）来取消现有监听。
+   - 然后才能创建**新的监听**事件。
 
-- ### 注册监听转发：
+##### 注册监听转发
 
-    ```bash
-    /listen_forward https://t.me/A https://t.me/B
-    ```
+```bash
+/listen_forward https://t.me/A https://t.me/B
+```
 
-- ### 注销监听转发：
+##### 注销监听转发
 
-    #### _再次向机器人发送创建监听时的命令，机器人将会提供给用户一个用于注销监听的内联键盘，点击确认即可。_
+###### 注销方法
 
-    ```bash
-    /listen_forward https://t.me/A https://t.me/B
-    ```
+_再次向机器人发送创建监听时的命令，机器人将会提供给用户一个用于注销监听的内联键盘，点击确认即可。_
 
-14. `/listen_info`命令使用教程：
+```bash
+/listen_forward https://t.me/A https://t.me/B
+```
+
+---
+
+#### /listen_info
 
 - `/listen_info`用于查看**当前**已经创建的**监听信息**，**直接发送**即可：
 
@@ -424,12 +448,14 @@
     /listen_info
     ```
 
-15. `/upload`命令使用教程：
-	> **⚠️ 注意：**  
-	> 自版本`≥v1.7.9`起：  
-	> 已全面支持上传时的断点续传功能（支持所有上传场景），增强了在较差网络环境下的传输稳定性与可靠性。  
-	> 自版本`≥v1.8.4`起：  
-	> `/upload`命令支持`me`、`self`作为目标频道的参数（`me`、`self`作为目标频道参时，代表指向个人收藏夹`Saved Messages`）  
+---
+
+#### /upload
+> **⚠️ 注意：**  
+> 自版本`≥v1.7.9`起：  
+> 已全面支持上传时的断点续传功能（支持所有上传场景），增强了在较差网络环境下的传输稳定性与可靠性。  
+> 自版本`≥v1.8.4`起：  
+> `/upload`命令支持`me`、`self`作为目标频道的参数（`me`、`self`作为目标频道参时，代表指向个人收藏夹`Saved Messages`）  
 
 - `/upload`用于上传本地的文件到指定频道。
   
@@ -440,58 +466,62 @@
     ```bash
    /upload 本地文件(夹) 目标频道
    ```
-    ### 注意：
+##### 注意
 
-    `Telegram` 对上传的**单个文件**大小设有**明确限制**：
+`Telegram` 对上传的**单个文件**大小设有**明确限制**：
 
-    - **普通用户**：**单个文件**最大上传大小为`2000 MiB`（约 2 GB）
-    - **会员用户（Telegram Premium）**：**单个文件**最大上传大小为`4000 MiB`（约 4 GB）
+- **普通用户**：**单个文件**最大上传大小为`2000 MiB`（约 2 GB）
+- **会员用户（Telegram Premium）**：**单个文件**最大上传大小为`4000 MiB`（约 4 GB）
 
-    ### 对于Windows用户：
-    #### 上传一个文件：
+##### 对于Windows用户
+###### 上传一个文件
+```bash
+/upload C:\files\video.mp4 https://t.me/test
+```
+###### 上传一个文件夹（≥v1.7.1）
+```bash
+/upload C:\files https://t.me/test
+```
+##### 对于Linux用户
+###### 上传一个文件
+```
+/upload /home/username/files/video.mp4 https://t.me/test
+```
+###### 上传一个文件夹（≥v1.7.1）
+```
+/upload /home/username/files https://t.me/test
+```
+
+---
+
+#### /upload_r
+> **⚠️ 注意：**  
+> 自版本`≥v1.8.4`起：  
+> `/upload_r`命令支持`me`、`self`作为目标频道的参数（`me`、`self`作为目标频道参时，代表指向个人收藏夹`Saved Messages`）。  
+
+- `/upload_r`命令是`/upload`命令的扩展版本，专为**批量文件上传**场景设计，支持递归处理目录结构，与`/upload`不同的是：
+
+  - `/upload_r`命令接收**文件夹路径**作为其第二个参数，自动**遍历该目录**及其**所有子目录**中的文件。
+
+    ```bash
+    /uploadr C:\files https://t.me/test
+    ```
+
+  - 当**第二个参数**为**文件路径**时，自动切换为 `/upload`的单文件上传模式。
+
+    ```bash
+    /uploadr C:\files\video.mp4 https://t.me/test
+    ```
+
     ```bash
     /upload C:\files\video.mp4 https://t.me/test
     ```
-    #### 上传一个文件夹（≥v1.7.1）：
-    ```bash
-    /upload C:\files https://t.me/test
-    ```
-    ### 对于Linux用户：
-    #### 上传一个文件：
-    ```
-    /upload /home/username/files/video.mp4 https://t.me/test
-    ```
-    #### 上传一个文件夹（≥v1.7.1）：
-    ```
-    /upload /home/username/files https://t.me/test
-    ```
 
-16. `/upload_r`命令使用教程：
-	> **⚠️ 注意：**  
-	> 自版本`≥v1.8.4`起：  
-	> `/upload_r`命令支持`me`、`self`作为目标频道的参数（`me`、`self`作为目标频道参时，代表指向个人收藏夹`Saved Messages`）。  
+    _以上两个命令在功能上完全等效，系统会自动识别文件类型并采用相应的上传策略。_
 
-    - `/upload_r`命令是`/upload`命令的扩展版本，专为**批量文件上传**场景设计，支持递归处理目录结构，与`/upload`不同的是：
+---
 
-      - `/upload_r`命令接收**文件夹路径**作为其第二个参数，自动**遍历该目录**及其**所有子目录**中的文件。
-
-        ```bash
-        /uploadr C:\files https://t.me/test
-        ```
-
-      - 当**第二个参数**为**文件路径**时，自动切换为 `/upload`的单文件上传模式。
-
-        ```bash
-        /uploadr C:\files\video.mp4 https://t.me/test
-        ```
-
-        ```bash
-        /upload C:\files\video.mp4 https://t.me/test
-        ```
-
-        _以上两个命令在功能上完全等效，系统会自动识别文件类型并采用相应的上传策略。_
-
-16. `/download_chat`命令使用教程：
+#### /download_chat
 
 - `/download_chat`下载指定频道。
 
@@ -503,12 +533,12 @@
    
 - 目前支持的过滤方式：
 
-    |  过滤方式  |                       默认值                       |
-    | :--------: | :------------------------------------------------: |
-    |  日期范围  | `第一条消息的发送日期`～`最后的一条消息的发生日期` |
-    |  文件类型  |   `视频`、`图片`、`音频`、`语音`、`GIF`、`文档`    |
-    | 匹配关键词 |                      &ndash;                       |
-    | 包含评论区 |                        `关`                        |
+|  过滤方式  |                       默认值                       |
+| :--------: | :------------------------------------------------: |
+|  日期范围  | `第一条消息的发送日期`～`最后的一条消息的发生日期` |
+|  文件类型  |   `视频`、`图片`、`音频`、`语音`、`GIF`、`文档`    |
+| 匹配关键词 |                      &ndash;                       |
+| 包含评论区 |                        `关`                        |
 
 - 下载指定频道语法：
 
@@ -520,7 +550,7 @@
 
    - 在设置完成后，必须**手动点击**"执行任务"或"取消任务"以继续或终止流程，否则该命令将**始终处于等待状态，并阻塞新的`/download_chat`命令。**
 
-- 下载用户与机器人的对话媒体:
+- 下载用户与机器人的对话媒体：
 
     用户与机器人的对话无法复制具体的请求链接，因此该方法用于解决某些用户与机器人对话中禁止用户进行转发、下载的情况。
 
@@ -532,7 +562,7 @@
         /download_chat https://t.me/developer_bot
         ```
 
-- 下载个人收藏夹（任选一种命令即可）:
+- 下载个人收藏夹（任选一种命令即可）：
 
     - 方式1（任选一种命令即可）：
 
@@ -580,11 +610,11 @@
      - **评论区的过滤条件仅遵循本次任务中用户指定的`媒体类型`作为过滤条件，其余过滤条件将被忽略（例如日期）。**
    - 任务处理时效性：
      - 开启评论区获取功能后，需对所匹配到的消息的评论区进行读取，消息过多时，任务创建至完成的时间可能相应延长，需耐心等待。
-      </details>
+</details>
 
-## 2.3.配置文件说明:
+## 2.3.配置文件说明
 
-### 用户配置文件:
+### 用户配置文件
 
 > [!NOTE]
 > 用户配置文件通常无需自行配置，此处旨在介绍全局配置文件中各参数的含义。  
@@ -628,17 +658,17 @@ session_directory: F:\directory\session\where\you\save # 会话的保存目录�
 temp_directory: F:\directory\temp\where\you\save # 缓存保存的目录（支持通配符）。
 ```
 
-### 自版本`≥v1.7.4`起，`save_directory`将支持通配符。
+### 版本变更
 
-#### 通配符允许用户动态生成存储路径。系统会在下载时自动将通配符替换为对应的实际值，实现按规则自动分类存储。
+通配符允许用户动态生成存储路径。系统会在下载时自动将通配符替换为对应的实际值，实现按规则自动分类存储。
 
 - 目前`save_directory`支持的通配符如下表所示：
   
-    |      通配符      |             意义             |
-    |:-------------:|:--------------------------:|
-    |  `%CHAT_ID%`  |     以实际`频道ID`作为指定路径填充。     |
-    | `%CHAT_NAME%` | 以实际`频道名`作为指定路径填充（≥v1.9.6）。 |
-    | `%MIME_TYPE%` |     以实际`文件类型`作为指定路径填充。     |
+|      通配符      |             意义             |
+|:-------------:|:--------------------------:|
+|  `%CHAT_ID%`  |     以实际`频道ID`作为指定路径填充。     |
+| `%CHAT_NAME%` | 以实际`频道名`作为指定路径填充（≥v1.9.6）。 |
+| `%MIME_TYPE%` |     以实际`文件类型`作为指定路径填充。     |
 
 - 用法示例1：
 
@@ -663,7 +693,7 @@ temp_directory: F:\directory\temp\where\you\save # 缓存保存的目录（支�
   F:\directory\media\%CHAT_NAME%\%CHAT_ID%\%MIME_TYPE%
   ```
 
-### 全局配置文件:
+### 全局配置文件
 
 > [!NOTE]
 > 全局配置文件通常无需自行配置，此处旨在介绍全局配置文件中各参数的含义。  
@@ -691,21 +721,21 @@ upload:
   download_upload: true # 控制/listen_forward命令遇到受限内容时,是否下载后上传到指定的转发频道。
 ```
 
-### 全局配置文件存放路径:
-#### 对于Windows用户：
+### 全局配置文件存放路径
+#### 对于Windows用户
   ```bash
   %APPDATA%/TRMD/.CONFIG.yaml
   ```
-#### 对于Linux用户:
+#### 对于Linux用户
   ```bash
   ~/.config/TRMD/.CONFIG.yaml
   ```
 
-## 2.4.**使用注意事项:**
+## 2.4.使用注意事项
 <details>
 <summary><strong>点击展开</strong></summary>
 
-### 链接获取方法:
+### 链接获取方法
 
 对想要保存的媒体文件点击**鼠标右键**然后选择**复制消息直链**，如下图所示：
 
@@ -713,7 +743,7 @@ upload:
 
 ---
 
-### links参数的文本内容具体写法:
+### links参数的文本内容具体写法
 
 如下图所示(即一行代表一个链接)：
 
@@ -721,7 +751,7 @@ upload:
 
 ---
 
-### 常见的links参数的文本内容的错误写法:
+### 常见的links参数的文本内容的错误写法
 
 如下图所示：
 
@@ -729,26 +759,26 @@ upload:
 
 ---
 
-### 关于私密频道链接的下载行为:
+### 关于私密频道链接的下载行为
 
 - 要求当前所登录的`Telegram`账号，在这个私密频道中，否则会报错无法下载。
 - 这是`Telegram`服务端设计所决定的，任何下载器都无法越界。
 
 ---
 
-### 重复链接问题说明（`≥v2.0.8`已针对重复链接导致的资源竞争问题进行自动处理）：
+### 重复链接问题说明（`≥v2.0.8`已针对重复链接导致的资源竞争问题进行自动处理）
 
-#### 问题描述:
+#### 问题描述
 
 - 如上图所示，在提交的下载任务中，存在多个**前缀相同但参数不同**的链接（如`?comment`、`?single`或`?single&comment`）。
 
-#### 问题原因:
+#### 问题原因
 
 - 当链接包含`?comment`参数时，会自动下载**原始消息及其评论区内容**。
 - 如果同时提交**相同前缀但无`?comment`的链接**，会导致**同一资源被重复添加**至下载队列。
 - 若前一次任务尚未完成，重复提交相同资源会触发**任务冲突**，进而引发下载异常。
 
-#### 解决方案:
+#### 解决方案
 
 - **仅需提交一个完整链接**（如带`?comment`的版本），系统会自动处理**原始内容及评论区**，无需额外提交无参数版本。
 - **避免重复提交相同资源**，确保每条链接的`t.me/c/<频道>/<消息ID>`部分唯一，防止任务冗余。
@@ -760,7 +790,7 @@ upload:
 
 ---
 
-### `Telegram`字段解释如下表所示:
+### `Telegram`字段解释
 
 |                字段                 |                     解释                      |
 | :---------------------------------: | :-------------------------------------------: |
@@ -771,9 +801,9 @@ upload:
 |     `https://t.me/TEST/111/666`     |        频道`TEST`**话题**`111`的链接。        |
 | `https://t.me/c/1111111111/333/666` | **私密**频道`1111111111`**话题**`333`的链接。 |
 
-#### 链接解释说明:
+#### 链接解释说明
 
-##### `Telegram`链接组成如下表所示:
+##### `Telegram`链接组成
 
 |   频道类型   |                     链接组成                      |
 | :----------: | :-----------------------------------------------: |
@@ -782,7 +812,7 @@ upload:
 |   话题频道   |        `https://t.me/频道名/话题ID/消息ID`        |
 | 私密话题频道 | `https://t.me/c/频道名(10位纯数字)/话题ID/消息ID` |
 
-##### `Telegram`链接所有链接格式如下表所示:
+##### `Telegram`链接所有链接格式
 
 "所有"指的是如果有**合并发送为一组**的文件，则给定一个链接，所有**合并发送的文件**会被全部下载。
 
@@ -800,29 +830,29 @@ upload:
 
 ---
 
-### 如何下载评论区的文件:
+### 如何下载评论区的文件
 
-#### 复制的链接时，带`?comment`字段:
+#### 复制的链接时，带`?comment`字段
 
 通常在评论区复制任意一条消息链接即可。
 
 ---
 
-### 评论区链接的下载行为规则的说明:
+### 评论区链接的下载行为规则的说明
 
-#### 标准链接（无`?comment`参数）:
+#### 标准链接（无`?comment`参数）
 
 - 仅下载**消息正文内容**（即频道/群组中直接发布的原始消息）。
 - **不包含评论区内容**，即使原消息存在评论，也不会被纳入下载任务。
 
-#### 带`?comment`参数的链接:
+#### 带`?comment`参数的链接
 
 - 下载**消息正文 + 关联的全部评论区内容**（完整会话结构）。
 - 若原消息**无评论区**（如频道消息或评论功能关闭），则**仅下载消息正文内容**，与无参数版本行为一致。
 
 ---
 
-#### 非下载评论区的推荐写法:
+#### 非下载评论区的推荐写法
 
 如下表所示:
 
@@ -835,9 +865,9 @@ upload:
 
 ---
 
-### 关于 `?single` 及 `?single&comment` 参数的下载行为说明（v1.5.8+）:
+### 关于 `?single` 及 `?single&comment` 参数的下载行为说明（v1.5.8+）
 
-#### 功能变更概述:
+#### 功能变更概述
 
 自`≥v1.5.8`版本起，链接中包含`?single`或`?single&comment`参数时，系统将启用**单文件下载模式**。此模式专为以下场景设计与优化：
 
@@ -845,21 +875,21 @@ upload:
 - 用户需求，仅需从合并发送的多媒体组中提取**特定单一文件**。
 - 用户需求，仅需下载评论区中的**单个指定媒体**（避免评论区媒体过多时，迟迟下载不到想要的文件）。
 
-#### 参数行为详解:
+#### 参数行为详解
 
 |       参数格式       |                下载范围                |           应用场景            |
 | :------------------: | :------------------------------------: | :---------------------------: |
 |     `xx?single`      |  仅下载消息正文中的**xx对应媒体文件**  |  从合并图组/视频组提取单文件  |
 | `?single&comment=xx` | 仅下载评论区中的**xx所对应的媒体文件** | 获取评论区单独分享的图片/视频 |
 
-#### 版本兼容性说明:
+#### 版本兼容性说明
 
 - 此特性**仅对`≥v1.5.8`版本**生效。
 - 历史版本中这些参数可能被忽略，导致完整内容下载。
 
-#### 最佳实践建议:
+#### 最佳实践建议
 
-##### 单一文件下载:
+##### 单一文件下载
 
 当消息包含多个媒体文件时，使用标准链接附加`?single`参数可精准获取首个文件：
 
@@ -867,7 +897,7 @@ upload:
 https://t.me/c/123456789/123?single
 ```
 
-##### 评论区单文件下载:
+##### 评论区单文件下载
 
 需从评论区单独下载文件时，应采用复合参数格式：
 
@@ -875,21 +905,21 @@ https://t.me/c/123456789/123?single
 https://t.me/c/123456789/123?single&comment=xx
 ```
 
-##### 参数互斥原则:
+##### 参数互斥原则
 
 - 避免同时提交同一消息的完整版和单文件版链接（`≥v2.0.8`已针对重复链接导致的资源竞争问题进行自动处理）。
 - 单文件模式与评论区下载模式（`?comment`）不可混用。
    </details>
 
-## 2.5.**软件更新教程**:
+## 2.5.软件更新教程
 
 ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_5_1.png)
 
-# 3.0.在生产环境中运行:
+# 3.0.在生产环境中运行
 
-_**推荐**使用`Python==3.13.2`作为该项目环境(避免使用其他`Python`版本导致运行时出现报错)。_
+_**推荐**使用`Python==3.13.2`作为该项目环境（避免使用其他`Python`版本导致运行时出现报错）。_
 
-## 对于Windows用户:
+## 对于Windows用户
 
 _需自行安装`python`与`git`并配置**环境变量**。_
 
@@ -900,7 +930,7 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 python main.py
 ```
-## 对于Linux用户:
+## 对于Linux用户
 
 _克隆本项目并**进入项目目录**。_
 
@@ -908,13 +938,13 @@ _克隆本项目并**进入项目目录**。_
 git clone https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader.git
 cd Telegram_Restricted_Media_Downloader
 ```
-_**更新**`pip`版本(推荐)。_
+_**更新**`pip`版本（推荐）。_
 
 ```bash
 python3 -m pip install --upgrade pip
 ```
 
-_创建并使用**虚拟环境**(可选)。_
+_创建并使用**虚拟环境**（可选）。_
 
 ```bash
 python3 -m venv venv
@@ -927,15 +957,15 @@ _安装程序运行**所需依赖**并等待全部安装完成。_
 pip3 install -r requirements.txt
 ```
 
-_运行程序(到这一步就安装完成并运行了，后面是注意事项)。_
+_运行程序（到这一步就安装完成并运行了，后面是注意事项）。_
 
 ```bash
 python3 main.py
 ```
 
-### 注意事项：
+### 注意事项
 
-**_如果选择创建虚拟环境运行,在下次运行时也需要先激活虚拟环境。_**
+**_如果选择创建虚拟环境运行，在下次运行时也需要先激活虚拟环境。_**
 
 在项目目录下，**激活虚拟环境**后再运行程序。
 
@@ -951,7 +981,7 @@ sudo apt update
 sudo apt-get install python3-pip
 ```
 
-## 关于更新:
+## 关于更新
 
 _在**项目目录**下打开终端使用如下命令拉取仓库当前的**最新版本**_：
 
@@ -959,13 +989,13 @@ _在**项目目录**下打开终端使用如下命令拉取仓库当前的**最�
 git pull
 ```
 
-_由于新版本可能使用了**新的依赖**，使用`git pull`拉取后，最好更新一下依赖(如果是**虚拟环境**请先激活再执行)。_
+_由于新版本可能使用了**新的依赖**，使用`git pull`拉取后，最好更新一下依赖（如果是**虚拟环境**请先激活再执行）。_
 
 ```shell
 pip3 install -r requirements.txt
 ```
 
-# 4.0.(高阶用法)运行前设置命令行参数:
+# 4.0.（高阶用法）运行前设置命令行参数
 
 > [!NOTE]
 > 自版本`≥v1.8.3`起：  
@@ -990,11 +1020,15 @@ _**设置命令行运行参数**需先在**软件目录**打开**终端**，或*
 
 _**长参数与短参数最终结果一致。**_
 
-1. `-h`、`--help`参数用法：
+---
+
+## 4.1.参数
+
+#### -h、--help
 
    该参数用于展示帮助。
 
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
 
      ```bash
      python3 main.py -h
@@ -1004,7 +1038,7 @@ _**长参数与短参数最终结果一致。**_
      python3 main.py --help
      ```
 
-   - 对于Windows用户:
+   - 对于Windows用户：
 
      ```bash
      TRMD.exe -h
@@ -1014,7 +1048,7 @@ _**长参数与短参数最终结果一致。**_
      TRMD.exe --help
      ```
 
-   - 对于Linux用户:
+   - 对于Linux用户：
 
      ```bash
      ./TRMD -h
@@ -1024,11 +1058,13 @@ _**长参数与短参数最终结果一致。**_
      ./TRMD --help
      ```
 
-2. `-v`、`--version`参数用法：
+---
+
+#### -v、--version
 
    该参数用于展示版本信息。
 
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
 
      ```bash
      TRMD.exe -v
@@ -1038,7 +1074,7 @@ _**长参数与短参数最终结果一致。**_
      TRMD.exe --version
      ```
 
-   - 对于Windows用户:
+   - 对于Windows用户：
 
      ```bash
      TRMD.exe -v
@@ -1048,7 +1084,7 @@ _**长参数与短参数最终结果一致。**_
      TRMD.exe --version
      ```
 
-   - 对于Linux用户:
+   - 对于Linux用户：
 
      ```bash
      ./TRMD -v
@@ -1058,15 +1094,17 @@ _**长参数与短参数最终结果一致。**_
      ./TRMD --version
      ```
 
-3. `-q`、`--quiet`参数用法：
-   
-    | 使用须知                                         |
-    | ------------------------------------------------ |
-    | _1.该参数用于跳过重新配置文件的确认提示。_       |
-    | _2.用户配置文件缺少必要参数时，指定该参数无效。_ |
-    | _3.该参数为一次性设置，不记忆。_                 |
+---
 
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+#### -q、--quiet
+   
+   | 使用须知                                         |
+   | ------------------------------------------------ |
+   | _1.该参数用于跳过重新配置文件的确认提示。_       |
+   | _2.用户配置文件缺少必要参数时，指定该参数无效。_ |
+   | _3.该参数为一次性设置，不记忆。_                 |
+   
+   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
    
      ```bash
      python3 main.py -q
@@ -1076,7 +1114,7 @@ _**长参数与短参数最终结果一致。**_
      python3 main.py --quiet
      ```
      
-   - 对于Windows用户:
+   - 对于Windows用户：
    
      ```bash
      TRMD.exe -q
@@ -1086,7 +1124,7 @@ _**长参数与短参数最终结果一致。**_
      TRMD.exe --quiet
      ```
      
-   - 对于Linux用户:
+   - 对于Linux用户：
    
      ```bash
      ./TRMD -q
@@ -1096,17 +1134,19 @@ _**长参数与短参数最终结果一致。**_
      ./TRMD --quiet
      ```
 
-4. `-c`、`--config`参数用法：
+---
+
+#### -c、--config
 
    | 使用须知                                                     |
    | ------------------------------------------------------------ |
    | _1.该参数用于设置用户配置文件的路径。_                       |
    | _2.**该参数旨在解决多个实例（多开）场景下，避免重复部署软件本体而设计的配置分离方案。**_ |
-   | _3.该参数需指定一个**符合**["2.3.配置文件说明(用户配置文件)"](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E7%94%A8%E6%88%B7%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)格式规范的文件，**并且后缀名需为`.yaml`**。_ |
+   | _3.该参数需指定一个**符合**["2.3.配置文件说明（用户配置文件）"](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E7%94%A8%E6%88%B7%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)格式规范的文件，**并且后缀名需为`.yaml`**。_ |
    | _4.当指定的**文件路径无效**时，将使用软件**默认**设置。_     |
    | _5.该参数为一次性设置，不记忆。_                             |
 
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
 
      以`Linux`系统为例（`Winodws`系统同理），此处假设用户配置文件位于`/home/username/files/example.yaml`。
 
@@ -1118,7 +1158,7 @@ _**长参数与短参数最终结果一致。**_
      python3 main.py --config /home/username/files/example.yaml
      ```
 
-   - 对于Windows用户:
+   - 对于Windows用户：
 
      此处假设用户配置文件位于`C:\files\example.yaml`。
 
@@ -1130,7 +1170,7 @@ _**长参数与短参数最终结果一致。**_
      TRMD.exe --config C:\files\example.yaml
      ```
 
-   - 对于Linux用户:
+   - 对于Linux用户：
 
       此处假设用户配置文件位于`/home/username/files/example.yaml`。
 
@@ -1142,11 +1182,13 @@ _**长参数与短参数最终结果一致。**_
       ./TRMD --config /home/username/files/example.yaml
       ```
 
-5. `-s`、`--session`参数用法：
+---
 
-   > ⚠️ 注意：  
-   > 自版本`≥v1.8.5`起：  
-   > `-s`、`--session`参数在设置后将被保存到用户配置文件的`session_directory`参数中，下次使用时无需重复指定，除非需要修改该设置。   
+#### -s、--session
+
+> ⚠️ 注意：  
+> 自版本`≥v1.8.5`起：  
+> `-s`、`--session`参数在设置后将被保存到用户配置文件的`session_directory`参数中，下次使用时无需重复指定，除非需要修改该设置。   
 
    | 使用须知                                                                        |
    |-----------------------------------------------------------------------------|
@@ -1156,7 +1198,7 @@ _**长参数与短参数最终结果一致。**_
    | _4.该参数需指定一个**文件夹**，可包含已有的 `.session`文件，指定为空文件夹或不存在时，登录后将在**该路径自动生成**会话文件。_  |
    | _5.该参数设置后会被记忆，下次无需重复设置（`≥v1.8.5`）。_                                         |
 
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
 
      以`Linux`系统为例（`Winodws`系统同理），此处假设会话文件位于`/home/username/files/session`。
 
@@ -1168,7 +1210,7 @@ _**长参数与短参数最终结果一致。**_
      python3 main.py --session /home/username/session
      ```
 
-   - 对于Windows用户:
+   - 对于Windows用户：
 
      此处假设会话文件位于`C:\files\session`。
 
@@ -1180,7 +1222,7 @@ _**长参数与短参数最终结果一致。**_
      TRMD.exe --session C:\files\session
      ```
 
-   - 对于Linux用户:
+   - 对于Linux用户：
 
      此处假设会话文件位于`/home/username/files/session`。
 
@@ -1192,11 +1234,13 @@ _**长参数与短参数最终结果一致。**_
      ./TRMD --session /home/username/files/session
      ```
 
-6. `-t`、`--temp`参数用法：
+---
 
-    > ⚠️ 注意：  
-    > 自版本`≥v1.8.5`起：  
-    > `-t`、`--temp`参数在设置后将被保存到用户配置文件的`temp_directory`参数中，下次使用时无需重复指定，除非需要修改该设置。   
+#### -t、--temp
+
+> ⚠️ 注意：  
+> 自版本`≥v1.8.5`起：  
+> `-t`、`--temp`参数在设置后将被保存到用户配置文件的`temp_directory`参数中，下次使用时无需重复指定，除非需要修改该设置。   
 
    | 使用须知                                                     |
    | ------------------------------------------------------------ |
@@ -1206,7 +1250,7 @@ _**长参数与短参数最终结果一致。**_
    | _4.该参数需指定一个**文件夹**，指定为空文件夹或不存在时，运行时将在**该路径自动生成**生成缓存文件。_ |
    | _5.该参数设置后会被记忆，下次无需重复设置（`≥v1.8.5`）。_    |
    
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
    
      以`Linux`系统为例（`Winodws`系统同理），此处假设缓存文件位于`/home/username/files/temp`。
    
@@ -1218,7 +1262,7 @@ _**长参数与短参数最终结果一致。**_
      python3 main.py --temp /home/username/temp
      ```
    
-   - 对于Windows用户:
+   - 对于Windows用户：
    
      此处假设缓存文件位于`C:\files\temp`。
    
@@ -1230,7 +1274,7 @@ _**长参数与短参数最终结果一致。**_
      TRMD.exe --temp C:\files\temp
      ```
    
-   - 对于Linux用户:
+   - 对于Linux用户：
    
      此处假设缓存文件位于`/home/username/files/temp`。
    
@@ -1242,7 +1286,9 @@ _**长参数与短参数最终结果一致。**_
      ./TRMD --temp /home/username/files/temp
      ```
 
-7. `-p`、`--port`参数用法：
+---
+
+#### -p、--port
 
   | 使用须知                                                         |
   |--------------------------------------------------------------|
@@ -1253,7 +1299,7 @@ _**长参数与短参数最终结果一致。**_
   | _5.该参数用于指定网页面板的**端口号**，范围为`0`~`65535`，若不指定，将使用`2921`端口，端口被占用时自动分配。_       |
   | _6.该参数为一次性设置，不记忆。_                                           |
   
-  - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）:
+  - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
   
     此处假设使用`1024`端口。
   
@@ -1265,7 +1311,7 @@ _**长参数与短参数最终结果一致。**_
     python3 main.py --port 1024
     ```
   
-  - 对于Windows用户:
+  - 对于Windows用户：
   
     此处假设使用`1024`端口。
   
@@ -1277,7 +1323,7 @@ _**长参数与短参数最终结果一致。**_
     TRMD.exe --port 1024
     ```
   
-  - 对于Linux用户:
+  - 对于Linux用户：
   
     此处假设使用`1024`端口。
   
@@ -1292,19 +1338,19 @@ _**长参数与短参数最终结果一致。**_
   </details>
 
 
-# 5.0.通过编译后运行:
+# 5.0.通过编译后运行
 
-_**推荐**使用`Python==3.13.2`作为该项目环境(避免使用其他`Python`版本导致编译过程中或编译完成后出现报错)。_
+_**推荐**使用`Python==3.13.2`作为该项目环境（避免使用其他`Python`版本导致编译过程中或编译完成后出现报错）。_
 
 - 同"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)**前置步骤一致**。
 
-- 然后执行编译代码(建议使用**虚拟环境**，**避免**添加不必要的库，从而**减小**输出的文件大小)。
+- 然后执行编译代码（建议使用**虚拟环境**，**避免**添加不必要的库，从而**减小**输出的文件大小）。
 
 ```bash
 python build.py
 ```
 
-# 6.0.通过Docker运行：
+# 6.0.通过Docker运行
 
 _**Docker环境运行配置文件模板参考（前提：需完全按照后续教程提供的命令启动Docker）：**_
 
@@ -1399,7 +1445,7 @@ temp_directory: /app/temp # 主机的路径为："temp/"。
 
 - _确保`git`、`docker`、`docker-compose`已安装并配置**环境变量。**_
 
-- 使用`git`克隆仓库:
+- 使用`git`克隆仓库：
 
   ```bash
   git clone https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader.git
@@ -1454,12 +1500,12 @@ _账号密码由系统随机生成，使用浏览器打开[http://127.0.0.1:2921
   docker stop trmd && docker rm trmd
   ```
 
-# 7.0.联系作者:
+# 7.0.联系作者
 
-  Telegram:[@Gentlesprite](https://t.me/Gentlesprite)
+  Telegram：[@Gentlesprite](https://t.me/Gentlesprite)
 
-  邮箱:Gentlesprites@outlook.com
+  邮箱：Gentlesprites@outlook.com
 
-# 8.0.支持作者:
+# 8.0.支持作者
 
 ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/pay.png)
