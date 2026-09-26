@@ -160,7 +160,7 @@ class StatisticalTable:
                 if only_export:
                     return None
         try:
-            result: Union[bool, str] = True
+            result: Union[bool, None, List[str]] = True
             if only_export is False:
                 panel = PanelTable(
                     title=title,
@@ -233,7 +233,7 @@ class StatisticalTable:
                     log.error(f'导出下载链接统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
                     if only_export:
                         return None
-            result: Union[bool, str] = True
+            result: Union[bool, None, List[str]] = True
             if only_export is False:
                 panel = PanelTable(
                     title=title,
@@ -358,7 +358,7 @@ class StatisticalTable:
                     return None
 
         try:
-            result: Union[bool, str] = True
+            result: Union[bool, None, List[str]] = True
             if only_export is False:
                 meta_panel = PanelTable(
                     title=meta_table_title,
@@ -366,16 +366,20 @@ class StatisticalTable:
                     data=meta_table_data,
                     show_lines=True
                 )
-                meta_panel.print_meta()
                 count_panel = PanelTable(
                     title=count_table_title,
                     header=count_table_header,
                     data=count_table_data,
                     show_lines=False
                 )
+                # 终端与消息均按"媒体上传统计在上、上传任务统计在下"的顺序展示。
                 count_panel.print_meta()
-                # 两张表各自分片后顺序拼接,保持元信息表在前、计数表在后。
-                result = meta_panel.to_markdown_chunks() + count_panel.to_markdown_chunks()
+                meta_panel.print_meta()
+                # 两张表合并为一条消息发送:计数表很短,直接拼在元信息表首个分片之前,
+                # 这样首片即含两表,不会再多出一条无键盘的消息(元信息表超长时后续分片仍逐条追加)。
+                meta_chunks = meta_panel.to_markdown_chunks()
+                meta_chunks[0] = f'{count_panel.to_markdown()}\n\n{meta_chunks[0]}'
+                result = meta_chunks
             return result
 
         except Exception as e:
