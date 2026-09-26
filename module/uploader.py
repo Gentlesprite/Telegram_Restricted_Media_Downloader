@@ -549,6 +549,11 @@ class TelegramUploader:
             upload_task: UploadTask
     ):
         file_path = upload_task.file_path
+        # 同一本地文件已在上传中(如媒体组与组内单条?single、重叠链接导致同文件被重复触发),直接放弃本任务,避免并发上传竞争。
+        if file_path in UploadTask.UPLOADING_KEYS:
+            UploadTask.TASKS.discard(upload_task)
+            return None
+        UploadTask.UPLOADING_KEYS.add(file_path)
         file_size = upload_task.file_size
         while self.current_task_num >= self.max_upload_task:  # v1.0.7 增加下载任务数限制。
             await self.event.wait()
@@ -605,11 +610,13 @@ class TelegramUploader:
             self.current_task_num -= 1
             self.pb.progress.remove_task(task_id=task_id)
             self.event.set()
+            UploadTask.UPLOADING_KEYS.discard(upload_task.file_path)
             log.info(e)
             return
         file_path: str = upload_task.file_path
         self.current_task_num -= 1
         self.pb.progress.remove_task(task_id=task_id)
+        UploadTask.UPLOADING_KEYS.discard(file_path)
         if upload_task.file_size < 10 * 1024 * 1024:
             if not safe_delete(os.path.join(UploadTask.DIRECTORY_NAME, f'{upload_task.sha256}.json')):
                 log.warning(f'无法删除"{os.path.basename(file_path)}"的上传缓存管理文件。')

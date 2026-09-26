@@ -333,6 +333,7 @@ class UploadTask:
     TASKS: set = set()
     TASK_COUNTER: int = 0
     NOTIFY: Optional[Callable] = None
+    UPLOADING_KEYS: set = set()  # 正在上传中的本地文件路径,防止不同链接(如媒体组与组内单条?single、重叠链接)并发上传同一文件导致上传缓存与源文件删除竞争。
 
     def __init__(
             self,
