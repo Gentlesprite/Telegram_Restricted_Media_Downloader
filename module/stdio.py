@@ -30,7 +30,7 @@ from rich.progress import (
     TransferSpeedColumn
 )
 from enum import Enum
-from pyrogram import __version__ as pyrogram_version
+from pyrogram import __version__ as pyrogram_version  # noqa.
 
 from module import (
     log,

@@ -17,7 +17,7 @@ from typing import (
     Dict,
     Union,
     Callable,
-    Optional,
+    Optional
 )
 
 import pyrogram
@@ -62,6 +62,7 @@ from pyrogram.types.bots_and_keyboards import (
 from module import (
     log,
     console,
+    FORWARD_LIMIT,
     SLEEP_THRESHOLD,
     LINK_PREVIEW_OPTIONS
 )
@@ -109,6 +110,7 @@ from module.path_tool import (
 )
 from module.util import (
     Issues,
+    LimitCall,
     ctrl_c,
     get_my_id,
     is_docker,
@@ -140,6 +142,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.pb: ProgressBar = ProgressBar()
         self.uploader: Union[TelegramUploader, None] = None
         self.cd: Union[CallbackData, None] = None
+        self.forward_limit_call: Union[LimitCall, None] = None  # 转发频率限制器,避免转发过快触发风控。
         self.web_remove_listen: set = set()  # 网页面板发起的移除监听命令,机器人识别后直接移除,不再发送二次确认按钮。
         self.my_id: int = 0
         self.web: Web = Web(
@@ -1001,13 +1004,25 @@ class TelegramRestrictedMediaDownloader(Bot):
                         )
                     )
                 return None
+            # 限制每分钟的转发次数,避免转发过快触发风控。
+            await self.forward_limit_call.wait() if isinstance(self.forward_limit_call, LimitCall) else None
             if media_group:
-                await self.app.client.copy_media_group(
-                    chat_id=target_chat_id,
-                    from_chat_id=origin_chat_id,
-                    message_id=message_id,
-                    disable_notification=True
-                )
+                while True:
+                    try:
+                        await self.app.client.copy_media_group(
+                            chat_id=target_chat_id,
+                            from_chat_id=origin_chat_id,
+                            message_id=message_id,
+                            disable_notification=True
+                        )
+                        break
+                    except (FloodWait, FloodPremiumWait) as e:
+                        amount = e.value
+                        console.log(
+                            f'[{self.app.client.name}]转发消息请求频繁,要求等待{amount}秒后继续运行。',
+                            style='#FF4689'
+                        )
+                        await asyncio.sleep(amount)
             elif getattr(message, 'text', False):
                 while True:
                     try:
@@ -1027,14 +1042,25 @@ class TelegramRestrictedMediaDownloader(Bot):
                         await asyncio.sleep(amount)
                     except Exception as e:
                         log.error(f'无法转发"{message.text}"消息,{_t(KeyWord.REASON)}:"{e}"')
+                        break
             else:
-                await self.app.client.copy_message(
-                    chat_id=target_chat_id,
-                    from_chat_id=origin_chat_id,
-                    message_id=message_id,
-                    disable_notification=True,
-                    protect_content=False
-                )
+                while True:
+                    try:
+                        await self.app.client.copy_message(
+                            chat_id=target_chat_id,
+                            from_chat_id=origin_chat_id,
+                            message_id=message_id,
+                            disable_notification=True,
+                            protect_content=False
+                        )
+                        break
+                    except (FloodWait, FloodPremiumWait) as e:
+                        amount = e.value
+                        console.log(
+                            f'[{self.app.client.name}]转发消息请求频繁,要求等待{amount}秒后继续运行。',
+                            style='#FF4689'
+                        )
+                        await asyncio.sleep(amount)
             p_message_id = ','.join(map(str, media_group)) if media_group else message_id
             console.log(
                 f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{p_message_id}"'
@@ -2642,6 +2668,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             if self.is_bot_running:
                 self.uploader = TelegramUploader(download_object=self)
                 self.cd = CallbackData()
+                self.forward_limit_call = LimitCall(max_limit_call_times=FORWARD_LIMIT)
                 if self.gc.upload_delete:
                     console.log(
                         f'在使用转发(/forward)、监听转发(/listen_forward)、上传(/upload)、递归上传(/upload_r)时:\n'

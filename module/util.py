@@ -6,8 +6,10 @@
 import os
 import re
 import sys
+import time
 import string
 import random
+import asyncio
 import subprocess
 
 from typing import (
@@ -589,6 +591,36 @@ def get_message_dtype(message, download_type: Optional[list] = None) -> Union[st
         if dtype != DownloadType.LIVE_PHOTO and getattr(message, dtype, None):
             return dtype
     return None
+
+
+class LimitCall:  # https://github.com/tangyoha/telegram_media_downloader/blob/master/module/app.py#L246
+    """限制单位时间内的调用次数。"""
+
+    def __init__(self, max_limit_call_times: int = 0):
+        # 时间窗口的长度,单位为秒。
+        self.time_window: int = 60
+        # 时间窗口内允许的最大调用次数。
+        self.max_limit_call_times: int = max_limit_call_times
+        # 当前时间窗口内已经调用的次数。
+        self.limit_call_times: int = 0
+        # 当前时间窗口的开始时间。
+        self.last_call_time: float = 0
+
+    async def wait(self):
+        """达到时间窗口内的最大调用次数时,等待至下一个时间窗口。"""
+        while True:
+            now = time.time()
+            time_span = now - self.last_call_time
+            # 超过时间窗口则重置计数,重新开始计时。
+            if time_span > self.time_window:
+                self.limit_call_times = 0
+                self.last_call_time = now
+
+            if self.limit_call_times + 1 <= self.max_limit_call_times:
+                self.limit_call_times += 1
+                break
+
+            await asyncio.sleep(1)
 
 
 class Issues:
