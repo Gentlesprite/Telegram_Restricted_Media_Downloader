@@ -154,7 +154,7 @@ log = logging.getLogger('rich')
 def get_commit_hash():
     env_commit = os.environ.get('TRMD_COMMIT_HASH')
     if env_commit:
-        log.info(f'通过环境变量TRMD_COMMIT_HASH获取commit hash:{env_commit}。')
+        log.debug(f'通过环境变量TRMD_COMMIT_HASH获取commit hash:{env_commit}。')
         return env_commit
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if os.path.isdir(os.path.join(repo_root, '.git')):
@@ -168,17 +168,17 @@ def get_commit_hash():
             )
             if completed.returncode == 0 and completed.stdout.strip():
                 commit_hash: str = completed.stdout.strip()
-                log.info(f'通过git获取commit hash:{commit_hash}。')
+                log.debug(f'通过git获取commit hash:{commit_hash}。')
                 return commit_hash
         except Exception as e:
-            log.info(f'无法获取commit hash,原因:"{e}"')
+            log.debug(f'无法获取commit hash,原因:"{e}"')
     return None
 
 
 def get_build_time():
     env_build_time = os.environ.get('TRMD_BUILD_TIME')
     if env_build_time:
-        log.info(f'通过环境变量TRMD_BUILD_TIME获取build time:{env_build_time}。')
+        log.debug(f'通过环境变量TRMD_BUILD_TIME获取build time:{env_build_time}。')
         return env_build_time
     return None
 

@@ -482,13 +482,13 @@ def gen_random_token(length: int = 32) -> str:
 
 
 def reset_web_session() -> str:
-    """重新生成并持久化网页面板的记名令牌,使此前下发的Cookie全部失效。"""
+    """重新生成并持久化网页面板的令牌,使此前下发的Cookie全部失效。"""
     token: str = gen_random_token()
     try:
         with open(file=TRMD_WEB_SESSION, mode='w', encoding='UTF-8') as f:
             f.write(token)
     except OSError as e:
-        log.warning(f'重置网页面板的记名令牌失败,原因:"{e}"。')
+        log.warning(f'重置网页面板令牌失败,原因:"{e}"。')
     return token
 
 
@@ -526,6 +526,24 @@ def is_frozen() -> bool:
     return is_pyinstaller() or is_nuitka()
 
 
+def get_nuitka_version():
+    compiled = globals().get('__compiled__')
+    if compiled is None:
+        return None
+    return f'{compiled.major}.{compiled.minor}.{compiled.micro}'
+
+
+def check_environment():
+    if is_nuitka():
+        log.info(f'检测到"__compiled__",当前运行于"Nuitka"编译产物中,版本:{get_nuitka_version()}。')
+    elif is_pyinstaller():
+        log.info('检测到"sys.frozen",当前运行于"PyInstaller"打包产物中。')
+    elif is_docker():
+        log.info('检测到"Docker"容器标识,当前运行于"Docker"容器中。')
+    else:
+        log.info('当前运行于"源码"环境中。')
+
+
 def get_work_directory() -> str:
     """获取软件工作目录,打包环境取原始可执行文件所在目录,源码环境取入口脚本所在目录。"""
     if is_frozen():  # 单文件打包(Nuitka/Pyinstaller)会把文件解压到临时目录运行,sys.executable/__file__ 均可能指向临时目录。
@@ -546,7 +564,7 @@ def is_docker() -> bool:
     """检查是否在Docker容器中运行。"""
     # 检查/.dockerenv文件是否存在。 # noqa.
     if os.path.exists('/.dockerenv'):  # noqa.
-        log.info('检测到"/.dockerenv",当前运行于"Docker"容器中。')  # noqa.
+        log.debug('检测到"/.dockerenv",当前运行于"Docker"容器中。')  # noqa.
         return True
 
     # 检查/proc/1/cgroup中是否包含"docker"。
@@ -554,14 +572,14 @@ def is_docker() -> bool:
         with open('/proc/1/cgroup', 'r') as f:
             content: str = f.read()
             if 'docker' in content or 'kubepods' in content:
-                log.info('检测到"/proc/1/cgroup"容器标识,当前运行于"Docker"容器中。')
+                log.debug('检测到"/proc/1/cgroup"容器标识,当前运行于"Docker"容器中。')
                 return True
     except (FileNotFoundError, IOError):
         pass
     except Exception:  # noqa.
         pass
 
-    log.info('未检测到容器标识,当前运行于非"Docker"环境。')
+    log.debug('未检测到容器标识,当前运行于非"Docker"环境。')
     return False
 
 

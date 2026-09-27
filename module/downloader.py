@@ -118,6 +118,7 @@ from module.util import (
     js_referral,
     safe_message,
     format_chat_link,
+    check_environment,
     get_message_dtype,
     safe_delete_message,
     get_message_by_link,
@@ -2716,6 +2717,7 @@ class TelegramRestrictedMediaDownloader(Bot):
     def run(self) -> None:
         record_error: bool = False
         try:
+            check_environment()
             MetaData.print_helper()
             MetaData.print_meta()
             self.app.print_env_table(self.app)
