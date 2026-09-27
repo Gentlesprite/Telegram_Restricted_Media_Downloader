@@ -63,5 +63,5 @@ def _t(text: str):
             return translations[text][0]
         else:
             return text
-    except Exception:
+    except Exception: # noqa.
         return text
