@@ -16,7 +16,7 @@ from typing import (
     Any,
     Union,
     Optional,
-    Callable,
+    Callable
 )
 
 from module import (

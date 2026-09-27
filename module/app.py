@@ -35,7 +35,7 @@ from module.path_tool import (
     get_extension,
     truncate_filename,
     is_compressed_file,
-    extract_full_extension,
+    extract_full_extension
 )
 
 

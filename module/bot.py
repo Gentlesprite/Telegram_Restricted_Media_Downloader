@@ -31,9 +31,9 @@ from pyrogram.errors.exceptions.bad_request_400 import (
 )
 from pyrogram.types.bots_and_keyboards import (
     BotCommand,
+    CallbackQuery,
     InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    CallbackQuery
+    InlineKeyboardMarkup
 )
 
 from module import (
@@ -58,7 +58,7 @@ from module.util import (
     check_update,
     safe_message,
     is_allow_upload,
-    get_valid_chat_id,
+    get_valid_chat_id
 )
 from module.enums import (
     KeyWord,

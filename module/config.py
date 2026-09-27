@@ -18,7 +18,7 @@ from module import (
     FILE_LOG_LEVEL,
     CONSOLE_LOG_LEVEL,
     GLOBAL_CONFIG_NAME,
-    GLOBAL_CONFIG_PATH,
+    GLOBAL_CONFIG_PATH
 )
 from module.language import _t
 from module.parser import PARSE_ARGS

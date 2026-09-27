@@ -15,7 +15,7 @@ translations: dict = {
     'voice': ['语音'],
     'animation': ['GIF'],
     'video_note': ['视频笔记'],
-    'live_photo':['实况图片'],
+    'live_photo': ['实况图片'],
     'media': ['媒体'],
     'pending': ['队列中'],
     'downloading': ['下载中'],
@@ -63,5 +63,5 @@ def _t(text: str):
             return translations[text][0]
         else:
             return text
-    except Exception: # noqa.
+    except Exception:  # noqa.
         return text
