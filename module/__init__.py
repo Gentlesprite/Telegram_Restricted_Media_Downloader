@@ -123,7 +123,7 @@ if os.path.exists(GLOBAL_CONFIG_PATH):
             FILE_LOG_LEVEL: int = logging.getLevelName(file_log_level)
         if via_log_level(log_level=console_log_level, param_name='console_log_level', default_level=logging.WARNING):
             CONSOLE_LOG_LEVEL: int = logging.getLevelName(console_log_level)
-    except Exception:
+    except Exception:  # noqa.
         pass
 
 file_handler.setLevel(logging.getLevelName(FILE_LOG_LEVEL))
@@ -152,7 +152,7 @@ log = logging.getLogger('rich')
 log.info(f'{SOFTWARE_SHORT_NAME}:{__version__},更新日期:{__update_date__}。')
 log.info(f'文件日志等级:"{logging.getLevelName(FILE_LOG_LEVEL)}"。')
 log.info(f'终端日志等级:"{logging.getLevelName(CONSOLE_LOG_LEVEL)}"。')
-CustomDumper.add_representer(type(None), CustomDumper.represent_none)
+CustomDumper.add_representer(type(None), CustomDumper.represent_none)  # noqa.
 README = r'''
 ```yaml
 api_hash: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # 申请的api_hash。

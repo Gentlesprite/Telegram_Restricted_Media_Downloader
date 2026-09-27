@@ -594,7 +594,7 @@ class ProcessConfig:
                 'hostname': hostname,
                 'port': port
             }
-        except Exception:
+        except Exception:  # noqa.
             return None
 
     @staticmethod
@@ -807,7 +807,7 @@ class ProcessConfig:
                 basic_truth_table.append(_[1])
             if _[0] in ['username', 'password']:
                 advance_account_truth_table.append(_[1])
-        if all(basic_truth_table) is False:
+        if all(basic_truth_table) is False:  # noqa.
             console.print('请配置代理!', style=ProcessConfig.stdio_style('config_proxy'))
             console.print(
                 '[#79FCD4]如果对代理配置有疑问[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\n'
@@ -1216,7 +1216,7 @@ class GetStdioParams:
             record: list = []
             for i in meta.items():
                 dtype, _ = i
-                if meta.get(dtype) is True:
+                if meta.get(dtype) is True:  # noqa.
                     record.append(dtype)
             last_record: str = ' '.join(record)
         default_prompt: str = '(默认为所有已支持的下载类型)' if last_record is None else ''
@@ -1248,7 +1248,7 @@ class GetStdioParams:
         _style: str = ProcessConfig.stdio_style('is_shutdown')
         if last_record:
             last_record: str = 'y'
-        elif last_record is False:
+        elif last_record is False:  # noqa.
             last_record: str = 'n'
         else:
             last_record = GetStdioParams.UNDEFINED

@@ -104,11 +104,11 @@ class Application(UserConfig, StatisticalTable):
             file_name: str = f'{file_id} - {datetime.datetime.now().strftime(time_format)}.unknown'
         return truncate_filename(splice_chat_id(file_name))
 
-    def on_record(func):
+    def on_record(func):  # noqa.
 
-        @wraps(func)
+        @wraps(func)  # noqa.
         def wrapper(self, *args):
-            res = func(self, *args)
+            res = func(self, *args)  # noqa.
             download_type = res
             _, file_name, download_status = args
             self.update_download_status(download_type, download_status, file_name)
@@ -184,7 +184,7 @@ class Application(UserConfig, StatisticalTable):
         """获取消息的下载类型,只用于展示,不记录任何统计信息。"""
         return get_message_dtype(message, self.download_type) or default_type or 'unknown_type'
 
-    @on_record
+    @on_record  # noqa.
     def get_file_type(self, *args) -> str:
         message, file_name, download_type = args
         return self.get_download_type(message=message, default_type=download_type)

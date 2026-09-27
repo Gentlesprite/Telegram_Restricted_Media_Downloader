@@ -268,15 +268,15 @@ class DownloadTask:
         """清空全部失败记录。"""
         self.fail_id.clear()
 
-    def on_create_task(func):
-        @wraps(func)
+    def on_create_task(func):  # noqa.
+        @wraps(func)  # noqa.
         async def wrapper(self, *args, **kwargs):
             message_ids = kwargs.get('message_ids')
             link = message_ids
             if isinstance(message_ids, pyrogram.types.Message):
                 link = message_ids.link if message_ids.link else message_ids.id
             task: DownloadTask = DownloadTask.get_or_create(link)
-            res: dict = await func(self, *args, **kwargs)
+            res: dict = await func(self, *args, **kwargs)  # noqa.
             status: Union[str, None] = res.get('status')
             e_code: Union[dict, None] = res.get('e_code')
             if status == DownloadStatus.FAILURE:
@@ -301,10 +301,10 @@ class DownloadTask:
 
         return wrapper
 
-    def on_complete(func):
-        @wraps(func)
+    def on_complete(func):  # noqa.
+        @wraps(func)  # noqa.
         def wrapper(self, *args, **kwargs):
-            res = func(self, *args, **kwargs)
+            res = func(self, *args, **kwargs)  # noqa.
             if all(i is None for i in res):
                 return None
             link, file_name = res

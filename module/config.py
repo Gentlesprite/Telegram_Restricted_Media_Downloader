@@ -229,7 +229,7 @@ class UserConfig(BaseConfig):
                         self.history_timestamp[timestamp] = i
                 except ValueError:
                     pass
-                except Exception as _:
+                except Exception:  # noqa.
                     pass
             for i in self.history_timestamp.keys():
                 self.difference_timestamp[now_timestamp - i] = i
@@ -264,7 +264,7 @@ class UserConfig(BaseConfig):
                 return self.__find_history_config()
             else:
                 return last_record
-        except Exception as _:
+        except Exception:  # noqa.
             return {}
 
     def add_missing_keys(self, target, template, log_message, history=False) -> None:

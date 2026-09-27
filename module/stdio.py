@@ -161,7 +161,7 @@ class StatisticalTable:
                     return None
         try:
             result: Union[bool, None, List[str]] = True
-            if only_export is False:
+            if only_export is False: # noqa.
                 panel = PanelTable(
                     title=title,
                     header=header,
@@ -234,7 +234,7 @@ class StatisticalTable:
                     if only_export:
                         return None
             result: Union[bool, None, List[str]] = True
-            if only_export is False:
+            if only_export is False: # noqa.
                 panel = PanelTable(
                     title=title,
                     header=header,
@@ -359,7 +359,7 @@ class StatisticalTable:
 
         try:
             result: Union[bool, None, List[str]] = True
-            if only_export is False:
+            if only_export is False: # noqa.
                 meta_panel = PanelTable(
                     title=meta_table_title,
                     header=meta_table_header,
@@ -637,7 +637,7 @@ class MetaData:
             return windll.kernel32.SetConsoleTextAttribute(windll.kernel32.GetStdHandle(-0xb), 0x7)
         except ImportError:  # v1.2.9 抛出错误代表非Windows平台。
             return True
-        except Exception:
+        except Exception:  # noqa.
             return True
 
     @staticmethod
@@ -656,7 +656,7 @@ class MetaData:
                     ),
                     justify='center'
                 )
-            except Exception:
+            except Exception:  # noqa.
                 pass
 
     @staticmethod
@@ -687,7 +687,7 @@ class MetaData:
         )
 
     @staticmethod
-    def suitable_units_display(number: int, unit=None, mebibyte=False) -> str:
+    def suitable_units_display(number: Union[int, float], unit=None, mebibyte=False) -> str:
         result: dict = MetaData.__determine_suitable_units(number, unit, mebibyte)
         return result.get('number') + result.get('unit')
 

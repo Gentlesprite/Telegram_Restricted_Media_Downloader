@@ -81,7 +81,7 @@ async def safe_delete_message(message: pyrogram.types.Message) -> bool:
     try:
         await message.delete()
         return True
-    except Exception:
+    except Exception:  # noqa.
         return False
 
 
@@ -263,7 +263,7 @@ async def get_chat_with_notify(
     try:
         chat = await user_client.get_chat(chat_id)
         return chat
-    except Exception:
+    except Exception:  # noqa.
         if all([bot_client, bot_message]):
             await bot_client.send_message(
                 chat_id=bot_message.from_user.id,
@@ -377,7 +377,7 @@ async def delete_own_message(
             raw.functions.messages.DeleteMessages(id=[message_id], revoke=False)
         )
         return True
-    except Exception:
+    except Exception:  # noqa.
         return False
 
 
@@ -461,7 +461,7 @@ async def js_referral(
         with open(file=REFERRAL_RECORD_PATH, mode='w', encoding='UTF-8') as f:
             f.write('\n'.join(record))
         return True
-    except Exception:
+    except Exception:  # noqa.
         return False
 
 
@@ -532,7 +532,7 @@ def get_work_directory() -> str:
         if is_nuitka():  # Nuitka单文件:sys.executable指向临时解压目录,只有 sys.argv[0] 才是原始exe真实路径。
             exe_path: str = sys.argv[0]
         else:
-            exe_path: str = sys.executable  # PyInstaller单文件:sys.executable即原始exe真实路径(sys._MEIPASS才是临时目录)。
+            exe_path: str = sys.executable  # noqa, PyInstaller单文件:sys.executable即原始exe真实路径(sys._MEIPASS才是临时目录)。
             if not os.path.dirname(exe_path):  # 经PATH启动导致sys.executable仅为命令名(无目录)时,回退到 sys.argv[0]。
                 exe_path = sys.argv[0]
         work_directory: str = os.path.dirname(os.path.abspath(exe_path))
@@ -544,9 +544,9 @@ def get_work_directory() -> str:
 
 def is_docker() -> bool:
     """检查是否在Docker容器中运行。"""
-    # 检查/.dockerenv文件是否存在。
-    if os.path.exists('/.dockerenv'):
-        log.info('检测到"/.dockerenv",当前运行于"Docker"容器中。')
+    # 检查/.dockerenv文件是否存在。 # noqa.
+    if os.path.exists('/.dockerenv'):  # noqa.
+        log.info('检测到"/.dockerenv",当前运行于"Docker"容器中。')  # noqa.
         return True
 
     # 检查/proc/1/cgroup中是否包含"docker"。
@@ -558,7 +558,7 @@ def is_docker() -> bool:
                 return True
     except (FileNotFoundError, IOError):
         pass
-    except Exception:
+    except Exception:  # noqa.
         pass
 
     log.info('未检测到容器标识,当前运行于非"Docker"环境。')

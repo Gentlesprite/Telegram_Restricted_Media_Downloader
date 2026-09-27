@@ -21,7 +21,7 @@ from http.server import (
     BaseHTTPRequestHandler
 )
 
-from pyrogram import __version__ as pyrogram_version # noqa.
+from pyrogram import __version__ as pyrogram_version  # noqa.
 
 from module import log
 from module import __version__
@@ -71,10 +71,10 @@ class WebHandler(BaseHTTPRequestHandler):
     PYROGRAM_PLACEHOLDER: bytes = b'__PYROGRAM_VERSION__'
     HAS_BOT_PLACEHOLDER: bytes = b'__HAS_BOT__'  # 是否配置了机器人(bot_token),前端据此隐藏上传与监听侧边栏。
 
-    def do_GET(self) -> None:
+    def do_GET(self) -> None:  # noqa.
         if self.path.startswith('/api/'):
             # 接口需要认证;页面与静态资源放行,否则登录卡片自身无法加载。
-            if self.__check_auth() is False:
+            if self.__check_auth() is False:  # noqa.
                 return
             if self.path.startswith('/api/progress'):
                 self.__response_progress()
@@ -83,14 +83,14 @@ class WebHandler(BaseHTTPRequestHandler):
             return
         self.__response_static()
 
-    def do_POST(self) -> None:
+    def do_POST(self) -> None:  # noqa.
         if self.path.startswith('/api/login'):
             self.__response_login()  # 登录接口本身不能被认证拦截。
             return
         if self.path.startswith('/api/logout'):
             self.__response_logout()  # 退出登录同样不能被认证拦截。
             return
-        if self.__check_auth() is False:
+        if self.__check_auth() is False:  # noqa.
             return
         if self.path.startswith('/api/listener/remove'):
             self.__response_remove_listener()
@@ -125,7 +125,7 @@ class WebHandler(BaseHTTPRequestHandler):
             return False
         try:
             credential: str = base64.b64decode(authorization.split(' ', 1)[1]).decode('UTF-8')
-        except Exception:
+        except Exception: # noqa.
             self.__response_unauthorized()
             return False
         if credential != f'{web.username}:{web.password}':
@@ -279,28 +279,33 @@ class WebHandler(BaseHTTPRequestHandler):
         if not os.path.isfile(file_path):
             self.send_error(404)
             return
+        body: bytes = b''
         try:
             with open(file=file_path, mode='rb') as f:
-                body: bytes = f.read()
+                body = f.read()
         except OSError as e:
             log.warning(f'读取网页文件"{file_path}"失败,{_t(KeyWord.REASON)}:"{e}"')
             self.send_error(404)
             return
         if os.path.basename(file_path) == Web.INDEX_FILE:  # 首页需要替换标记与版本号。
+            # body 在此处已确定赋值(正常路径来自文件读取,异常路径已在上方 return)。
+            # 先取出基准内容到 page,后续替换均基于 page,避免在分支内回头读取 try 赋值的 body。
+            page: bytes = body  # type: ignore[reportPossiblyUnboundVariable]
             if self.first_login:
-                body = WebHandler.replace_body_tag(body, WebHandler.FIRST_LOGIN_BODY)
+                page = WebHandler.replace_body_tag(page, WebHandler.FIRST_LOGIN_BODY)
             elif web and web.username:
                 # 需要认证:首屏即隐藏页面内容,认证通过后由前端移除该类,避免刷新时闪现已登录界面。
-                body = WebHandler.replace_body_tag(body, WebHandler.LOGIN_BODY)
-            body = body.replace(WebHandler.VERSION_PLACEHOLDER, f'v{__version__}'.encode('UTF-8'))
-            body = body.replace(
+                page = WebHandler.replace_body_tag(page, WebHandler.LOGIN_BODY)
+            page = page.replace(WebHandler.VERSION_PLACEHOLDER, f'v{__version__}'.encode('UTF-8'))
+            page = page.replace(
                 WebHandler.PYROGRAM_PLACEHOLDER,
                 f'v{pyrogram_version}'.encode('UTF-8')
             )
-            body = body.replace(  # 注入是否配置机器人,前端据此隐藏上传与监听侧边栏。
+            page = page.replace(  # 注入是否配置机器人,前端据此隐藏上传与监听侧边栏。
                 WebHandler.HAS_BOT_PLACEHOLDER,
                 b'1' if (web and web.has_bot) else b'0'
             )
+            body = page
         content_type: str = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
         if content_type.startswith('text/'):
             content_type: str = f'{content_type}; charset=utf-8'
@@ -363,7 +368,7 @@ class Web:
         """获取网页模板目录与静态资源目录,打包环境取资源解压目录。"""
         base_directory: str = get_work_directory()
         if is_frozen():
-            base_directory = getattr(sys, '_MEIPASS', sys.prefix)
+            base_directory = getattr(sys, '_MEIPASS', sys.prefix) # noqa.
         template_directory: str = os.path.join(base_directory, Web.TEMPLATE_DIRECTORY)
         static_directory: str = os.path.join(base_directory, Web.STATIC_DIRECTORY)
         log.info(f'获取网页模板目录:"{template_directory}",静态资源目录:"{static_directory}"。')
@@ -388,7 +393,7 @@ class Web:
                 log.error(f'网页面板启动失败,未找到网页目录:"{directory}"。')
                 return False
         try:
-            self.server = ThreadingHTTPServer((self.ip, self.port), WebHandler)
+            self.server = ThreadingHTTPServer((self.ip, self.port), WebHandler)  # type: ignore[arg-type]
         except OSError as e:
             log.error(f'网页面板启动失败,{_t(KeyWord.REASON)}:"{e}"')
             return False
