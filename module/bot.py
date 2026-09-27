@@ -42,7 +42,7 @@ from module import (
     __license__,
     log,
     console,
-    VERSION_WITH_COMMIT,
+    VERSION_SEMVER,
     SOFTWARE_SHORT_NAME,
     LINK_PREVIEW_OPTIONS
 )
@@ -472,7 +472,7 @@ class Bot:
             remote_version=config.get('version', __version__),
             local_version=__version__
         )
-        version: str = f'{VERSION_WITH_COMMIT}({update_version}⬆)' if update_version else VERSION_WITH_COMMIT
+        version: str = f'{VERSION_SEMVER}({update_version}⬆)' if update_version else VERSION_SEMVER
         keyboard = InlineKeyboardMarkup(
             [
                 [

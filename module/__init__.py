@@ -152,9 +152,9 @@ log = logging.getLogger('rich')
 
 
 def get_commit_hash():
-    env_commit = os.environ.get('TRMD_COMMIT')
+    env_commit = os.environ.get('TRMD_COMMIT_HASH')
     if env_commit:
-        log.info(f'通过环境变量TRMD_COMMIT获取commit hash:{env_commit}。')
+        log.info(f'通过环境变量TRMD_COMMIT_HASH获取commit hash:{env_commit}。')
         return env_commit
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if os.path.isdir(os.path.join(repo_root, '.git')):
@@ -166,17 +166,29 @@ def get_commit_hash():
                 capture_output=True,
                 text=True
             )
-            log.info(f'通过git获取commit hash:{env_commit}。')
             if completed.returncode == 0 and completed.stdout.strip():
-                return completed.stdout.strip()
+                commit_hash: str = completed.stdout.strip()
+                log.info(f'通过git获取commit hash:{commit_hash}。')
+                return commit_hash
         except Exception as e:
             log.info(f'无法获取commit hash,原因:"{e}"')
     return None
 
 
+def get_build_time():
+    env_build_time = os.environ.get('TRMD_BUILD_TIME')
+    if env_build_time:
+        log.info(f'通过环境变量TRMD_BUILD_TIME获取build time:{env_build_time}。')
+        return env_build_time
+    return None
+
+
 COMMIT = get_commit_hash()
-VERSION_WITH_COMMIT = f'{__version__}{"@" + COMMIT if COMMIT else ""}'
-log.info(f'{SOFTWARE_SHORT_NAME}:{VERSION_WITH_COMMIT},更新日期:{__update_date__}。')
+BUILD_TIME = get_build_time()
+BUILD_META: str = '.'.join(part for part in (COMMIT, BUILD_TIME) if part)
+VERSION_SEMVER = f'{__version__}+{BUILD_META}' if BUILD_META else __version__
+VERSION_WITH_COMMIT = f'{__version__}+{COMMIT}' if COMMIT else __version__
+log.info(f'{SOFTWARE_SHORT_NAME}:{VERSION_SEMVER},更新日期:{__update_date__}。')
 log.info(f'文件日志等级:"{logging.getLevelName(FILE_LOG_LEVEL)}"。')
 log.info(f'终端日志等级:"{logging.getLevelName(CONSOLE_LOG_LEVEL)}"。')
 CustomDumper.add_representer(type(None), CustomDumper.represent_none)  # noqa.
