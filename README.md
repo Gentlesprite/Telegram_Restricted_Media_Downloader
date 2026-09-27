@@ -668,7 +668,7 @@ temp_directory: F:\directory\temp\where\you\save
 | `links` | 链接地址文本文件路径（一个链接一行，不要加引号，运行前准备好）。 |
 | `max_retries` | 任务重试次数，含 `download`（下载任务重试次数）与 `upload`（上传任务重试次数）。 |
 | `max_tasks` | 最大并发任务数，含 `download` 与 `upload`。 |
-| `proxy` | 代理设置，不使用请全部填 `null`（注意冒号后空格，否则报错），含 `enable_proxy`、`scheme`、`hostname`、`port`、`username`、`password`。 |
+| `proxy` | 代理配置；如不使用代理，请将各子字段置为 `null`（注意键值间冒号后需保留空格，否则 YAML 解析报错）。包含 `enable_proxy`、`scheme`、`hostname`、`port`、`username`、`password`。其中 `hostname` 为代理服务器 IP，需按实际网络环境填写，各部署环境取值不同；若运行环境已可直接访问 Telegram 服务器，可不启用代理，将各子字段置为 `null` 即可。 |
 | `save_directory` | 下载媒体保存目录（支持通配符）。 |
 | `session_directory` | 会话保存目录（支持通配符）。 |
 | `temp_directory` | 缓存保存目录（支持通配符）。 |
@@ -1416,6 +1416,18 @@ save_directory: /app/downloads/%CHAT_NAME%/%MIME_TYPE%
 session_directory: /app/sessions
 temp_directory: /app/temp
 ```
+
+由于`Docker`容器的工作目录为`/app`，配置文件中的路径应填写**容器内路径**，实际文件通过`docker run`的`-v`卷挂载映射至宿主机目录：
+
+| 配置项 | 容器内路径（写入配置） | 对应的主机路径 |
+| --- | --- | --- |
+| `save_directory` | `/app/downloads/%CHAT_NAME%/%MIME_TYPE%` | `./downloads/%CHAT_NAME%/%MIME_TYPE%` |
+| `session_directory` | `/app/sessions` | `./sessions` |
+| `temp_directory` | `/app/temp` | `./temp` |
+| `links` | `/app/TRMD/links.txt` | `./config/links.txt` |
+
+- _*另挂载`./form:/app/form`为程序内部统计/表单导出目录（`/app/form`）。_
+- _*代理`hostname`（示例`192.168.1.10`）仅作为参考，实际部署时需替换为各自代理服务器的`ip`地址（可通过`ip addr`或`ifconfig`查看本机局域网`IP`）。若运行环境已可直接访问`Telegram`服务器，则可不启用代理：将`enable_proxy`设为`false`。_
 
 方式1：
 
