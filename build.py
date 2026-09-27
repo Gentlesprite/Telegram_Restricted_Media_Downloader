@@ -90,7 +90,7 @@ SOFTWARE_SHORT_NAME: str = ''.join(part[0].upper() for part in PROJECT['name'].s
 VERSION_INFO = sys.version_info
 PLATFORM: str = sys.platform
 UV: str = 'uv ' if which('uv') and os.path.exists('uv.lock') else ''  # noqa.
-MIN_PYTHON_VERSION: tuple = (3, 9, 0)
+MIN_PYTHON_VERSION: tuple = (3, 10, 0)
 MAX_PYTHON_VERSION: tuple = (3, 15, 0)
 MIN_NUITKA_VERSION: tuple = (4, 3, 0)
 
