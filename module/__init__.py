@@ -42,6 +42,27 @@ def via_log_level(log_level: str, param_name: str, default_level: int = logging.
     return True
 
 
+def get_commit_hash():
+    env_commit = os.environ.get('TRMD_COMMIT')
+    if env_commit:
+        return env_commit
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if os.path.isdir(os.path.join(repo_root, '.git')):
+        try:
+            import subprocess
+            completed = subprocess.run(
+                ['git', 'rev-parse', '--short', 'HEAD'],
+                cwd=repo_root,
+                capture_output=True,
+                text=True
+            )
+            if completed.returncode == 0 and completed.stdout.strip():
+                return completed.stdout.strip()
+        except Exception:  # noqa.
+            pass
+    return None
+
+
 class CustomDumper(yaml.Dumper):
 
     def represent_none(self, data):
@@ -80,8 +101,10 @@ SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
 __version__ = '2.0.8'
 __license__ = 'GPL-3.0-or-later'
-__update_date__ = '2026/09/27 00:11:19'
-__copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/Gentlesprite>'
+__update_date__ = '2026/09/27 23:25:50'
+__copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/{AUTHOR}>'
+COMMIT = get_commit_hash()
+VERSION_WITH_COMMIT = f'{__version__}{"@" + COMMIT if COMMIT else ""}'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
 APPDATA_PATH = os.path.join(
@@ -149,7 +172,7 @@ logging.basicConfig(
     ]
 )
 log = logging.getLogger('rich')
-log.info(f'{SOFTWARE_SHORT_NAME}:{__version__},更新日期:{__update_date__}。')
+log.info(f'{SOFTWARE_SHORT_NAME}:{VERSION_WITH_COMMIT},更新日期:{__update_date__}。')
 log.info(f'文件日志等级:"{logging.getLevelName(FILE_LOG_LEVEL)}"。')
 log.info(f'终端日志等级:"{logging.getLevelName(CONSOLE_LOG_LEVEL)}"。')
 CustomDumper.add_representer(type(None), CustomDumper.represent_none)  # noqa.

@@ -23,8 +23,10 @@ from http.server import (
 
 from pyrogram import __version__ as pyrogram_version  # noqa.
 
-from module import log
-from module import __version__
+from module import (
+    log,
+    VERSION_WITH_COMMIT
+)
 from module.remote import rc
 from module.language import _t
 from module.parser import PARSE_ARGS
@@ -125,7 +127,7 @@ class WebHandler(BaseHTTPRequestHandler):
             return False
         try:
             credential: str = base64.b64decode(authorization.split(' ', 1)[1]).decode('UTF-8')
-        except Exception: # noqa.
+        except Exception:  # noqa.
             self.__response_unauthorized()
             return False
         if credential != f'{web.username}:{web.password}':
@@ -294,12 +296,17 @@ class WebHandler(BaseHTTPRequestHandler):
             if self.first_login:
                 page = WebHandler.replace_body_tag(page, WebHandler.FIRST_LOGIN_BODY)
             elif web and web.username:
-                # 需要认证:首屏即隐藏页面内容,认证通过后由前端移除该类,避免刷新时闪现已登录界面。
-                page = WebHandler.replace_body_tag(page, WebHandler.LOGIN_BODY)
-            page = page.replace(WebHandler.VERSION_PLACEHOLDER, f'v{__version__}'.encode('UTF-8'))
+                page = WebHandler.replace_body_tag(
+                    page,
+                    WebHandler.LOGIN_BODY
+                )  # 需要认证:首屏即隐藏页面内容,认证通过后由前端移除该类,避免刷新时闪现已登录界面。
+            page = page.replace(
+                WebHandler.VERSION_PLACEHOLDER,
+                f'{VERSION_WITH_COMMIT}'.encode('UTF-8')
+            )
             page = page.replace(
                 WebHandler.PYROGRAM_PLACEHOLDER,
-                f'v{pyrogram_version}'.encode('UTF-8')
+                f'{pyrogram_version}'.encode('UTF-8')
             )
             page = page.replace(  # 注入是否配置机器人,前端据此隐藏上传与监听侧边栏。
                 WebHandler.HAS_BOT_PLACEHOLDER,
@@ -368,7 +375,7 @@ class Web:
         """获取网页模板目录与静态资源目录,打包环境取资源解压目录。"""
         base_directory: str = get_work_directory()
         if is_frozen():
-            base_directory = getattr(sys, '_MEIPASS', sys.prefix) # noqa.
+            base_directory = getattr(sys, '_MEIPASS', sys.prefix)  # noqa.
         template_directory: str = os.path.join(base_directory, Web.TEMPLATE_DIRECTORY)
         static_directory: str = os.path.join(base_directory, Web.STATIC_DIRECTORY)
         log.info(f'获取网页模板目录:"{template_directory}",静态资源目录:"{static_directory}"。')

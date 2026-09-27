@@ -8,6 +8,7 @@ import sys
 import datetime
 import subprocess
 
+from typing import Union
 from pathlib import Path
 from shutil import which
 
@@ -44,7 +45,7 @@ def ready_meta() -> dict:
     }
 
 
-def ready_nuitka():
+def ready_nuitka() -> None:
     subprocess.run(
         f'{UV}pip install --upgrade --no-cache-dir "nuitka[app] @ https://github.com/Nuitka/Nuitka/archive/factory.zip"',
         shell=True)
@@ -59,6 +60,22 @@ def ready_web() -> list:
             sys.exit(1)
         web_directories.append((path, relative_directory))
     return web_directories
+
+
+def ready_commit_hash() -> Union[str, None]:
+    repo_root: Path = Path(__file__).resolve().parent
+    try:
+        completed = subprocess.run(
+            ['git', 'rev-parse', '--short', 'HEAD'],
+            cwd=repo_root,
+            capture_output=True,
+            text=True
+        )
+        if completed.returncode == 0 and completed.stdout.strip():
+            return completed.stdout.strip()
+    except Exception:  # noqa.
+        pass
+    return None
 
 
 def build(command):
@@ -113,10 +130,12 @@ if __name__ == '__main__':
     check_python_version()
     try:
         ready_nuitka()
+        commit_hash: Union[str, None] = ready_commit_hash()
         build_command = f'{sys.executable} -m '
         build_command += f'nuitka --standalone --onefile '
         build_command += f'--assume-yes-for-downloads '
         build_command += f'--no-deployment-flag=self-execution '
+        build_command += f'--force-runtime-environment-variable=TRMD_COMMIT={commit_hash} ' if commit_hash else ''
         build_command += f'--clang --windows-icon-from-ico="{ICO_PATH}" ' if PLATFORM == 'win32' else ''
         build_command += f'--include-package-data=pyrogram '
         build_command += f'--include-module=pygments.lexers.data '

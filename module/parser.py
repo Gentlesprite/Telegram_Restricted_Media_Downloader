@@ -8,11 +8,11 @@ from argparse import (
     ArgumentParser
 )
 
-from pyrogram import __version__ as pyrogram_version # noqa.
+from pyrogram import __version__ as pyrogram_version  # noqa.
 
 from module import (
     console,
-    __version__
+    VERSION_WITH_COMMIT
 )
 from module.enums import (
     Banner,
@@ -33,7 +33,7 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
         self.add_argument(
             '-v', '--version',
             action='version',
-            version=f'TRMD {__version__} (pyrogram {pyrogram_version})',
+            version=f'TRMD {VERSION_WITH_COMMIT} (pyrogram {pyrogram_version})',
             default=SUPPRESS,
             help='展示版本信息'
         )

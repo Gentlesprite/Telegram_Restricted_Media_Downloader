@@ -38,7 +38,8 @@ from module import (
     README,
     __version__,
     __license__,
-    __copyright__
+    __copyright__,
+    VERSION_WITH_COMMIT
 )
 from module.remote import rc
 from module.language import _t
@@ -161,7 +162,7 @@ class StatisticalTable:
                     return None
         try:
             result: Union[bool, None, List[str]] = True
-            if only_export is False: # noqa.
+            if only_export is False:  # noqa.
                 panel = PanelTable(
                     title=title,
                     header=header,
@@ -234,7 +235,7 @@ class StatisticalTable:
                     if only_export:
                         return None
             result: Union[bool, None, List[str]] = True
-            if only_export is False: # noqa.
+            if only_export is False:  # noqa.
                 panel = PanelTable(
                     title=title,
                     header=header,
@@ -359,7 +360,7 @@ class StatisticalTable:
 
         try:
             result: Union[bool, None, List[str]] = True
-            if only_export is False: # noqa.
+            if only_export is False:  # noqa.
                 meta_panel = PanelTable(
                     title=meta_table_title,
                     header=meta_table_header,
@@ -467,7 +468,7 @@ class StatisticalTable:
             {
                 'platform': app.platform,
                 'python_version': sys.version.split()[0],
-                'TRMD_version': __version__,
+                'TRMD_version': VERSION_WITH_COMMIT,
                 'update_version': update_version,
                 'pyrogram_version': pyrogram_version,
                 'user_config_path': app.config_path,
@@ -482,7 +483,7 @@ class StatisticalTable:
             data=[
                 ['平台', app.platform],
                 ['Python版本', sys.version.split()[0]],
-                ['TRMD版本', f'{__version__}({update_version}⬆)' if update_version else __version__],
+                ['TRMD版本', f'{VERSION_WITH_COMMIT}({update_version}⬆)' if update_version else VERSION_WITH_COMMIT],
                 ['Pyrogram版本', pyrogram_version],
                 ['用户配置文件', app.config_path],
                 ['保存目录', app.save_directory],
