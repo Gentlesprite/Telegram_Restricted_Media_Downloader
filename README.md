@@ -27,8 +27,8 @@
 
 > [!NOTE]
 > 由于本项目**提供**的Linux版本可能对较早版本的Linux系统兼容性较差。  
-> 若**无法运行的**Linux用户请**阅读**:[_"3.0.在生产环境中运行(对于Linux用户)"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7-2)或[_"6.0.通过Docker运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#60%E9%80%9A%E8%BF%87docker%E8%BF%90%E8%A1%8C)。  
-> 如果你**遇到任何问题**，请先仔细**阅读**:[_"常见问题及解决方案汇总"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
+> 若**无法运行的**Linux用户请**阅读**:[_“3.0.在生产环境中运行（对于Linux用户）”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7-2)或[_“6.0.通过Docker运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#60%E9%80%9A%E8%BF%87docker%E8%BF%90%E8%A1%8C)。  
+> 如果你**遇到任何问题**，请先仔细**阅读**:[_“常见问题及解决方案汇总”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
 > **没有找到解决方案**再进群或私聊提问。
 
 # 免责声明
@@ -114,7 +114,7 @@
 > 如果配置了机器人，只要**保持软件运行**，就能实现**多端发送下载命令**并且**随时进行下载**。  
 > 故可以将软件部署在服务器上，无论是Windows还是Linux平台。  
 > Windows平台可直接使用[releases](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases)里发布的二进制文件放在服务器运行。  
-> Linux平台的部署教程请**阅读**:[_"3.0.在生产环境中运行(对于Linux用户)"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7)。
+> Linux平台的部署教程请**阅读**:[_“3.0.在生产环境中运行（对于Linux用户）”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7)。
 
 
 <details>
@@ -307,7 +307,7 @@
 
 - 转发至个人收藏夹（任选一种命令即可）：
 
-    - 方式1，使用me或self指向个人收藏夹（任选一种命令即可）：
+    - 方式1，使用`me`或`self`指向个人收藏夹（任选一种命令即可）：
 
       ```bash
       /forward https://t.me/test me 1 500
@@ -624,40 +624,54 @@ _再次向机器人发送创建监听时的命令，机器人将会提供给用�
 > 需注意配置文件使用的引号、冒号均为半角，冒号后需有一个空格。  
 
 ```yaml
-api_hash: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx # 申请的api_hash。
-api_id: 'xxxxxxxx' # 申请的api_id。
-# bot_token（选填）如果不填，就不能使用机器人功能。可前往https://t.me/BotFather免费申请。
+api_hash: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+api_id: 'xxxxxxxx'
 bot_token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
-download_type: # 需要下载的类型。支持的参数:video,photo,document,audio,voice,animation。
-- video # 视频。
-- photo # 图片。
-- document # 文档。
-- audio # 音频。
-- voice # 语音。
-- animation # GIF。
-- video_note # 视频笔记。
-- live_photo # 实况图片（当不指定时，并且photo类型存在的情况下，live_photo类型将被视为photo类型）。
-is_shutdown: true # 下载完成后是否自动关机。支持的参数：true,false。
-links: D:\path\where\your\link\files\save\content.txt # 链接地址写法如下:
-# 新建txt文本，一个链接为一行，将路径填入即可请不要加引号，在软件运行前就准备好。
-# D:\path\where\your\link\txt\save\content.txt 一个链接一行。
+download_type:
+  - video
+  - photo
+  - document
+  - audio
+  - voice
+  - animation
+  - video_note
+  - live_photo
+is_shutdown: true
+links: D:\path\where\your\link\files\save\content.txt
 max_retries:
-  download: 5 # 最大的下载任务的重试次数。
-  upload: 3 # 最大的上传任务的重试次数。
+  download: 5
+  upload: 3
 max_tasks:
-  download: 3 # 最大同时下载的任务数。
-  upload: 3 # 最大同时上传的任务数。
-proxy: # 代理部分，如不使用请全部填null注意冒号后面有空格，否则不生效导致报错。
-  enable_proxy: true # 是否开启代理。支持的参数：true,false。
-  hostname: 127.0.0.1 # 代理的ip地址。
-  scheme: socks5 # 代理的类型。支持的参数：http,socks4,socks5。
-  port: 10808 # 代理ip的端口。支持的参数：0~65535。
-  username: null # 代理的账号，没有就填null。
-  password: null # 代理的密码，没有就填null。
-save_directory: F:\directory\media\where\you\save # 下载的媒体保存的目录（支持通配符）。
-session_directory: F:\directory\session\where\you\save # 会话的保存目录（支持通配符）。
-temp_directory: F:\directory\temp\where\you\save # 缓存保存的目录（支持通配符）。
+  download: 3
+  upload: 3
+proxy:
+  enable_proxy: true
+  hostname: 127.0.0.1
+  scheme: socks5
+  port: 10808
+  username: null
+  password: null
+save_directory: F:\directory\media\where\you\save
+session_directory: F:\directory\session\where\you\save
+temp_directory: F:\directory\temp\where\you\save
 ```
+
+#### 参数说明
+
+| 参数 | 说明 |
+| --- | --- |
+| `api_hash` | 申请的 `api_hash`（Telegram API 凭据）。 |
+| `api_id` | 申请的 `api_id`（Telegram API 凭据，需加引号）。 |
+| `bot_token` | 机器人令牌（选填）；不填则无法使用机器人功能，可前往 [BotFather](https://t.me/BotFather) 免费申请。 |
+| `download_type` | 需要下载的类型，支持 `video`、`photo`、`document`、`audio`、`voice`、`animation`、`video_note`、`live_photo`（其中 `live_photo` 在不指定且 `photo` 存在时被视为 `photo` 类型）。 |
+| `is_shutdown` | 下载完成后是否自动关机，支持 `true`、`false`。 |
+| `links` | 链接地址文本文件路径（一个链接一行，不要加引号，运行前准备好）。 |
+| `max_retries` | 任务重试次数，含 `download`（下载任务重试次数）与 `upload`（上传任务重试次数）。 |
+| `max_tasks` | 最大并发任务数，含 `download` 与 `upload`。 |
+| `proxy` | 代理设置，不使用请全部填 `null`（注意冒号后空格，否则报错），含 `enable_proxy`、`scheme`、`hostname`、`port`、`username`、`password`。 |
+| `save_directory` | 下载媒体保存目录（支持通配符）。 |
+| `session_directory` | 会话保存目录（支持通配符）。 |
+| `temp_directory` | 缓存保存目录（支持通配符）。 |
 
 ### 版本变更
 
@@ -701,26 +715,37 @@ temp_directory: F:\directory\temp\where\you\save # 缓存保存的目录（支�
 > 部分参数支持通过机器人设置进行修改。
 
 ```yaml
-console_log_level: WARNING # 在终端显示的最低日志类型。
+console_log_level: WARNING
 export_table:
-  count: false # 控制运行结束时是否导出下载计数统计表。
-  link: false # 控制运行结束时是否导出下载链接统计表。
-file_log_level: INFO # 在TRMD_LOG.log文件中记录的最低日志类型。
-forward_type: # 控制/listen_forward与/forward命令可转发的文件类型。
-  animation: true # GIF类型。
-  audio: true # 音频类型。
-  document: true # 文档类型。
-  photo: true # 图片类型。
-  text: true # 文本消息类型。
-  video: true # 视频类型。
-  voice: true # 语音类型。
-  video_note: true # 视频笔记类型。
-  live_photo: true # 实况图片类型（当不指定时，并且photo类型存在的情况下，live_photo类型将被视为photo类型）。
-notice: false # 控制机器人启动时候是否发送启动通知。
+  count: false
+  link: false
+file_log_level: INFO
+forward_type:
+  animation: true
+  audio: true
+  document: true
+  photo: true
+  text: true
+  video: true
+  voice: true
+  video_note: true
+  live_photo: true
+notice: false
 upload:
-  delete: false # 控制/listen_forward命令遇到受限内容时,下载上传完成后是否删除已上传完成的本地文件。
-  download_upload: true # 控制/listen_forward命令遇到受限内容时,是否下载后上传到指定的转发频道。
+  delete: false
+  download_upload: true
 ```
+
+#### 参数说明
+
+| 参数 | 说明 |
+| --- | --- |
+| `console_log_level` | 终端显示的最低日志级别（如 `WARNING`）。 |
+| `export_table` | 运行结束时是否导出统计表，含 `count`（下载计数统计表）与 `link`（下载链接统计表）。 |
+| `file_log_level` | `TRMD_LOG.log` 文件中记录的最低日志级别（如 `INFO`）。 |
+| `forward_type` | 控制 `/listen_forward` 与 `/forward` 命令可转发的文件类型，含 `animation`、`audio`、`document`、`photo`、`text`、`video`、`voice`、`video_note`、`live_photo`（其中 `live_photo` 在不指定且 `photo` 存在时被视为 `photo` 类型）。 |
+| `notice` | 机器人启动时是否发送启动通知。 |
+| `upload` | 受限内容处理，含 `delete`（下载上传完成后是否删除本地文件）与 `download_upload`（是否下载后上传到指定转发频道）。 |
 
 ### 全局配置文件存放路径
 #### 对于Windows用户
@@ -1029,7 +1054,7 @@ _**长参数与短参数最终结果一致。**_
 
    该参数用于展示帮助。
 
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
+   - 对于生产环境用户（**需要先完成前置步骤**[_“3.0.在生产环境中运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
 
      ```bash
      python3 main.py -h
@@ -1065,7 +1090,7 @@ _**长参数与短参数最终结果一致。**_
 
    该参数用于展示版本信息。
 
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
+   - 对于生产环境用户（**需要先完成前置步骤**[_“3.0.在生产环境中运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
 
      ```bash
      TRMD.exe -v
@@ -1105,7 +1130,7 @@ _**长参数与短参数最终结果一致。**_
    | _2.用户配置文件缺少必要参数时，指定该参数无效。_ |
    | _3.该参数为一次性设置，不记忆。_                 |
    
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
+   - 对于生产环境用户（**需要先完成前置步骤**[_“3.0.在生产环境中运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
    
      ```bash
      python3 main.py -q
@@ -1139,15 +1164,15 @@ _**长参数与短参数最终结果一致。**_
 
 #### -c、--config
 
-   | 使用须知                                                     |
-   | ------------------------------------------------------------ |
-   | _1.该参数用于设置用户配置文件的路径。_                       |
-   | _2.**该参数旨在解决多个实例（多开）场景下，避免重复部署软件本体而设计的配置分离方案。**_ |
-   | _3.该参数需指定一个**符合**["2.3.配置文件说明（用户配置文件）"](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E7%94%A8%E6%88%B7%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)格式规范的文件，**并且后缀名需为`.yaml`**。_ |
-   | _4.当指定的**文件路径无效**时，将使用软件**默认**设置。_     |
-   | _5.该参数为一次性设置，不记忆。_                             |
+   | 使用须知                                                                                                                                                                                                                |
+   |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+   | _1.该参数用于设置用户配置文件的路径。_                                                                                                                                                                                               |
+   | _2.**该参数旨在解决多个实例（多开）场景下，避免重复部署软件本体而设计的配置分离方案。**_                                                                                                                                                                    |
+   | _3.该参数需指定一个**符合**[“2.3.配置文件说明（用户配置文件）”](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E7%94%A8%E6%88%B7%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)格式规范的文件，**并且后缀名需为`.yaml`**。_ |
+   | _4.当指定的**文件路径无效**时，将使用软件**默认**设置。_                                                                                                                                                                                  |
+   | _5.该参数为一次性设置，不记忆。_                                                                                                                                                                                                  |
 
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
+   - 对于生产环境用户（**需要先完成前置步骤**[_“3.0.在生产环境中运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
 
      以`Linux`系统为例（`Winodws`系统同理），此处假设用户配置文件位于`/home/username/files/example.yaml`。
 
@@ -1201,7 +1226,7 @@ _**长参数与短参数最终结果一致。**_
    | _4.该参数需指定一个**文件夹**，可包含已有的 `.session`文件，指定为空文件夹或不存在时，登录后将在**该路径自动生成**会话文件。_  |
    | _5.该参数设置后会被记忆，下次无需重复设置（`≥v1.8.5`）。_                                         |
 
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
+   - 对于生产环境用户（**需要先完成前置步骤**"[_“3.0.在生产环境中运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
 
      以`Linux`系统为例（`Winodws`系统同理），此处假设会话文件位于`/home/username/files/session`。
 
@@ -1255,7 +1280,7 @@ _**长参数与短参数最终结果一致。**_
    | _4.该参数需指定一个**文件夹**，指定为空文件夹或不存在时，运行时将在**该路径自动生成**生成缓存文件。_ |
    | _5.该参数设置后会被记忆，下次无需重复设置（`≥v1.8.5`）。_    |
    
-   - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
+   - 对于生产环境用户（**需要先完成前置步骤**[_“3.0.在生产环境中运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
    
      以`Linux`系统为例（`Winodws`系统同理），此处假设缓存文件位于`/home/username/files/temp`。
    
@@ -1304,7 +1329,7 @@ _**长参数与短参数最终结果一致。**_
   | _5.该参数用于指定网页面板的**端口号**，范围为`0`~`65535`，若不指定，将使用`2921`端口，端口被占用时自动分配。_       |
   | _6.该参数为一次性设置，不记忆。_                                           |
   
-  - 对于生产环境用户（**需要先完成前置步骤**"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
+  - 对于生产环境用户（**需要先完成前置步骤**"[_“3.0.在生产环境中运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
   
     此处假设使用`1024`端口。
   
@@ -1347,7 +1372,7 @@ _**长参数与短参数最终结果一致。**_
 
 _**推荐**使用`Python==3.13.2`作为该项目环境（避免使用其他`Python`版本导致编译过程中或编译完成后出现报错）。_
 
-- 同"[_3.0.在生产环境中运行"_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)**前置步骤一致**。
+- 同[_“3.0.在生产环境中运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)**前置步骤一致**。
 
 - 然后执行编译代码（建议使用**虚拟环境**，**避免**添加不必要的库，从而**减小**输出的文件大小）。
 
@@ -1362,7 +1387,7 @@ _**Docker环境运行配置文件模板参考（前提：需完全按照后续�
 ```yaml
 api_hash: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 api_id: 'xxxxxxxx'
-bot_token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11 # Docker运行推荐使用机器人，通过"电报机器人(bot_token)申请及使用教程"自行申请。
+bot_token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 download_type:
 - video
 - photo
@@ -1373,7 +1398,7 @@ download_type:
 - video_note
 - live_photo
 is_shutdown: false
-links: /app/TRMD/links.txt # 主机的路径为："config/links.txt"。
+links: /app/TRMD/links.txt
 max_retries:
   download: 5
   upload: 3
@@ -1381,15 +1406,15 @@ max_tasks:
   download: 3
   upload: 3
 proxy:
-  enable_proxy: true # 如果网络能直接访问Telegram服务器，设置为false。
-  hostname: 192.168.1.10 # 此处为示例，每个人地址不同，填写提供代理服务器主机的ip地址，通常使用ifconfig查看。
-  scheme: socks5 # 代理的类型。支持的参数：http,socks4,socks5。
-  port: 10808 # 此处为示例，实际使用的代理软件不同端口也不同，填写主机的代理ip的端口。支持的参数：0~65535。
-  username: null # 代理的账号，没有就填null。
-  password: null # 代理的密码，没有就填null。
-save_directory: /app/downloads/%CHAT_NAME%/%MIME_TYPE% # 主机的路径为："downloads/%CHAT_NAME%/%MIME_TYPE%"。
-session_directory: /app/sessions # 主机的路径为："sessions/"。
-temp_directory: /app/temp # 主机的路径为："temp/"。
+  enable_proxy: true
+  hostname: 192.168.1.10
+  scheme: socks5
+  port: 10808
+  username: null
+  password: null
+save_directory: /app/downloads/%CHAT_NAME%/%MIME_TYPE%
+session_directory: /app/sessions
+temp_directory: /app/temp
 ```
 
 方式1：
