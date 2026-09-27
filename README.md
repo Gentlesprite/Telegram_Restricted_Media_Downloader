@@ -454,7 +454,7 @@ _再次向机器人发送创建监听时的命令，机器人将会提供给用�
 | 版本 | 说明 |
 | --- | --- |
 | `≥v1.7.9` | 已全面支持上传时的断点续传功能（支持所有上传场景），增强了在较差网络环境下的传输稳定性与可靠性。 |
-| `≥v1.8.4` | `/upload` 命令支持 `me`、`self` 作为目标频道的参数（`me`、`self` 作为目标频道参时，代表指向个人收藏夹 `Saved Messages`）。 |
+| `≥v1.8.4` | `/upload` 命令支持`me`、`self` 作为目标频道的参数（`me`、`self` 作为目标频道参时，代表指向个人收藏夹`Saved Messages`）。 |
 
 - `/upload`用于上传本地的文件到指定频道。
   
@@ -658,20 +658,20 @@ temp_directory: F:\directory\temp\where\you\save
 
 #### 参数说明
 
-| 参数 | 说明 |
-| --- | --- |
-| `api_hash` | 申请的 `api_hash`（Telegram API 凭据）。 |
-| `api_id` | 申请的 `api_id`（Telegram API 凭据，需加引号）。 |
-| `bot_token` | 机器人令牌（选填）；不填则无法使用机器人功能，可前往 [BotFather](https://t.me/BotFather) 免费申请。 |
-| `download_type` | 需要下载的类型，支持 `video`、`photo`、`document`、`audio`、`voice`、`animation`、`video_note`、`live_photo`（其中 `live_photo` 在不指定且 `photo` 存在时被视为 `photo` 类型）。 |
-| `is_shutdown` | 下载完成后是否自动关机，支持 `true`、`false`。 |
-| `links` | 链接地址文本文件路径（一个链接一行，不要加引号，运行前准备好）。 |
-| `max_retries` | 任务重试次数，含 `download`（下载任务重试次数）与 `upload`（上传任务重试次数）。 |
-| `max_tasks` | 最大并发任务数，含 `download` 与 `upload`。 |
-| `proxy` | 代理配置；如不使用代理，请将各子字段置为 `null`（注意键值间冒号后需保留空格，否则 YAML 解析报错）。包含 `enable_proxy`、`scheme`、`hostname`、`port`、`username`、`password`。其中 `hostname` 为代理服务器 IP，需按实际网络环境填写，各部署环境取值不同；若运行环境已可直接访问 Telegram 服务器，可不启用代理，将各子字段置为 `null` 即可。 |
-| `save_directory` | 下载媒体保存目录（支持通配符）。 |
-| `session_directory` | 会话保存目录（支持通配符）。 |
-| `temp_directory` | 缓存保存目录（支持通配符）。 |
+| 参数 | 说明                                                                                                                                                                                                                            |
+| --- |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `api_hash` | 申请的`api_hash`（Telegram API 凭据）。                                                                                                                                                                                               |
+| `api_id` | 申请的`api_id`（Telegram API 凭据，需加引号）。                                                                                                                                                                                            |
+| `bot_token` | 机器人令牌（选填）；不填则无法使用机器人功能，可前往[BotFather](https://t.me/BotFather) 免费申请。                                                                                                                                                           |
+| `download_type` | 需要下载的类型，支持`video`、`photo`、`document`、`audio`、`voice`、`animation`、`video_note`、`live_photo`（其中`live_photo`在不指定且`photo`存在时被视为`photo`类型）。                                                                                        |
+| `is_shutdown` | 下载完成后是否自动关机，支持`true`、`false`。                                                                                                                                                                                                 |
+| `links` | 链接地址文本文件路径（一个链接一行，不要加引号，运行前准备好）。                                                                                                                                                                                              |
+| `max_retries` | 任务重试次数，含`download`（下载任务重试次数）与`upload`（上传任务重试次数）。                                                                                                                                                                              |
+| `max_tasks` | 最大并发任务数，含`download`与`upload`。                                                                                                                                                                                                 |
+| `proxy` | 代理配置；如不使用代理，请将`enable_proxy`字段置为`false`（注意键值间冒号后需保留空格，否则`YAML`解析报错）。包含`enable_proxy`、`scheme`、`hostname`、`port`、`username`、`password`。其中`hostname`为代理服务器`IP`，需按实际网络环境填写，各部署环境取值不同；若运行环境已可直接访问`Telegram`服务器，则可不启用代理：将`enable_proxy`设为`false`。 |
+| `save_directory` | 下载媒体保存目录（支持通配符）。                                                                                                                                                                                                              |
+| `session_directory` | 会话保存目录（支持通配符）。                                                                                                                                                                                                                |
+| `temp_directory` | 缓存保存目录（支持通配符）。                                                                                                                                                                                                                |
 
 ### 版本变更
 
@@ -740,12 +740,12 @@ upload:
 
 | 参数 | 说明 |
 | --- | --- |
-| `console_log_level` | 终端显示的最低日志级别（如 `WARNING`）。 |
-| `export_table` | 运行结束时是否导出统计表，含 `count`（下载计数统计表）与 `link`（下载链接统计表）。 |
-| `file_log_level` | `TRMD_LOG.log` 文件中记录的最低日志级别（如 `INFO`）。 |
-| `forward_type` | 控制 `/listen_forward` 与 `/forward` 命令可转发的文件类型，含 `animation`、`audio`、`document`、`photo`、`text`、`video`、`voice`、`video_note`、`live_photo`（其中 `live_photo` 在不指定且 `photo` 存在时被视为 `photo` 类型）。 |
+| `console_log_level` | 终端显示的最低日志级别（如`WARNING`）。 |
+| `export_table` | 运行结束时是否导出统计表，含`count`（下载计数统计表）与`link`（下载链接统计表）。 |
+| `file_log_level` | `TRMD_LOG.log`文件中记录的最低日志级别（如`INFO`）。 |
+| `forward_type` | 控制`/listen_forward`与`/forward`命令可转发的文件类型，含`animation`、`audio`、`document`、`photo`、`text`、`video`、`voice`、`video_note`、`live_photo`（其中`live_photo`在不指定且`photo`存在时被视为`photo`类型）。 |
 | `notice` | 机器人启动时是否发送启动通知。 |
-| `upload` | 受限内容处理，含 `delete`（下载上传完成后是否删除本地文件）与 `download_upload`（是否下载后上传到指定转发频道）。 |
+| `upload` | 受限内容处理，含`delete`（下载上传完成后是否删除本地文件）与`download_upload`（是否下载后上传到指定转发频道）。 |
 
 ### 全局配置文件存放路径
 #### 对于Windows用户
