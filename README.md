@@ -1370,11 +1370,18 @@ _**长参数与短参数最终结果一致。**_
 
 # 5.0.通过编译后运行
 
-_**推荐**使用`Python==3.13.2`作为该项目环境（避免使用其他`Python`版本导致编译过程中或编译完成后出现报错）。_
+_**推荐**使用`Python==3.13.2`作为该项目环境，并使用**虚拟环境**，**避免**添加不必要的库，从而**减小**输出的文件大小。_
 
-- 同[_“3.0.在生产环境中运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)**前置步骤一致**。
+_`Windows`构建说明：_
+   - **Windows构建会启用`--clang`**。
+   - 需安装`Visual Studio`并勾选`C++ Clang Compiler for Windows`组件以提供`clang-cl`。  
+   - 下载`Visual Studio`时须留意版本，其安装的`LLVM`/`clang`版本须**≥19**，因Nuitka编译所用的`#embed`（C23）常量嵌入仅在该版本起受支持。  
+   - 在`Windows`下，`build.py`必须在**x64 Native Tools Command Prompt for VS**中运行，`Nuitka`依靠该命令行预置的`MSVC`与`Windows SDK`编译环境。
+   - 在`CMD`/`PowerShell`中运行，将因所需环境变量在编译期报错，并且`Nuitka`不再回退至`gcc`/`zig`（仅当`MSVC`完全探测不到时才触发回退）。
 
-- 然后执行编译代码（建议使用**虚拟环境**，**避免**添加不必要的库，从而**减小**输出的文件大小）。
+同[_“3.0.在生产环境中运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)**前置步骤一致**。
+
+执行代码：
 
 ```bash
 python build.py
