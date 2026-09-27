@@ -51,10 +51,9 @@
 
 |      平台      |                           下载地址                           |    备注    |
 | :------------: | :----------------------------------------------------------: | :--------: |
-|     蓝奏云     |         [点击跳转](https://wwgr.lanzn.com/b0fopovuf)         | 密码:ceze  |
 |     Github     | [点击跳转](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases) |  &ndash;   |
-|    Gitcode     | [点击跳转](https://gitcode.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases) |  &ndash;   |
 |     Gitee      | [点击跳转](https://gitee.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases) | 仅发布源码 |
+|     蓝奏云     |         [点击跳转](https://wwgr.lanzn.com/b0fopovuf)         | 密码:ceze  |
 | Telegram交流群 |          [点击加入](https://t.me/+6KKA-buFaixmNTE1)          |   群文件   |
 
 ## 1.1.（选看）推荐终端
