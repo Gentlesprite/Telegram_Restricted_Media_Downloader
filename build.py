@@ -102,17 +102,18 @@ if __name__ == '__main__':
         ready_nuitka()
         commit_hash: Union[str, None] = ready_commit_hash()
         build_command = f'{sys.executable} -m '
-        build_command += f'nuitka --standalone --onefile '
-        build_command += f'--assume-yes-for-downloads '
-        build_command += f'--no-deployment-flag=self-execution '
+        build_command += 'nuitka --standalone --onefile '
+        build_command += '--assume-yes-for-downloads '
+        build_command += '--no-deployment-flag=self-execution --prefer-source-code '
+        build_command += '--low-memory ' if '--low-memory' in sys.argv else ''
+        build_command += '--remove-output ' if '--remove-output' in sys.argv else ''
+        build_command += '--include-package-data=pyrogram '
+        build_command += '--include-module=_json --include-module=_bisect ' if PLATFORM in ('linux', 'darwin') else ''
+        build_command += ''.join(map(lambda d: f'--include-data-dir="{d[0]}"="{d[1]}" ', ready_web()))
         build_command += f'--force-runtime-environment-variable=TRMD_COMMIT_HASH={commit_hash} ' if commit_hash else ''
         build_command += f'--force-runtime-environment-variable=TRMD_BUILD_TIME={datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")} '
         build_command += f'--clang --windows-icon-from-ico="{ICO_PATH}" ' if PLATFORM == 'win32' else ''
-        build_command += f'--include-package-data=pyrogram '
-        build_command += ''.join(map(lambda d: f'--include-data-dir="{d[0]}"="{d[1]}" ', ready_web()))
         build_command += f'--output-dir={OUTPUT} --output-filename="{SOFTWARE_SHORT_NAME}{EXTENSION}" --file-version={__version__} --product-version={__version__} --copyright="{COPYRIGHT}" '
-        build_command += f'--low-memory ' if '--low-memory' in sys.argv else ''
-        build_command += f'--remove-output ' if '--remove-output' in sys.argv else ''
         build_command += ''.join(f'{arg} ' for arg in sys.argv if arg.startswith('--disable-cache='))
         build_command += f'--script-name={SCRIPT_NAME}'
         build(build_command)
