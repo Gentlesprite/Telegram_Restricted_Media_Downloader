@@ -1146,7 +1146,7 @@ class Bot:
             )
             self.is_bot_running: bool = True
             await self.send_message_to_bot(text='/start')
-            return f'🤖「机器人」启动成功。({BotButton.OPEN_NOTICE if self.gc.config.get(BotCallbackText.NOTICE) else BotButton.CLOSE_NOTICE})'
+            return f'🤖「机器人」启动成功 ({BotButton.OPEN_NOTICE if self.gc.config.get(BotCallbackText.NOTICE) else BotButton.CLOSE_NOTICE})。'
         except AccessTokenInvalid as e:
             self.is_bot_running: bool = False
             return f'🤖「机器人」启动失败,「bot_token」错误,{_t(KeyWord.REASON)}:"{e}"'

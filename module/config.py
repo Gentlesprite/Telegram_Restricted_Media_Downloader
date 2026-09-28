@@ -646,7 +646,7 @@ class GlobalConfig(BaseConfig):
         self.forward_type: dict = self.config.get('forward_type')
         p = '全局配置文件已重新加载。'
         console.log(p, style='#FF4689')
-        log.info(f'{p}{self.config}')
+        log.info(f'{p.replace("。", ":")}{self.config}')
 
     def __check_params(self, config: dict) -> None:
         if config is None:
