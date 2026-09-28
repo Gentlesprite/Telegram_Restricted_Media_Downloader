@@ -53,8 +53,8 @@ def ready_commit_hash() -> Union[str, None]:
 
 
 def build(command):
-    print(f'Command:\n{command}\n{GRID}')
-    print('Build in progress:')
+    print(f'Command:\n{command}\n{GRID}', flush=True)
+    print('Build in progress:', flush=True)
     subprocess.run(command, shell=True)
 
 
@@ -71,7 +71,7 @@ def check_python_version():
             f'Python版本不满足要求\n当前版本:{sys.version}\n要求范围:{".".join(map(str, MIN_PYTHON_VERSION))} ≤ Python 版本 < {".".join(map(str, MAX_PYTHON_VERSION))}\n请安装符合要求的Python版本后重试。')
         sys.exit(1)
 
-    print(f'{GRID}\nPython:\n{sys.version}\n{GRID}')
+    print(f'{GRID}\nPython:\n{sys.version}\n{GRID}', flush=True)
 
 
 VERSION_INFO = sys.version_info
@@ -117,4 +117,4 @@ if __name__ == '__main__':
         build_command += f'--script-name={SCRIPT_NAME}'
         build(build_command)
     except KeyboardInterrupt:
-        print('键盘中断。')
+        pass
