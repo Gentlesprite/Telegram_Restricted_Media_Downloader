@@ -143,7 +143,7 @@ if __name__ == '__main__':
         build_command += f'--output-dir={OUTPUT} --output-filename="{SOFTWARE_SHORT_NAME}{EXTENSION}" --file-version={VERSION} --product-version={VERSION} --copyright="{COPYRIGHT}" '
         build_command += f'--low-memory ' if '--low-memory' in sys.argv else ''
         build_command += f'--remove-output ' if '--remove-output' in sys.argv else ''
-        build_command += f'--disable-cache=all ' if '--disable-cache=all' in sys.argv else ''
+        build_command += ''.join(f'{arg} ' for arg in sys.argv if arg.startswith('--disable-cache='))
         build_command += f'--script-name={SCRIPT_NAME}'
         build(build_command)
     except KeyboardInterrupt:
