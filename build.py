@@ -12,37 +12,11 @@ from typing import Union
 from pathlib import Path
 from shutil import which
 
-
-def ready_meta() -> dict:
-    try:
-        import tomllib
-    except ModuleNotFoundError:
-        import tomli as tomllib  # noqa, Python < 3.11回退。
-    pyroject_path: Path = Path(__file__).resolve().parent / 'pyproject.toml'
-    if pyroject_path.exists():
-        with open(pyroject_path, 'rb') as f:
-            pyproject: dict = tomllib.load(f)
-        return pyproject
-    import logging
-    logging.disable(logging.CRITICAL)  # 导入module前禁用日志,避免其初始化日志写入文件。
-    from module import (
-        AUTHOR,
-        SOFTWARE_FULL_NAME,
-        __version__
-    )
-    logging.disable(logging.NOTSET)  # 恢复日志输出。
-    # 构建日志仅输出到控制台,移除module配置的文件处理器。
-    for handler in logging.getLogger().handlers[:]:
-        if getattr(handler, 'baseFilename', None):
-            logging.getLogger().removeHandler(handler)
-    # pyproject.toml不存在时,从module模块读取元数据,构建结构一致的字典作为回退。
-    return {
-        'project': {
-            'authors': [{'name': AUTHOR}],
-            'name': SOFTWARE_FULL_NAME.replace(' ', '_'),
-            'version': __version__,
-        }
-    }
+from module import (
+    __version__,
+    AUTHOR,
+    SOFTWARE_SHORT_NAME
+)
 
 
 def ready_nuitka() -> None:
@@ -100,10 +74,6 @@ def check_python_version():
     print(f'{GRID}\nPython:\n{sys.version}\n{GRID}')
 
 
-PROJECT: dict = ready_meta()['project']
-AUTHOR: str = PROJECT['authors'][0]['name']
-VERSION: str = PROJECT['version']
-SOFTWARE_SHORT_NAME: str = ''.join(part[0].upper() for part in PROJECT['name'].split('_') if part)
 VERSION_INFO = sys.version_info
 PLATFORM: str = sys.platform
 UV: str = 'uv ' if which('uv') and os.path.exists('uv.lock') else ''  # noqa.
@@ -140,7 +110,7 @@ if __name__ == '__main__':
         build_command += f'--clang --windows-icon-from-ico="{ICO_PATH}" ' if PLATFORM == 'win32' else ''
         build_command += f'--include-package-data=pyrogram '
         build_command += ''.join(map(lambda d: f'--include-data-dir="{d[0]}"="{d[1]}" ', ready_web()))
-        build_command += f'--output-dir={OUTPUT} --output-filename="{SOFTWARE_SHORT_NAME}{EXTENSION}" --file-version={VERSION} --product-version={VERSION} --copyright="{COPYRIGHT}" '
+        build_command += f'--output-dir={OUTPUT} --output-filename="{SOFTWARE_SHORT_NAME}{EXTENSION}" --file-version={__version__} --product-version={__version__} --copyright="{COPYRIGHT}" '
         build_command += f'--low-memory ' if '--low-memory' in sys.argv else ''
         build_command += f'--remove-output ' if '--remove-output' in sys.argv else ''
         build_command += ''.join(f'{arg} ' for arg in sys.argv if arg.startswith('--disable-cache='))
