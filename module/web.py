@@ -59,8 +59,8 @@ from module.enums import (
 class WebHandler(BaseHTTPRequestHandler):
     """处理网页面板的请求。"""
     server_version: str = 'TRMDWeb'
-    remember_session: bool = False  # 本次响应是否需要下发记名Cookie。
-    expire_session: bool = False  # 本次响应是否需要清除记名Cookie(退出登录)。
+    remember_session: bool = False  # 本次响应是否需要下发Cookie。
+    expire_session: bool = False  # 本次响应是否需要清除Cookie(退出登录)。
     first_login: bool = False  # 本次请求是否属于未携带有效Cookie的首次登录。
     # 首页<body>起始标签,用正则匹配,模板给<body>新增属性后替换依然生效。
     BODY_TAG_PATTERN: bytes = rb'<body\b[^>]*>'
@@ -133,7 +133,7 @@ class WebHandler(BaseHTTPRequestHandler):
         if credential != f'{web.username}:{web.password}':
             self.__response_unauthorized()
             return False
-        self.remember_session = True  # 首次认证成功,响应时下发记名Cookie。
+        self.remember_session = True  # 首次认证成功,响应时下发Cookie。
         self.first_login = True  # 走到这里说明请求未携带有效Cookie,即本次为首次登录。
         return True
 
@@ -185,7 +185,7 @@ class WebHandler(BaseHTTPRequestHandler):
         )
 
     def __response_session_cookie(self) -> None:
-        """下发或清除记名Cookie。
+        """下发或清除Cookie。
         登录勾选"30天内免登录"时下发长期Cookie;退出登录时下发一个立即过期的Cookie以清除它。"""
         web: Union[Web, None] = getattr(self.server, 'web', None)
         if web is None:
@@ -203,7 +203,7 @@ class WebHandler(BaseHTTPRequestHandler):
         self.send_header('Set-Cookie', cookie)
 
     def __response_logout(self) -> None:
-        """退出登录:轮换记名令牌使所有已下发的Cookie失效,并清除本浏览器的Cookie。"""
+        """退出登录:轮换令牌使所有已下发的Cookie失效,并清除本浏览器的Cookie。"""
         web: Union[Web, None] = getattr(self.server, 'web', None)
         if web is not None:
             web.logout()
@@ -330,7 +330,7 @@ class Web:
     TEMPLATE_FILES: tuple = ('index.html',)  # 模板目录提供的页面,其余请求一律按静态资源处理。
     UNGROUPED: str = '未分组'
     REMOVE_LISTEN_TIMEOUT: int = 10  # 等待事件循环移除监听的超时时间,单位为秒。
-    REMEMBER_COOKIE_MAX_AGE: int = 30 * 24 * 3600  # 记名Cookie的有效期,单位为秒(30天)。
+    REMEMBER_COOKIE_MAX_AGE: int = 30 * 24 * 3600  # Cookie的有效期,单位为秒(30天)。
     UNFINISHED_STATE: tuple = (
         DownloadStatus.PENDING,
         DownloadStatus.DOWNLOADING
@@ -348,7 +348,7 @@ class Web:
         self.port: int = self.get_free_port(PARSE_ARGS.port)
         self.username: str = self.credential.get(WebMeta.USERNAME)
         self.password: str = self.credential.get(WebMeta.PASSWORD)
-        self.token: str = get_web_session()  # 记名令牌,使浏览器在软件重启后依然免密。
+        self.token: str = get_web_session()  # 令牌,使浏览器在软件重启后依然免密。
         self.template_directory, self.static_directory = self.get_web_directory()
         self.server: Union[ThreadingHTTPServer, None] = None
         self.thread: Union[threading.Thread, None] = None
@@ -434,11 +434,11 @@ class Web:
         ).print_meta()
 
     def check_session(self, token: str) -> bool:
-        """校验浏览器提交的记名令牌是否有效,用于免密登录。"""
+        """校验浏览器提交的令牌是否有效,用于免密登录。"""
         return bool(token) and token == self.token
 
     def logout(self) -> None:
-        """退出登录:重新生成记名令牌并持久化,使所有已下发的Cookie失效。"""
+        """退出登录:重新生成令牌并持久化,使所有已下发的Cookie失效。"""
         self.token = reset_web_session()
 
     @staticmethod

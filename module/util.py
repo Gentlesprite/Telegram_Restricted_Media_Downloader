@@ -503,7 +503,7 @@ def reset_web_session() -> str:
 
 
 def get_web_session() -> str:
-    """读取网页面板的记名令牌,不存在时生成并持久化,以便浏览器在软件重启后依然免密。"""
+    """读取网页面板令牌,不存在时生成并持久化,以便浏览器在软件重启后依然免密。"""
     try:
         with open(file=TRMD_WEB_SESSION, mode='r', encoding='UTF-8') as f:
             token: str = f.read().strip()
@@ -515,9 +515,9 @@ def get_web_session() -> str:
     try:
         with open(file=TRMD_WEB_SESSION, mode='w', encoding='UTF-8') as f:
             f.write(token)
-        log.info(f'已生成网页面板的记名令牌:"{TRMD_WEB_SESSION}"。')
+        log.info(f'已生成网页面板令牌:"{TRMD_WEB_SESSION}"。')
     except OSError as e:
-        log.warning(f'保存网页面板的记名令牌失败,原因:"{e}"。')
+        log.warning(f'保存网页面板令牌失败,原因:"{e}"。')
     return token
 
 
@@ -547,6 +547,7 @@ def check_environment():
     log.info(f'{SOFTWARE_SHORT_NAME}:{VERSION_SEMVER},更新日期:{__update_date__}。')
     log.info(f'文件日志等级:"{logging.getLevelName(FILE_LOG_LEVEL)}"。')
     log.info(f'终端日志等级:"{logging.getLevelName(CONSOLE_LOG_LEVEL)}"。')
+    log.info(f'获取工作目录:"{get_work_directory()}"。')
     if is_nuitka():
         log.info(f'检测到"__compiled__",当前运行于"Nuitka"编译产物中,版本:{get_nuitka_version()}。')
     elif is_pyinstaller():
@@ -558,7 +559,7 @@ def check_environment():
 
 
 def get_work_directory() -> str:
-    """获取软件工作目录,打包环境取原始可执行文件所在目录,源码环境取入口脚本所在目录。"""
+    """获取工作目录,打包环境取原始可执行文件所在目录,源码环境取入口脚本所在目录。"""
     if is_frozen():  # 单文件打包(Nuitka/Pyinstaller)会把文件解压到临时目录运行,sys.executable/__file__ 均可能指向临时目录。
         if is_nuitka():  # Nuitka单文件:sys.executable指向临时解压目录,只有 sys.argv[0] 才是原始exe真实路径。
             exe_path: str = sys.argv[0]
@@ -569,7 +570,6 @@ def get_work_directory() -> str:
         work_directory: str = os.path.dirname(os.path.abspath(exe_path))
     else:
         work_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
-    log.info(f'获取软件工作目录:"{work_directory}"。')
     return work_directory
 
 
