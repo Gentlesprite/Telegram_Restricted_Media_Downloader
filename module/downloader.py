@@ -63,8 +63,7 @@ from module import (
     log,
     console,
     FORWARD_LIMIT,
-    SLEEP_THRESHOLD,
-    LINK_PREVIEW_OPTIONS
+    SLEEP_THRESHOLD
 )
 from module.web import Web
 from module.remote import rc
@@ -265,7 +264,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             last_msg = await client.send_message(
                 chat_id=chat_id,
                 text=f'🚛请稍后{load_name}加载中. . .',
-                link_preview_options=LINK_PREVIEW_OPTIONS
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             tasks = [client.send_photo(
                 chat_id=chat_id,
@@ -300,7 +299,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 client.send_message(
                     chat_id=chat_id,
                     text='😊欢迎使用,您的支持是我持续更新的动力。',
-                    link_preview_options=LINK_PREVIEW_OPTIONS)
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS)
             )
 
     async def callback_data(self, client: pyrogram.Client, callback_query: pyrogram.types.CallbackQuery):
@@ -373,7 +372,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             await self.app.client.send_message(
                 chat_id=callback_query.message.from_user.id,
                 text='/listen_info',
-                link_preview_options=LINK_PREVIEW_OPTIONS
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
         elif callback_data == BotCallbackText.SHUTDOWN:
             try:
@@ -1172,7 +1171,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             last_message = await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                link_preview_options=LINK_PREVIEW_OPTIONS,
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
                 text=loading
             )
             async for i in self.app.client.get_chat_history(
@@ -1358,7 +1357,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text=f'{named_link}',
-                link_preview_options=LINK_PREVIEW_OPTIONS,
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
                 reply_markup=InlineKeyboardMarkup([
                     [
                         InlineKeyboardButton(
@@ -1378,7 +1377,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
             text=f'`{named_link}`\n🚛已经在监听列表中。',
-            link_preview_options=LINK_PREVIEW_OPTIONS,
+            link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
             reply_markup=InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton(
@@ -1474,7 +1473,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         await client.send_message(
                             chat_id=message.from_user.id,
                             reply_parameters=ReplyParameters(message_id=message.id),
-                            link_preview_options=LINK_PREVIEW_OPTIONS,
+                            link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
                             text=f'⚠️⚠️⚠️无法读取⚠️⚠️⚠️\n`{_link}`\n(具体原因请前往终端查看报错信息)'
                         )
                         log.error(f'频道"{_link}"解析失败,{_t(KeyWord.REASON)}:"{e}"')
@@ -1483,7 +1482,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     await client.send_message(
                         chat_id=message.from_user.id,
                         reply_parameters=ReplyParameters(message_id=message.id),
-                        link_preview_options=LINK_PREVIEW_OPTIONS,
+                        link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
                         text=f'⚠️⚠️⚠️无法读取⚠️⚠️⚠️\n`{_link}`\n(具体原因请前往终端查看报错信息)'
                     )
                     log.error(f'读取频道"{_link}"时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
@@ -1506,7 +1505,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         last_message: Union[pyrogram.types.Message, str, None] = await client.send_message(
                             chat_id=message.from_user.id,
                             reply_parameters=ReplyParameters(message_id=message.id),
-                            link_preview_options=LINK_PREVIEW_OPTIONS,
+                            link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
                             text=f'✅新增`监听下载频道`频道:\n')
                     last_message: Union[pyrogram.types.Message, None] = await self.safe_edit_message(
                         client=client,
@@ -1529,7 +1528,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    link_preview_options=LINK_PREVIEW_OPTIONS,
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
                     text=f'✅新增`监听转发`频道:\n{listen_link} ➡️ {target_link}',
                     reply_markup=InlineKeyboardMarkup(
                         [

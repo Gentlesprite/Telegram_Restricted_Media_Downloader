@@ -15,7 +15,6 @@ import yaml
 
 from rich.console import Console
 from rich.logging import RichHandler
-from pyrogram.types.messages_and_media import LinkPreviewOptions
 
 
 def read_input_history(history_path: str, max_record_len: int, **kwargs) -> None:
@@ -94,11 +93,9 @@ os.makedirs(APPDATA_PATH, exist_ok=True)  # v1.2.6修复初次运行打开报错
 INPUT_HISTORY_PATH = os.path.join(APPDATA_PATH, f'.{SOFTWARE_SHORT_NAME}_HISTORY')
 MAX_RECORD_LENGTH = 1000
 read_input_history(history_path=INPUT_HISTORY_PATH, max_record_len=MAX_RECORD_LENGTH, platform=PLATFORM)
-# 配置日志输出到文件
 LOG_PATH = os.path.join(APPDATA_PATH, f'{SOFTWARE_SHORT_NAME}_LOG.log')
 MAX_LOG_SIZE = 200 * 1024 * 1024  # 200MB
 BACKUP_COUNT = 0  # 不保留日志文件。
-LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
 LOG_FORMAT = '%(name)s:%(caller_name)s:%(funcName)s:%(lineno)d - %(message)s'
 FILE_LOG_LEVEL: int = logging.INFO
 CONSOLE_LOG_LEVEL: int = logging.WARNING
@@ -188,6 +185,9 @@ BUILD_TIME = get_build_time()
 BUILD_META: str = '.'.join(part for part in (COMMIT, BUILD_TIME) if part)
 VERSION_SEMVER = f'{__version__}+{BUILD_META}' if BUILD_META else __version__
 VERSION_WITH_COMMIT = f'{__version__}+{COMMIT}' if COMMIT else __version__
+
+from module.parser import PARSE_ARGS
+
 log.info(f'{SOFTWARE_SHORT_NAME}:{VERSION_SEMVER},更新日期:{__update_date__}。')
 log.info(f'文件日志等级:"{logging.getLevelName(FILE_LOG_LEVEL)}"。')
 log.info(f'终端日志等级:"{logging.getLevelName(CONSOLE_LOG_LEVEL)}"。')

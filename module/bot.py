@@ -19,8 +19,14 @@ from typing import (
 )
 
 import pyrogram
-from pyrogram.types.messages_and_media import ReplyParameters
-from pyrogram.handlers import MessageHandler, CallbackQueryHandler
+from pyrogram.types.messages_and_media import (
+    ReplyParameters,
+    LinkPreviewOptions
+)
+from pyrogram.handlers import (
+    MessageHandler,
+    CallbackQueryHandler
+)
 from pyrogram.errors import (
     FloodWait,
     FloodPremiumWait
@@ -43,8 +49,7 @@ from module import (
     log,
     console,
     VERSION_SEMVER,
-    SOFTWARE_SHORT_NAME,
-    LINK_PREVIEW_OPTIONS
+    SOFTWARE_SHORT_NAME
 )
 from module.remote import rc
 from module.language import _t
@@ -87,6 +92,7 @@ class Bot:
         BotCommand(BotCommandText.UPLOAD_R[0], BotCommandText.UPLOAD_R[1].replace('`', '')),
         BotCommand(BotCommandText.DOWNLOAD_CHAT[0], BotCommandText.DOWNLOAD_CHAT[1].replace('`', ''))
     ]
+    LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
 
     def __init__(self):
         self.application = None
@@ -155,7 +161,7 @@ class Bot:
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
             text='⚠️⚠️⚠️未知命令⚠️⚠️⚠️\n请查看帮助后重试。',
-            link_preview_options=LINK_PREVIEW_OPTIONS
+            link_preview_options=Bot.LINK_PREVIEW_OPTIONS
         )
 
     async def handle_keyword_input(
@@ -251,7 +257,7 @@ class Bot:
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='⚠️⚠️⚠️请提供下载链接⚠️⚠️⚠️语法:\n`/download https://t.me/x/x`',
-                link_preview_options=LINK_PREVIEW_OPTIONS
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
         elif text.startswith('https://t.me/'):
             if text[len('https://t.me/'):].count('/') >= 1:
@@ -263,14 +269,14 @@ class Bot:
                         chat_id=message.from_user.id,
                         reply_parameters=ReplyParameters(message_id=message.id),
                         text=f'{e}\n⬇️⬇️⬇️请使用以下命令分配下载任务⬇️⬇️⬇️\n`/download {text}`',
-                        link_preview_options=LINK_PREVIEW_OPTIONS
+                        link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                     )
             else:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
                     text=f'⬇️⬇️⬇️请使用以下命令分配下载任务⬇️⬇️⬇️\n`/download https://t.me/x/x`',
-                    link_preview_options=LINK_PREVIEW_OPTIONS
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
         elif len(text) <= 25 or text == '/download https://t.me/x/x' or text.endswith('.txt'):
             await self.help(client, message)
@@ -278,7 +284,7 @@ class Bot:
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='❌❌❌链接错误❌❌❌\n请查看帮助后重试。',
-                link_preview_options=LINK_PREVIEW_OPTIONS
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
         else:
             link: list = text.split()
@@ -331,7 +337,7 @@ class Bot:
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='⚠️⚠️⚠️请执行或取消上一次频道下载任务设置⚠️⚠️⚠️',
-                link_preview_options=LINK_PREVIEW_OPTIONS
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
         text: str = message.text
@@ -340,7 +346,7 @@ class Bot:
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='⚠️⚠️⚠️请提供下载链接⚠️⚠️⚠️语法:\n`/download_chat https://t.me/x/x`',
-                link_preview_options=LINK_PREVIEW_OPTIONS
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
         command = text.split()
@@ -350,7 +356,7 @@ class Bot:
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='❌❌❌命令语法错误❌❌❌\n请查看帮助后重试。',
-                link_preview_options=LINK_PREVIEW_OPTIONS
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
         chat_link = command[1]
@@ -363,7 +369,7 @@ class Bot:
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='❌❌❌找不到频道❌❌❌',
-                link_preview_options=LINK_PREVIEW_OPTIONS
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
         chat_id = meta.get('chat_id')
@@ -372,7 +378,7 @@ class Bot:
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='❌❌❌无法获取频道名❌❌❌',
-                link_preview_options=LINK_PREVIEW_OPTIONS
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
         if chat_id in self.download_chat_filter:
@@ -381,7 +387,7 @@ class Bot:
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='⚠️⚠️⚠️该频道已在下载中⚠️⚠️⚠️\n'
                      f'{chat_link}',
-                link_preview_options=LINK_PREVIEW_OPTIONS
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
         BotCallbackText.DOWNLOAD_CHAT_ID = str(chat_id)
@@ -421,7 +427,7 @@ class Bot:
                  f'🔑当前匹配的关键词为:未定义\n'
                  f'👥包含评论区:{comment}',
             reply_markup=KeyboardButton.download_chat_filter_button(include_comment),
-            link_preview_options=LINK_PREVIEW_OPTIONS
+            link_preview_options=Bot.LINK_PREVIEW_OPTIONS
         )
 
     @staticmethod
@@ -436,7 +442,7 @@ class Bot:
                 chat_id=message.from_user.id,
                 message_id=last_message_id,
                 text=text[0],
-                link_preview_options=LINK_PREVIEW_OPTIONS,
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
                 reply_markup=reply_markup
             )
             return last_bot_message
@@ -446,7 +452,7 @@ class Bot:
             last_bot_message: pyrogram.types.Message = await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text=t, link_preview_options=LINK_PREVIEW_OPTIONS
+                text=t, link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             if last_bot_message not in last_bot_messages:
                 last_bot_messages.append(last_bot_message)
@@ -532,7 +538,7 @@ class Bot:
         await client.send_message(
             chat_id=message.from_user.id,
             text=text,
-            link_preview_options=LINK_PREVIEW_OPTIONS,
+            link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
             reply_markup=keyboard
         )
 
@@ -592,7 +598,7 @@ class Bot:
         await client.send_message(
             chat_id=message.from_user.id,
             text=text,
-            link_preview_options=LINK_PREVIEW_OPTIONS,
+            link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
             reply_markup=keyboard
         )
 
@@ -655,7 +661,7 @@ class Bot:
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='⚠️⚠️⚠️请提供参数⚠️⚠️⚠️语法:\n`/upload 本地文件 目标频道`或`/upload_r 本地文件夹 目标频道`',
-                link_preview_options=LINK_PREVIEW_OPTIONS
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
 
@@ -709,7 +715,7 @@ class Bot:
                         chat_id=message.from_user.id,
                         reply_parameters=ReplyParameters(message_id=message.id),
                         text=f'📤📤📤上传任务已创建,请耐心等待📤📤📤\n`{file_path}`',
-                        link_preview_options=LINK_PREVIEW_OPTIONS
+                        link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                     )
                     await asyncio.gather(*upload_folder)
                 else:
@@ -717,7 +723,7 @@ class Bot:
                         chat_id=message.from_user.id,
                         reply_parameters=ReplyParameters(message_id=message.id),
                         text=f'⚠️⚠️⚠️文件夹为空⚠️⚠️⚠️\n`{file_path}`',
-                        link_preview_options=LINK_PREVIEW_OPTIONS
+                        link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                     )
                 return None
             if not os.path.isfile(file_path):
@@ -726,7 +732,7 @@ class Bot:
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
                     text=f'⚠️⚠️⚠️上传文件不存在⚠️⚠️⚠️\n`{file_path}`',
-                    link_preview_options=LINK_PREVIEW_OPTIONS
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
                 return None
             file_size = os.path.getsize(file_path)
@@ -735,7 +741,7 @@ class Bot:
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
                     text=f'⚠️⚠️⚠️上传文件大小为0⚠️⚠️⚠️\n`{file_path}`',
-                    link_preview_options=LINK_PREVIEW_OPTIONS
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
 
             if not is_allow_upload(file_size=file_size, is_premium=self.user.me.is_premium):
@@ -746,14 +752,14 @@ class Bot:
                     text=f'⚠️⚠️⚠️上传大小超过限制({format_file_size})⚠️⚠️⚠️\n'
                          f'`{file_path}`\n'
                          f'(普通用户2000MiB,会员用户4000MiB)',
-                    link_preview_options=LINK_PREVIEW_OPTIONS
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
             if not recursion:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
                     text=f'📤📤📤上传任务已创建,请耐心等待📤📤📤\n`{file_path}`',
-                    link_preview_options=LINK_PREVIEW_OPTIONS
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
             log.info(f'上传文件:"{file_path}",上传频道:"{target_link}"。')
             if target_link.startswith('https://t.me/') or target_link in ('me', 'self'):  # 验证目标链接格式。
@@ -775,7 +781,7 @@ class Bot:
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='❌❌❌命令错误❌❌❌\n请查看帮助后重试。',
-                link_preview_options=LINK_PREVIEW_OPTIONS
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
 
@@ -788,7 +794,7 @@ class Bot:
             chat_id=message.from_user.id,
             text='🚧已收到退出命令。',
             reply_parameters=ReplyParameters(message_id=message.id),
-            link_preview_options=LINK_PREVIEW_OPTIONS
+            link_preview_options=Bot.LINK_PREVIEW_OPTIONS
         )
         self.is_bot_running = False
         await self.safe_edit_message(
@@ -946,7 +952,7 @@ class Bot:
             last_message = await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                link_preview_options=LINK_PREVIEW_OPTIONS,
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
                 text=_text
             )
             for link in _listen_chat:
@@ -972,7 +978,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                link_preview_options=LINK_PREVIEW_OPTIONS,
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
                 text='😲目前没有正在监听的频道。'
             )
         else:
@@ -999,7 +1005,7 @@ class Bot:
                         await self.last_client.send_message(
                             chat_id=self.last_message.from_user.id,
                             text=f'📢通知:\n{text}',
-                            link_preview_options=LINK_PREVIEW_OPTIONS
+                            link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                         )
                         break
                     except (FloodWait, FloodPremiumWait) as e:
@@ -1155,7 +1161,7 @@ class Bot:
                 return await self.user.send_message(
                     chat_id=bot_username,
                     text=text,
-                    link_preview_options=LINK_PREVIEW_OPTIONS
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
         except Exception as e:
             if catch:
@@ -1198,7 +1204,7 @@ class Bot:
                         chat_id=message.from_user.id,
                         message_id=last_message_id,
                         text=text,
-                        link_preview_options=LINK_PREVIEW_OPTIONS,
+                        link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
                         reply_markup=reply_markup
                     )
                     return None
