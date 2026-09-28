@@ -139,7 +139,6 @@ if __name__ == '__main__':
         build_command += f'--force-runtime-environment-variable=TRMD_BUILD_TIME={datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")} '
         build_command += f'--clang --windows-icon-from-ico="{ICO_PATH}" ' if PLATFORM == 'win32' else ''
         build_command += f'--include-package-data=pyrogram '
-        build_command += f'--include-module=pygments.lexers.data '
         build_command += ''.join(map(lambda d: f'--include-data-dir="{d[0]}"="{d[1]}" ', ready_web()))
         build_command += f'--output-dir={OUTPUT} --output-filename="{SOFTWARE_SHORT_NAME}{EXTENSION}" --file-version={VERSION} --product-version={VERSION} --copyright="{COPYRIGHT}" '
         build_command += f'--low-memory ' if '--low-memory' in sys.argv else ''
