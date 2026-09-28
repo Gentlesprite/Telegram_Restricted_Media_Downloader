@@ -13,6 +13,6 @@ dependencies = [
     "pyreadline3>=3.5.4",
     "pyyaml>=6.0.3",
     "qrcode>=8.2",
-    "rich==14.2.0",
+    "rich==15.0.0",
     "tgcrypto>=1.2.5",
 ]

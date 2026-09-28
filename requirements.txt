@@ -1,6 +1,6 @@
 tgcrypto
 PyYAML
-rich==14.2.0
+rich==15.0.0
 qrcode
 pyreadline3
 kurigram==2.2.26
