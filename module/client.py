@@ -57,6 +57,7 @@ from module import (
     __version__
 )
 from module.enums import DownloadType, KeyWord
+from module.util import ainput
 from module.language import _t
 
 
@@ -71,8 +72,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
         while True:
             try:
                 while True:
-                    value = console.input('请输入「电话号码」([#6a2c70]电话号码[/#6a2c70]需以[#b83b5e]「+地区」[/#b83b5e]开头!'
-                                          '如:[#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):').strip()
+                    value = (await ainput('请输入「电话号码」([#6a2c70]电话号码[/#6a2c70]需以[#b83b5e]「+地区」[/#b83b5e]开头!'
+                                          '如:[#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):')).strip()
                     if not value.startswith('+'):
                         log.warning(f'意外的参数:"{value}",电话号码需以「+地区」开头!')
                         continue
@@ -82,8 +83,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                     if not value:
                         continue
 
-                    confirm = console.input(
-                        f'所输入的「{value}」是否[#B1DB74]正确[/#B1DB74]? - 「y|n」(默认y):').strip().lower()
+                    confirm = (await ainput(
+                        f'所输入的「{value}」是否[#B1DB74]正确[/#B1DB74]? - 「y|n」(默认y):')).strip().lower()
                     if confirm in ('y', ''):
                         break
                     elif confirm == 'n':
@@ -106,10 +107,10 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             while True:
                 try:
                     while True:
-                        email = console.input('请输入「邮箱」:')
+                        email = await ainput('请输入「邮箱」:')
                         if not email:
                             continue
-                        confirm = console.input(f'所输入的「{email}」是否正确? - 「y|n」(默认y):').strip().lower()
+                        confirm = (await ainput(f'所输入的「{email}」是否正确? - 「y|n」(默认y):')).strip().lower()
                         if confirm in ('y', ''):
                             break
                         elif confirm == 'n':
@@ -126,7 +127,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                         )
                     )
 
-                    email_code = console.input('请输入「验证码」:')
+                    email_code = await ainput('请输入「验证码」:')
 
                     email_sent_code = await self.invoke(
                         raw.functions.account.VerifyEmail(
@@ -164,7 +165,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
 
         while True:
             if not self.phone_code:
-                self.phone_code = console.input('请输入收到的[#f08a5d]「验证码」[/#f08a5d]:').strip()
+                self.phone_code = (await ainput('请输入收到的[#f08a5d]「验证码」[/#f08a5d]:')).strip()
 
             try:
                 signed_in = await self.sign_in(self.phone_number, sent_code.phone_code_hash, self.phone_code)
@@ -179,21 +180,21 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                     console.print('密码提示:{}'.format(await self.get_password_hint()))
 
                     if not self.password:
-                        self.password = console.input(
+                        self.password = (await ainput(
                             '输入[#f08a5d]「两步验证」[/#f08a5d]的[#f9ed69]「密码」[/#f9ed69](为空代表[#FF4689]忘记密码[/#FF4689]):',
-                            password=self.hide_password).strip()
+                            password=self.hide_password)).strip()
 
                     try:
                         if not self.password:
-                            confirm = console.input(
-                                '所输入的[#f08a5d]「恢复密码」[/#f08a5d]是否正确? - 「y|n」(默认y):').strip().lower()
+                            confirm = (await ainput(
+                                '所输入的[#f08a5d]「恢复密码」[/#f08a5d]是否正确? - 「y|n」(默认y):')).strip().lower()
                             if confirm in ('y', ''):
                                 email_pattern = await self.send_recovery_code()
                                 console.print(
                                     f'[#f08a5d]「恢复代码」[/#f08a5d]已发送到邮箱[#f9ed69]「{email_pattern}」[/#f9ed69]。')
 
                                 while True:
-                                    recovery_code = console.input('请输入[#f08a5d]「恢复代码」[/#f08a5d]:').strip()
+                                    recovery_code = (await ainput('请输入[#f08a5d]「恢复代码」[/#f08a5d]:')).strip()
 
                                     try:
                                         return await self.recover_password(recovery_code)
@@ -216,8 +217,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             return signed_in
 
         while True:
-            first_name = console.input('输入[#f08a5d]「名字」[/#f08a5d]:').strip()
-            last_name = console.input('输入[#f9ed69]「姓氏」[/#f9ed69](为空代表跳过): ').strip()
+            first_name = (await ainput('输入[#f08a5d]「名字」[/#f08a5d]:')).strip()
+            last_name = (await ainput('输入[#f9ed69]「姓氏」[/#f9ed69](为空代表跳过): ')).strip()
 
             try:
                 signed_up = await self.sign_up(

@@ -58,7 +58,7 @@ class Application(UserConfig, StatisticalTable):
             proxy=self.proxy if self.enable_proxy else None,
             workdir=self.work_directory,
             max_concurrent_transmissions=self.max_download_task,
-            sleep_threshold=SLEEP_THRESHOLD,
+            sleep_threshold=SLEEP_THRESHOLD
         )
         # v1.3.7 新增多任务下载功能,无论是否Telegram会员。
         # https://stackoverflow.com/questions/76714896/pyrogram-download-multiple-files-at-the-same-time

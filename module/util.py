@@ -347,6 +347,10 @@ async def get_my_id(client: pyrogram.Client) -> int:
     return me.id
 
 
+async def ainput(prompt: str = '', password: bool = False) -> str:  # noqa.
+    return await asyncio.to_thread(console.input, prompt, password=password)
+
+
 async def delete_own_message(
         client: pyrogram.Client,
         result: Union[
