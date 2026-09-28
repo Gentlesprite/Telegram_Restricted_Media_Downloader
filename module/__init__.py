@@ -79,7 +79,7 @@ SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
 __version__ = '2.0.8'
 __license__ = 'GPL-3.0-or-later'
-__update_date__ = '2026/09/27 23:25:50'
+__update_date__ = '2026/09/28 10:19:13'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/{AUTHOR}>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
@@ -185,12 +185,6 @@ BUILD_TIME = get_build_time()
 BUILD_META: str = '.'.join(part for part in (COMMIT, BUILD_TIME) if part)
 VERSION_SEMVER = f'{__version__}+{BUILD_META}' if BUILD_META else __version__
 VERSION_WITH_COMMIT = f'{__version__}+{COMMIT}' if COMMIT else __version__
-
-from module.parser import PARSE_ARGS
-
-log.info(f'{SOFTWARE_SHORT_NAME}:{VERSION_SEMVER},更新日期:{__update_date__}。')
-log.info(f'文件日志等级:"{logging.getLevelName(FILE_LOG_LEVEL)}"。')
-log.info(f'终端日志等级:"{logging.getLevelName(CONSOLE_LOG_LEVEL)}"。')
 CustomDumper.add_representer(type(None), CustomDumper.represent_none)  # noqa.
 README = r'''
 ```yaml

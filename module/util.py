@@ -10,6 +10,7 @@ import time
 import string
 import random
 import asyncio
+import logging
 import subprocess
 
 from typing import (
@@ -30,8 +31,13 @@ from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid
 from module import (
     log,
     console,
-    TRMD_WEB_SESSION,
+    __update_date__,
     PLATFORM,
+    FILE_LOG_LEVEL,
+    CONSOLE_LOG_LEVEL,
+    VERSION_SEMVER,
+    TRMD_WEB_SESSION,
+    SOFTWARE_SHORT_NAME,
     REFERRAL_RECORD_PATH
 )
 from module.enums import (
@@ -534,6 +540,9 @@ def get_nuitka_version():
 
 
 def check_environment():
+    log.info(f'{SOFTWARE_SHORT_NAME}:{VERSION_SEMVER},更新日期:{__update_date__}。')
+    log.info(f'文件日志等级:"{logging.getLevelName(FILE_LOG_LEVEL)}"。')
+    log.info(f'终端日志等级:"{logging.getLevelName(CONSOLE_LOG_LEVEL)}"。')
     if is_nuitka():
         log.info(f'检测到"__compiled__",当前运行于"Nuitka"编译产物中,版本:{get_nuitka_version()}。')
     elif is_pyinstaller():
