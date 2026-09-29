@@ -669,7 +669,7 @@ temp_directory: F:\directory\temp\where\you\save
 | `api_hash` | 申请的`api_hash`（Telegram API 凭据）。                                                                                                                                                                                                             |
 | `api_id` | 申请的`api_id`（Telegram API 凭据，需加引号）。                                                                                                                                                                                                          |
 | `bot_token` | 机器人令牌（选填）；不填则无法使用机器人功能，可前往[BotFather](https://t.me/BotFather)免费申请。                                                                                                                                                                          |
-| `download_type` | 需要下载的媒体类型，详见`download_type`参数支持的媒体类型表。                                                                                                                                                                                                      |
+| `download_type` | 需要下载的媒体类型，详见`download_type`参数支持下载的媒体类型表。                                                                                                                                                                                                      |
 | `is_shutdown` | 下载完成后是否自动关机，支持`true`、`false`。                                                                                                                                                                                                               |
 | `links` | 链接地址文本文件路径（一个链接一行，不要加引号，运行前准备好）。                                                                                                                                                                                                            |
 | `max_retries` | 任务重试次数，含`download`（下载任务重试次数）与`upload`（上传任务重试次数）。                                                                                                                                                                                            |
@@ -679,7 +679,7 @@ temp_directory: F:\directory\temp\where\you\save
 | `session_directory` | 会话保存目录（支持通配符）。                                                                                                                                                                                                                              |
 | `temp_directory` | 缓存保存目录（支持通配符）。                                                                                                                                                                                                                              |
 
-##### `download_type`参数支持的媒体类型
+##### `download_type`参数支持下载的媒体类型
 
 | 下载类型        | 说明                         |
 | --------------- |----------------------------|
@@ -768,14 +768,28 @@ upload:
 
 #### 参数说明
 
-| 参数 | 说明 |
-| --- | --- |
-| `console_log_level` | 终端显示的最低日志级别（如`WARNING`）。 |
-| `export_table` | 运行结束时是否导出统计表，含`count`（下载计数统计表）与`link`（下载链接统计表）。 |
-| `file_log_level` | `TRMD_LOG.log`文件中记录的最低日志级别（如`INFO`）。 |
-| `forward_type` | 控制`/listen_forward`与`/forward`命令可转发的文件类型，含`animation`、`audio`、`document`、`photo`、`text`、`video`、`voice`、`video_note`、`live_photo`（其中`live_photo`在不指定且`photo`存在时被视为`photo`类型）。 |
-| `notice` | 机器人启动时是否发送启动通知。 |
-| `upload` | 受限内容处理，含`delete`（下载上传完成后是否删除本地文件）与`download_upload`（是否下载后上传到指定转发频道）。 |
+| 参数 | 说明                                                                    |
+| --- |-----------------------------------------------------------------------|
+| `console_log_level` | 终端显示的最低日志级别（如`WARNING`）。                                              |
+| `export_table` | 运行结束时是否导出统计表，含`count`（下载计数统计表）与`link`（下载链接统计表）。                       |
+| `file_log_level` | `TRMD_LOG.log`文件中记录的最低日志级别（如`INFO`）。                                  |
+| `forward_type` | 控制`/listen_forward`与`/forward`命令可转发的文件类型，详见`forward_type`参数支持转发的媒体类型。 |
+| `notice` | 机器人启动时是否发送启动通知。                                                       |
+| `upload` | 受限内容处理，含`delete`（下载上传完成后是否删除本地文件）与`download_upload`（是否下载后上传到指定转发频道）。  |
+
+##### `forward_type`参数支持转发的媒体类型
+
+| 下载类型         | 说明                             |
+|--------------|--------------------------------|
+| `text`       | 文本。                            |
+| `video`      | 视频。                            |
+| `photo`      | 图片。                            |
+| `document`   | 文档。                            |
+| `audio`      | 音频。                            |
+| `voice`      | 语音。                            |
+| `animation`  | 动画（GIF）。                       |
+| `video_note` | 视频笔记。                          |
+| `live_photo` | 实况照片（未指定且`photo`存在时视为`photo`）。 |
 
 ### 全局配置文件存放路径
 #### 对于Windows用户
