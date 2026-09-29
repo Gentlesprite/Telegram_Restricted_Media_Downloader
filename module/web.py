@@ -42,6 +42,7 @@ from module.task import (
 )
 from module.util import (
     is_frozen,
+    get_local_ip,
     get_web_session,
     reset_web_session,
     get_message_dtype,
@@ -335,6 +336,7 @@ class Web:
         DownloadStatus.PENDING,
         DownloadStatus.DOWNLOADING
     )  # 尚未出结果的消息状态。
+    LOCAL_IP: str = get_local_ip()
 
     def __init__(self, progress, app=None, downloader=None):
         self.progress = progress
@@ -407,7 +409,7 @@ class Web:
         self.server.web = self
         self.thread = threading.Thread(target=self.server.serve_forever, name='TRMDWeb', daemon=True)
         self.thread.start()
-        log.info(f'网页面板已启动,链接:"{self.protocol}://127.0.0.1:{self.port}"。')
+        log.info(f'网页面板已启动,链接:"{self.protocol}://{self.LOCAL_IP}:{self.port}"。')
         self.print_meta()
         return True
 
@@ -428,7 +430,7 @@ class Web:
                 [_t(WebMeta.PORT), self.port],
                 [_t(WebMeta.USERNAME), self.username],
                 [_t(WebMeta.PASSWORD), self.password],
-                ['链接', f'{self.protocol}://127.0.0.1:{self.port}']
+                ['链接', f'{self.protocol}://{Web.LOCAL_IP}:{self.port}']
             ],
             show_lines=True
         ).print_meta()

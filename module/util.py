@@ -7,6 +7,7 @@ import os
 import re
 import sys
 import time
+import socket
 import string
 import random
 import asyncio
@@ -178,7 +179,7 @@ async def get_message_by_link(
         elif link.startswith('https://t.me'):
             record_type.add(LinkType.TOPIC)
 
-    # https://github.com/KurimuzonAkuma/pyrogram/blob/dev/pyrogram/methods/messages/get_messages.py#L101
+    # https://github.com/kurigram-org/kurigram/blob/main/pyrogram/methods/messages/get_messages.py#L207
     match = re.match(
         r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/\d+)*/(\d+)/?$',
         link.lower())
@@ -345,6 +346,15 @@ async def format_chat_link(
 async def get_my_id(client: pyrogram.Client) -> int:
     me = await client.get_me()
     return me.id
+
+
+def get_local_ip() -> str:
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        try:
+            sock.connect(('10.255.255.255', 1))  # 不发送数据，仅让内核选择出口网卡。
+            return sock.getsockname()[0]
+        except OSError:
+            return '127.0.0.1'
 
 
 async def ainput(prompt: str = '', password: bool = False) -> str:  # noqa.

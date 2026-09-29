@@ -471,7 +471,7 @@ class Bot:
                 f'🔌 端口: {web.port}\n'
                 f'👤 账号: ||{web.username}||\n'
                 f'🔑 密码: ||{web.password}||\n'
-                f'🔗 链接: {web.protocol}://127.0.0.1:{web.port}\n\n'
+                f'🔗 链接: {web.protocol}://{web.LOCAL_IP}:{web.port}\n\n'
             )
         config: dict = rc.cached_config()
         update_version: str = check_update(  # 远程版本更高时返回该版本号,用于提示可更新。
