@@ -56,7 +56,7 @@
 |     蓝奏云     |         [点击跳转](https://wwgr.lanzn.com/b0fopovuf)         | 密码:ceze  |
 | Telegram交流群 |          [点击加入](https://t.me/+6KKA-buFaixmNTE1)          |   群文件   |
 
-## 1.1.（选看）推荐终端
+## 1.1.推荐终端（选看）
 <details>
 <summary><strong>点击展开</strong></summary>
 
@@ -109,7 +109,7 @@
 
 5. 申请成功会得到一个`api_hash`和`api_id`保存下载，**切记不要泄露给任何人！**
 
-## 2.2.（选看）电报机器人（bot_token）申请及使用教程
+## 2.2.电报机器人`bot_token`申请及使用教程（选看）
 > [!NOTE]
 > 如果配置了机器人，只要**保持软件运行**，就能实现**多端发送下载命令**并且**随时进行下载**。  
 > 故可以将软件部署在服务器上，无论是Windows还是Linux平台。  
@@ -674,7 +674,7 @@ temp_directory: F:\directory\temp\where\you\save
 | `links` | 链接地址文本文件路径（一个链接一行，不要加引号，运行前准备好）。                                                                                                                                                                                                            |
 | `max_retries` | 任务重试次数，含`download`（下载任务重试次数）与`upload`（上传任务重试次数）。                                                                                                                                                                                            |
 | `max_tasks` | 最大并发任务数，含`download`与`upload`。                                                                                                                                                                                                               |
-| `proxy` | 代理配置；如不使用代理，请将`enable_proxy`字段置为`false`（注意键值间冒号后需保留空格，否则`YAML`解析报错）。包含`enable_proxy`、`scheme`、`hostname`、`port`、`username`、`password`。其中`hostname`为代理服务器`IP`，需按实际网络环境填写，各部署环境取值不同；若运行环境已可直接访问`Telegram`服务器，则可不启用代理：将`enable_proxy`设为`false`。 |
+| `proxy` | 代理配置，子字段详见`proxy`参数配置项表；不使用代理时请将`enable_proxy`设为`false`（注意键值间冒号后需保留空格，否则`YAML`解析报错）。 |
 | `save_directory` | 下载媒体保存目录（支持通配符）。                                                                                                                                                                                                                            |
 | `session_directory` | 会话保存目录（支持通配符）。                                                                                                                                                                                                                              |
 | `temp_directory` | 缓存保存目录（支持通配符）。                                                                                                                                                                                                                              |
@@ -691,6 +691,17 @@ temp_directory: F:\directory\temp\where\you\save
 | `animation`     | 动画（GIF）。                   |
 | `video_note`    | 视频笔记。                      |
 | `live_photo`    | 实况照片（未指定且`photo`存在时视为`photo`）。 |
+
+##### `proxy`参数配置项
+
+| 配置项       | 说明                                       |
+| ------------ | ------------------------------------------ |
+| `enable_proxy` | 是否启用代理，支持`true`、`false`。          |
+| `scheme`      | 代理协议，如`socks5`、`http`。               |
+| `hostname`    | 代理服务器`IP`或域名。                       |
+| `port`        | 代理服务器端口。                             |
+| `username`    | 代理认证用户名（选填）。                     |
+| `password`    | 代理认证密码（选填）。                       |
 
 ### 通配符说明
 
@@ -1041,7 +1052,7 @@ _由于新版本可能使用了**新的依赖**，使用`git pull`拉取后，�
 pip3 install -r requirements.txt
 ```
 
-# 4.0.（高阶用法）运行前设置命令行参数
+# 4.0.运行前设置命令行参数（高阶用法）
 
 > [!NOTE]
 > 自版本`≥v1.8.3`起：  
