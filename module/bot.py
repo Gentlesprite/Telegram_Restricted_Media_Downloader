@@ -1170,16 +1170,14 @@ class Bot:
                 return e
 
     @staticmethod
-    def update_text(right_link: set, invalid_link: set, exist_link: Union[set, None] = None) -> list:
+    def update_text(
+            right_link: set,
+            invalid_link: set
+    ) -> list:
         n = '\n'
         right_msg = f'{BotMessage.RIGHT}{n.join(sorted(right_link))}' if right_link else ''
         invalid_msg = f'{BotMessage.INVALID}{n.join(sorted(invalid_link))}{n}(具体原因请前往终端查看报错信息)' if invalid_link else ''
-        if exist_link:
-            exist_msg = f'{BotMessage.EXIST}{n.join(sorted(exist_link))}' if exist_link else ''
-            text: str = right_msg + n + exist_msg + n + invalid_msg
-        else:
-            text = right_msg + n + invalid_msg
-        return safe_message(text)
+        return safe_message(f'{right_msg}{n}{invalid_msg}')
 
     async def safe_edit_message(
             self, client: pyrogram.Client,

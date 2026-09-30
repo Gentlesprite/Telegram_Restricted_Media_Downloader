@@ -1498,7 +1498,6 @@ class BotCallbackText:
 
 class BotMessage:
     RIGHT: str = '✅以下链接已创建下载任务:\n'
-    EXIST: str = '⚠️以下链接已存在已被移除:\n'
     INVALID: str = '🚫以下链接不合法已被移除:\n'
 
 
