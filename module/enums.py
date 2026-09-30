@@ -1499,6 +1499,7 @@ class BotCallbackText:
 class BotMessage:
     RIGHT: str = '✅以下链接已创建下载任务:\n'
     INVALID: str = '🚫以下链接不合法已被移除:\n'
+    NOTICE: str = '📢通知:\n'
 
 
 class BotButton:

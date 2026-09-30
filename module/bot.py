@@ -1004,7 +1004,7 @@ class Bot:
                     try:
                         await self.last_client.send_message(
                             chat_id=self.last_message.from_user.id,
-                            text=f'📢通知:\n{text}',
+                            text=f'{BotMessage.NOTICE}{text}',
                             link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                         )
                         break
