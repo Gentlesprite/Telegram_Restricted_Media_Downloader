@@ -2608,7 +2608,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     if i.startswith(start_content):
                         links.add(i)
                         self.bot_task_link.add(i)
-                    elif i == '' or '#':
+                    elif i == '' or i.startswith('#'):
                         continue
                     else:
                         log.warning(f'"{i}"是一个非法链接,{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。')
