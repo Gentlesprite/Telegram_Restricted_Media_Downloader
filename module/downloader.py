@@ -1946,6 +1946,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             download_type=valid_dtype
                         )
                     )
+                    self.app.increase_task_num()
                     MetaData.print_current_task_num(
                         prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
                         num=self.app.current_task_num

@@ -169,9 +169,6 @@ class Application(UserConfig, StatisticalTable):
             target_set = type_to_failure[download_type]
         elif download_status == DownloadStatus.SKIP:
             target_set = type_to_skip[download_type]
-        elif download_status == DownloadStatus.DOWNLOADING:
-            self.increase_task_num()
-            return
         else:
             return
         # 同一文件只计入一种状态:写入目标集合前,先从同类型的其它状态集合中移除该文件。
