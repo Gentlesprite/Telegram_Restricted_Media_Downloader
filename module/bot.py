@@ -10,6 +10,11 @@ import datetime
 import calendar
 
 from functools import partial
+from dataclasses import dataclass
+from abc import (
+    ABC,
+    abstractmethod
+)
 from typing import (
     List,
     Dict,
@@ -54,10 +59,15 @@ from module import (
 from module.remote import rc
 from module.language import _t
 from module.stdio import MetaData
-from module.task import UploadTask
+
 from module.config import GlobalConfig
 from module.path_tool import safe_scan_directory_file
+from module.task import (
+    DownloadTask,
+    UploadTask
+)
 from module.util import (
+    is_docker,
     parse_link,
     safe_index,
     check_update,
@@ -1954,3 +1964,813 @@ class KeyboardButton:
 class CallbackData:
     def __init__(self, data: Union[dict, None] = None):
         self.data: Union[dict, None] = data
+
+
+@dataclass
+class CallbackContext:
+    """回调处理上下文,聚合handler需要访问的对象,避免闭包捕获。"""
+    downloader: 'TelegramRestrictedMediaDownloader'  # noqa.
+    client: pyrogram.Client
+    query: CallbackQuery
+    kb: KeyboardButton
+    data: str
+
+
+class CallbackHandler(ABC):
+    """回调处理器基类,子类声明exact/prefixes匹配集合并实handle。"""
+    exact: tuple = ()
+    prefixes: tuple = ()
+
+    def match(self, data: str) -> bool:
+        return data in self.exact or data.startswith(self.prefixes)
+
+    @abstractmethod
+    async def handle(self, ctx: CallbackContext) -> None:
+        ...
+
+
+class NoticeHandler(CallbackHandler):
+    exact = (BotCallbackText.NOTICE,)
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        kb = ctx.kb
+        try:
+            downloader.gc.config[BotCallbackText.NOTICE] = not downloader.gc.config.get(BotCallbackText.NOTICE)
+            downloader.gc.save_config(downloader.gc.config)
+            n_s = '启用' if downloader.gc.config.get(BotCallbackText.NOTICE) else '禁用'
+            n_p = f'机器人消息通知已{n_s}。'
+            log.info(n_p)
+            console.log(n_p, style='#FF4689')
+            await kb.toggle_setting_button(global_config=downloader.gc.config, user_config=downloader.app.config)
+        except Exception as e:
+            await query.message.reply_text('启用或禁用机器人消息通知失败\n(具体原因请前往终端查看报错信息)')
+            log.error(f'启用或禁用机器人消息通知失败,{_t(KeyWord.REASON)}:"{e}"')
+
+
+class PayHandler(CallbackHandler):
+    exact = (BotCallbackText.PAY,)
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        client = ctx.client
+        query = ctx.query
+        res = await downloader.send_pay_qr(
+            client=client,
+            chat_id=query.from_user.id,
+            load_name='收款码'
+        )
+        MetaData.pay()
+        if res:
+            msg = '🥰🥰🥰\n收款「二维码」已发送至您的「终端」十分感谢您的支持!'
+        else:
+            msg = '🥰🥰🥰\n收款「二维码」已发送至您的「终端」与「对话框」十分感谢您的支持!'
+        await query.message.reply_text(msg)
+
+
+class BackHandler(CallbackHandler):
+    exact = (BotCallbackText.BACK_HELP, BotCallbackText.BACK_TABLE)
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        if ctx.data == BotCallbackText.BACK_HELP:
+            meta = await downloader.help()
+            await query.message.edit_text(meta.get('text'))
+            await query.message.edit_reply_markup(meta.get('keyboard'))
+        elif ctx.data == BotCallbackText.BACK_TABLE:
+            meta = await downloader.table()
+            await query.message.edit_text(meta.get('text'))
+            await query.message.edit_reply_markup(meta.get('keyboard'))
+
+
+class TaskAssignHandler(CallbackHandler):
+    exact = (BotCallbackText.DOWNLOAD, BotCallbackText.DOWNLOAD_UPLOAD)
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        kb = ctx.kb
+        if not isinstance(downloader.cd.data, dict):
+            return None
+        meta = downloader.cd.data.copy()
+        downloader.cd.data = None
+        origin_link = meta.get('origin_link')
+        target_link = meta.get('target_link')
+        start_id = meta.get('start_id')
+        end_id = meta.get('end_id')
+        if ctx.data == BotCallbackText.DOWNLOAD:
+            downloader.last_message.text = f'/download {origin_link} {start_id} {end_id}'
+            await downloader.get_download_link_from_bot(client=downloader.last_client, message=downloader.last_message)
+        elif ctx.data == BotCallbackText.DOWNLOAD_UPLOAD:
+            downloader.last_message.text = f'/download {origin_link} {start_id} {end_id}'
+            await downloader.get_download_link_from_bot(
+                client=downloader.last_client,
+                message=downloader.last_message,
+                with_upload={
+                    'link': target_link,
+                    'file_name': None,
+                    'with_delete': downloader.gc.upload_delete,
+                    'send_as_media_group': True
+                }
+            )
+        await kb.task_assign_button()
+
+
+class ListenInfoHandler(CallbackHandler):
+    exact = (BotCallbackText.LOOKUP_LISTEN_INFO,)
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        await downloader.app.client.send_message(
+            chat_id=query.from_user.id,
+            text='/listen_info',
+            link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+        )
+
+
+class ShutdownHandler(CallbackHandler):
+    exact = (BotCallbackText.SHUTDOWN,)
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        kb = ctx.kb
+        try:
+            downloader.app.config['is_shutdown'] = not downloader.app.config.get('is_shutdown')
+            downloader.app.save_config(downloader.app.config)
+            s_s = '启用' if downloader.app.config.get('is_shutdown') else '禁用'
+            s_p = f'退出后关机已{s_s}。'
+            log.info(s_p)
+            console.log(s_p, style='#FF4689')
+            await kb.toggle_setting_button(global_config=downloader.gc.config, user_config=downloader.app.config)
+        except Exception as e:
+            await query.message.reply_text('启用或禁用自动关机失败\n(具体原因请前往终端查看报错信息)')
+            log.error(f'启用或禁用自动关机失败,{_t(KeyWord.REASON)}:"{e}"')
+
+
+class SettingsHandler(CallbackHandler):
+    exact = (
+        BotCallbackText.SETTING,
+        BotCallbackText.EXPORT_TABLE,
+        BotCallbackText.DOWNLOAD_SETTING,
+        BotCallbackText.UPLOAD_SETTING,
+        BotCallbackText.FORWARD_SETTING
+    )
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        kb = ctx.kb
+        if ctx.data == BotCallbackText.SETTING:
+            await kb.toggle_setting_button(global_config=downloader.gc.config, user_config=downloader.app.config)
+        elif ctx.data == BotCallbackText.EXPORT_TABLE:
+            await kb.toggle_table_button(config=downloader.gc.config)
+        elif ctx.data == BotCallbackText.DOWNLOAD_SETTING:
+            await kb.toggle_download_setting_button(user_config=downloader.app.config)
+        elif ctx.data == BotCallbackText.UPLOAD_SETTING:
+            await kb.toggle_upload_setting_button(global_config=downloader.gc.config)
+        elif ctx.data == BotCallbackText.FORWARD_SETTING:
+            await kb.toggle_forward_setting_button(global_config=downloader.gc.config)
+
+
+class TableHandler(CallbackHandler):
+    exact = (
+        BotCallbackText.LINK_TABLE,
+        BotCallbackText.COUNT_TABLE,
+        BotCallbackText.UPLOAD_TABLE,
+        BotCallbackText.TOGGLE_LINK_TABLE,
+        BotCallbackText.TOGGLE_COUNT_TABLE,
+        BotCallbackText.TOGGLE_UPLOAD_TABLE,
+        BotCallbackText.EXPORT_LINK_TABLE,
+        BotCallbackText.EXPORT_COUNT_TABLE,
+        BotCallbackText.EXPORT_UPLOAD_TABLE
+    )
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        kb = ctx.kb
+        data = ctx.data
+        if data in (BotCallbackText.LINK_TABLE, BotCallbackText.COUNT_TABLE, BotCallbackText.UPLOAD_TABLE):
+            prompt_string = ''
+            false_text = ''
+            choice = ''
+            res = None
+            if data == BotCallbackText.LINK_TABLE:
+                prompt_string = '链接统计表'
+                false_text = '😵😵😵没有链接需要统计。'
+                choice = BotCallbackText.EXPORT_LINK_TABLE
+                res = downloader.app.print_link_table(DownloadTask.TASKS)
+            elif data == BotCallbackText.COUNT_TABLE:
+                prompt_string = '计数统计表'
+                false_text = '😵😵😵当前没有任何下载。'
+                choice = BotCallbackText.EXPORT_COUNT_TABLE
+                res = downloader.app.print_count_table()
+            elif data == BotCallbackText.UPLOAD_TABLE:
+                prompt_string = '上传统计表'
+                false_text = '😵😵😵当前没有任何上传。'
+                choice = BotCallbackText.EXPORT_UPLOAD_TABLE
+                res = downloader.app.print_upload_table(UploadTask.TASKS)
+            if res:
+                await downloader.send_rich_table(message=query.message, chunks=res)
+                await kb.choice_export_table_button(choice=choice)
+                return None
+            elif res is False:
+                await query.message.edit_text(false_text)
+            else:
+                await query.message.edit_text(
+                    f'😵‍💫😵‍💫😵‍💫`{prompt_string}`打印失败。\n(具体原因请前往终端查看报错信息)')
+            await kb.back_table_button()
+        elif data in (
+                BotCallbackText.TOGGLE_LINK_TABLE,
+                BotCallbackText.TOGGLE_COUNT_TABLE,
+                BotCallbackText.TOGGLE_UPLOAD_TABLE
+        ):
+            if data == BotCallbackText.TOGGLE_LINK_TABLE:
+                await self.__toggle_export_table(ctx, 'link')
+            elif data == BotCallbackText.TOGGLE_COUNT_TABLE:
+                await self.__toggle_export_table(ctx, 'count')
+            elif data == BotCallbackText.TOGGLE_UPLOAD_TABLE:
+                await self.__toggle_export_table(ctx, 'upload')
+        elif data in (
+                BotCallbackText.EXPORT_LINK_TABLE,
+                BotCallbackText.EXPORT_COUNT_TABLE,
+                BotCallbackText.EXPORT_UPLOAD_TABLE
+        ):
+            prompt_string = ''
+            folder = ''
+            res = False
+            if data == BotCallbackText.EXPORT_LINK_TABLE:
+                prompt_string = '链接统计表'
+                folder = 'DownloadRecordForm'
+                res = downloader.app.print_link_table(link_tasks=DownloadTask.TASKS, export=True, only_export=True)
+            elif data == BotCallbackText.EXPORT_COUNT_TABLE:
+                prompt_string = '计数统计表'
+                folder = 'DownloadRecordForm'
+                res = downloader.app.print_count_table(export=True, only_export=True)
+            elif data == BotCallbackText.EXPORT_UPLOAD_TABLE:
+                prompt_string = '上传统计表'
+                folder = 'UploadRecordForm'
+                res = downloader.app.print_upload_table(upload_tasks=UploadTask.TASKS, export=True, only_export=True)
+            if res:
+                folder = 'form' if is_docker() else folder
+                await query.message.edit_text(
+                    f'✅✅✅`{prompt_string}`已发送至您的「终端」并已「导出」为表格请注意查收。\n(请查看软件目录下`{folder}`文件夹)')
+            elif res is False:
+                await query.message.edit_text('😵😵😵没有链接需要统计。')
+            else:
+                await query.message.edit_text(
+                    f'😵‍💫😵‍💫😵‍💫`{prompt_string}`导出失败。\n(具体原因请前往终端查看报错信息)')
+            await kb.back_table_button()
+
+    @staticmethod
+    async def __toggle_export_table(ctx: CallbackContext, table_type: str) -> None:
+        downloader = ctx.downloader
+        kb = ctx.kb
+        export_config = downloader.gc.config.get('export_table')
+        export_config[table_type] = not export_config.get(table_type)
+        if table_type == 'link':
+            t_t = '链接统计表'
+        elif table_type == 'count':
+            t_t = '计数统计表'
+        elif table_type == 'upload':
+            t_t = '上传统计表'
+        else:
+            t_t = '统计表'
+        s_t = '启用' if export_config.get(table_type) else '禁用'
+        t_p = f'退出后导出{t_t}已{s_t}。'
+        console.log(t_p, style='#FF4689')
+        log.info(t_p)
+        downloader.gc.save_config(downloader.gc.config)
+        await kb.toggle_table_button(config=downloader.gc.config, choice=table_type)
+
+
+class UploadDownloadSettingHandler(CallbackHandler):
+    exact = (BotCallbackText.UPLOAD_DOWNLOAD, BotCallbackText.UPLOAD_DOWNLOAD_DELETE)
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        kb = ctx.kb
+        try:
+            if ctx.data == BotCallbackText.UPLOAD_DOWNLOAD:
+                self.__toggle_upload_param(downloader, 'download_upload')
+            elif ctx.data == BotCallbackText.UPLOAD_DOWNLOAD_DELETE:
+                self.__toggle_upload_param(downloader, 'delete')
+            downloader.gc.save_config(downloader.gc.config)
+            await kb.toggle_upload_setting_button(global_config=downloader.gc.config)
+        except Exception as e:
+            await query.message.reply_text('上传设置失败\n(具体原因请前往终端查看报错信息)')
+            log.error(f'上传设置失败,{_t(KeyWord.REASON)}:"{e}"')
+
+    @staticmethod
+    def __toggle_upload_param(downloader, param):
+        current = downloader.gc.get_nesting_config(
+            default_nesting=downloader.gc.default_upload_nesting, param='upload', nesting_param=param)
+        downloader.gc.config.get('upload', downloader.gc.default_upload_nesting)[param] = not current
+        u_s = '禁用' if current else '开启'
+        u_p = ''
+        if param == 'delete':
+            u_p = f'遇到"受限转发"时,下载后上传并"删除上传完成的本地文件"的行为已{u_s}。'
+        elif param == 'download_upload':
+            u_p = f'遇到"受限转发"时,下载后上传已{u_s}。'
+        console.log(u_p, style='#FF4689')
+        log.info(u_p)
+
+
+class DownloadTypeHandler(CallbackHandler):
+    exact = (
+        BotCallbackText.TOGGLE_DOWNLOAD_VIDEO,
+        BotCallbackText.TOGGLE_DOWNLOAD_PHOTO,
+        BotCallbackText.TOGGLE_DOWNLOAD_AUDIO,
+        BotCallbackText.TOGGLE_DOWNLOAD_VOICE,
+        BotCallbackText.TOGGLE_DOWNLOAD_ANIMATION,
+        BotCallbackText.TOGGLE_DOWNLOAD_DOCUMENT,
+        BotCallbackText.TOGGLE_DOWNLOAD_VIDEO_NOTE,
+        BotCallbackText.TOGGLE_DOWNLOAD_LIVE_PHOTO
+    )
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        kb = ctx.kb
+        try:
+            if ctx.data == BotCallbackText.TOGGLE_DOWNLOAD_VIDEO:
+                self.__toggle_download_type(downloader, 'video')
+            elif ctx.data == BotCallbackText.TOGGLE_DOWNLOAD_PHOTO:
+                self.__toggle_download_type(downloader, 'photo')
+            elif ctx.data == BotCallbackText.TOGGLE_DOWNLOAD_AUDIO:
+                self.__toggle_download_type(downloader, 'audio')
+            elif ctx.data == BotCallbackText.TOGGLE_DOWNLOAD_VOICE:
+                self.__toggle_download_type(downloader, 'voice')
+            elif ctx.data == BotCallbackText.TOGGLE_DOWNLOAD_ANIMATION:
+                self.__toggle_download_type(downloader, 'animation')
+            elif ctx.data == BotCallbackText.TOGGLE_DOWNLOAD_DOCUMENT:
+                self.__toggle_download_type(downloader, 'document')
+            elif ctx.data == BotCallbackText.TOGGLE_DOWNLOAD_VIDEO_NOTE:
+                self.__toggle_download_type(downloader, 'video_note')
+            elif ctx.data == BotCallbackText.TOGGLE_DOWNLOAD_LIVE_PHOTO:
+                self.__toggle_download_type(downloader, 'live_photo')
+            downloader.app.config['download_type'] = downloader.app.download_type
+            downloader.app.save_config(downloader.app.config)
+            await kb.toggle_download_setting_button(downloader.app.config)
+        except ValueError:
+            await query.message.reply_text('⚠️⚠️⚠️至少需要选择一个下载类型⚠️⚠️⚠️')
+        except Exception as e:
+            await query.message.reply_text('下载类型设置失败\n(具体原因请前往终端查看报错信息)')
+            log.error(f'下载类型设置失败,{_t(KeyWord.REASON)}:"{e}"')
+
+    @staticmethod
+    def __toggle_download_type(downloader, param):
+        if param in downloader.app.download_type:
+            if len(downloader.app.download_type) == 1:
+                raise ValueError
+            f_s = '禁用'
+            downloader.app.download_type.remove(param)
+        else:
+            f_s = '启用'
+            downloader.app.download_type.append(param)
+        f_p = f'已{f_s}"{param}"类型的下载。'
+        console.log(f_p, style='#FF4689')
+        log.info(f_p)
+
+
+class ForwardTypeHandler(CallbackHandler):
+    exact = (
+        BotCallbackText.TOGGLE_FORWARD_VIDEO,
+        BotCallbackText.TOGGLE_FORWARD_PHOTO,
+        BotCallbackText.TOGGLE_FORWARD_AUDIO,
+        BotCallbackText.TOGGLE_FORWARD_VOICE,
+        BotCallbackText.TOGGLE_FORWARD_ANIMATION,
+        BotCallbackText.TOGGLE_FORWARD_DOCUMENT,
+        BotCallbackText.TOGGLE_FORWARD_TEXT,
+        BotCallbackText.TOGGLE_FORWARD_VIDEO_NOTE,
+        BotCallbackText.TOGGLE_FORWARD_LIVE_PHOTO
+    )
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        kb = ctx.kb
+        try:
+            if ctx.data == BotCallbackText.TOGGLE_FORWARD_VIDEO:
+                self.__toggle_forward_type(downloader, 'video')
+            elif ctx.data == BotCallbackText.TOGGLE_FORWARD_PHOTO:
+                self.__toggle_forward_type(downloader, 'photo')
+            elif ctx.data == BotCallbackText.TOGGLE_FORWARD_AUDIO:
+                self.__toggle_forward_type(downloader, 'audio')
+            elif ctx.data == BotCallbackText.TOGGLE_FORWARD_VOICE:
+                self.__toggle_forward_type(downloader, 'voice')
+            elif ctx.data == BotCallbackText.TOGGLE_FORWARD_ANIMATION:
+                self.__toggle_forward_type(downloader, 'animation')
+            elif ctx.data == BotCallbackText.TOGGLE_FORWARD_DOCUMENT:
+                self.__toggle_forward_type(downloader, 'document')
+            elif ctx.data == BotCallbackText.TOGGLE_FORWARD_TEXT:
+                self.__toggle_forward_type(downloader, 'text')
+            elif ctx.data == BotCallbackText.TOGGLE_FORWARD_VIDEO_NOTE:
+                self.__toggle_forward_type(downloader, 'video_note')
+            elif ctx.data == BotCallbackText.TOGGLE_FORWARD_LIVE_PHOTO:
+                self.__toggle_forward_type(downloader, 'live_photo')
+            downloader.gc.save_config(downloader.gc.config)
+            await kb.toggle_forward_setting_button(downloader.gc.config)
+        except ValueError:
+            await query.message.reply_text('⚠️⚠️⚠️至少需要选择一个转发类型⚠️⚠️⚠️')
+        except Exception as e:
+            await query.message.reply_text('转发设置失败\n(具体原因请前往终端查看报错信息)')
+            log.error(f'转发设置失败,{_t(KeyWord.REASON)}:"{e}"')
+
+    @staticmethod
+    def __toggle_forward_type(downloader, param):
+        forward_type = downloader.gc.config.get('forward_type', downloader.gc.default_forward_type_nesting)
+        status = downloader.gc.get_nesting_config(
+            default_nesting=downloader.gc.default_forward_type_nesting, param='forward_type', nesting_param=param)
+        if list(forward_type.values()).count(True) == 1 and status:
+            raise ValueError
+        forward_type[param] = not status
+        f_s = '禁用' if status else '启用'
+        f_p = f'已{f_s}"{param}"类型的转发。'
+        console.log(f_p, style='#FF4689')
+        log.info(f_p)
+
+
+class ListenRemoveHandler(CallbackHandler):
+    exact = (BotCallbackText.REMOVE_LISTEN_FORWARD,)
+    prefixes = (BotCallbackText.REMOVE_LISTEN_DOWNLOAD,)
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        data = ctx.data
+        if data.startswith(BotCallbackText.REMOVE_LISTEN_DOWNLOAD):
+            args = data.split()
+            link = args[1]
+            downloader.app.client.remove_handler(downloader.listen_download_chat.get(link))
+            downloader.listen_download_chat.pop(link)
+            await query.message.edit_text(link)
+            await query.message.edit_reply_markup(
+                KeyboardButton.single_button(text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL))
+            p = f'已删除监听下载,频道链接:"{link}"。'
+            console.log(p, style='#FF4689')
+            log.info(f'{p}当前的监听下载信息:{downloader.listen_download_chat}')
+            return None
+        if not isinstance(downloader.cd.data, dict):
+            return None
+        meta = downloader.cd.data.copy()
+        downloader.cd.data = None
+        link = meta.get('link')
+        downloader.app.client.remove_handler(downloader.listen_forward_chat.get(link))
+        downloader.listen_forward_chat.pop(link)
+        m = link.split()
+        joined = ' -> '.join(m)
+        p = f'已删除监听转发,转发规则:"{joined}"。'
+        await query.message.edit_text(' ➡️ '.join(m))
+        await query.message.edit_reply_markup(
+            KeyboardButton.single_button(text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL))
+        console.log(p, style='#FF4689')
+        log.info(f'{p}当前的监听转发信息:{downloader.listen_forward_chat}')
+
+
+class DownloadChatHandler(CallbackHandler):
+    exact = (
+        BotCallbackText.DOWNLOAD_CHAT_FILTER,
+        BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER,
+        BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER,
+        BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER,
+        BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO,
+        BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO,
+        BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO,
+        BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE,
+        BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION,
+        BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT,
+        BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE,
+        BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_LIVE_PHOTO,
+        BotCallbackText.TOGGLE_DOWNLOAD_CHAT_COMMENT,
+        BotCallbackText.DOWNLOAD_CHAT_ID,
+        BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL,
+        BotCallbackText.FILTER_START_DATE,
+        BotCallbackText.FILTER_END_DATE,
+        BotCallbackText.CONFIRM_KEYWORD,
+        BotCallbackText.CANCEL_KEYWORD_INPUT
+    )
+    prefixes = (
+        'time_inc_',
+        'time_dec_',
+        'set_time_',
+        'set_specific_time_',
+        'adjust_step_',
+        'drop_keyword_',
+        'ignore_keyword'
+    )
+
+    def match(self, data: str) -> bool:
+        # DOWNLOAD_CHAT_ID在download_chat启动时被运行时改写为真实chat_id,
+        # 因此执行任务的回调数据就是该真实chat_id,必须动态读取此常量来匹配。
+        return (
+                data in self.exact
+                or data.startswith(self.prefixes)
+                or data == BotCallbackText.DOWNLOAD_CHAT_ID
+        )
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        kb = ctx.kb
+        data = ctx.data
+        # 先捕获真实chat_id到局部变量,此时BotCallbackText.DOWNLOAD_CHAT_ID仍为运行时改写值。
+        chat_id = BotCallbackText.DOWNLOAD_CHAT_ID
+        if data in (BotCallbackText.DOWNLOAD_CHAT_ID, BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL):
+            # 任务结束后将常量重置回字面量,作为"无进行中download_chat"的状态位。
+            BotCallbackText.DOWNLOAD_CHAT_ID = 'download_chat_id'
+            downloader.adding_keywords.clear()
+            downloader.add_keyword_mode_handler(
+                chat_id=chat_id,
+                callback_query=query,
+                callback_prompt=partial(self.__filter_prompt, downloader, chat_id),
+                enable=False
+            )
+            if data == chat_id:
+                await downloader.download_chat(chat_id=chat_id, callback_query=query)
+                self.__remove_chat_id(downloader, chat_id)
+            elif data == BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL:
+                self.__remove_chat_id(downloader, chat_id)
+                await query.message.edit_text(
+                    text=query.message.text,
+                    reply_markup=kb.single_button(
+                        text=BotButton.TASK_CANCEL,
+                        callback_data=BotCallbackText.NULL
+                    )
+                )
+        elif data in (BotCallbackText.DOWNLOAD_CHAT_FILTER, BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER):
+            if data == BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER:
+                start_time, end_time = self.__get_update_time(downloader, chat_id)
+                if not await self.__verification_time(query, start_time, end_time):
+                    return None
+            await query.message.edit_text(
+                text=self.__filter_prompt(downloader, chat_id),
+                reply_markup=kb.download_chat_filter_button(
+                    downloader.download_chat_filter[chat_id][
+                        'comment']) if data == BotCallbackText.DOWNLOAD_CHAT_FILTER else kb.filter_date_range_button()
+            )
+        elif data in (BotCallbackText.FILTER_START_DATE, BotCallbackText.FILTER_END_DATE):
+            dtype = None
+            p_s_d = ''
+            if data == BotCallbackText.FILTER_START_DATE:
+                dtype = CalenderKeyboard.START_TIME_BUTTON
+                p_s_d = '起始'
+            elif data == BotCallbackText.FILTER_END_DATE:
+                dtype = CalenderKeyboard.END_TIME_BUTTON
+                p_s_d = '结束'
+            await query.message.edit_text(text=f'📅选择{p_s_d}日期:\n{self.__filter_prompt(downloader, chat_id)}')
+            await kb.calendar_keyboard(dtype=dtype)
+        elif data.startswith('adjust_step_'):
+            parts = data.split('_')
+            dtype = parts[-2]
+            current_step = int(parts[-1])
+            step_sequence = [1, 2, 5, 10, 15, 20]
+            current_index = step_sequence.index(current_step)
+            next_index = (current_index + 1) % len(step_sequence)
+            new_step = step_sequence[next_index]
+            downloader.download_chat_filter[chat_id]['date_range']['adjust_step'] = new_step
+            current_date = datetime.datetime.fromtimestamp(
+                downloader.download_chat_filter[chat_id]['date_range'][f'{dtype}_date']
+            ).strftime('%Y-%m-%d %H:%M:%S')
+            await query.message.edit_reply_markup(
+                reply_markup=kb.time_keyboard(
+                    dtype=dtype,
+                    date=current_date,
+                    adjust_step=new_step
+                )
+            )
+        elif data.startswith(('time_inc_', 'time_dec_')):
+            parts = data.split('_')
+            dtype = None
+            if 'start' in data:
+                dtype = CalenderKeyboard.START_TIME_BUTTON
+            elif 'end' in data:
+                dtype = CalenderKeyboard.END_TIME_BUTTON
+            if 'month' in data:
+                year = int(parts[-2])
+                month = int(parts[-1])
+                await kb.calendar_keyboard(year=year, month=month, dtype=dtype)
+                log.info(f'日期切换为{year}年,{month}月。')
+        elif data.startswith(('set_time_', 'set_specific_time_')):
+            parts = data.split('_')
+            date = parts[-1]
+            dtype = parts[-2]
+            date_type = ''
+            p_s_d = ''
+            timestamp = datetime.datetime.timestamp(datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S'))
+            if 'start' in data:
+                date_type = 'start_date'
+                p_s_d = '起始'
+            elif 'end' in data:
+                date_type = 'end_date'
+                p_s_d = '结束'
+            downloader.download_chat_filter[chat_id]['date_range'][date_type] = timestamp
+            await query.message.edit_text(
+                text=f'📅选择{p_s_d}日期:\n{self.__filter_prompt(downloader, chat_id)}',
+                reply_markup=kb.time_keyboard(
+                    dtype=dtype,
+                    date=date,
+                    adjust_step=downloader.download_chat_filter[chat_id]['date_range']['adjust_step']
+                )
+            )
+            log.info(
+                f'日期设置,起始日期:{self.__get_update_time(downloader, chat_id)[0]},结束日期:{self.__get_update_time(downloader, chat_id)[1]}。')
+        elif data.startswith(('drop_keyword_', 'ignore_keyword')):
+            if data.startswith('drop_keyword_'):
+                parts = data.split('_')
+                keyword = parts[-1]
+                keyword_dict = downloader.download_chat_filter.get(chat_id, {}).get('keyword', {})
+                keyword_dict.pop(keyword)
+                downloader.adding_keywords.remove(keyword)
+            await query.message.edit_text(
+                text=self.__filter_prompt(downloader, chat_id),
+                reply_markup=KeyboardButton.keyword_filter_button(downloader.adding_keywords)
+            )
+        elif data in (
+                BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE,
+                BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_LIVE_PHOTO
+        ):
+            try:
+                if data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO:
+                    self.__toggle_download_chat_dtype(downloader, chat_id, 'video')
+                elif data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO:
+                    self.__toggle_download_chat_dtype(downloader, chat_id, 'photo')
+                elif data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO:
+                    self.__toggle_download_chat_dtype(downloader, chat_id, 'audio')
+                elif data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE:
+                    self.__toggle_download_chat_dtype(downloader, chat_id, 'voice')
+                elif data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION:
+                    self.__toggle_download_chat_dtype(downloader, chat_id, 'animation')
+                elif data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT:
+                    self.__toggle_download_chat_dtype(downloader, chat_id, 'document')
+                elif data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE:
+                    self.__toggle_download_chat_dtype(downloader, chat_id, 'video_note')
+                elif data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_LIVE_PHOTO:
+                    self.__toggle_download_chat_dtype(downloader, chat_id, 'live_photo')
+                await query.message.edit_text(
+                    text=self.__filter_prompt(downloader, chat_id),
+                    reply_markup=kb.toggle_download_chat_type_filter_button(downloader.download_chat_filter)
+                )
+            except ValueError:
+                await query.message.reply_text('⚠️⚠️⚠️至少需要选择一个下载类型⚠️⚠️⚠️')
+            except Exception as e:
+                await query.message.reply_text('下载类型设置失败\n(具体原因请前往终端查看报错信息)')
+                log.error(f'下载类型设置失败,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+        elif data in (
+                BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER,
+                BotCallbackText.CONFIRM_KEYWORD,
+                BotCallbackText.CANCEL_KEYWORD_INPUT
+        ):
+            if data == BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER:
+                try:
+                    await query.message.edit_text(
+                        text=self.__filter_prompt(downloader, chat_id),
+                        reply_markup=kb.keyword_filter_button(downloader.adding_keywords)
+                    )
+                except MessageNotModified:
+                    pass
+                downloader.add_keyword_mode_handler(
+                    enable=True,
+                    chat_id=chat_id,
+                    callback_query=query,
+                    callback_prompt=partial(self.__filter_prompt, downloader, chat_id)
+                )
+            elif data == BotCallbackText.CONFIRM_KEYWORD:
+                downloader.add_keyword_mode_handler(
+                    enable=False,
+                    chat_id=chat_id,
+                    callback_query=query,
+                    callback_prompt=partial(self.__filter_prompt, downloader, chat_id)
+                )
+                await query.message.edit_text(
+                    text=self.__filter_prompt(downloader, chat_id),
+                    reply_markup=kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'])
+                )
+            elif data == BotCallbackText.CANCEL_KEYWORD_INPUT:
+                downloader.adding_keywords.clear()
+                downloader.add_keyword_mode_handler(
+                    enable=False,
+                    chat_id=chat_id,
+                    callback_query=query,
+                    callback_prompt=partial(self.__filter_prompt, downloader, chat_id)
+                )
+                downloader.download_chat_filter[chat_id]['keyword'] = {}
+                await query.message.edit_text(
+                    text=self.__filter_prompt(downloader, chat_id),
+                    reply_markup=kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'])
+                )
+        elif data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_COMMENT:
+            status = downloader.download_chat_filter[chat_id]['comment']
+            downloader.download_chat_filter[chat_id]['comment'] = not status
+            await query.message.edit_text(
+                text=self.__filter_prompt(downloader, chat_id),
+                reply_markup=kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'])
+            )
+
+    @staticmethod
+    def __get_update_time(downloader, chat_id):
+        start_timestamp = downloader.download_chat_filter[chat_id]['date_range']['start_date']
+        end_timestamp = downloader.download_chat_filter[chat_id]['date_range']['end_date']
+        start_time = datetime.datetime.fromtimestamp(start_timestamp) if start_timestamp else '未定义'
+        end_time = datetime.datetime.fromtimestamp(end_timestamp) if end_timestamp else '未定义'
+        return start_time, end_time
+
+    @staticmethod
+    def __get_format_dtype(downloader, chat_id):
+        download_type = []
+        for dtype, status in downloader.download_chat_filter[chat_id]['download_type'].items():
+            if status:
+                download_type.append(_t(dtype))
+        return ','.join(download_type)
+
+    @staticmethod
+    def __get_format_keywords(downloader, chat_id):
+        keywords = downloader.download_chat_filter[chat_id]['keyword']
+        if not keywords:
+            return '未定义'
+        return ','.join(keywords.keys())
+
+    @staticmethod
+    def __get_format_comment_status(downloader, chat_id):
+        status = downloader.download_chat_filter[chat_id]['comment']
+        return '开' if status else '关'
+
+    @staticmethod
+    def __remove_chat_id(downloader, chat_id):
+        if chat_id in downloader.download_chat_filter:
+            downloader.download_chat_filter.pop(chat_id)
+            log.info(f'"{chat_id}"已从{downloader.download_chat_filter}中移除。')
+
+    def __filter_prompt(self, downloader, chat_id):
+        start_time, end_time = self.__get_update_time(downloader, chat_id)
+        return (
+            f'💬下载频道:`{chat_id}`\n'
+            f'⏮️当前选择的起始日期为:{start_time}\n'
+            f'⏭️当前选择的结束日期为:{end_time}\n'
+            f'📝当前选择的下载类型为:{self.__get_format_dtype(downloader, chat_id)}\n'
+            f'🔑当前匹配的关键词为:{self.__get_format_keywords(downloader, chat_id)}\n'
+            f'👥包含评论区:{self.__get_format_comment_status(downloader, chat_id)}'
+        )
+
+    @staticmethod
+    async def __verification_time(query, start_time, end_time) -> bool:
+        if isinstance(start_time, datetime.datetime) and isinstance(end_time, datetime.datetime):
+            if start_time > end_time:
+                await query.message.reply_text(
+                    text=f'❌❌❌日期设置失败❌❌❌\n'
+                         f'`起始日期({start_time})`>`结束日期({end_time})`\n'
+                )
+                return False
+            elif start_time == end_time:
+                await query.message.reply_text(
+                    text=f'❌❌❌日期设置失败❌❌❌\n'
+                         f'`起始日期({start_time})`=`结束日期({end_time})`\n'
+                )
+                return False
+        return True
+
+    @staticmethod
+    def __toggle_download_chat_dtype(downloader, chat_id, param):
+        dtype = downloader.download_chat_filter[chat_id]['download_type']
+        status = dtype[param]
+        if list(dtype.values()).count(True) == 1 and status:
+            raise ValueError
+        dtype[param] = not status
+        f_s = '禁用' if status else '启用'
+        f_p = f'已{f_s}"{param}"类型用于/download_chat命令的下载。'
+        log.info(f'{f_p}当前的/download_chat下载类型设置:{dtype}')
+
+
+CALLBACK_HANDLERS: tuple = (
+    NoticeHandler(),
+    PayHandler(),
+    BackHandler(),
+    TaskAssignHandler(),
+    ListenInfoHandler(),
+    ShutdownHandler(),
+    SettingsHandler(),
+    TableHandler(),
+    UploadDownloadSettingHandler(),
+    DownloadTypeHandler(),
+    ForwardTypeHandler(),
+    ListenRemoveHandler(),
+    DownloadChatHandler()
+)
+
+
+async def dispatch_callback_data(ctx: CallbackContext) -> None:
+    """按注册表顺序分发回调,首个匹配的处理器负责处理。"""
+    for handler in CALLBACK_HANDLERS:
+        if handler.match(ctx.data):
+            await handler.handle(ctx)
+            return None
