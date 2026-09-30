@@ -130,7 +130,17 @@ class DownloadTask:
             existing: Union[dict, None] = task.items.get(key)
             current_status: Optional[str] = existing.get('status') if existing else None
             # 正在下载中的消息不降级为排队:避免面板把"下载中"误显示为"队列中",也避免被调度器重复拉起。
-            re_enqueue: bool = current_status != DownloadStatus.DOWNLOADING
+            # 例外: 若该消息已无活动下载协程占用(DOWNLOADING_KEYS不含其键, 说明此前崩溃/被强杀后未回写终态)。
+            # 则视为孤儿并恢复为排队, 避免重拉链接时永久卡在DOWNLOADING。
+            dl_key = (_message.chat.id, key) if getattr(_message, 'chat', None) else None
+            orphan_downloading: bool = (
+                current_status == DownloadStatus.DOWNLOADING
+                and dl_key is not None
+                and dl_key not in cls.DOWNLOADING_KEYS
+            )
+            if orphan_downloading:
+                cls.DOWNLOADING_KEYS.discard(dl_key)  # 防御性清理可能残留的占用标记。
+            re_enqueue: bool = current_status != DownloadStatus.DOWNLOADING or orphan_downloading
             task.update_member(  # 登记链接成员,包括下载完成后仍需展示的消息。
                 message_id=key,
                 status=DownloadStatus.PENDING if re_enqueue else None,
