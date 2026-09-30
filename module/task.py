@@ -127,9 +127,13 @@ class DownloadTask:
             if retry_count != 0 and key != retry_id:
                 continue  # 重试时只保留需要重试的那条消息,避免整个媒体组被重复排队。
             task.remove_fail(message_id=key)  # 重新排队(含重试)时,清除该消息的失败记录。
+            existing: Union[dict, None] = task.items.get(key)
+            current_status: Optional[str] = existing.get('status') if existing else None
+            # 正在下载中的消息不降级为排队:避免面板把"下载中"误显示为"队列中",也避免被调度器重复拉起。
+            re_enqueue: bool = current_status != DownloadStatus.DOWNLOADING
             task.update_member(  # 登记链接成员,包括下载完成后仍需展示的消息。
                 message_id=key,
-                status=DownloadStatus.PENDING,
+                status=DownloadStatus.PENDING if re_enqueue else None,
                 date=str(getattr(_message, 'date', '') or '')[:10]
             )
             item: Union[dict, None] = task.items.get(key)
@@ -146,8 +150,9 @@ class DownloadTask:
                     'create_time': time.time(),
                     'meta': None  # 网页面板的展示信息缓存。
                 }
-            else:
+            elif re_enqueue:
                 item['status'] = DownloadStatus.PENDING  # 重试时重置状态。
+            # 正在下载中(re_enqueue 为 False)时保留原状态,不做降级。
 
     def set_item_status(self, message_id: Union[int, str], status: str) -> None:
         """设置指定消息的排队状态,并同步到链接成员。"""

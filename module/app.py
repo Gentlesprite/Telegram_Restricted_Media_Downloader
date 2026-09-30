@@ -164,21 +164,26 @@ class Application(UserConfig, StatisticalTable):
         }
 
         if download_status == DownloadStatus.SUCCESS:
-            type_to_success[download_type].add(file_name)
+            target_set = type_to_success[download_type]
         elif download_status == DownloadStatus.FAILURE:
-            type_to_failure[download_type].add(file_name)
+            target_set = type_to_failure[download_type]
         elif download_status == DownloadStatus.SKIP:
-            type_to_skip[download_type].add(file_name)
+            target_set = type_to_skip[download_type]
         elif download_status == DownloadStatus.DOWNLOADING:
             self.increase_task_num()
-        failure_set = type_to_failure[download_type]
-        success_set = type_to_success[download_type]
-        if failure_set and success_set:
-            success_name: set = {os.path.basename(str(i)) for i in success_set}
-            failure_set -= success_set  # 重试成功后,移除完全同名(含临时路径)的失败记录。
-            failure_set -= {
-                i for i in failure_set if os.path.basename(str(i)) in success_name
-            }  # 兼容失败记录为临时路径、成功记录为文件名的情况。
+            return
+        else:
+            return
+        # 同一文件只计入一种状态:写入目标集合前,先从同类型的其它状态集合中移除该文件。
+        # 按完整路径与文件名(兼容临时路径如 .part)匹配,避免重复链接被重复计入多种状态。
+        base_name: str = os.path.basename(str(file_name))
+        for other_set in (type_to_success[download_type], type_to_failure[download_type], type_to_skip[download_type]):
+            if other_set is target_set:
+                continue
+            other_set.discard(file_name)
+            other_set.discard(base_name)
+            other_set.difference_update({i for i in other_set if os.path.basename(str(i)) == base_name})
+        target_set.add(file_name)
 
     def get_download_type(self, message: pyrogram.types.Message, default_type: str) -> str:
         """获取消息的下载类型,只用于展示,不记录任何统计信息。"""
