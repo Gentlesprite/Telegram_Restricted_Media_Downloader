@@ -175,14 +175,21 @@ class Application(UserConfig, StatisticalTable):
         else:
             return
         # 同一文件只计入一种状态:写入目标集合前,先从同类型的其它状态集合中移除该文件。
-        # 按完整路径与文件名(兼容临时路径如 .part)匹配,避免重复链接被重复计入多种状态。
+        # 成功记录为临时路径(带 .temp)、失败记录为最终路径,故按"去掉.temp后缀的归一化文件名"匹配。
+        # 兼容同一文件重试成功的情况,又避免仅按basename误删其它同名但不同的文件。
         base_name: str = os.path.basename(str(file_name))
+        norm_name: str = base_name[:-len('.temp')] if base_name.lower().endswith('.temp') else base_name
         for other_set in (type_to_success[download_type], type_to_failure[download_type], type_to_skip[download_type]):
             if other_set is target_set:
                 continue
             other_set.discard(file_name)
-            other_set.discard(base_name)
-            other_set.difference_update({i for i in other_set if os.path.basename(str(i)) == base_name})
+            other_set.discard(norm_name)
+            other_set.difference_update({
+                i for i in other_set
+                if (os.path.basename(str(i))[:-len('.temp')]
+                    if os.path.basename(str(i)).lower().endswith('.temp')
+                    else os.path.basename(str(i))) == norm_name
+            })
         target_set.add(file_name)
 
     def get_download_type(self, message: pyrogram.types.Message, default_type: str) -> str:
