@@ -1418,7 +1418,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.SKIP))},'
                     f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。', style='#e6db74'
                 )
-                DownloadTask.COMPLETE_LINK.add(link)
                 if download_task is not None:
                     download_task.update_member(  # 文件已存在,标记为跳过。
                         message_id=message.id,

@@ -61,7 +61,6 @@ class DownloadTask:
 
     TASKS: dict = {}  # 链接 -> DownloadTask。
     ORDER: list = []  # 链接首次出现的顺序,调度器按此顺序派发。
-    COMPLETE_LINK: set = set()
     DOWNLOADING_KEYS: set = set()  # (chat_id, message_id) -> 正在下载中的消息,防止不同链接(如媒体组与组内单条?single)并发下载同一消息导致数据竞争。
 
     def __init__(self, link: Union[str, int]):
@@ -334,7 +333,6 @@ class DownloadTask:
                     f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SUCCESS)}。'
                 )
                 task.error_msg = {}
-                DownloadTask.COMPLETE_LINK.add(task.link)
                 asyncio.create_task(self.done_notice(f'"{link}"下载完成。'))
                 log.info(f'链接:"{link}"下载完成。')
             return res
