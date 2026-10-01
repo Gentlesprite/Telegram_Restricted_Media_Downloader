@@ -249,7 +249,7 @@ class DownloadFileName:
     def __init__(
             self,
             message: pyrogram.types.Message,
-            download_type: Union[str, "DownloadType"]
+            download_type: Union[str, 'DownloadType']
     ):
         self.message = message
         self.download_type = download_type
