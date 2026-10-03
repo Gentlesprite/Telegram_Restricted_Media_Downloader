@@ -7,21 +7,7 @@ Dockerfile
 docker-compose.yml
 .dockerignore
 
-# 构建产物
-build.py
-output/
-
-# Windows 二进制（Linux 镜像不需要）
-res/bin/MediaInfo.dll
-res/bin/rar.exe
-
-# 文档和图片资源（运行不需要）
-res/*.png
-res/*.pdf
-README.md
-LICENCE
-
-# Python 缓存
+# Python cache
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -36,3 +22,13 @@ dist/
 
 # GitHub Actions
 .github/
+
+# Build
+build.py
+output/
+
+# Resources
+res/
+
+# Readme
+README.md
