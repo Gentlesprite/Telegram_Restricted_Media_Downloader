@@ -1614,19 +1614,19 @@ class TelegramRestrictedMediaDownloader(Bot):
                         if _filter.date_range(member, start_date, end_date) and _filter.dtype(member, download_type):
                             messages_to_download.append(member)
                         matched_message_ids.add(member_key)
-                    # 使用时间节流机制,只在指定时间间隔后才更新,避免频繁API调用。
-                    current_time = asyncio.get_event_loop().time()
-                    current_count = len(messages_to_download)
-                    if current_time - last_update_time >= update_interval:
-                        await _progress(
-                            _text=f'{callback_query_text}\n'
-                                  f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到{current_count}条消息。',
-                            _reply_markup=KeyboardButton.single_button(
-                                text=BotButton.RETRIEVE_MESSAGE,
-                                callback_data=BotCallbackText.NULL)
-                        )
-                        last_displayed_count = current_count
-                        last_update_time = current_time
+                # 使用时间节流机制,只在指定时间间隔后才更新,避免频繁API调用。
+                current_time = asyncio.get_event_loop().time()
+                current_count = len(messages_to_download)
+                if current_time - last_update_time >= update_interval:
+                    await _progress(
+                        _text=f'{callback_query_text}\n'
+                              f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到{current_count}条消息。',
+                        _reply_markup=KeyboardButton.single_button(
+                            text=BotButton.RETRIEVE_MESSAGE,
+                            callback_data=BotCallbackText.NULL)
+                    )
+                    last_displayed_count = current_count
+                    last_update_time = current_time
             # 确保最后一次更新显示正确的消息数量。
             final_count = len(messages_to_download)
             if final_count != last_displayed_count:
