@@ -1530,13 +1530,21 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _text: str,
                 _reply_markup: InlineKeyboardMarkup
         ) -> Union[pyrogram.types.Message, None]:
-            try:
-                return await callback_query.message.edit_text(
-                    text=_text,
-                    reply_markup=_reply_markup
-                )
-            except MessageNotModified:
-                pass
+            while True:
+                try:
+                    return await callback_query.message.edit_text(
+                        text=_text,
+                        reply_markup=_reply_markup
+                    )
+                except MessageNotModified:
+                    return
+                except (FloodWait, FloodPremiumWait) as _e:
+                    _amount = _e.value
+                    console.log(
+                        f'[{self.app.client.name}]编辑消息请求频繁,要求等待{_amount}秒后继续运行。',
+                        style='#FF4689'
+                    )
+                    await asyncio.sleep(_amount)
 
         origin_callback_query_text: str = callback_query.message.text
         cq = await _progress(
