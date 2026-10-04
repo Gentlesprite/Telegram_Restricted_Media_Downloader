@@ -1652,6 +1652,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             last_displayed_comment_count: int = -1  # 记录上次显示的评论数量,初始化为-1确保第一次一定更新。
             last_comment_update_time: float = 0  # 记录上次评论更新的时间戳。
             processed_message_count: int = 0  # 记录已处理的消息数量。
+            comment_fetched_groups: set = set()  # 已检索过评论区的媒体组,避免对同一组的每条成员重复调用 get_discussion_replies。
             # 第二阶段：对匹配的消息进行处理，获取评论区。
             if include_comment:
                 await _progress(
@@ -1667,6 +1668,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                 processed_message_count += 1
                 if not include_comment:
                     continue
+                # 媒体组内仅对首条成员检索评论区:其余成员没有独立评论区,调用必抛MsgIdInvalid(已被捕获),徒增RPC调用,且同组评论会被重复入库。
+                if getattr(message, 'media_group_id', None):
+                    if message.media_group_id in comment_fetched_groups:
+                        continue
+                    comment_fetched_groups.add(message.media_group_id)
                 # 检查并获取评论区。
                 try:
                     async for comment in self.app.client.get_discussion_replies(
