@@ -1616,40 +1616,51 @@ class TelegramRestrictedMediaDownloader(Bot):
                     downloaded_message_ids.add(msg_key)
                 matched_message_ids.add(msg_key)
                 # 命中且属于媒体组 → 主动拉取整组,组内每个成员再各自按类型/日期独立筛选,不再依赖遍历顺序,也不会因首条成员被类型过滤而丢失整组,更不会跳过成员的类型筛选。
+                # 无关键词时整组各成员会经遍历各自命中,无需RPC展开。
+                # 此处累计首条(最小id)成员id供评论区检索,避免每个相册各发一次get_media_group。
+                if getattr(message, 'media_group_id', None) and not active_keywords:
+                    media_group_thread_id[message.media_group_id] = min(
+                        media_group_thread_id.get(message.media_group_id, message.id),
+                        message.id
+                    )
                 if message.media_group_id and message.media_group_id not in media_group_matched:
-                    while True:
-                        try:
-                            group_members = await message.get_media_group()
-                            break
-                        except (ValueError, AttributeError, MsgIdInvalid):
-                            group_members = []
-                            break
-                        except (FloodWait, FloodPremiumWait) as e:
-                            amount = e.value
-                            console.log(
-                                f'[{self.app.client.name}]获取媒体组消息请求频繁,要求等待{amount}秒后继续运行。',
-                                style='#FF4689'
+                    if active_keywords:
+                        while True:
+                            try:
+                                group_members = await message.get_media_group()
+                                break
+                            except (ValueError, AttributeError, MsgIdInvalid):
+                                group_members = []
+                                break
+                            except (FloodWait, FloodPremiumWait) as e:
+                                amount = e.value
+                                console.log(
+                                    f'[{self.app.client.name}]获取媒体组消息请求频繁,要求等待{amount}秒后继续运行。',
+                                    style='#FF4689'
+                                )
+                                await asyncio.sleep(amount)
+                        if group_members:
+                            # 获取成功才标记该组已处理,失败则不标记,使同组其它命中成员可重试。
+                            media_group_matched.add(message.media_group_id)
+                            # 记录媒体组评论区所在的首条成员id(最小message id),评论区挂在首条成员上,而非组内任意成员,供第二阶段检索评论区时作为依据。
+                            media_group_thread_id[message.media_group_id] = min(
+                                m.id for m in group_members
                             )
-                            await asyncio.sleep(amount)
-                    if group_members:
-                        # 获取成功才标记该组已处理,失败则不标记,使同组其它命中成员可重试。
-                        media_group_matched.add(message.media_group_id)
-                        # 记录媒体组评论区所在的首条成员id(最小message id),评论区挂在首条成员上,而非组内任意成员,供第二阶段检索评论区时作为依据。
-                        media_group_thread_id[message.media_group_id] = min(
-                            m.id for m in group_members
-                        )
+                        else:
+                            # 获取媒体组失败(消息已失效/无评论区等),该组除已命中的首条成员外无法补齐,记日志避免静默丢失。
+                            log.warning(
+                                f'在/download_chat命令过程中,获取媒体组失败(消息ID:{message.id}),该组其余成员可能无法下载。')
+                        for member in group_members:
+                            member_key = (member.chat.id, member.id)
+                            if member_key in matched_message_ids:
+                                continue
+                            # 组内成员按类型/日期各自筛选(关键词已在组层面满足),只下载符合条件者。
+                            if _filter.date_range(member, start_date, end_date) and _filter.dtype(member, download_type):
+                                messages_to_download.append(member)
+                            matched_message_ids.add(member_key)
                     else:
-                        # 获取媒体组失败(消息已失效/无评论区等),该组除已命中的首条成员外无法补齐,记日志避免静默丢失。
-                        log.warning(
-                            f'在/download_chat命令过程中,获取媒体组失败(消息ID:{message.id}),该组其余成员可能无法下载。')
-                    for member in group_members:
-                        member_key = (member.chat.id, member.id)
-                        if member_key in matched_message_ids:
-                            continue
-                        # 组内成员按类型/日期各自筛选(关键词已在组层面满足),只下载符合条件者。
-                        if _filter.date_range(member, start_date, end_date) and _filter.dtype(member, download_type):
-                            messages_to_download.append(member)
-                        matched_message_ids.add(member_key)
+                        # 无关键词:整组由各成员遍历命中补全,无需RPC展开,仅标记该组已处理。
+                        media_group_matched.add(message.media_group_id)
                 # 评论区检索与消息自身类型无关,自身类型被关闭(未进下载列表)但评论区有内容的消息,仍需扫描其评论。
                 # 仅当确有评论时才记录,避免对无评论消息发起无谓RPC。
                 # 判断依据是原始Message的replies字段(MessageReplies.replies为评论数),该字段来自get_chat_history响应,无需额外RPC。媒体组由首条成员逻辑统一处理,此处跳过。
