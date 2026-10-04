@@ -1602,10 +1602,20 @@ class TelegramRestrictedMediaDownloader(Bot):
                 # 命中且属于媒体组 → 主动拉取整组,组内每个成员再各自按类型/日期独立筛选,不再依赖遍历顺序,也不会因首条成员被类型过滤而丢失整组,更不会跳过成员的类型筛选。
                 if message.media_group_id and message.media_group_id not in media_group_matched:
                     media_group_matched.add(message.media_group_id)
-                    try:
-                        group_members = await message.get_media_group()
-                    except (ValueError, AttributeError):
-                        group_members = []
+                    while True:
+                        try:
+                            group_members = await message.get_media_group()
+                            break
+                        except (ValueError, AttributeError):
+                            group_members = []
+                            break
+                        except (FloodWait, FloodPremiumWait) as e:
+                            amount = e.value
+                            console.log(
+                                f'[{self.app.client.name}]获取媒体组消息请求频繁,要求等待{amount}秒后继续运行。',
+                                style='#FF4689'
+                            )
+                            await asyncio.sleep(amount)
                     for member in group_members:
                         member_key = (member.chat.id, member.id)
                         if member_key in matched_message_ids:
