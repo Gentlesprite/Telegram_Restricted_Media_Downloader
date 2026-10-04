@@ -1574,7 +1574,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             links: list = []
             # 第一阶段：收集匹配的消息。
             messages_to_download = []
-            matched_message_ids: set = set()  # 已加入下载列表的(chat_id, message_id),用于媒体组整体展开后避免重复添加。
+            matched_message_ids: set = set()  # 已处理过的(chat_id, message_id),含被类型/日期过滤掉但已判定过的成员,避免媒体组展开后重复处理。
             media_group_matched: set = set()  # 已展开过的media_group_id,避免对同一媒体组重复调用get_media_group。
             await _progress(
                 _text=f'{callback_query_text}\n'
@@ -1588,17 +1588,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                     reverse=True
             ):
                 msg_key = (message.chat.id, message.id)
-                # 已加入下载列表的消息(含媒体组被整体展开的成员)直接跳过,避免重复。
+                # 已处理过的消息(含媒体组被整体展开的成员)直接跳过,避免重复。
                 if msg_key in matched_message_ids:
                     continue
+                # 关键词/日期命中即选中该消息(不要求类型:媒体组内成员类型可能不同,关键词只挂在首条 caption 上,命中即代表整组命中)。
                 if not (_filter.date_range(message, start_date, end_date) and
-                        _filter.dtype(message, download_type) and
                         _filter.keyword_filter(message, active_keywords)):
                     continue
-                messages_to_download.append(message)
+                # 命中关键词的消息自身先按类型筛选。
+                if _filter.dtype(message, download_type):
+                    messages_to_download.append(message)
                 matched_message_ids.add(msg_key)
-                # 命中的消息属于媒体组时,主动拉取整组,确保组内其余成员
-                # (其文案可能不含关键词)也能被完整收集,不再依赖遍历顺序,避免媒体组只下载到命中的关键词的那一条。
+                # 命中且属于媒体组 → 主动拉取整组,组内每个成员再各自按类型/日期独立筛选,不再依赖遍历顺序,也不会因首条成员被类型过滤而丢失整组,更不会跳过成员的类型筛选。
                 if message.media_group_id and message.media_group_id not in media_group_matched:
                     media_group_matched.add(message.media_group_id)
                     try:
@@ -1609,7 +1610,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                         member_key = (member.chat.id, member.id)
                         if member_key in matched_message_ids:
                             continue
-                        messages_to_download.append(member)
+                        # 组内成员按类型/日期各自筛选(关键词已在组层面满足),只下载符合条件者。
+                        if _filter.date_range(member, start_date, end_date) and _filter.dtype(member, download_type):
+                            messages_to_download.append(member)
                         matched_message_ids.add(member_key)
                     # 使用时间节流机制,只在指定时间间隔后才更新,避免频繁API调用。
                     current_time = asyncio.get_event_loop().time()
