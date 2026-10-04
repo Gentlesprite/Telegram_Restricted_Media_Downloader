@@ -1537,7 +1537,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         reply_markup=_reply_markup
                     )
                 except MessageNotModified:
-                    return
+                    return callback_query.message  # 文本本就相同,属良性no-op,按成功处理使外层照常更新时间戳,避免忙等重试。
                 except (FloodWait, FloodPremiumWait) as _e:
                     _amount = _e.value
                     console.log(
