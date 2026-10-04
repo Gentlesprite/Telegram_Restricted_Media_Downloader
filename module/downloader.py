@@ -1622,7 +1622,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         try:
                             group_members = await message.get_media_group()
                             break
-                        except (ValueError, AttributeError):
+                        except (ValueError, AttributeError, MsgIdInvalid):
                             group_members = []
                             break
                         except (FloodWait, FloodPremiumWait) as e:
