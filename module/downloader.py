@@ -1574,7 +1574,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             links: list = []
             # 第一阶段：收集匹配的消息。
             messages_to_download = []
-            media_group_matched = set()  # 记录已匹配的media_group_id。
+            matched_message_ids: set = set()  # 已加入下载列表的(chat_id, message_id),用于媒体组整体展开后避免重复添加。
+            media_group_matched: set = set()  # 已展开过的media_group_id,避免对同一媒体组重复调用get_media_group。
             await _progress(
                 _text=f'{callback_query_text}\n'
                       f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到0条消息。',
@@ -1586,18 +1587,30 @@ class TelegramRestrictedMediaDownloader(Bot):
                     chat_id=chat_id,
                     reverse=True
             ):
-                # 对于媒体组，如果该媒体组已匹配，直接添加。
-                if getattr(message, 'media_group_id', None) and message.media_group_id in media_group_matched:
-                    messages_to_download.append(message)
+                msg_key = (message.chat.id, message.id)
+                # 已加入下载列表的消息(含媒体组被整体展开的成员)直接跳过,避免重复。
+                if msg_key in matched_message_ids:
                     continue
-
-                if (_filter.date_range(message, start_date, end_date) and
+                if not (_filter.date_range(message, start_date, end_date) and
                         _filter.dtype(message, download_type) and
                         _filter.keyword_filter(message, active_keywords)):
-                    messages_to_download.append(message)
-                    # 如果是媒体组的第一条消息，记录该media_group_id。
-                    if message.media_group_id:
-                        media_group_matched.add(message.media_group_id)
+                    continue
+                messages_to_download.append(message)
+                matched_message_ids.add(msg_key)
+                # 命中的消息属于媒体组时,主动拉取整组,确保组内其余成员
+                # (其文案可能不含关键词)也能被完整收集,不再依赖遍历顺序,避免媒体组只下载到命中的关键词的那一条。
+                if message.media_group_id and message.media_group_id not in media_group_matched:
+                    media_group_matched.add(message.media_group_id)
+                    try:
+                        group_members = await message.get_media_group()
+                    except (ValueError, AttributeError):
+                        group_members = []
+                    for member in group_members:
+                        member_key = (member.chat.id, member.id)
+                        if member_key in matched_message_ids:
+                            continue
+                        messages_to_download.append(member)
+                        matched_message_ids.add(member_key)
                     # 使用时间节流机制,只在指定时间间隔后才更新,避免频繁API调用。
                     current_time = asyncio.get_event_loop().time()
                     current_count = len(messages_to_download)
