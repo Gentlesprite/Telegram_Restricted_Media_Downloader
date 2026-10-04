@@ -1617,7 +1617,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                 matched_message_ids.add(msg_key)
                 # 命中且属于媒体组 → 主动拉取整组,组内每个成员再各自按类型/日期独立筛选,不再依赖遍历顺序,也不会因首条成员被类型过滤而丢失整组,更不会跳过成员的类型筛选。
                 if message.media_group_id and message.media_group_id not in media_group_matched:
-                    media_group_matched.add(message.media_group_id)
                     while True:
                         try:
                             group_members = await message.get_media_group()
@@ -1632,11 +1631,17 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 style='#FF4689'
                             )
                             await asyncio.sleep(amount)
-                    # 记录媒体组评论区所在的首条成员id(最小message id),评论区挂在首条成员上,而非组内任意成员,供第二阶段检索评论区时作为依据。
                     if group_members:
+                        # 获取成功才标记该组已处理,失败则不标记,使同组其它命中成员可重试。
+                        media_group_matched.add(message.media_group_id)
+                        # 记录媒体组评论区所在的首条成员id(最小message id),评论区挂在首条成员上,而非组内任意成员,供第二阶段检索评论区时作为依据。
                         media_group_thread_id[message.media_group_id] = min(
                             m.id for m in group_members
                         )
+                    else:
+                        # 获取媒体组失败(消息已失效/无评论区等),该组除已命中的首条成员外无法补齐,记日志避免静默丢失。
+                        log.warning(
+                            f'在/download_chat命令过程中,获取媒体组失败(消息ID:{message.id}),该组其余成员可能无法下载。')
                     for member in group_members:
                         member_key = (member.chat.id, member.id)
                         if member_key in matched_message_ids:
