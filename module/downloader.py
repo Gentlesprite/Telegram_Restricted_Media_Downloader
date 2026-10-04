@@ -1577,6 +1577,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             matched_message_ids: set = set()  # 已处理过的(chat_id, message_id),含被类型/日期过滤掉但已判定过的成员,避免媒体组展开后重复处理。
             media_group_matched: set = set()  # 已展开过的media_group_id,避免对同一媒体组重复调用get_media_group。
             media_group_thread_id: dict = {}  # 媒体组评论区所在的首条成员(最小message id)id,供第二阶段检索评论区时使用。
+            extra_comment_ids: set = set()  # 被类型过滤掉但评论区有内容的消息 id(非媒体组),需单独扫描其评论。
             await _progress(
                 _text=f'{callback_query_text}\n'
                       f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到0条消息。',
@@ -1630,6 +1631,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                         if _filter.date_range(member, start_date, end_date) and _filter.dtype(member, download_type):
                             messages_to_download.append(member)
                         matched_message_ids.add(member_key)
+                # 评论区检索与消息自身类型无关,自身类型被关闭(未进下载列表)但评论区有内容的消息,仍需扫描其评论。
+                # 仅当确有评论时才记录,避免对无评论消息发起无谓RPC。
+                # 判断依据是原始Message的replies字段(MessageReplies.replies为评论数),该字段来自get_chat_history响应,无需额外RPC。媒体组由首条成员逻辑统一处理,此处跳过。
+                if include_comment and not getattr(message, 'media_group_id', None):
+                    if message not in messages_to_download:
+                        _raw = getattr(message, 'raw', None)
+                        _rep = getattr(_raw, 'replies', None) if _raw is not None else None
+                        if _rep is not None and getattr(_rep, 'replies', 0) > 0:
+                            extra_comment_ids.add(message.id)
                 # 使用时间节流机制,只在指定时间间隔后才更新,避免频繁API调用。
                 current_time = asyncio.get_event_loop().time()
                 current_count = len(messages_to_download)
@@ -1719,6 +1729,35 @@ class TelegramRestrictedMediaDownloader(Bot):
                             last_comment_update_time = current_time
                 except (ValueError, AttributeError, MsgIdInvalid):
                     pass  # 消息没有评论区或消息ID无效，跳过。
+            # 扫描被类型过滤掉但评论区有内容的消息(例如视频被关闭,但其评论区含图片)。
+            if include_comment:
+                for source_id in extra_comment_ids:
+                    try:
+                        async for comment in self.app.client.get_discussion_replies(
+                                chat_id=chat_id,
+                                message_id=source_id
+                        ):
+                            # 根据用户设置的download_type过滤评论中的媒体,但不过滤具体时间。
+                            if not _filter.dtype(comment, download_type):
+                                continue
+                            comment_link = comment.link if comment.link else comment
+                            links.append(comment_link)
+                            # 使用时间节流机制,只在指定时间间隔后才更新,避免频繁API调用。
+                            current_time = asyncio.get_event_loop().time()
+                            # 计算评论数量,总链接数减去已处理的消息数。
+                            current_comment_count = len(links) - processed_message_count
+                            if current_time - last_comment_update_time >= update_interval:
+                                await _progress(
+                                    _text=f'{callback_query_text}\n'
+                                          f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到{current_comment_count}条消息。',
+                                    _reply_markup=KeyboardButton.single_button(
+                                        text=BotButton.RETRIEVE_COMMENT,
+                                        callback_data=BotCallbackText.NULL)
+                                )
+                                last_displayed_comment_count = current_comment_count
+                                last_comment_update_time = current_time
+                    except (ValueError, AttributeError, MsgIdInvalid):
+                        pass  # 消息没有评论区或消息ID无效，跳过。
             # 确保最后一次更新显示正确的评论数量。
             if include_comment:
                 final_comment_count = len(links) - message_count
