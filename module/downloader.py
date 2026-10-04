@@ -1776,7 +1776,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
                 assigned_count += 1
             await _progress(
-                _text=origin_callback_query_text,
+                _text=f'{origin_callback_query_text}\n'
+                      f'🔎匹配消息:{message_count}条,评论区消息:{comment_count}条,共{total_count}条。\n',
                 _reply_markup=KeyboardButton.single_button(
                     text=BotButton.TASK_ASSIGN,
                     callback_data=BotCallbackText.NULL
