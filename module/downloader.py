@@ -1572,10 +1572,11 @@ class TelegramRestrictedMediaDownloader(Bot):
             include_comment: bool = download_chat_filter.get('comment', False)
             active_keywords = [k for k, v in keyword_filter.items() if v]
             links: list = []
-            # 第一阶段：收集匹配的消息。
+            # 第一阶段,收集匹配的消息。
             messages_to_download = []
             matched_message_ids: set = set()  # 已处理过的(chat_id, message_id),含被类型/日期过滤掉但已判定过的成员,避免媒体组展开后重复处理。
             media_group_matched: set = set()  # 已展开过的media_group_id,避免对同一媒体组重复调用get_media_group。
+            media_group_thread_id: dict = {}  # 媒体组评论区所在的首条成员(最小message id)id,供第二阶段检索评论区时使用。
             await _progress(
                 _text=f'{callback_query_text}\n'
                       f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到0条消息。',
@@ -1616,6 +1617,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 style='#FF4689'
                             )
                             await asyncio.sleep(amount)
+                    # 记录媒体组评论区所在的首条成员id(最小message id),评论区挂在首条成员上,而非组内任意成员,供第二阶段检索评论区时作为依据。
+                    if group_members:
+                        media_group_thread_id[message.media_group_id] = min(
+                            m.id for m in group_members
+                        )
                     for member in group_members:
                         member_key = (member.chat.id, member.id)
                         if member_key in matched_message_ids:
@@ -1663,7 +1669,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             last_comment_update_time: float = 0  # 记录上次评论更新的时间戳。
             processed_message_count: int = 0  # 记录已处理的消息数量。
             comment_fetched_groups: set = set()  # 已检索过评论区的媒体组,避免对同一组的每条成员重复调用 get_discussion_replies。
-            # 第二阶段：对匹配的消息进行处理，获取评论区。
+            # 第二阶段,对匹配的消息进行处理，获取评论区。
             if include_comment:
                 await _progress(
                     _text=f'{callback_query_text}\n'
@@ -1678,25 +1684,28 @@ class TelegramRestrictedMediaDownloader(Bot):
                 processed_message_count += 1
                 if not include_comment:
                     continue
-                # 媒体组内仅对首条成员检索评论区:其余成员没有独立评论区,调用必抛MsgIdInvalid(已被捕获),徒增RPC调用,且同组评论会被重复入库。
+                # 媒体组内仅对首条成员检索评论区,其余成员没有独立评论区,调用必抛,MsgIdInvalid(已被捕获),徒增RPC调用,且同组评论会被重复入库。
+                # 媒体组的评论区挂在组内首条(最小 message id)成员上,而非当前成员,故以展开时记录的首条成员 id 作为检索依据,避免移除该成员类型后漏抓评论。
+                thread_id = message.id
                 if getattr(message, 'media_group_id', None):
                     if message.media_group_id in comment_fetched_groups:
                         continue
                     comment_fetched_groups.add(message.media_group_id)
+                    thread_id = media_group_thread_id.get(message.media_group_id, message.id)
                 # 检查并获取评论区。
                 try:
                     async for comment in self.app.client.get_discussion_replies(
                             chat_id=chat_id,
-                            message_id=message.id
+                            message_id=thread_id
                     ):
-                        # 根据用户设置的download_type过滤评论中的媒体，但不过滤具体时间。
+                        # 根据用户设置的download_type过滤评论中的媒体,但不过滤具体时间。
                         if not _filter.dtype(comment, download_type):
                             continue
                         comment_link = comment.link if comment.link else comment
                         links.append(comment_link)
                         # 使用时间节流机制,只在指定时间间隔后才更新,避免频繁API调用。
                         current_time = asyncio.get_event_loop().time()
-                        # 计算评论数量: 总链接数减去已处理的消息数。
+                        # 计算评论数量,总链接数减去已处理的消息数。
                         current_comment_count = len(links) - processed_message_count
                         if current_time - last_comment_update_time >= update_interval:
                             await _progress(
@@ -1709,8 +1718,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             last_displayed_comment_count = current_comment_count
                             last_comment_update_time = current_time
                 except (ValueError, AttributeError, MsgIdInvalid):
-                    # 消息没有评论区或消息ID无效，跳过。
-                    pass
+                    pass  # 消息没有评论区或消息ID无效，跳过。
             # 确保最后一次更新显示正确的评论数量。
             if include_comment:
                 final_comment_count = len(links) - message_count
