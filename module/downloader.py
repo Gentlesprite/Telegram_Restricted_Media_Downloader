@@ -1616,15 +1616,16 @@ class TelegramRestrictedMediaDownloader(Bot):
                     downloaded_message_ids.add(msg_key)
                 matched_message_ids.add(msg_key)
                 # 命中且属于媒体组 → 主动拉取整组,组内每个成员再各自按类型/日期独立筛选,不再依赖遍历顺序,也不会因首条成员被类型过滤而丢失整组,更不会跳过成员的类型筛选。
-                # 无关键词时整组各成员会经遍历各自命中,无需RPC展开。
-                # 此处累计首条(最小id)成员id供评论区检索,避免每个相册各发一次get_media_group。
-                if getattr(message, 'media_group_id', None) and not active_keywords:
+                # 无关键词且未开启评论区时,整组各成员会经遍历各自命中,无需RPC展开。
+                # 此处累计(窗口内)首条(最小id)成员id;开启评论区时需绝对首条作锚点,改走下方get_media_group,故此处跳过。
+                if getattr(message, 'media_group_id', None) and not active_keywords and not include_comment:
                     media_group_thread_id[message.media_group_id] = min(
                         media_group_thread_id.get(message.media_group_id, message.id),
                         message.id
                     )
                 if message.media_group_id and message.media_group_id not in media_group_matched:
-                    if active_keywords:
+                    # 有关键词(命中成员未必是组内首个)或开启评论区(需绝对首条成员id作评论锚点)时,才RPC展开整组,否则走下方遍历快路径。
+                    if active_keywords or include_comment:
                         while True:
                             try:
                                 group_members = await message.get_media_group()
