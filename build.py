@@ -21,7 +21,7 @@ from module import (
 
 def ready_nuitka() -> None:
     subprocess.run(
-        f'{UV}pip install --upgrade --no-cache-dir "nuitka[app] @ https://github.com/Nuitka/Nuitka/archive/factory.zip"',
+        f'{UV}pip install --upgrade --no-cache-dir "nuitka[app] @ https://github.com/Nuitka/Nuitka/archive/39f61f252a9dd39f88f77711ecedda03e98354f5.zip"',
         shell=True)
 
 
