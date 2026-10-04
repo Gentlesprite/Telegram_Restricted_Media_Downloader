@@ -423,7 +423,7 @@ class Bot:
             'title': {},
             'comment': False
         }
-        log.info(f'"{BotCallbackText.DOWNLOAD_CHAT_ID}"已添加至{self.download_chat_filter}。')
+        log.info(f'"{BotCallbackText.DOWNLOAD_CHAT_ID}"已添加至:{self.download_chat_filter}。')
         format_dtype = ','.join([_t(_) for _ in DownloadType()])
         include_comment = self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['comment']
         comment: str = '开' if include_comment else '关'

@@ -1551,16 +1551,16 @@ class TelegramRestrictedMediaDownloader(Bot):
                     return
 
         origin_callback_query_text: str = callback_query.message.text
+        _setup_text = f'{origin_callback_query_text}\n⏳需要检索该频道所有匹配的消息,请耐心等待。\n💡请忽略终端中的请求频繁提示,不会影响下载。'
         cq = await _progress(
-            _text=f'{callback_query.message.text}\n'
-                  f'⏳需要检索该频道所有匹配的消息,请耐心等待。\n'
-                  f'💡请忽略终端中的请求频繁提示,不会影响下载。',
+            _text=_setup_text,
             _reply_markup=KeyboardButton.single_button(
                 text=BotButton.RETRIEVE_MESSAGE,
                 callback_data=BotCallbackText.NULL
             )
         )
-        callback_query_text: str = cq.text
+        # _progress通用异常时返回None,此处回退到意图发出的setup文案(而非消息对象),避免callback_query_text退化成编辑前的原始文案,保证后续进度消息拼接一致。
+        callback_query_text: str = cq.text if cq is not None else _setup_text
         last_displayed_count: int = -1  # 记录上次显示的数量,初始化为-1确保第一次一定更新。
         last_update_time: float = 0  # 记录上次更新的时间戳。
         update_interval: float = 1.0  # 更新时间间隔(秒),无论多少条消息,都只在这个时间间隔更新一次。
@@ -1656,7 +1656,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                             if member_key in matched_message_ids:
                                 continue
                             # 组内成员按类型/日期各自筛选(关键词已在组层面满足),只下载符合条件者。
-                            if _filter.date_range(member, start_date, end_date) and _filter.dtype(member, download_type):
+                            if _filter.date_range(
+                                    member,
+                                    start_date,
+                                    end_date
+                            ) and _filter.dtype(
+                                member,
+                                download_type
+                            ):
                                 messages_to_download.append(member)
                             matched_message_ids.add(member_key)
                     else:
