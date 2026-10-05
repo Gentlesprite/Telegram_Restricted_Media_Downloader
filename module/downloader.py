@@ -501,6 +501,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
                 text=loading
             )
+            seen_media_groups: set = set()
             async for i in self.app.client.get_chat_history(
                     chat_id=origin_chat.id,
                     offset_id=start_id,
@@ -509,6 +510,12 @@ class TelegramRestrictedMediaDownloader(Bot):
             ):
                 try:
                     message_id = i.id
+                    # 媒体组只需整体转发一次,避免相册被打散为多条独立消息,并保持源频道顺序。
+                    media_group_id = getattr(i, 'media_group_id', None)
+                    if media_group_id is not None:
+                        if media_group_id in seen_media_groups:
+                            continue
+                        seen_media_groups.add(media_group_id)
                     await self.forward(
                         client=client,
                         message=i,
@@ -516,6 +523,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         origin_chat_id=origin_chat_id,
                         target_chat_id=target_chat_id,
                         target_link=target_link,
+                        media_group=[message_id] if media_group_id is not None else None,
                         done_notice=False
                     )
                     record_id.append(message_id)
