@@ -455,7 +455,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         group_ids = sorted(m.id for m in group_messages)
         passed = [m for m in group_messages if self.check_type(m)]
         if passed and len(passed) != len(group_messages):
-            for m in passed:
+            # 组内混合了被过滤的类型,退化为逐条转发,由forward内的check_type决定转发或跳过。
+            for m in group_messages:
                 await self.forward(
                     client=client,
                     message=m,
