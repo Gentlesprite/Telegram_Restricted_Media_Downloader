@@ -524,37 +524,41 @@ class TelegramRestrictedMediaDownloader(Bot):
                             pending_ids.append(message_id)
                         else:
                             # 理论上媒体组连续不会出现新组,保险起见先结算旧组。
-                            await self.forward(
-                                client=client,
-                                message=pending_first,
-                                message_id=pending_ids[0],
-                                origin_chat_id=origin_chat_id,
-                                target_chat_id=target_chat_id,
-                                target_link=target_link,
-                                media_group=sorted(pending_ids),
-                                done_notice=False
-                            )
-                            record_id.extend(pending_ids)
+                            group_first = pending_first
+                            group_ids = sorted(pending_ids)
                             pending_group_id = media_group_id
                             pending_ids = [message_id]
                             pending_first = i
+                            await self.forward(
+                                client=client,
+                                message=group_first,
+                                message_id=group_ids[0],
+                                origin_chat_id=origin_chat_id,
+                                target_chat_id=target_chat_id,
+                                target_link=target_link,
+                                media_group=group_ids,
+                                done_notice=False
+                            )
+                            record_id.extend(group_ids)
                         continue
                     # 非媒体组消息,若前面有未结算的媒体组,先整体转发。
                     if pending_group_id is not None:
-                        await self.forward(
-                            client=client,
-                            message=pending_first,
-                            message_id=pending_ids[0],
-                            origin_chat_id=origin_chat_id,
-                            target_chat_id=target_chat_id,
-                            target_link=target_link,
-                            media_group=sorted(pending_ids),
-                            done_notice=False
-                        )
-                        record_id.extend(pending_ids)
+                        group_first = pending_first
+                        group_ids = sorted(pending_ids)
                         pending_group_id = None
                         pending_ids = []
                         pending_first = None
+                        await self.forward(
+                            client=client,
+                            message=group_first,
+                            message_id=group_ids[0],
+                            origin_chat_id=origin_chat_id,
+                            target_chat_id=target_chat_id,
+                            target_link=target_link,
+                            media_group=group_ids,
+                            done_notice=False
+                        )
+                        record_id.extend(group_ids)
                     await self.forward(
                         client=client,
                         message=i,
