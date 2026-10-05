@@ -442,6 +442,43 @@ class TelegramRestrictedMediaDownloader(Bot):
             console.log(p, style='#FF4689')
             log.info(p)
 
+    async def forward_media_group(
+            self,
+            client: pyrogram.Client,
+            group_messages: list,
+            origin_chat_id: Union[str, int],
+            target_chat_id: Union[str, int],
+            target_link: str,
+            record_id: list
+    ):
+        """结算媒体组,组内混合了被过滤的类型时退化为逐条转发,避免整体转发绕过过滤设置。"""
+        group_ids = sorted(m.id for m in group_messages)
+        passed = [m for m in group_messages if self.check_type(m)]
+        if passed and len(passed) != len(group_messages):
+            for m in passed:
+                await self.forward(
+                    client=client,
+                    message=m,
+                    message_id=m.id,
+                    origin_chat_id=origin_chat_id,
+                    target_chat_id=target_chat_id,
+                    target_link=target_link,
+                    done_notice=False
+                )
+                record_id.append(m.id)
+            return None
+        await self.forward(
+            client=client,
+            message=group_messages[0],
+            message_id=group_ids[0],
+            origin_chat_id=origin_chat_id,
+            target_chat_id=target_chat_id,
+            target_link=target_link,
+            media_group=group_ids,
+            done_notice=False
+        )
+        record_id.extend(group_ids)
+
     async def get_forward_link_from_bot(
             self, client: pyrogram.Client,
             message: pyrogram.types.Message
@@ -503,8 +540,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
             # 媒体组在源频道中连续返回,按 media_group_id(raw层grouped_id)本地分组,即可零RPC拿到整组消息ID,待组结束再整体转发并合并为一条日志。
             pending_group_id = None
-            pending_ids: list = []
-            pending_first = None
+            pending_messages: list = []
             async for i in self.app.client.get_chat_history(
                     chat_id=origin_chat.id,
                     offset_id=start_id,
@@ -518,47 +554,36 @@ class TelegramRestrictedMediaDownloader(Bot):
                         # 同组消息连续到达,先收集整组ID,组结束后再整体转发。
                         if pending_group_id is None:
                             pending_group_id = media_group_id
-                            pending_ids = [message_id]
-                            pending_first = i
+                            pending_messages = [i]
                         elif media_group_id == pending_group_id:
-                            pending_ids.append(message_id)
+                            pending_messages.append(i)
                         else:
                             # 理论上媒体组连续不会出现新组,保险起见先结算旧组。
-                            group_first = pending_first
-                            group_ids = sorted(pending_ids)
+                            group_messages = pending_messages
                             pending_group_id = media_group_id
-                            pending_ids = [message_id]
-                            pending_first = i
-                            await self.forward(
+                            pending_messages = [i]
+                            await self.forward_media_group(
                                 client=client,
-                                message=group_first,
-                                message_id=group_ids[0],
+                                group_messages=group_messages,
                                 origin_chat_id=origin_chat_id,
                                 target_chat_id=target_chat_id,
                                 target_link=target_link,
-                                media_group=group_ids,
-                                done_notice=False
+                                record_id=record_id
                             )
-                            record_id.extend(group_ids)
                         continue
-                    # 非媒体组消息,若前面有未结算的媒体组,先整体转发。
+                    # 非媒体组消息,若前面有未结算的媒体组,先结算该媒体组。
                     if pending_group_id is not None:
-                        group_first = pending_first
-                        group_ids = sorted(pending_ids)
+                        group_messages = pending_messages
                         pending_group_id = None
-                        pending_ids = []
-                        pending_first = None
-                        await self.forward(
+                        pending_messages = []
+                        await self.forward_media_group(
                             client=client,
-                            message=group_first,
-                            message_id=group_ids[0],
+                            group_messages=group_messages,
                             origin_chat_id=origin_chat_id,
                             target_chat_id=target_chat_id,
                             target_link=target_link,
-                            media_group=group_ids,
-                            done_notice=False
+                            record_id=record_id
                         )
-                        record_id.extend(group_ids)
                     await self.forward(
                         client=client,
                         message=i,
@@ -626,17 +651,15 @@ class TelegramRestrictedMediaDownloader(Bot):
             else:
                 if pending_group_id is not None:
                     # 循环正常结束时,结算末尾尚未转发的媒体组。
-                    await self.forward(
+                    group_messages = pending_messages
+                    await self.forward_media_group(
                         client=client,
-                        message=pending_first,
-                        message_id=pending_ids[0],
+                        group_messages=group_messages,
                         origin_chat_id=origin_chat_id,
                         target_chat_id=target_chat_id,
                         target_link=target_link,
-                        media_group=sorted(pending_ids),
-                        done_notice=False
+                        record_id=record_id
                     )
-                    record_id.extend(pending_ids)
                 if not record_id:
                     last_message = await self.safe_edit_message(
                         client=client,
