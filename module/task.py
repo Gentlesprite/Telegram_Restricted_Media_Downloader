@@ -81,7 +81,7 @@ class DownloadTask:
         return len(self.fail_id)
 
     @classmethod
-    def get_or_create(cls, link: Union[str, int]) -> "DownloadTask":
+    def get_or_create(cls, link: Union[str, int]) -> 'DownloadTask':
         """获取链接对应的下载任务,不存在时创建并记录顺序。"""
         _link: str = str(link)
         task: Union[DownloadTask, None] = cls.TASKS.get(_link)
@@ -92,7 +92,7 @@ class DownloadTask:
         return task
 
     @classmethod
-    def get(cls, link: Union[str, int, None]) -> Union["DownloadTask", None]:
+    def get(cls, link: Union[str, int, None]) -> Union['DownloadTask', None]:
         """获取链接对应的下载任务。"""
         return cls.TASKS.get(str(link))
 
@@ -130,7 +130,7 @@ class DownloadTask:
             current_status: Optional[str] = existing.get('status') if existing else None
             # 正在下载中的消息不降级为排队:避免面板把"下载中"误显示为"队列中",也避免被调度器重复拉起。
             # 例外: 若该消息已无活动下载协程占用(DOWNLOADING_KEYS不含其键, 说明此前崩溃/被强杀后未回写终态)。
-            # 则视为孤儿并恢复为排队, 避免重拉链接时永久卡在DOWNLOADING。
+            # 则视为孤儿并恢复为排队,避免重拉链接时永久卡在DOWNLOADING。
             dl_key = (_message.chat.id, key) if getattr(_message, 'chat', None) else None
             orphan_downloading: bool = (
                     current_status == DownloadStatus.DOWNLOADING
@@ -260,8 +260,7 @@ class DownloadTask:
 
         Args:
             message_ids: 需要检查的message_id集合(如媒体组全部成员)。
-            chat_id: 原始频道ID。给出时按下载占用键(chat_id, message_id)精确匹配,
-                用于捕捉"同一条消息正被其它链接并发下载中"的情况。
+            chat_id: 原始频道ID。给出时按下载占用键(chat_id, message_id)精确匹配,用于捕捉"同一条消息正被其它链接并发下载中"的情况。
 
         Returns:
             存在排队/下载中的成员返回True,否则False。

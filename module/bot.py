@@ -2083,11 +2083,11 @@ class ListenInfoHandler(CallbackHandler):
     async def handle(self, ctx: CallbackContext) -> None:
         downloader = ctx.downloader
         query = ctx.query
-        await downloader.app.client.send_message(
-            chat_id=query.from_user.id,
-            text='/listen_info',
-            link_preview_options=Bot.LINK_PREVIEW_OPTIONS
-        )
+        # 监听信息由机器人命令查询,需用登录账号向机器人发送命令,直接发给用户自己会落入收藏夹。
+        result = await downloader.send_message_to_bot(text='/listen_info')
+        if isinstance(result, Exception) or result is None:
+            await query.message.reply_text('查看监听信息失败\n(具体原因请前往终端查看报错信息)')
+            log.error(f'发送查看监听信息命令失败,{_t(KeyWord.REASON)}:"{result}"')
 
 
 class ShutdownHandler(CallbackHandler):
