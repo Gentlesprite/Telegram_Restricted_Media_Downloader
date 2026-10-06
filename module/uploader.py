@@ -321,6 +321,8 @@ class TelegramUploader:
             media_group_poll_tasks: dict
     ):
         try:
+            # 原始频道ID:下载占用键为(原始chat_id, message_id),用于精确判定本相册成员是否仍在下载中。
+            origin_chat_id = getattr(getattr(media_group[0], 'chat', None), 'id', None) if media_group else None
             while self.is_bot_running:
                 await asyncio.sleep(1)  # 每1秒检查一次。
 
@@ -328,7 +330,8 @@ class TelegramUploader:
                 # 1. 所有需要上传的文件都已创建UploadTask（没有文件还在下载中）。
                 # 2. 没有待处理的媒体组任务。
                 created_count = UploadTask.get_media_group_task_count(message_ids)
-                no_pending = not UploadTask.has_pending_media_group_tasks()
+                no_pending = not UploadTask.has_pending_media_group_tasks(
+                    message_ids=message_ids, origin_chat_id=origin_chat_id)
                 collected_count = len(media_group_cache.get(media_group_id, {}))
 
                 log.debug(

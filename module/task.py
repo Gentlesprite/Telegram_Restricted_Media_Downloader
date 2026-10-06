@@ -254,6 +254,34 @@ class DownloadTask:
                     return True
         return False
 
+    @classmethod
+    def has_pending_message(cls, message_ids: set, chat_id: Optional[int] = None) -> bool:
+        """判断指定消息中是否仍有处于排队或下载中的项(按消息范围判定,不做全局检查)。
+
+        Args:
+            message_ids: 需要检查的message_id集合(如媒体组全部成员)。
+            chat_id: 原始频道ID。给出时按下载占用键(chat_id, message_id)精确匹配,
+                用于捕捉"同一条消息正被其它链接并发下载中"的情况。
+
+        Returns:
+            存在排队/下载中的成员返回True,否则False。
+        """
+        if chat_id is not None:
+            for message_id in message_ids:
+                if (chat_id, message_id) in cls.DOWNLOADING_KEYS:
+                    return True
+        for task in cls.ordered_tasks():
+            for key, item in task.items.items():
+                if key not in message_ids:
+                    continue
+                if chat_id is not None:
+                    message = item.get('message')
+                    if not isinstance(message, pyrogram.types.Message) or message.chat.id != chat_id:
+                        continue
+                if item.get('status') in (DownloadStatus.PENDING, DownloadStatus.DOWNLOADING):
+                    return True
+        return False
+
     def add_file_name(self, file_name: str) -> None:
         """记录已完成的文件名,并同步完成数。"""
         self.file_name.add(file_name)
@@ -512,15 +540,23 @@ class UploadTask:
         self.save_json()
 
     @staticmethod
-    def has_pending_media_group_tasks() -> bool:
-        """检查是否还有PENDING/UPLOADING状态且属于媒体组的上传任务,或仍有媒体组成员正在下载中。"""
+    def has_pending_media_group_tasks(
+            message_ids: Optional[set] = None,
+            origin_chat_id: Optional[int] = None
+    ) -> bool:
+        """检查是否还有PENDING/UPLOADING状态且属于媒体组的上传任务,或本媒体组成员仍在下载中。
+        仅判断上传队列不足以判定媒体组是否已齐:某成员可能仍处于下载阶段、尚未生成上传任务,此时若判定为"无待处理"会提前发出不完整的相册,因此同时检查下载任务。
+        Args:
+            message_ids: 本媒体组成员的message_id集合。给出时只检查这些消息的下载状态,避免被无关的下载任务拖住;不给出则退化为全局检查。
+            origin_chat_id: 原始频道ID,配合message_ids精确匹配下载占用键。
+        """
         for task in UploadTask.TASKS:
             if task.status in (UploadStatus.PENDING, UploadStatus.UPLOADING) and task.is_media_group:
                 return True
-        # 同时检查是否还有下载任务在进行(PENDING/DOWNLOADING),避免媒体组某成员仍在下载就被误判为已齐。
-        if DownloadTask.has_task():
-            return True
-        return False
+        # 同时检查本媒体组成员是否仍在下载中(PENDING/DOWNLOADING),避免成员还在下载就被误判为已齐。
+        if not message_ids:
+            return DownloadTask.has_task()
+        return DownloadTask.has_pending_message(message_ids=message_ids, chat_id=origin_chat_id)
 
     @staticmethod
     def get_media_group_task_count(message_ids: set) -> int:
