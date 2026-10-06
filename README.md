@@ -7,7 +7,7 @@
 <p align="center">
 </p>
 <p align="center">
-  A telegram downloader on windows and linux platform based on Python.
+  A telegram downloader on Windows and Linux platform based on Python.
 </p>
 <p align="center">
   <a style="text-decoration:none">
@@ -19,8 +19,7 @@
   <a style="text-decoration:none">
 <img src="https://img.shields.io/badge/Platform-Windows & Linux%20-blue?color=00B16A" alt="Platform Windows & Linux"/>
   </a>
-<a href="https://deepwiki.com/Gentlesprite/Telegram_Restricted_Media_Downloader">
-<img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+<a href="https://deepwiki.com/Gentlesprite/Telegram_Restricted_Media_Downloader"><img alt="DeepWiki" src="https://img.shields.io/badge/DeepWiki-Documentation-blue?color=00B16A">
   </a>
 </p>
 
@@ -540,12 +539,12 @@ _版本需要`≥v1.7.1`。_
    
 - 目前支持的过滤方式：
 
-|  过滤方式  |                       默认值                       |
-| :--------: | :------------------------------------------------: |
-|  日期范围  | `第一条消息的发送日期`～`最后的一条消息的发生日期` |
-|  文件类型  |   `视频`、`图片`、`音频`、`语音`、`GIF`、`文档`    |
-| 匹配关键词 |                      &ndash;                       |
-| 包含评论区 |                        `关`                        |
+|  过滤方式  |                       默认值                        |
+| :--------: |:------------------------------------------------:|
+|  日期范围  |           `第一条消息的发送日期`～`最后的一条消息的发生日期`            |
+|  文件类型  | `视频`、`图片`、`文档`、`音频`、`语音`、`动画（GIF）`、`视频笔记`、`实况照片` |
+| 匹配关键词 |                     &ndash;                      |
+| 包含评论区 |                       `关`                        |
 
 - 下载指定频道语法：
 
@@ -815,7 +814,7 @@ upload:
 
 ### links参数的文本内容具体写法
 
-如下图所示(即一行代表一个链接)：
+如下图所示，即一行代表一个链接：
 
    ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_4_2.png)
 
