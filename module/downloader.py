@@ -653,14 +653,52 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if pending_group_id is not None:
                     # 循环正常结束时,结算末尾尚未转发的媒体组。
                     group_messages = pending_messages
-                    await self.forward_media_group(
-                        client=client,
-                        group_messages=group_messages,
-                        origin_chat_id=origin_chat_id,
-                        target_chat_id=target_chat_id,
-                        target_link=target_link,
-                        record_id=record_id
-                    )
+                    try:
+                        await self.forward_media_group(
+                            client=client,
+                            group_messages=group_messages,
+                            origin_chat_id=origin_chat_id,
+                            target_chat_id=target_chat_id,
+                            target_link=target_link,
+                            record_id=record_id
+                        )
+                    except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
+                        # 末尾媒体组转发受限,与循环内保持一致转为整段下载后上传。
+                        self.cd.data = {
+                            'origin_link': origin_link,
+                            'target_link': target_link,
+                            'start_id': start_id,
+                            'end_id': end_id
+                        }
+                        channel = '@' + origin_chat.username if isinstance(
+                            getattr(origin_chat, 'username'), str) else ''
+                        if not self.gc.download_upload:
+                            await client.send_message(
+                                chat_id=message.from_user.id,
+                                text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{origin_link}`\n{channel}存在内容保护限制。',
+                                parse_mode=ParseMode.MARKDOWN,
+                                reply_parameters=ReplyParameters(message_id=message.id),
+                                reply_markup=KeyboardButton.restrict_forward_button()
+                            )
+                            return None
+                        await client.send_message(
+                            chat_id=message.from_user.id,
+                            text=f'`{origin_link}`\n{channel}存在内容保护限制(已自动使用下载后上传)。\n⚠️通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型。',
+                            parse_mode=ParseMode.MARKDOWN,
+                            reply_parameters=ReplyParameters(message_id=message.id)
+                        )
+                        self.last_message.text = f'/download {origin_link} {start_id} {end_id}'
+                        await self.get_download_link_from_bot(
+                            client=self.last_client,
+                            message=self.last_message,
+                            with_upload={
+                                'link': target_link,
+                                'file_name': None,
+                                'with_delete': self.gc.upload_delete,
+                                'send_as_media_group': True
+                            }
+                        )
+                        return None
                 if not record_id:
                     last_message = await self.safe_edit_message(
                         client=client,
