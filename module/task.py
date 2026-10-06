@@ -133,9 +133,9 @@ class DownloadTask:
             # 则视为孤儿并恢复为排队, 避免重拉链接时永久卡在DOWNLOADING。
             dl_key = (_message.chat.id, key) if getattr(_message, 'chat', None) else None
             orphan_downloading: bool = (
-                current_status == DownloadStatus.DOWNLOADING
-                and dl_key is not None
-                and dl_key not in cls.DOWNLOADING_KEYS
+                    current_status == DownloadStatus.DOWNLOADING
+                    and dl_key is not None
+                    and dl_key not in cls.DOWNLOADING_KEYS
             )
             if orphan_downloading:
                 cls.DOWNLOADING_KEYS.discard(dl_key)  # 防御性清理可能残留的占用标记。
@@ -513,10 +513,13 @@ class UploadTask:
 
     @staticmethod
     def has_pending_media_group_tasks() -> bool:
-        """检查是否还有IDLE或UPLOADING状态且属于媒体组的任务。"""
+        """检查是否还有PENDING/UPLOADING状态且属于媒体组的上传任务,或仍有媒体组成员正在下载中。"""
         for task in UploadTask.TASKS:
             if task.status in (UploadStatus.PENDING, UploadStatus.UPLOADING) and task.is_media_group:
                 return True
+        # 同时检查是否还有下载任务在进行(PENDING/DOWNLOADING),避免媒体组某成员仍在下载就被误判为已齐。
+        if DownloadTask.has_task():
+            return True
         return False
 
     @staticmethod
