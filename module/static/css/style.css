@@ -542,7 +542,7 @@ h1 {
 /* 修改配置弹窗:按"保存目录 / 并发与重试"分为两个区块,每个区块带左侧竖条小标题,
    与页面 h2 分组标题风格一致,结构更清晰、不再平铺。 */
 #settingsModal .cfg-block {
-    margin-bottom: 0;
+    margin-bottom: 16px;  /* 区块之间留舒适间隙(最后一个区块靠 :last-of-type 归零)。 */
 }
 #settingsModal .cfg-block:last-of-type {
     margin-bottom: 0;
@@ -550,7 +550,7 @@ h1 {
 #settingsModal .cfg-block-title {
     padding-left: 9px;
     border-left: 3px solid var(--accent);
-    margin-bottom: 5px;  /* 标题到下方内容的间距,与标签到输入框的 5px 协调一致。 */
+    margin-bottom: 8px;  /* 标题到下方内容的间距,放松到舒适。 */
     font-size: 13px;
     font-weight: 600;
     color: var(--muted);
@@ -565,8 +565,7 @@ h1 {
 }
 #settingsModal .login-input {
     width: 100%;
-    box-sizing: border-box;
-    padding: 5px 11px;  /* 上下内边距由通用 8px 收到 5px,输入框更矮、与上下文字更贴。 */
+    box-sizing: border-box;  /* 输入框高度用通用 8px 上下内边距,恢复舒适、不再为紧凑压扁。 */
 }
 /* 保存目录输入框也对齐标题文字(左缩进 9px),与下方任务数/重试数区块的输入框保持等宽一致。 */
 #settingsModal #saveDirInput {
@@ -584,15 +583,18 @@ h1 {
 #settingsModal .cfg-item {
     display: flex;
     flex-direction: column;
-    gap: 5px;  /* 标签与输入框之间留协调间距,避免紧贴。 */
+    gap: 8px;  /* 标签与输入框之间的间距,放松到舒适。 */
 }
 #settingsModal .cfg-item .login-label {
     margin-bottom: 0;  /* 间距由 flex gap 控制,避免与上方 4px 叠加成双重间距。 */
 }
 /* 配置弹窗内边距收紧,减少四周留白(仅作用于本弹窗,不影响支持/确认/登录弹窗)。 */
+/* 标题区(修改配置)高度与通用弹窗(如支持作者弹窗)保持一致,不另设 head 内边距;
+   标题区到首个区块的间距由 body 上内边距控制。 */
 #settingsModal .modal-body {
-    padding: 0 14px;
-    line-height: 1.4;  /* 覆盖通用 1.6,收紧文字上下行高空间。 */
+    padding: 8px 16px;  /* 上 8px = 标题区到保存目录的间隙;左右 16px 与通用弹窗一致。 */
+    line-height: 1.5;  /* 比紧凑版(1.4)略松,整体不那么挤。 */
+    white-space: normal;  /* 覆盖通用 pre-line:源码元素间的换行不再渲染成空行,三个区块才能真正收紧;提示换行由 .modal-tip 单独保留。 */
 }
 /* 弹窗底部留白归零(仅本弹窗);顶部 header 恢复默认 11px 上下,避免标题贴边太紧凑。 */
 #settingsModal .modal-foot {
@@ -609,6 +611,7 @@ h1 {
 #settingsModal .modal-tip {
     text-align: left;
     padding: 0 2px;
+    white-space: pre-line;  /* 单独保留提示文案的换行(本弹窗的 pre-line 已在 modal-body 关闭)。 */
 }
 #settingsModal .modal-tip.ok {
     color: var(--accent);
