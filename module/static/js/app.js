@@ -1517,6 +1517,31 @@ async function applyConfig() {
         return;
     }
     try {
+        /* 冲突检测:lastSnapshot由后台每秒轮询刷新,settingsOriginal是打开弹窗时的基准。
+           本次要提交的项若在别处被改过,提交会覆盖对方的改动,因此先让用户确认;
+           本次不提交的项即使被改过也不会被覆盖,所以只检查真正要改的那些项。 */
+        var conflictParts = [];
+        if (dirChanged && lastSnapshot && settingsOriginal
+            && (lastSnapshot.save_directory || '') !== settingsOriginal.save_directory) {
+            conflictParts.push('保存目录');
+        }
+        if (tasksChanged && lastSnapshot && lastSnapshot.max_tasks && settingsOriginal
+            && (lastSnapshot.max_tasks.download !== settingsOriginal.max_tasks.download
+                || lastSnapshot.max_tasks.upload !== settingsOriginal.max_tasks.upload)) {
+            conflictParts.push('并发数');
+        }
+        if (retriesChanged && lastSnapshot && lastSnapshot.max_retries && settingsOriginal
+            && (lastSnapshot.max_retries.download !== settingsOriginal.max_retries.download
+                || lastSnapshot.max_retries.upload !== settingsOriginal.max_retries.upload)) {
+            conflictParts.push('重试次数');
+        }
+        if (conflictParts.length) {
+            var goon = await askConfirm(
+                conflictParts.join('、') + '已在别处被修改，应用将覆盖该改动，是否继续？', '修改配置');
+            if (!goon) {
+                return;
+            }
+        }
         /* 多项改动合并成一次请求:分开请求会让后端写多次配置文件,且其中一项失败时已经写入的
            项无法回退(部分生效)。合并后由后端统一校验、只落盘一次,要么全部生效要么一个都不改。
            三个配置路径在后端已等价,这里沿用save_directory路径作为统一入口。 */
