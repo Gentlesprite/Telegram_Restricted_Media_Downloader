@@ -344,6 +344,7 @@ h1 {
 .menu-item {
     display: block;
     width: 100%;
+    margin: 0;  /* 清除 <button> 的默认外边距,否则与 <a> 菜单项垂直间距不一致导致不对齐。 */
     padding: 8px 10px;
     border: none;  /* 清除 <button> 的默认边框(菜单里也用 button 元素)。 */
     border-radius: 8px;
@@ -534,6 +535,36 @@ h1 {
 .login-input:focus {
     outline: none;
     border-color: var(--accent);
+}
+
+/* 保存目录弹窗:标签独占一行作为标题,输入框占满宽度便于填写长路径。 */
+#settingsModal .login-label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text);  /* 标题用主文本色,避免沿用登录标签的灰暗色显得不协调。 */
+    font-size: 13px;
+}
+#settingsModal .login-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+/* 聚焦(正在输入)时叠加毛玻璃模糊并稍加深背景:既保留默认透明玻璃感,又让输入框边界清晰可辨。 */
+#settingsModal .login-input:focus {
+    background: rgba(0, 0, 0, .32);
+    border-color: var(--accent);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+/* 输入框下方的状态反馈:左对齐,并区分成功/失败配色。 */
+#settingsModal .modal-tip {
+    text-align: left;
+    padding: 8px 2px 0;
+}
+#settingsModal .modal-tip.ok {
+    color: var(--accent);
+}
+#settingsModal .modal-tip.err {
+    color: var(--danger);
 }
 
 /* 30天内免登录 */

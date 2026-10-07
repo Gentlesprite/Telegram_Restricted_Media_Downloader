@@ -33,6 +33,7 @@
                     <a class="menu-item" id="linkGithub" href="#" target="_blank" rel="noopener" hidden>📦GitHub</a>
                     <a class="menu-item" id="linkChannel" href="#" target="_blank" rel="noopener" hidden>📌订阅频道</a>
                     <a class="menu-item" id="linkVideo" href="#" target="_blank" rel="noopener" hidden>🎬视频教程</a>
+                    <button class="menu-item" id="btnSettings" type="button">📁保存目录</button>
                     <button class="menu-item" id="btnLogout" type="button" hidden>🚪退出登录</button>
                 </div>
             </div>
@@ -195,6 +196,23 @@
                 <span>30天内免登录</span>
             </label>
             <button class="modal-btn login-submit" id="loginSubmit" type="button">登录</button>
+        </div>
+    </div>
+</div>
+<div class="modal-mask" id="settingsModal" hidden>
+    <div class="modal-card">
+        <div class="modal-head">
+            <span class="modal-title">保存目录设置</span>
+            <button class="modal-close" id="settingsClose" type="button" title="关闭">✖</button>
+        </div>
+        <div class="modal-body">
+            <label class="login-label" for="saveDirInput">媒体保存目录（支持通配符）</label>
+            <input class="login-input" id="saveDirInput" type="text" placeholder="如 F:\media 或 /app/downloads/%CHAT_NAME%" autocomplete="off">
+            <div class="modal-tip" id="saveDirTip"></div>
+        </div>
+        <div class="modal-foot">
+            <button class="modal-btn" id="saveDirCancel" type="button">取消</button>
+            <button class="modal-btn danger" id="saveDirApply" type="button">应用</button>
         </div>
     </div>
 </div>

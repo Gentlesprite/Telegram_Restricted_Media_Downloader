@@ -80,6 +80,7 @@ var lastUploadCollapsed = false;  // 上传页频道层最后的手动选择,缺
 var UNGROUPED_NAME = '未分组';
 var currentSection = 'download';
 var currentListen = 'forward';
+var lastSnapshot = null;  // 缓存最近一次进度快照,供设置弹窗回填当前保存目录。
 var lastDownloadActive = 0;
 var lastUploadActive = 0;
 var lastListenCount = 0;
@@ -1344,7 +1345,9 @@ async function refresh(force) {
             return;
         }
         document.body.classList.remove('logged-out');  // 认证通过,显示页面内容。
-        render(await res.json(), force);
+        var json = await res.json();
+        lastSnapshot = json;  // 缓存最新快照,供设置弹窗回填保存目录。
+        render(json, force);
         refreshNameTip();  // 列表重绘后按当前鼠标位置重新定位提示。
         document.getElementById('offline').style.display = 'none';
     } catch (e) {
@@ -1389,15 +1392,86 @@ function closeSupport() {
     document.getElementById('supportModal').hidden = true;
 }
 
-function supportMaskClick(event) {
-    if (event.target === this) {  // 点击遮罩空白处关闭弹窗。
+function supportEscape(event) {
+    if (event.key === 'Escape' && !document.getElementById('supportModal').hidden) {
         closeSupport();
     }
 }
 
-function supportEscape(event) {
-    if (event.key === 'Escape' && !document.getElementById('supportModal').hidden) {
-        closeSupport();
+function initSettings() {
+    var btn = document.getElementById('btnSettings');
+    if (btn) {
+        btn.onclick = openSettings;
+    }
+    var close = document.getElementById('settingsClose');
+    if (close) {
+        close.onclick = closeSettings;
+    }
+    var cancel = document.getElementById('saveDirCancel');
+    if (cancel) {
+        cancel.onclick = closeSettings;
+    }
+    var apply = document.getElementById('saveDirApply');
+    if (apply) {
+        apply.onclick = applySaveDirectory;
+    }
+    document.addEventListener('keydown', settingsEscape);  // ESC 关闭弹窗(不再响应遮罩点击关闭)。
+}
+
+function openSettings() {
+    setMenuOpen(false);  // 先收起顶部菜单,避免与设置弹窗叠加。
+    var modal = document.getElementById('settingsModal');
+    var input = document.getElementById('saveDirInput');
+    if (lastSnapshot && lastSnapshot.save_directory) {
+        input.value = lastSnapshot.save_directory;
+    }
+    var tip = document.getElementById('saveDirTip');
+    tip.textContent = '';
+    tip.classList.remove('ok', 'err');
+    modal.hidden = false;
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').hidden = true;
+}
+
+function settingsEscape(event) {
+    if (event.key === 'Escape' && !document.getElementById('settingsModal').hidden) {
+        closeSettings();
+    }
+}
+
+async function applySaveDirectory() {
+    var input = document.getElementById('saveDirInput');
+    var tip = document.getElementById('saveDirTip');
+    var path = (input.value || '').trim();
+    if (!path) {
+        tip.textContent = '保存目录不能为空。';
+        return;
+    }
+    try {
+        var res = await fetch('/api/config/save_directory', {
+            method: 'POST',
+            headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
+            body: JSON.stringify({path: path})
+        });
+        var data = await res.json();
+        if (data.status) {
+            tip.textContent = '已更新保存目录,后续下载将保存到新目录。';
+            tip.classList.remove('err');
+            tip.classList.add('ok');
+            if (lastSnapshot) {
+                lastSnapshot.save_directory = path;
+            }
+        } else {
+            tip.textContent = data.e_code || '更新失败。';
+            tip.classList.remove('ok');
+            tip.classList.add('err');
+        }
+    } catch (e) {
+        tip.textContent = '请求失败：' + e;
+        tip.classList.remove('ok');
+        tip.classList.add('err');
     }
 }
 
@@ -1446,7 +1520,6 @@ function isFirstLogin() {
 function bindSupport() {
     document.getElementById('supportBtn').onclick = openSupport;
     document.getElementById('supportClose').onclick = closeSupport;
-    document.getElementById('supportModal').onclick = supportMaskClick;
     document.addEventListener('keydown', supportEscape);
     if (isFirstLogin()) {
         openSupport();
@@ -2124,6 +2197,7 @@ initLogout();
 bindStatFilter();
 bindSupport();
 bindMenu();
+initSettings();
 initVersion();
 applyBotVisibility();  // 未配置机器人时隐藏整个侧边栏,随后switchSection会强制锁定到下载页。
 switchSection(savedSection);

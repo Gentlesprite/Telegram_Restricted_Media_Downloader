@@ -53,7 +53,8 @@ from module.enums import (
     WebMeta,
     KeyWord,
     UploadStatus,
-    DownloadStatus
+    DownloadStatus,
+    SaveDirectoryPrefix
 )
 
 
@@ -97,6 +98,8 @@ class WebHandler(BaseHTTPRequestHandler):
             return
         if self.path.startswith('/api/listener/remove'):
             self.__response_remove_listener()
+        elif self.path.startswith('/api/config/save_directory'):
+            self.__response_set_save_directory()
         else:
             self.send_error(404)
 
@@ -258,6 +261,19 @@ class WebHandler(BaseHTTPRequestHandler):
                 kind=str(payload.get('kind') or ''),
                 link=str(payload.get('link') or '')
             )
+        self.__response_body(
+            body=json.dumps(body, ensure_ascii=False).encode('UTF-8'),
+            content_type='application/json; charset=utf-8'
+        )
+
+    def __response_set_save_directory(self) -> None:
+        """处理网页面板修改保存目录的请求。"""
+        web: Union[Web, None] = getattr(self.server, 'web', None)
+        payload: dict = self.__read_json()
+        if web is None:
+            body: dict = {'status': False, 'e_code': '网页面板未就绪。'}
+        else:
+            body: dict = web.set_save_directory(path=str(payload.get('path') or ''))
         self.__response_body(
             body=json.dumps(body, ensure_ascii=False).encode('UTF-8'),
             content_type='application/json; charset=utf-8'
@@ -598,6 +614,40 @@ class Web:
             log.debug(f'移除监听失败,{_t(KeyWord.REASON)}:"{e}"')
             return {'status': False, 'e_code': '移除监听超时,请稍后重试。'}
 
+    def set_save_directory(self, path: str) -> dict:
+        """按网页面板的请求修改媒体保存目录并持久化。
+
+        校验在后台HTTP线程中执行,不能复用 Validator.is_valid_save_directory
+        (其内部会 console.input 交互询问,在Web线程中会导致阻塞),
+        因此此处采用非交互校验:剥离通配符占位符后判断目录,不存在则直接创建。
+
+        Args:
+            path: 新的保存目录,允许包含通配符占位符。
+
+        Returns:
+            dict: status为是否成功,失败时e_code为失败原因。
+        """
+        if not path:
+            return {'status': False, 'e_code': '保存目录不能为空。'}
+        if self.app is None:
+            return {'status': False, 'e_code': '配置未加载,无法修改保存目录。'}
+        clean_path: str = path
+        for placeholder in SaveDirectoryPrefix():
+            if placeholder in clean_path:
+                clean_path = clean_path.replace(placeholder, '')
+        clean_path = os.path.normpath(clean_path)
+        try:
+            if not os.path.isdir(clean_path):
+                os.makedirs(clean_path, exist_ok=True)
+        except Exception as e:
+            return {'status': False, 'e_code': f'目录无效或无法创建,{_t(KeyWord.REASON)}:"{e}"'}
+        if not os.path.isdir(clean_path):
+            return {'status': False, 'e_code': '保存目录不是一个有效的目录。'}
+        self.app.save_directory = path
+        self.app.config['save_directory'] = path
+        self.app.save_config(self.app.config)
+        return {'status': True}
+
     def get_upload_tasks(self, tasks: Union[list, None] = None) -> list:
         """获取上传任务的概要信息,并按进度条任务ID补全上传进度。"""
         result: list = []
@@ -729,7 +779,8 @@ class Web:
                 'links': links,
                 'uploads': uploads,
                 'listeners': self.get_listeners(),
-                'outer_links': self.get_outer_links()  # 顶栏菜单使用的外部链接。
+                'outer_links': self.get_outer_links(),  # 顶栏菜单使用的外部链接。
+                'save_directory': self.app.save_directory if self.app else ''
             }
         except Exception as e:
             log.debug(f'生成进度数据时出错,{_t(KeyWord.REASON)}:"{e}"')
@@ -741,5 +792,6 @@ class Web:
                 'links': [],
                 'uploads': [],
                 'listeners': {'download': [], 'forward': []},
-                'outer_links': self.get_outer_links()
+                'outer_links': self.get_outer_links(),
+                'save_directory': self.app.save_directory if self.app else ''
             }
