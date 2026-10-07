@@ -80,6 +80,15 @@ class TelegramUploader:
     def max_upload_retries(self) -> int:
         return self.app.max_upload_retries
 
+    def notify_waiters(self) -> None:
+        """通知排队等待上传名额的任务重新检查并发上限。
+
+        上传任务用event.wait()阻塞等待名额,该事件只在一次上传结束(成功或失败)时被set;
+        网页面板修改上传并发后调用本方法,让队列中已排队的任务立刻按新的上限重新判断,
+        而不必等到下次上传结束或新命令进来才开始。
+        """
+        self.event.set()
+
     async def resume_upload(
             self,
             upload_task: UploadTask,

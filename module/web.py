@@ -720,12 +720,11 @@ class Web:
         uploader = getattr(self.downloader, 'uploader', None)
         if uploader is None:
             return
-        loop: Union[AbstractEventLoop, None] = getattr(self.downloader, 'loop', None)
+        loop = getattr(self.downloader, 'loop', None)
+        if loop is None or not loop.is_running():
+            return  # 没有运行中的事件循环就不会有任务在等待,且跨线程操作asyncio对象并不安全。
         try:
-            if loop is not None and hasattr(loop, 'call_soon_threadsafe'):
-                loop.call_soon_threadsafe(uploader.event.set)
-            else:
-                uploader.event.set()
+            loop.call_soon_threadsafe(lambda: uploader.notify_waiters())
         except Exception as e:
             log.warning(f'唤醒排队上传任务失败,原因:"{e}"')
 
