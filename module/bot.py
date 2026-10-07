@@ -139,7 +139,7 @@ class Bot:
             chat_id,
             callback_query: CallbackQuery,
             callback_prompt: Callable,
-            enable: bool,
+            enable: bool
     ):
         """添加或移除关键词输入模式的handler。"""
         if enable:
