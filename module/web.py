@@ -282,7 +282,8 @@ class WebHandler(BaseHTTPRequestHandler):
             body: dict = web.set_config(
                 directory=payload.get('save_directory'),
                 max_tasks=payload.get('max_tasks'),
-                max_retries=payload.get('max_retries')
+                max_retries=payload.get('max_retries'),
+                confirm_directory=bool(payload.get('confirm_directory'))
             )
         self.__response_body(
             body=json.dumps(body, ensure_ascii=False).encode('UTF-8'),
@@ -655,20 +656,23 @@ class Web:
         return result
 
     @staticmethod
-    def __check_save_directory(path: str) -> Union[str, None]:
+    def __check_save_directory(path: str, allow_create: bool = True) -> dict:
         """非交互地校验保存目录。
 
         Validator.is_valid_save_directory内部会console.input交互询问,在Web线程中会阻塞,因此此处
-        采用非交互校验:剥离通配符占位符后判断目录,不存在则直接创建。
+        采用非交互校验:剥离通配符占位符后判断目录,不存在时按allow_create决定是否直接创建。
 
         Args:
             path: 新的保存目录,允许包含通配符占位符。
+            allow_create: 目录不存在时是否直接创建;False时不创建,并在结果中标记need_confirm,
+                由网页面板先向用户二次确认,避免静默创建拼错的目录。
 
         Returns:
-            Union[str, None]: 校验不通过时的失败原因;通过时为None。
+            dict: status为校验是否通过;不通过时e_code为失败原因;
+                need_confirm为True表示目录不存在且尚未创建。
         """
         if not path:
-            return '保存目录不能为空'
+            return {'status': False, 'e_code': '保存目录不能为空'}
         clean_path: str = path
         for placeholder in SaveDirectoryPrefix():
             if placeholder in clean_path:
@@ -677,15 +681,18 @@ class Web:
         drive, tail = os.path.splitdrive(clean_path)
         invalid: list = [c for c in '<>:"|?*' if c in tail]
         if invalid:
-            return f'路径包含非法字符：{"、".join(sorted(set(invalid)))}'
+            return {'status': False, 'e_code': f'路径包含非法字符：{"、".join(sorted(set(invalid)))}'}
+        if os.path.isdir(clean_path):
+            return {'status': True}
+        if not allow_create:
+            return {'status': False, 'need_confirm': True}  # 目录不存在,交由网页面板二次确认后再创建。
         try:
-            if not os.path.isdir(clean_path):
-                os.makedirs(clean_path, exist_ok=True)
+            os.makedirs(clean_path, exist_ok=True)
         except Exception as e:
-            return f'目录无效或无法创建,{_t(KeyWord.REASON)}:"{e}"'
+            return {'status': False, 'e_code': f'目录无效或无法创建,{_t(KeyWord.REASON)}:"{e}"'}
         if not os.path.isdir(clean_path):
-            return '保存目录不是一个有效的目录'
-        return None
+            return {'status': False, 'e_code': '保存目录不是一个有效的目录'}
+        return {'status': True}
 
     def __adjust_client_semaphores(self, download: int, upload: int) -> None:
         """按新的并发数调整客户端传输信号量的额度。
@@ -732,7 +739,7 @@ class Web:
         except Exception as e:
             log.warning(f'唤醒排队上传任务失败,原因:"{e}"')
 
-    def set_config(self, directory=None, max_tasks=None, max_retries=None) -> dict:
+    def set_config(self, directory=None, max_tasks=None, max_retries=None, confirm_directory: bool = False) -> dict:
         """按网页面板的请求一次性修改多项配置,并只落盘一次。
 
         保存目录、并发数、重试次数原本各走一次save_config:同时改动会写三次盘,且其中一项失败时
@@ -743,9 +750,11 @@ class Web:
             directory: 新的保存目录;None表示本次不修改。
             max_tasks: 形如{'download': int, 'upload': int}的并发数;None表示本次不修改。
             max_retries: 形如{'download': int, 'upload': int}的重试次数;None表示本次不修改。
+            confirm_directory: 目录不存在时是否已确认创建(False则先返回need_confirm由前端二次确认)。
 
         Returns:
-            dict: status为是否成功,失败时e_code为失败原因(多项问题时以全角分号分隔)。
+            dict: status为是否成功,失败时e_code为失败原因(多项问题时以全角分号分隔);
+                目录待确认时额外返回need_confirm为True。
         """
         if self.app is None:
             return {'status': False, 'e_code': '配置未加载，无法修改'}  # 末尾句号由前端统一补。
@@ -753,9 +762,12 @@ class Web:
         tasks = self.__check_number_pair(max_tasks, 1, 10, '并发数', '必须为1到10之间的整数', error_parts)
         retries = self.__check_number_pair(max_retries, 1, None, '重试次数', '必须大于0', error_parts)
         if directory is not None:
-            reason: Union[str, None] = self.__check_save_directory(directory)
-            if reason is not None:
-                error_parts.append(reason)
+            checked: dict = self.__check_save_directory(directory, allow_create=confirm_directory)
+            if checked.get('need_confirm'):
+                # 目录不存在且用户尚未确认:此时不落盘、不创建,交回前端二次确认后再提交。
+                return {'status': False, 'need_confirm': True, 'e_code': f'目录"{directory}"不存在，是否创建'}
+            if not checked.get('status'):
+                error_parts.append(checked.get('e_code') or '保存目录无效')
         if error_parts:
             return {'status': False, 'e_code': '；'.join(error_parts)}
         if directory is not None:

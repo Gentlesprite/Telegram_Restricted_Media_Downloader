@@ -1536,6 +1536,21 @@ async function applyConfig() {
             body: JSON.stringify(payload)
         });
         var data = await res.json();
+        /* 保存目录不存在时后端不创建、不落盘,先回来请求二次确认:
+           取消则什么都不改;确定则带confirm_directory重新提交,由后端创建目录再保存。 */
+        if (data.need_confirm) {
+            var ok = await askConfirm((data.e_code || '目录不存在，是否创建') + '。', '修改配置');
+            if (!ok) {
+                return;
+            }
+            payload.confirm_directory = true;
+            res = await fetch('/api/config/save_directory', {
+                method: 'POST',
+                headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
+                body: JSON.stringify(payload)
+            });
+            data = await res.json();
+        }
         if (!data.status) {
             await askAlert((data.e_code || '配置更新失败') + '。', '修改配置');
             return;
