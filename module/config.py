@@ -580,12 +580,13 @@ class UserConfig(BaseConfig):
                 os.replace(temp_path, self.config_path)  # 同一目录内的替换是原子操作。
             except Exception as e:
                 log.error(f'保存配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
+                return False
+            finally:
                 try:
                     if os.path.exists(temp_path):
                         os.remove(temp_path)
                 except Exception:  # noqa.
                     pass
-                return False
         log.info('配置文件已保存。')
         return True
 
