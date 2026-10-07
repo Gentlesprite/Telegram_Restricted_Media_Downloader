@@ -1416,6 +1416,19 @@ function initSettings() {
         apply.onclick = applyConfig;
     }
     document.addEventListener('keydown', settingsEscape);  // ESC 关闭弹窗(不再响应遮罩点击关闭)。
+    // 修改配置时每输入一个字符也推进背景涂鸦渐变,与登录框一致(复用官方推进逻辑)。
+    var cfgAdvance = function () {
+        if (!bgCtx) {
+            return;  // 渐变背景未初始化成功时跳过。
+        }
+        bgAdvancePosition();
+    };
+    ['saveDirInput', 'maxDownload', 'maxUpload', 'maxRetryDownload', 'maxRetryUpload'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', cfgAdvance);
+        }
+    });
 }
 
 function openSettings() {
