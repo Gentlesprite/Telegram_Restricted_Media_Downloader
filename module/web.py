@@ -14,8 +14,8 @@ import mimetypes
 import threading
 
 from typing import Union
-from asyncio import AbstractEventLoop
 from urllib.parse import unquote
+from asyncio import AbstractEventLoop
 from http.server import (
     ThreadingHTTPServer,
     BaseHTTPRequestHandler
@@ -683,8 +683,11 @@ class Web:
             return '保存目录不是一个有效的目录'
         return None
 
-    def __rebuild_client_semaphores(self, download: int, upload: int) -> None:
-        """按新的并发数重建客户端的传输信号量,使改动对后续传输立即生效。
+    def __adjust_client_semaphores(self, download: int, upload: int) -> None:
+        """按新的并发数调整客户端传输信号量的额度。
+
+        只调整额度而不是新建信号量:新建会丢弃正在传输所占用的名额,导致"旧的活跃数 + 新的额度"
+        叠加超限。调整额度时正在进行的传输仍在同一个闸门内,降低并发后新的传输会排队等待。
 
         Args:
             download: 最大下载并发数。
@@ -696,14 +699,14 @@ class Web:
         try:
             loop = getattr(client, 'loop', None)
 
-            def rebuild() -> None:
-                client.get_file_semaphore = asyncio.Semaphore(download)
-                client.save_file_semaphore = asyncio.Semaphore(upload)
+            def adjust() -> None:
+                client.get_file_semaphore.set_limit(download)
+                client.save_file_semaphore.set_limit(upload)
 
             if loop is not None and hasattr(loop, 'call_soon_threadsafe'):
-                loop.call_soon_threadsafe(rebuild)
+                loop.call_soon_threadsafe(adjust)
             else:
-                rebuild()
+                adjust()
         except Exception as e:
             log.warning(f'实时更新并发信号量失败,原因:"{e}"')
 
@@ -745,7 +748,7 @@ class Web:
         if tasks is not None:
             self.app.max_download_task = tasks['download']
             self.app.max_upload_task = tasks['upload']
-            self.__rebuild_client_semaphores(tasks['download'], tasks['upload'])
+            self.__adjust_client_semaphores(tasks['download'], tasks['upload'])
         if retries is not None:
             self.app.max_download_retries = retries['download']
             self.app.max_upload_retries = retries['upload']

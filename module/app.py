@@ -24,7 +24,7 @@ from module import (
 )
 from module.language import _t
 from module.config import UserConfig
-from module.util import get_message_dtype
+from module.util import get_message_dtype, AdjustableSemaphore
 from module.stdio import StatisticalTable
 from module.client import TelegramRestrictedMediaDownloaderClient
 
@@ -66,8 +66,9 @@ class Application(UserConfig, StatisticalTable):
             app_version=Application.APP_VERSION,
             device_model=Application.DEVICE_MODEL
         )
-        client.get_file_semaphore = asyncio.Semaphore(self.max_download_task)
-        client.save_file_semaphore = asyncio.Semaphore(self.max_upload_task)
+        # 用容量可调的信号量:网页面板修改并发数时只调整额度,不会丢弃正在传输所占用的名额。
+        client.get_file_semaphore = AdjustableSemaphore(self.max_download_task)
+        client.save_file_semaphore = AdjustableSemaphore(self.max_upload_task)
         return client
 
     def process_shutdown(self, second: int) -> None:

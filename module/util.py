@@ -14,6 +14,8 @@ import asyncio
 import logging
 import subprocess
 
+from collections import deque
+
 from typing import (
     Tuple,
     List,
@@ -677,6 +679,73 @@ class LimitCall:  # https://github.com/tangyoha/telegram_media_downloader/blob/m
                 )
 
             await asyncio.sleep(1)
+
+
+class AdjustableSemaphore:
+    """容量可动态调整的传输信号量(替代每次修改都新建一个asyncio.Semaphore)。
+
+    网页面板修改并发数时,若新建一个asyncio.Semaphore替换到客户端上,正在进行的传输仍占用旧对象
+    的名额,而新对象又带着满额放行新的传输,瞬时并发会叠加成"正在传输的数量 + 新的额度",可能超过
+    用户设置的上限。这里改为始终复用同一个对象:下调并发后剩余额度为负,新的传输排队等待,直到
+    活跃数量回落到限额以内才放行,因此既不会超限,也不存在新旧并存。
+
+    仅实现pyrogram与本项目实际用到的接口(acquire/release与async with)。
+    """
+
+    def __init__(self, limit: int):
+        self._limit: int = max(0, int(limit))
+        self._held: int = 0  # 已放行且尚未归还的数量(即当前活跃的传输数)。
+        self._waiters: deque = deque()
+
+    @property
+    def limit(self) -> int:
+        """当前的并发上限。"""
+        return self._limit
+
+    async def acquire(self) -> bool:
+        """占用一个名额;额度不足时排队等待。"""
+        # 被唤醒后重新校验:名额可能已被其它等待者占满,此时需要继续排队。
+        while self._limit <= 0 or self._held >= self._limit:
+            waiter = asyncio.get_running_loop().create_future()
+            self._waiters.append(waiter)
+            try:
+                await waiter
+            except BaseException:
+                if not waiter.done():
+                    waiter.cancel()
+                try:
+                    self._waiters.remove(waiter)
+                except ValueError:
+                    pass
+                raise
+        self._held += 1
+        return True
+
+    def release(self) -> None:
+        """归还一个名额,并尝试放行等待中的传输。"""
+        if self._held > 0:
+            self._held -= 1
+        self.__wake_up_next()
+
+    def set_limit(self, limit: int) -> None:
+        """调整并发上限:提高时放行等待者;降低时新的传输需等活跃数量回落。"""
+        self._limit = max(0, int(limit))
+        self.__wake_up_next()
+
+    def __wake_up_next(self) -> None:
+        """按剩余名额逐个唤醒等待者;多唤醒的等待者会自行继续等待。"""
+        while self._waiters and self._limit - self._held > 0:
+            waiter = self._waiters.popleft()
+            if not waiter.done():
+                waiter.set_result(True)
+
+    async def __aenter__(self) -> 'AdjustableSemaphore':
+        await self.acquire()
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb) -> bool:
+        self.release()
+        return False
 
 
 class Issues:
