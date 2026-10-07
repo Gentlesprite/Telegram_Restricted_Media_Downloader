@@ -79,7 +79,7 @@ SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
 __version__ = '2.1.0'
 __license__ = 'GPL-3.0-or-later'
-__update_date__ = '2026/10/06 12:51:07'
+__update_date__ = '2026/10/07 15:51:39'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/{AUTHOR}>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
@@ -145,6 +145,9 @@ logging.basicConfig(
         file_handler  # 文件:INFO+
     ]
 )
+logging.getLogger('pyrogram.session').setLevel(logging.WARNING)
+logging.getLogger('pyrogram.connection').setLevel(logging.WARNING)
+logging.getLogger('pyrogram.dispatcher').setLevel(logging.WARNING)
 log = logging.getLogger('rich')
 
 
