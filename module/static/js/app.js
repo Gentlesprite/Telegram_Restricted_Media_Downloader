@@ -1564,6 +1564,13 @@ async function applyConfig() {
         if (retriesChanged && lastSnapshot) {
             lastSnapshot.max_retries = {download: maxRetries.download, upload: maxRetries.upload};
         }
+        /* 保存成功后刷新改动比对基准:否则窗口不关闭时再次点应用,仍会拿旧值比对出"有改动",
+           导致重复提交、重复写盘(后台反复提示配置文件已保存)。 */
+        settingsOriginal = {
+            save_directory: path,
+            max_tasks: {download: maxTasks.download, upload: maxTasks.upload},
+            max_retries: {download: maxRetries.download, upload: maxRetries.upload}
+        };
         await askAlert('配置已生效。', '修改配置');
     } catch (e) {
         await askAlert('请求失败：' + e + '。', '修改配置');
