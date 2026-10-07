@@ -1498,7 +1498,7 @@ async function applyConfig() {
         });
         var d3 = await r3.json();
         if (d1.status && d2.status && d3.status) {
-            tip.textContent = '配置已保存,并发与重试参数均已实时生效。';
+            tip.textContent = '配置已生效。';
             tip.classList.remove('err');
             tip.classList.add('ok');
             if (lastSnapshot) {
@@ -1508,9 +1508,9 @@ async function applyConfig() {
             }
         } else {
             var msg = [
-                !d1.status && (d1.e_code || '保存目录更新失败'),
-                !d2.status && (d2.e_code || '并发数更新失败'),
-                !d3.status && (d3.e_code || '重试次数更新失败')
+                !d1.status && (d1.e_code || '保存目录更新失败。'),
+                !d2.status && (d2.e_code || '并发数更新失败。'),
+                !d3.status && (d3.e_code || '重试次数更新失败。')
             ].filter(Boolean).join('；');
             tip.textContent = msg || '保存失败。';
             tip.classList.remove('ok');
