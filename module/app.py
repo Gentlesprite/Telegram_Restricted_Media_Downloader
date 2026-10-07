@@ -5,6 +5,7 @@
 # File:app.py
 import os
 import time
+import asyncio
 import datetime
 import subprocess
 
@@ -55,19 +56,19 @@ class Application(UserConfig, StatisticalTable):
     def build_client(self) -> pyrogram.Client:
         """用填写的配置文件,构造pyrogram客户端。"""
         os.makedirs(self.work_directory, exist_ok=True)
-        return TelegramRestrictedMediaDownloaderClient(
+        client = TelegramRestrictedMediaDownloaderClient(
             name=SOFTWARE_FULL_NAME.replace(' ', ''),
             api_id=self.api_id,
             api_hash=self.api_hash,
             proxy=self.proxy if self.enable_proxy else None,
             workdir=self.work_directory,
-            max_concurrent_transmissions=self.max_download_task,
             sleep_threshold=SLEEP_THRESHOLD,
             app_version=Application.APP_VERSION,
             device_model=Application.DEVICE_MODEL
         )
-        # v1.3.7 新增多任务下载功能,无论是否Telegram会员。
-        # https://stackoverflow.com/questions/76714896/pyrogram-download-multiple-files-at-the-same-time
+        client.get_file_semaphore = asyncio.Semaphore(self.max_download_task)
+        client.save_file_semaphore = asyncio.Semaphore(self.max_upload_task)
+        return client
 
     def process_shutdown(self, second: int) -> None:
         """处理关机逻辑。"""

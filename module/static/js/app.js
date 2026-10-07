@@ -1484,7 +1484,7 @@ async function applyConfig() {
         });
         var d3 = await r3.json();
         if (d1.status && d2.status && d3.status) {
-            tip.textContent = '配置已保存,并发参数已实时生效,重试参数重启后完全生效。';
+            tip.textContent = '配置已保存,并发与重试参数均已实时生效。';
             tip.classList.remove('err');
             tip.classList.add('ok');
             if (lastSnapshot) {

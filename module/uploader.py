@@ -69,14 +69,16 @@ class TelegramUploader:
         self.pb: ProgressBar = download_object.pb
         self.is_premium: bool = self.client.me.is_premium
         self.current_task_num: int = 0
-        self.max_upload_task: int = self.app.max_upload_task
-        self.max_upload_retries: int = self.app.max_upload_retries
         self.is_bot_running = download_object.is_bot_running
         self.upload_queue: asyncio.Queue = asyncio.Queue()
         self.valid_link_cache = {}
         UploadTask.NOTIFY = download_object.done_notice
         UploadTask.DIRECTORY_NAME = os.path.join(UploadTask.DIRECTORY_NAME, str(download_object.my_id))
         asyncio.create_task(self.send_media_worker())
+
+    @property
+    def max_upload_retries(self) -> int:
+        return self.app.max_upload_retries
 
     async def resume_upload(
             self,
@@ -575,7 +577,7 @@ class TelegramUploader:
             'success': False
         }
         file_size = upload_task.file_size
-        while self.current_task_num >= self.max_upload_task:  # v1.0.7 增加下载任务数限制。
+        while self.current_task_num >= self.app.max_upload_task:  # v1.0.7 增加上传任务数限制。
             await self.event.wait()
             self.event.clear()
         upload_task.status = UploadStatus.UPLOADING
