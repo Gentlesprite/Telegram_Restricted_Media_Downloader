@@ -343,9 +343,11 @@ h1 {
 
 .menu-item {
     display: block;
+    box-sizing: border-box;  /* 避免 width:100% 叠加 padding 超出下拉框导致水平错位。 */
     width: 100%;
     margin: 0;  /* 清除 <button> 的默认外边距,否则与 <a> 菜单项垂直间距不一致导致不对齐。 */
     padding: 8px 10px;
+    line-height: 1.5;  /* 统一 <a> 与 <button> 的行高,避免文字垂直基线错位。 */
     border: none;  /* 清除 <button> 的默认边框(菜单里也用 button 元素)。 */
     border-radius: 8px;
     background: transparent;  /* 清除 <button> 的默认底色,否则在深色菜单里出现反色。 */
