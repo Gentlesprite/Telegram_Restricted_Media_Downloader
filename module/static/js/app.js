@@ -1550,7 +1550,6 @@ async function applyConfig() {
             lastSnapshot.max_retries = {download: maxRetries.download, upload: maxRetries.upload};
         }
         await askAlert('配置已生效。', '修改配置');
-        closeSettings();
     } catch (e) {
         await askAlert('请求失败：' + e + '。', '修改配置');
     }
