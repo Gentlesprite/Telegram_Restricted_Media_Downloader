@@ -6,6 +6,7 @@
 import os
 import logging
 import datetime
+import threading
 
 from typing import Union
 
@@ -136,6 +137,7 @@ class BaseConfig:
 
 
 class UserConfig(BaseConfig):
+    CONFIG_LOCK: threading.Lock = threading.Lock()  # 串行化多线程与异步回调对同一份配置文件的写入。
     DIRECTORY_NAME: str = get_work_directory()  # 获取软件工作绝对目录。
     FILE_NAME: str = 'config.yaml'  # 配置文件名。
     PATH: str = os.path.join(DIRECTORY_NAME, FILE_NAME)
@@ -569,14 +571,23 @@ class UserConfig(BaseConfig):
             pre_load_config['temp_directory'] = PARSE_ARGS.temp
         self.save_config(pre_load_config)  # v1.3.0 修复不保存配置文件时,配置文件仍然保存的问题。
 
-    def save_config(self, config: dict) -> None:
-        """保存配置文件。"""
-        try:
-            with open(file=self.config_path, mode='w', encoding='UTF-8') as f:
-                yaml.dump(config, f)
-            log.info('配置文件已保存。')
-        except Exception as e:
-            log.error(f'保存配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
+    def save_config(self, config: dict) -> bool:
+        temp_path: str = f'{self.config_path}.temp'
+        with UserConfig.CONFIG_LOCK:  # 锁内只有同步文件IO(不含await、不调用其它加锁方法),不会死锁。
+            try:
+                with open(file=temp_path, mode='w', encoding='UTF-8') as f:
+                    yaml.dump(config, f)
+                os.replace(temp_path, self.config_path)  # 同一目录内的替换是原子操作。
+            except Exception as e:
+                log.error(f'保存配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
+                try:
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
+                except Exception:  # noqa.
+                    pass
+                return False
+        log.info('配置文件已保存。')
+        return True
 
 
 class GlobalConfig(BaseConfig):

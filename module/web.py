@@ -13,6 +13,8 @@ import asyncio
 import mimetypes
 import threading
 
+import copy
+
 from typing import Union
 from urllib.parse import unquote
 from asyncio import AbstractEventLoop
@@ -774,13 +776,16 @@ class Web:
         if need_confirm:
             # 其它项均合法,仅目录不存在:此时不落盘、不创建,交回前端二次确认后再提交。
             return {'status': False, 'need_confirm': True, 'e_code': f'目录"{directory}"不存在，是否创建'}
+        save_config: dict = copy.deepcopy(self.app.config)  # 先在副本上改动:落盘失败时原配置不受影响。
         if directory is not None:
-            self.app.config['save_directory'] = directory
+            save_config['save_directory'] = directory
         if tasks is not None:
-            self.app.config['max_tasks'] = tasks
+            save_config['max_tasks'] = tasks
         if retries is not None:
-            self.app.config['max_retries'] = retries
-        self.app.save_config(self.app.config)  # 多项改动合并后,整个请求只在这里写一次配置文件。
+            save_config['max_retries'] = retries
+        if not self.app.save_config(save_config):  # 多项改动合并后,整个请求只在这里写一次配置文件。
+            return {'status': False, 'e_code': '配置文件保存失败，请稍后重试'}  # 末尾句号由前端统一补。
+        self.app.config = save_config
         if directory is not None:
             self.app.save_directory = directory
         if tasks is not None:
