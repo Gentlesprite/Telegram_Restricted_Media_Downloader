@@ -759,17 +759,21 @@ class Web:
         if self.app is None:
             return {'status': False, 'e_code': '配置未加载，无法修改'}  # 末尾句号由前端统一补。
         error_parts: list = []
+        need_confirm: bool = False  # 目录不存在;待其它错误都排除后再请求前端二次确认。
         tasks = self.__check_number_pair(max_tasks, 1, 10, '并发数', '必须为1到10之间的整数', error_parts)
         retries = self.__check_number_pair(max_retries, 1, None, '重试次数', '必须大于0', error_parts)
         if directory is not None:
             checked: dict = self.__check_save_directory(directory, allow_create=confirm_directory)
             if checked.get('need_confirm'):
-                # 目录不存在且用户尚未确认:此时不落盘、不创建,交回前端二次确认后再提交。
-                return {'status': False, 'need_confirm': True, 'e_code': f'目录"{directory}"不存在，是否创建'}
-            if not checked.get('status'):
+                need_confirm = True  # 目录不存在不是错误,先不与其它错误一起返回。
+            elif not checked.get('status'):
                 error_parts.append(checked.get('e_code') or '保存目录无效')
         if error_parts:
+            # 存在不合法的项:先让用户改正,此时不提示创建目录(有一项不合法就一项都不改)。
             return {'status': False, 'e_code': '；'.join(error_parts)}
+        if need_confirm:
+            # 其它项均合法,仅目录不存在:此时不落盘、不创建,交回前端二次确认后再提交。
+            return {'status': False, 'need_confirm': True, 'e_code': f'目录"{directory}"不存在，是否创建'}
         if directory is not None:
             self.app.config['save_directory'] = directory
         if tasks is not None:
