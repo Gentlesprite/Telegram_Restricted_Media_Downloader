@@ -12,6 +12,7 @@ import string
 import random
 import asyncio
 import logging
+import datetime
 import subprocess
 
 from typing import (
@@ -181,7 +182,7 @@ async def get_message_by_link(
 
     # https://github.com/kurigram-org/kurigram/blob/main/pyrogram/methods/messages/get_messages.py#L207
     match = re.match(
-        r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/\d+)*/(\d+)/?$',
+        r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/\d+)*/(\d+)/?$',  # noqa.
         link.lower())
     if not match:
         raise ValueError('Invalid message link.')
@@ -554,9 +555,10 @@ def get_nuitka_version():
 
 
 def check_environment():
-    log.info(f'{SOFTWARE_SHORT_NAME}:{VERSION_SEMVER},更新日期:{__update_date__}。')
-    log.info(f'文件日志等级:"{logging.getLevelName(FILE_LOG_LEVEL)}"。')
-    log.info(f'终端日志等级:"{logging.getLevelName(CONSOLE_LOG_LEVEL)}"。')
+    log.info(
+        f'{SOFTWARE_SHORT_NAME}:{VERSION_SEMVER},更新日期:{__update_date__},运行日期:{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}。')
+    log.info(
+        f'文件日志等级:"{logging.getLevelName(FILE_LOG_LEVEL)}",终端日志等级:"{logging.getLevelName(CONSOLE_LOG_LEVEL)}"。')
     log.info(f'获取工作目录:"{get_work_directory()}"。')
     if is_nuitka():
         log.info(f'检测到"__compiled__",当前运行于"Nuitka"编译产物中,版本:{get_nuitka_version()}。')

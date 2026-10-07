@@ -79,7 +79,7 @@ SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
 __version__ = '2.1.0'
 __license__ = 'GPL-3.0-or-later'
-__update_date__ = '2026/10/07 16:28:27'
+__update_date__ = '2026-10-07 16:28:27'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/{AUTHOR}>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
@@ -248,4 +248,4 @@ save_directory: F:\directory\media\where\you\save # 下载的媒体保存的目�
 session_directory: F:\directory\session\where\you\save # 会话的保存目录（支持通配符）。
 temp_directory: F:\directory\temp\where\you\save # 缓存保存的目录（支持通配符）。
 ```
-'''
+'''  # noqa.
