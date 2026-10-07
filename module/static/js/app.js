@@ -1476,6 +1476,30 @@ function settingsEscape(event) {
     }
 }
 
+/* 冲突检测:lastSnapshot由后台每秒轮询刷新,settingsOriginal是打开弹窗时的基准。
+   本次要提交的项若在别处被改过,提交会覆盖对方的改动,因此返回冲突项列表供调用处确认;
+   本次不提交的项即使被改过也不会被覆盖,所以只检查真正要改的那些项。
+   抽成独立函数是为了在第一次提交前与二次确认后的第二次提交前各调用一次,避免确认框
+   停留期间后台被别处改动,却直接用旧值覆盖对方的改动。 */
+function checkConfigConflict(dirChanged, tasksChanged, retriesChanged, lastSnapshot, settingsOriginal) {
+    var conflictParts = [];
+    if (dirChanged && lastSnapshot && settingsOriginal
+        && (lastSnapshot.save_directory || '') !== settingsOriginal.save_directory) {
+        conflictParts.push('保存目录');
+    }
+    if (tasksChanged && lastSnapshot && lastSnapshot.max_tasks && settingsOriginal
+        && (lastSnapshot.max_tasks.download !== settingsOriginal.max_tasks.download
+            || lastSnapshot.max_tasks.upload !== settingsOriginal.max_tasks.upload)) {
+        conflictParts.push('并发数');
+    }
+    if (retriesChanged && lastSnapshot && lastSnapshot.max_retries && settingsOriginal
+        && (lastSnapshot.max_retries.download !== settingsOriginal.max_retries.download
+            || lastSnapshot.max_retries.upload !== settingsOriginal.max_retries.upload)) {
+        conflictParts.push('重试次数');
+    }
+    return conflictParts;
+}
+
 async function applyConfig() {
     var dirInput = document.getElementById('saveDirInput');
     var path = (dirInput.value || '').trim();
@@ -1517,24 +1541,9 @@ async function applyConfig() {
         return;
     }
     try {
-        /* 冲突检测:lastSnapshot由后台每秒轮询刷新,settingsOriginal是打开弹窗时的基准。
-           本次要提交的项若在别处被改过,提交会覆盖对方的改动,因此先让用户确认;
-           本次不提交的项即使被改过也不会被覆盖,所以只检查真正要改的那些项。 */
-        var conflictParts = [];
-        if (dirChanged && lastSnapshot && settingsOriginal
-            && (lastSnapshot.save_directory || '') !== settingsOriginal.save_directory) {
-            conflictParts.push('保存目录');
-        }
-        if (tasksChanged && lastSnapshot && lastSnapshot.max_tasks && settingsOriginal
-            && (lastSnapshot.max_tasks.download !== settingsOriginal.max_tasks.download
-                || lastSnapshot.max_tasks.upload !== settingsOriginal.max_tasks.upload)) {
-            conflictParts.push('并发数');
-        }
-        if (retriesChanged && lastSnapshot && lastSnapshot.max_retries && settingsOriginal
-            && (lastSnapshot.max_retries.download !== settingsOriginal.max_retries.download
-                || lastSnapshot.max_retries.upload !== settingsOriginal.max_retries.upload)) {
-            conflictParts.push('重试次数');
-        }
+        /* 提交前比对后台实时配置与打开弹窗时的基准:本次要提交的项若在别处被改过,
+           提交会覆盖对方的改动,因此先让用户确认;二次确认后的第二次提交前还会再比对一次。 */
+        var conflictParts = checkConfigConflict(dirChanged, tasksChanged, retriesChanged, lastSnapshot, settingsOriginal);
         if (conflictParts.length) {
             var goon = await askConfirm(
                 conflictParts.join('、') + '已在别处被修改，应用将覆盖该改动，是否继续？', '修改配置');
@@ -1567,6 +1576,15 @@ async function applyConfig() {
             var ok = await askConfirm((data.e_code || '目录不存在，是否创建') + '。', '修改配置');
             if (!ok) {
                 return;
+            }
+            /* 二次确认框停留期间后台可能被别处改动:重新比对一次,避免直接用旧值覆盖对方改动。 */
+            conflictParts = checkConfigConflict(dirChanged, tasksChanged, retriesChanged, lastSnapshot, settingsOriginal);
+            if (conflictParts.length) {
+                var goon2 = await askConfirm(
+                    conflictParts.join('、') + '已在别处被修改，应用将覆盖该改动，是否继续？', '修改配置');
+                if (!goon2) {
+                    return;
+                }
             }
             payload.confirm_directory = true;
             res = await fetch('/api/config/save_directory', {
