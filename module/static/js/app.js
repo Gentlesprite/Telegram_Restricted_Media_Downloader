@@ -1500,6 +1500,37 @@ function checkConfigConflict(dirChanged, tasksChanged, retriesChanged, lastSnaps
     return conflictParts;
 }
 
+/* 冲突取消后把后台实时配置回填到弹窗,并刷新比对基准:否则弹窗仍显示旧值,用户不知别处已改,
+   再次点应用又会撞到同一处冲突;回填后弹窗与后台一致,再点应用即为"未做任何修改"。 */
+function syncSettingsFromSnapshot() {
+    if (!lastSnapshot) {
+        return;
+    }
+    var dirInput = document.getElementById('saveDirInput');
+    if (dirInput && lastSnapshot.save_directory) {
+        dirInput.value = lastSnapshot.save_directory;
+    }
+    if (lastSnapshot.max_tasks) {
+        setNum('maxDownload', lastSnapshot.max_tasks.download);
+        setNum('maxUpload', lastSnapshot.max_tasks.upload);
+    }
+    if (lastSnapshot.max_retries) {
+        setNum('maxRetryDownload', lastSnapshot.max_retries.download);
+        setNum('maxRetryUpload', lastSnapshot.max_retries.upload);
+    }
+    settingsOriginal = {
+        save_directory: lastSnapshot.save_directory,
+        max_tasks: lastSnapshot.max_tasks ? {
+            download: lastSnapshot.max_tasks.download,
+            upload: lastSnapshot.max_tasks.upload
+        } : {download: null, upload: null},
+        max_retries: lastSnapshot.max_retries ? {
+            download: lastSnapshot.max_retries.download,
+            upload: lastSnapshot.max_retries.upload
+        } : {download: null, upload: null}
+    };
+}
+
 async function applyConfig() {
     var dirInput = document.getElementById('saveDirInput');
     var path = (dirInput.value || '').trim();
@@ -1548,6 +1579,7 @@ async function applyConfig() {
             var goon = await askConfirm(
                 conflictParts.join('、') + '已在别处被修改，应用将覆盖该改动，是否继续？', '修改配置');
             if (!goon) {
+                syncSettingsFromSnapshot();
                 return;
             }
         }
@@ -1583,6 +1615,7 @@ async function applyConfig() {
                 var goon2 = await askConfirm(
                     conflictParts.join('、') + '已在别处被修改，应用将覆盖该改动，是否继续？', '修改配置');
                 if (!goon2) {
+                    syncSettingsFromSnapshot();
                     return;
                 }
             }
