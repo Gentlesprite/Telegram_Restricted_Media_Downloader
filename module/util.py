@@ -702,16 +702,24 @@ class AdjustableSemaphore:
         """当前的并发上限。"""
         return self._limit
 
+    def locked(self) -> bool:
+        """当前是否已无剩余额度(与asyncio.Semaphore的同名方法语义一致)。"""
+        return self._limit <= 0 or self._held >= self._limit
+
     async def acquire(self) -> bool:
         """占用一个名额;额度不足时排队等待。"""
         # 被唤醒后重新校验:名额可能已被其它等待者占满,此时需要继续排队。
-        while self._limit <= 0 or self._held >= self._limit:
+        while self.locked():
             waiter = asyncio.get_running_loop().create_future()
             self._waiters.append(waiter)
             try:
                 await waiter
             except BaseException:
-                if not waiter.done():
+                if waiter.done():
+                    # 已被唤醒(说明当时确有空位)却又被取消:把这次唤醒转交给其它等待者,
+                    # 否则这个空位会被白白浪费,剩下的等待者可能一直等下去。
+                    self.__wake_up_next()
+                else:
                     waiter.cancel()
                 try:
                     self._waiters.remove(waiter)
@@ -734,7 +742,7 @@ class AdjustableSemaphore:
 
     def __wake_up_next(self) -> None:
         """按剩余名额逐个唤醒等待者;多唤醒的等待者会自行继续等待。"""
-        while self._waiters and self._limit - self._held > 0:
+        while self._waiters and not self.locked():
             waiter = self._waiters.popleft()
             if not waiter.done():
                 waiter.set_result(True)
