@@ -674,6 +674,10 @@ class Web:
             if placeholder in clean_path:
                 clean_path = clean_path.replace(placeholder, '')
         clean_path = os.path.normpath(clean_path)
+        drive, tail = os.path.splitdrive(clean_path)
+        invalid: list = [c for c in '<>:"|?*' if c in tail]
+        if invalid:
+            return f'路径包含非法字符：{"、".join(sorted(set(invalid)))}'
         try:
             if not os.path.isdir(clean_path):
                 os.makedirs(clean_path, exist_ok=True)
