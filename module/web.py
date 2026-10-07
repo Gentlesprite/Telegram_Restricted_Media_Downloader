@@ -98,12 +98,10 @@ class WebHandler(BaseHTTPRequestHandler):
             return
         if self.path.startswith('/api/listener/remove'):
             self.__response_remove_listener()
-        elif self.path.startswith('/api/config/save_directory'):
-            self.__response_set_save_directory()
-        elif self.path.startswith('/api/config/max_tasks'):
-            self.__response_set_max_tasks()
-        elif self.path.startswith('/api/config/max_retries'):
-            self.__response_set_max_retries()
+        elif (self.path.startswith('/api/config/save_directory')
+              or self.path.startswith('/api/config/max_tasks')
+              or self.path.startswith('/api/config/max_retries')):
+            self.__response_set_config()  # 三个历史路径等价:统一入口,多项改动只落盘一次。
         else:
             self.send_error(404)
 
@@ -270,45 +268,21 @@ class WebHandler(BaseHTTPRequestHandler):
             content_type='application/json; charset=utf-8'
         )
 
-    def __response_set_save_directory(self) -> None:
-        """处理网页面板修改保存目录的请求。"""
-        web: Union[Web, None] = getattr(self.server, 'web', None)
-        payload: dict = self.__read_json()
-        if web is None:
-            body: dict = {'status': False, 'e_code': '网页面板未就绪。'}
-        else:
-            body: dict = web.set_save_directory(path=str(payload.get('path') or ''))
-        self.__response_body(
-            body=json.dumps(body, ensure_ascii=False).encode('UTF-8'),
-            content_type='application/json; charset=utf-8'
-        )
+    def __response_set_config(self) -> None:
+        """处理网页面板修改配置的请求。
 
-    def __response_set_max_tasks(self) -> None:
-        """处理网页面板修改最大下载/上传并发数的请求。"""
+        save_directory / max_tasks / max_retries三个历史路径在这里等价:一次性读取请求体中的
+        全部字段交由Web.set_config处理,多项改动因此只会写一次配置文件。
+        """
         web: Union[Web, None] = getattr(self.server, 'web', None)
         payload: dict = self.__read_json()
         if web is None:
             body: dict = {'status': False, 'e_code': '网页面板未就绪。'}
         else:
-            body: dict = web.set_max_tasks(
-                download=payload.get('download'),
-                upload=payload.get('upload')
-            )
-        self.__response_body(
-            body=json.dumps(body, ensure_ascii=False).encode('UTF-8'),
-            content_type='application/json; charset=utf-8'
-        )
-
-    def __response_set_max_retries(self) -> None:
-        """处理网页面板修改最大下载/上传重试次数的请求。"""
-        web: Union[Web, None] = getattr(self.server, 'web', None)
-        payload: dict = self.__read_json()
-        if web is None:
-            body: dict = {'status': False, 'e_code': '网页面板未就绪。'}
-        else:
-            body: dict = web.set_max_retries(
-                download=payload.get('download'),
-                upload=payload.get('upload')
+            body: dict = web.set_config(
+                directory=payload.get('save_directory'),
+                max_tasks=payload.get('max_tasks'),
+                max_retries=payload.get('max_retries')
             )
         self.__response_body(
             body=json.dumps(body, ensure_ascii=False).encode('UTF-8'),
@@ -650,22 +624,51 @@ class Web:
             log.debug(f'移除监听失败,{_t(KeyWord.REASON)}:"{e}"')
             return {'status': False, 'e_code': '移除监听超时，请稍后重试。'}
 
-    def set_save_directory(self, path: str) -> dict:
-        """按网页面板的请求修改媒体保存目录并持久化。
+    @staticmethod
+    def __check_number_pair(values, lower: int, upper, name: str, range_text: str, error_parts: list):
+        """校验一组下载/上传数值是否合法,不合法时把失败原因追加到error_parts。
 
-        校验在后台HTTP线程中执行,不能复用Validator.is_valid_save_directory。
-        其内部会console.input交互询问,在Web线程中会导致阻塞,因此此处采用非交互校验:剥离通配符占位符后判断目录,不存在则直接创建。
+        Args:
+            values: 形如{'download': int, 'upload': int}的取值;None表示本次不修改。
+            lower: 允许的下限(含)。
+            upper: 允许的上限(含);None表示不限制上限。
+            name: 配置项名称,用于拼装失败原因。
+            range_text: 超出范围时的提示语。
+            error_parts: 失败原因收集列表。
+
+        Returns:
+            dict | None: 校验通过时的规范化取值;本次不修改或校验失败时为None。
+        """
+        if values is None:
+            return None
+        try:
+            result: dict = {'download': int(values.get('download')), 'upload': int(values.get('upload'))}
+        except (AttributeError, TypeError, ValueError):
+            error_parts.append(f'{name}必须是整数')
+            return None
+        if result['download'] < lower or result['upload'] < lower:
+            error_parts.append(f'{name}{range_text}')
+            return None
+        if upper is not None and (result['download'] > upper or result['upload'] > upper):
+            error_parts.append(f'{name}{range_text}')
+            return None
+        return result
+
+    @staticmethod
+    def __check_save_directory(path: str) -> Union[str, None]:
+        """非交互地校验保存目录。
+
+        Validator.is_valid_save_directory内部会console.input交互询问,在Web线程中会阻塞,因此此处
+        采用非交互校验:剥离通配符占位符后判断目录,不存在则直接创建。
 
         Args:
             path: 新的保存目录,允许包含通配符占位符。
 
         Returns:
-            dict: status为是否成功,失败时e_code为失败原因。
+            Union[str, None]: 校验不通过时的失败原因;通过时为None。
         """
         if not path:
-            return {'status': False, 'e_code': '保存目录不能为空。'}
-        if self.app is None:
-            return {'status': False, 'e_code': '配置未加载,无法修改保存目录。'}
+            return '保存目录不能为空'
         clean_path: str = path
         for placeholder in SaveDirectoryPrefix():
             if placeholder in clean_path:
@@ -675,85 +678,77 @@ class Web:
             if not os.path.isdir(clean_path):
                 os.makedirs(clean_path, exist_ok=True)
         except Exception as e:
-            return {'status': False, 'e_code': f'目录无效或无法创建,{_t(KeyWord.REASON)}:"{e}"'}
+            return f'目录无效或无法创建,{_t(KeyWord.REASON)}:"{e}"'
         if not os.path.isdir(clean_path):
-            return {'status': False, 'e_code': '保存目录不是一个有效的目录。'}
-        self.app.save_directory = path
-        self.app.config['save_directory'] = path
-        self.app.save_config(self.app.config)
-        return {'status': True}
+            return '保存目录不是一个有效的目录'
+        return None
 
-    def set_max_tasks(self, download, upload) -> dict:
-        """按网页面板的请求修改最大下载/上传并发数并持久化。
-
-        校验在后台HTTP线程中执行,不触发交互询问。
+    def __rebuild_client_semaphores(self, download: int, upload: int) -> None:
+        """按新的并发数重建客户端的传输信号量,使改动对后续传输立即生效。
 
         Args:
             download: 最大下载并发数。
             upload: 最大上传并发数。
-
-        Returns:
-            dict: status为是否成功,失败时e_code为失败原因。
         """
-        if self.app is None:
-            return {'status': False, 'e_code': '配置未加载，无法修改。'}
-        try:
-            values = {'download': int(download), 'upload': int(upload)}
-        except (TypeError, ValueError):
-            return {'status': False, 'e_code': '并发数必须是整数。'}
-        if values['download'] <= 0 or values['upload'] <= 0 or values['download'] > 10 or values['upload'] > 10:
-            return {'status': False, 'e_code': '并发数必须为1到10之间的整数。'}
-        if not isinstance(self.app.config.get('max_tasks'), dict):
-            self.app.config['max_tasks'] = {}
-        self.app.config['max_tasks']['download'] = values['download']
-        self.app.config['max_tasks']['upload'] = values['upload']
-        self.app.max_download_task = values['download']
-        self.app.max_upload_task = values['upload']
         client = getattr(self.app, 'client', None)
-        if client is not None:
-            try:
-                loop = getattr(client, 'loop', None)
+        if client is None:
+            return
+        try:
+            loop = getattr(client, 'loop', None)
 
-                def _rebuild_client_semaphores() -> None:
-                    client.get_file_semaphore = asyncio.Semaphore(values['download'])
-                    client.save_file_semaphore = asyncio.Semaphore(values['upload'])
+            def rebuild() -> None:
+                client.get_file_semaphore = asyncio.Semaphore(download)
+                client.save_file_semaphore = asyncio.Semaphore(upload)
 
-                if loop is not None and hasattr(loop, 'call_soon_threadsafe'):
-                    loop.call_soon_threadsafe(_rebuild_client_semaphores)
-                else:
-                    _rebuild_client_semaphores()
-            except Exception as e:
-                log.warning(f'实时更新并发信号量失败,原因:"{e}"')
-        self.app.save_config(self.app.config)
-        return {'status': True}
+            if loop is not None and hasattr(loop, 'call_soon_threadsafe'):
+                loop.call_soon_threadsafe(rebuild)
+            else:
+                rebuild()
+        except Exception as e:
+            log.warning(f'实时更新并发信号量失败,原因:"{e}"')
 
-    def set_max_retries(self, download, upload) -> dict:
-        """按网页面板的请求修改最大下载/上传重试次数并持久化。
+    def set_config(self, directory=None, max_tasks=None, max_retries=None) -> dict:
+        """按网页面板的请求一次性修改多项配置,并只落盘一次。
 
-        校验在后台HTTP线程中执行,不触发交互询问。
+        保存目录、并发数、重试次数原本各走一次save_config:同时改动会写三次盘,且其中一项失败时
+        已经写入的项无法回退,出现"部分生效"。这里改为合并提交:先把各项的错误全部收集完毕,
+        任一不合法就整体放弃;全部通过后才改写配置并只调用一次save_config。
 
         Args:
-            download: 最大下载重试次数。
-            upload: 最大上传重试次数。
+            directory: 新的保存目录;None表示本次不修改。
+            max_tasks: 形如{'download': int, 'upload': int}的并发数;None表示本次不修改。
+            max_retries: 形如{'download': int, 'upload': int}的重试次数;None表示本次不修改。
 
         Returns:
-            dict: status为是否成功,失败时e_code为失败原因。
+            dict: status为是否成功,失败时e_code为失败原因(多项问题时以全角分号分隔)。
         """
         if self.app is None:
             return {'status': False, 'e_code': '配置未加载，无法修改。'}
-        try:
-            values = {'download': int(download), 'upload': int(upload)}
-        except (TypeError, ValueError):
-            return {'status': False, 'e_code': '重试次数必须是整数。'}
-        if values['download'] <= 0 or values['upload'] <= 0:
-            return {'status': False, 'e_code': '重试次数必须大于0。'}
-        if not isinstance(self.app.config.get('max_retries'), dict):
-            self.app.config['max_retries'] = {}
-        self.app.config['max_retries']['download'] = values['download']
-        self.app.config['max_retries']['upload'] = values['upload']
-        self.app.max_download_retries = values['download']
-        self.app.max_upload_retries = values['upload']
-        self.app.save_config(self.app.config)
+        error_parts: list = []
+        tasks = self.__check_number_pair(max_tasks, 1, 10, '并发数', '必须为1到10之间的整数', error_parts)
+        retries = self.__check_number_pair(max_retries, 1, None, '重试次数', '必须大于0', error_parts)
+        if directory is not None:
+            reason: Union[str, None] = self.__check_save_directory(directory)
+            if reason is not None:
+                error_parts.append(reason)
+        if error_parts:
+            return {'status': False, 'e_code': '；'.join(error_parts)}
+        if directory is not None:
+            self.app.config['save_directory'] = directory
+        if tasks is not None:
+            self.app.config['max_tasks'] = tasks
+        if retries is not None:
+            self.app.config['max_retries'] = retries
+        self.app.save_config(self.app.config)  # 多项改动合并后,整个请求只在这里写一次配置文件。
+        if directory is not None:
+            self.app.save_directory = directory
+        if tasks is not None:
+            self.app.max_download_task = tasks['download']
+            self.app.max_upload_task = tasks['upload']
+            self.__rebuild_client_semaphores(tasks['download'], tasks['upload'])
+        if retries is not None:
+            self.app.max_download_retries = retries['download']
+            self.app.max_upload_retries = retries['upload']
         return {'status': True}
 
     def get_upload_tasks(self, tasks: Union[list, None] = None) -> list:

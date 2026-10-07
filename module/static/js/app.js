@@ -1517,49 +1517,37 @@ async function applyConfig() {
         return;
     }
     try {
-        var failParts = [];
+        /* 多项改动合并成一次请求:分开请求会让后端写多次配置文件,且其中一项失败时已经写入的
+           项无法回退(部分生效)。合并后由后端统一校验、只落盘一次,要么全部生效要么一个都不改。
+           三个配置路径在后端已等价,这里沿用save_directory路径作为统一入口。 */
+        var payload = {};
         if (dirChanged) {
-            var r1 = await fetch('/api/config/save_directory', {
-                method: 'POST',
-                headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
-                body: JSON.stringify({path: path})
-            });
-            var d1 = await r1.json();
-            if (!d1.status) {
-                failParts.push(d1.e_code || '保存目录更新失败。');
-            } else if (lastSnapshot) {
-                lastSnapshot.save_directory = path;
-            }
+            payload.save_directory = path;
         }
         if (tasksChanged) {
-            var r2 = await fetch('/api/config/max_tasks', {
-                method: 'POST',
-                headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
-                body: JSON.stringify(maxTasks)
-            });
-            var d2 = await r2.json();
-            if (!d2.status) {
-                failParts.push(d2.e_code || '并发数更新失败。');
-            } else if (lastSnapshot) {
-                lastSnapshot.max_tasks = {download: maxTasks.download, upload: maxTasks.upload};
-            }
+            payload.max_tasks = maxTasks;
         }
         if (retriesChanged) {
-            var r3 = await fetch('/api/config/max_retries', {
-                method: 'POST',
-                headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
-                body: JSON.stringify(maxRetries)
-            });
-            var d3 = await r3.json();
-            if (!d3.status) {
-                failParts.push(d3.e_code || '重试次数更新失败。');
-            } else if (lastSnapshot) {
-                lastSnapshot.max_retries = {download: maxRetries.download, upload: maxRetries.upload};
-            }
+            payload.max_retries = maxRetries;
         }
-        if (failParts.length) {
-            await askAlert(failParts.join('；') + '。', '修改配置');
+        var res = await fetch('/api/config/save_directory', {
+            method: 'POST',
+            headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
+            body: JSON.stringify(payload)
+        });
+        var data = await res.json();
+        if (!data.status) {
+            await askAlert((data.e_code || '配置更新失败') + '。', '修改配置');
             return;
+        }
+        if (dirChanged && lastSnapshot) {
+            lastSnapshot.save_directory = path;
+        }
+        if (tasksChanged && lastSnapshot) {
+            lastSnapshot.max_tasks = {download: maxTasks.download, upload: maxTasks.upload};
+        }
+        if (retriesChanged && lastSnapshot) {
+            lastSnapshot.max_retries = {download: maxRetries.download, upload: maxRetries.upload};
         }
         await askAlert('配置已生效。', '修改配置');
         closeSettings();
