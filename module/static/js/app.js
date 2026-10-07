@@ -1435,6 +1435,8 @@ function initSettings() {
     });
 }
 
+var settingsOriginal = null;  // 打开配置弹窗时的原值快照:用于"只提交改动项",避免全量保存。
+
 function openSettings() {
     setMenuOpen(false);  // 先收起顶部菜单,避免与设置弹窗叠加。
     var modal = document.getElementById('settingsModal');
@@ -1447,6 +1449,12 @@ function openSettings() {
         setNum('maxRetryDownload', lastSnapshot.max_retries && lastSnapshot.max_retries.download);
         setNum('maxRetryUpload', lastSnapshot.max_retries && lastSnapshot.max_retries.upload);
     }
+    /* 记录"打开弹窗时输入框里的值"作为改动比对基准(只读 lastSnapshot 会被轮询刷新而失准)。 */
+    settingsOriginal = {
+        save_directory: (document.getElementById('saveDirInput').value || '').trim(),
+        max_tasks: {download: numVal('maxDownload'), upload: numVal('maxUpload')},
+        max_retries: {download: numVal('maxRetryDownload'), upload: numVal('maxRetryUpload')}
+    };
     modal.hidden = false;
 }
 
@@ -1495,41 +1503,66 @@ async function applyConfig() {
         await askAlert(_errParts.join('，') + '。', '修改配置');
         return;
     }
+    /* 只提交真正改动的项:未改动的接口不再请求(后端就不会重复写配置),
+       改一项也只落一次盘,杜绝"改一处却保存三次"的日志。 */
+    var dirChanged = !settingsOriginal || settingsOriginal.save_directory !== path;
+    var tasksChanged = !settingsOriginal
+        || settingsOriginal.max_tasks.download !== maxTasks.download
+        || settingsOriginal.max_tasks.upload !== maxTasks.upload;
+    var retriesChanged = !settingsOriginal
+        || settingsOriginal.max_retries.download !== maxRetries.download
+        || settingsOriginal.max_retries.upload !== maxRetries.upload;
+    if (!dirChanged && !tasksChanged && !retriesChanged) {
+        await askAlert('未做任何修改。', '修改配置');
+        return;
+    }
     try {
-        var r1 = await fetch('/api/config/save_directory', {
-            method: 'POST',
-            headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
-            body: JSON.stringify({path: path})
-        });
-        var d1 = await r1.json();
-        var r2 = await fetch('/api/config/max_tasks', {
-            method: 'POST',
-            headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
-            body: JSON.stringify(maxTasks)
-        });
-        var d2 = await r2.json();
-        var r3 = await fetch('/api/config/max_retries', {
-            method: 'POST',
-            headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
-            body: JSON.stringify(maxRetries)
-        });
-        var d3 = await r3.json();
-        if (d1.status && d2.status && d3.status) {
-            if (lastSnapshot) {
+        var failParts = [];
+        if (dirChanged) {
+            var r1 = await fetch('/api/config/save_directory', {
+                method: 'POST',
+                headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
+                body: JSON.stringify({path: path})
+            });
+            var d1 = await r1.json();
+            if (!d1.status) {
+                failParts.push(d1.e_code || '保存目录更新失败。');
+            } else if (lastSnapshot) {
                 lastSnapshot.save_directory = path;
+            }
+        }
+        if (tasksChanged) {
+            var r2 = await fetch('/api/config/max_tasks', {
+                method: 'POST',
+                headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
+                body: JSON.stringify(maxTasks)
+            });
+            var d2 = await r2.json();
+            if (!d2.status) {
+                failParts.push(d2.e_code || '并发数更新失败。');
+            } else if (lastSnapshot) {
                 lastSnapshot.max_tasks = {download: maxTasks.download, upload: maxTasks.upload};
+            }
+        }
+        if (retriesChanged) {
+            var r3 = await fetch('/api/config/max_retries', {
+                method: 'POST',
+                headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
+                body: JSON.stringify(maxRetries)
+            });
+            var d3 = await r3.json();
+            if (!d3.status) {
+                failParts.push(d3.e_code || '重试次数更新失败。');
+            } else if (lastSnapshot) {
                 lastSnapshot.max_retries = {download: maxRetries.download, upload: maxRetries.upload};
             }
-            await askAlert('配置已生效。', '修改配置');
-            closeSettings();
-        } else {
-            var msg = [
-                !d1.status && (d1.e_code || '保存目录更新失败。'),
-                !d2.status && (d2.e_code || '并发数更新失败。'),
-                !d3.status && (d3.e_code || '重试次数更新失败。')
-            ].filter(Boolean).join('；');
-            await askAlert(msg ? msg + '。' : '保存失败。', '修改配置');
         }
+        if (failParts.length) {
+            await askAlert(failParts.join('；') + '。', '修改配置');
+            return;
+        }
+        await askAlert('配置已生效。', '修改配置');
+        closeSettings();
     } catch (e) {
         await askAlert('请求失败：' + e + '。', '修改配置');
     }
