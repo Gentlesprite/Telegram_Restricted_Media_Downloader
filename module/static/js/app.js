@@ -1458,12 +1458,22 @@ async function applyConfig() {
     }
     var maxTasks = {download: numVal('maxDownload'), upload: numVal('maxUpload')};
     var maxRetries = {download: numVal('maxRetryDownload'), upload: numVal('maxRetryUpload')};
-    var _tasksInvalid = (maxTasks.download === null || maxTasks.download < 1 || maxTasks.download > 10 ||
-                         maxTasks.upload === null || maxTasks.upload < 1 || maxTasks.upload > 10);
-    var _retriesInvalid = (maxRetries.download === null || maxRetries.download < 1 ||
-                           maxRetries.upload === null || maxRetries.upload < 1);
-    if (_tasksInvalid || _retriesInvalid) {
-        tip.textContent = '并发数必须是1到10之间的整数，重试次数必须大于0。';
+    /* 字段级校验:用户改了哪个就只提示哪个;多个都有问题时再一起提示。 */
+    var _errParts = [];
+    if (maxTasks.download === null || maxTasks.download < 1 || maxTasks.download > 10) {
+        _errParts.push('下载并发数必须是1到10之间的整数');
+    }
+    if (maxTasks.upload === null || maxTasks.upload < 1 || maxTasks.upload > 10) {
+        _errParts.push('上传并发数必须是1到10之间的整数');
+    }
+    if (maxRetries.download === null || maxRetries.download < 1) {
+        _errParts.push('下载重试次数必须大于0');
+    }
+    if (maxRetries.upload === null || maxRetries.upload < 1) {
+        _errParts.push('上传重试次数必须大于0');
+    }
+    if (_errParts.length) {
+        tip.textContent = _errParts.join('，') + '。';
         tip.classList.remove('ok');
         tip.classList.add('err');
         return;

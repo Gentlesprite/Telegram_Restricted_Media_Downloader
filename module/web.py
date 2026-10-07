@@ -639,7 +639,7 @@ class Web:
             return {'status': False, 'e_code': '网页面板未关联下载器。'}
         loop: Union[AbstractEventLoop, None] = self.downloader.loop
         if loop is None or not loop.is_running():
-            return {'status': False, 'e_code': '下载器未运行,无法移除监听。'}
+            return {'status': False, 'e_code': '下载器未运行，无法移除监听。'}
         future = asyncio.run_coroutine_threadsafe(
             self.downloader.cancel_listen_from_web(kind=kind, link=link),
             loop
@@ -648,7 +648,7 @@ class Web:
             return future.result(timeout=Web.REMOVE_LISTEN_TIMEOUT)
         except Exception as e:
             log.debug(f'移除监听失败,{_t(KeyWord.REASON)}:"{e}"')
-            return {'status': False, 'e_code': '移除监听超时,请稍后重试。'}
+            return {'status': False, 'e_code': '移除监听超时，请稍后重试。'}
 
     def set_save_directory(self, path: str) -> dict:
         """按网页面板的请求修改媒体保存目录并持久化。
@@ -696,7 +696,7 @@ class Web:
             dict: status为是否成功,失败时e_code为失败原因。
         """
         if self.app is None:
-            return {'status': False, 'e_code': '配置未加载,无法修改。'}
+            return {'status': False, 'e_code': '配置未加载，无法修改。'}
         try:
             values = {'download': int(download), 'upload': int(upload)}
         except (TypeError, ValueError):
@@ -740,7 +740,7 @@ class Web:
             dict: status为是否成功,失败时e_code为失败原因。
         """
         if self.app is None:
-            return {'status': False, 'e_code': '配置未加载,无法修改。'}
+            return {'status': False, 'e_code': '配置未加载，无法修改。'}
         try:
             values = {'download': int(download), 'upload': int(upload)}
         except (TypeError, ValueError):
