@@ -79,7 +79,7 @@ SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
 __version__ = '2.1.0'
 __license__ = 'GPL-3.0-or-later'
-__update_date__ = '2026/10/07 15:51:39'
+__update_date__ = '2026/10/07 16:28:27'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/{AUTHOR}>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
@@ -145,9 +145,32 @@ logging.basicConfig(
         file_handler  # 文件:INFO+
     ]
 )
-logging.getLogger('pyrogram.session').setLevel(logging.WARNING)
-logging.getLogger('pyrogram.connection').setLevel(logging.WARNING)
-logging.getLogger('pyrogram.dispatcher').setLevel(logging.WARNING)
+
+
+class PyrogramQuietFilter(logging.Filter):
+    """按命名空间屏蔽pyrogram的INFO/DEBUG日志。"""
+    PYROGRAM_LOGGERS = (
+        'pyrogram.client',
+        'pyrogram.crypto',
+        'pyrogram.session',
+        'pyrogram.connection',
+        'pyrogram.dispatcher'
+    )
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        # 同时匹配命名空间本身及其子模块(如pyrogram.session.session)。
+        for name in PyrogramQuietFilter.PYROGRAM_LOGGERS:
+            if record.name == name or record.name.startswith(name + '.'):
+                if record.levelno < logging.WARNING:
+                    return False
+                break
+        return True
+
+
+if CONSOLE_LOG_LEVEL > logging.DEBUG:
+    console_handler.addFilter(PyrogramQuietFilter())
+if FILE_LOG_LEVEL > logging.DEBUG:
+    file_handler.addFilter(PyrogramQuietFilter())
 log = logging.getLogger('rich')
 
 
