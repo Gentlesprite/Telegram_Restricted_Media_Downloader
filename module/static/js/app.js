@@ -732,6 +732,10 @@ function confirmEscape(event) {
         return;  // 未打开时不处理,避免影响其它弹窗。
     }
     closeConfirm(false);
+    /* 阻止同一节点(document)上后续监听(如 settingsEscape)继续处理这次 ESC:
+       本函数关掉提示弹窗后,后续监听再查 confirmModal.hidden 已是 true,
+       会误判为"没有提示弹窗"而连带关闭下层的修改配置弹窗。 */
+    event.stopImmediatePropagation();
 }
 
 function bindConfirm() {
@@ -1443,9 +1447,6 @@ function openSettings() {
         setNum('maxRetryDownload', lastSnapshot.max_retries && lastSnapshot.max_retries.download);
         setNum('maxRetryUpload', lastSnapshot.max_retries && lastSnapshot.max_retries.upload);
     }
-    var tip = document.getElementById('saveDirTip');
-    tip.textContent = '';
-    tip.classList.remove('ok', 'err');
     modal.hidden = false;
 }
 
@@ -1454,19 +1455,24 @@ function closeSettings() {
 }
 
 function settingsEscape(event) {
-    if (event.key === 'Escape' && !document.getElementById('settingsModal').hidden) {
+    if (event.key !== 'Escape') {
+        return;
+    }
+    // 有上层提示/确认弹窗时,ESC 已由 confirmEscape 处理(它 stopImmediatePropagation,正常情况下到不了这);
+    // 此处若仍检测到它开着,则仅退出,绝不连带关闭修改配置弹窗。
+    if (!document.getElementById('confirmModal').hidden) {
+        return;
+    }
+    if (!document.getElementById('settingsModal').hidden) {
         closeSettings();
     }
 }
 
 async function applyConfig() {
     var dirInput = document.getElementById('saveDirInput');
-    var tip = document.getElementById('saveDirTip');
     var path = (dirInput.value || '').trim();
     if (!path) {
-        tip.textContent = '保存目录不能为空。';
-        tip.classList.remove('ok');
-        tip.classList.add('err');
+        await askAlert('保存目录不能为空。', '修改配置');
         return;
     }
     var maxTasks = {download: numVal('maxDownload'), upload: numVal('maxUpload')};
@@ -1486,9 +1492,7 @@ async function applyConfig() {
         _errParts.push('上传重试次数必须大于0');
     }
     if (_errParts.length) {
-        tip.textContent = _errParts.join('，') + '。';
-        tip.classList.remove('ok');
-        tip.classList.add('err');
+        await askAlert(_errParts.join('，') + '。', '修改配置');
         return;
     }
     try {
@@ -1511,28 +1515,23 @@ async function applyConfig() {
         });
         var d3 = await r3.json();
         if (d1.status && d2.status && d3.status) {
-            tip.textContent = '配置已生效。';
-            tip.classList.remove('err');
-            tip.classList.add('ok');
             if (lastSnapshot) {
                 lastSnapshot.save_directory = path;
                 lastSnapshot.max_tasks = {download: maxTasks.download, upload: maxTasks.upload};
                 lastSnapshot.max_retries = {download: maxRetries.download, upload: maxRetries.upload};
             }
+            await askAlert('配置已生效。', '修改配置');
+            closeSettings();
         } else {
             var msg = [
                 !d1.status && (d1.e_code || '保存目录更新失败。'),
                 !d2.status && (d2.e_code || '并发数更新失败。'),
                 !d3.status && (d3.e_code || '重试次数更新失败。')
             ].filter(Boolean).join('；');
-            tip.textContent = msg || '保存失败。';
-            tip.classList.remove('ok');
-            tip.classList.add('err');
+            await askAlert(msg ? msg + '。' : '保存失败。', '修改配置');
         }
     } catch (e) {
-        tip.textContent = '请求失败：' + e;
-        tip.classList.remove('ok');
-        tip.classList.add('err');
+        await askAlert('请求失败：' + e + '。', '修改配置');
     }
 }
 

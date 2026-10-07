@@ -495,6 +495,9 @@ h1 {
 
 /* 询问框/提示框宽度由文字自身决定:先按文字撑开,达到上限后换行,不再留大片空白。
    遮罩本身是 flex 居中,所以卡片自然保持居中。 */
+#confirmModal {
+    z-index: 60;  /* 提示/确认弹窗始终盖在其它弹窗(如修改配置)之上,否则会被同 z-index 且 DOM 在后的 settingsModal 遮住。 */
+}
 #confirmModal .modal-card {
     width: fit-content;
     max-width: min(360px, 90vw);
@@ -608,18 +611,6 @@ h1 {
     border-color: var(--accent);
     background: rgba(0, 0, 0, .32);
     box-shadow: 0 0 0 3px rgba(10, 132, 255, .25);
-}
-/* 输入框下方的状态反馈:左对齐,并区分成功/失败配色。 */
-#settingsModal .modal-tip {
-    text-align: left;
-    padding: 0 2px;
-    white-space: pre-line;  /* 单独保留提示文案的换行(本弹窗的 pre-line 已在 modal-body 关闭)。 */
-}
-#settingsModal .modal-tip.ok {
-    color: var(--accent);
-}
-#settingsModal .modal-tip.err {
-    color: var(--danger);
 }
 
 /* 30天内免登录 */
