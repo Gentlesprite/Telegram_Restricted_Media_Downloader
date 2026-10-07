@@ -596,7 +596,7 @@ h1 {
 }
 /* 弹窗底部留白归零(仅本弹窗);顶部 header 恢复默认 11px 上下,避免标题贴边太紧凑。 */
 #settingsModal .modal-foot {
-    padding: 0 16px;
+    padding: 0 16px 14px;
 }
 /* 聚焦(正在输入)时叠加毛玻璃模糊并稍加深背景:既保留默认透明玻璃感,又让输入框边界清晰可辨。 */
 #settingsModal .login-input:focus {
