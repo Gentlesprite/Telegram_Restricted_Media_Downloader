@@ -74,6 +74,7 @@ class DownloadTask:
         self.fail_id: set = set()  # 已彻底失败(重试耗尽)的消息ID。
         self.items: dict = {}  # 消息ID -> 待下载消息(dict,字段见add_item)。
         self.member_info: dict = {}  # 消息ID -> 该链接下消息的展示信息与状态,完成后不移除。
+        self.max_retry: int = 0  # 该任务锁定的下载重试上限(首次创建时写入,重试沿用);0表示尚未锁定。
 
     @property
     def fail_num(self) -> int:

@@ -1610,7 +1610,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                         )
                 self.queue.task_done()
             else:
-                if retry_count < self.app.max_download_retries:
+                # 用任务锁定的重试上限判定(download_task为None时回退当前配置),避免运行中修改重试次数让正在重试的任务按新上限被判死。
+                _max_retry = getattr(download_task, 'max_retry', None) or self.app.max_download_retries
+                if retry_count < _max_retry:
                     retry_count += 1
                     task = self.loop.create_task(
                         self.create_download_task(
@@ -1625,11 +1627,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         partial(
                             self.__retry_call,
                             f'{_t(KeyWord.RE_DOWNLOAD)}:"{file_name}",'
-                            f'{_t(KeyWord.RETRY_TIMES)}:{retry_count}/{self.app.max_download_retries}。'
+                            f'{_t(KeyWord.RETRY_TIMES)}:{retry_count}/{_max_retry}。'
                         )
                     )
                 else:
-                    _error = f'(达到最大重试次数:{self.app.max_download_retries}次)。'
+                    _error = f'(达到最大重试次数:{_max_retry}次)。'
                     console.log(
                         f'{_t(KeyWord.DOWNLOAD_TASK)}'
                         f'{_t(KeyWord.FILE)}:"{file_name}",'
@@ -2053,6 +2055,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             task.link_type = link_type
             task.chat_id = chat_id
             task.member_num = member_num
+            # 首次创建任务时锁定重试上限,同一link的重试复用该实例,因此运行中修改配置不会让正在重试的任务按新上限被判死;新任务仍按当时的配置值锁定。
+            if not task.max_retry:
+                task.max_retry = self.app.max_download_retries
             ChatInfo.add(chat=getattr(message, 'chat', None), chat_id=chat_id)
             DownloadTask.add_item(
                 link=link,

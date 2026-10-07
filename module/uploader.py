@@ -508,7 +508,9 @@ class TelegramUploader:
 
         retry = 0
         reset = 0
-        while retry < self.max_upload_retries:
+        # 锁定本次上传的重试上限,运行中修改配置不应让正在重试的任务按新上限被判死。
+        max_retry = self.max_upload_retries
+        while retry < max_retry:
             try:
                 await self.__add_task(
                     upload_task=upload_task
@@ -526,7 +528,7 @@ class TelegramUploader:
                 continue
             except FilePartLengthInvalid as e:
                 # 复用了历史会话的分片缓存,但服务器端已不存在这些分片,最终上报分片长度无效,需要丢弃缓存并换用新的file_id重传全部分片。
-                if reset >= self.max_upload_retries:
+                if reset >= max_retry:
                     upload_task.error_msg = str(e)
                     upload_task.status = UploadStatus.FAILURE
                     return None
@@ -535,7 +537,7 @@ class TelegramUploader:
                 console.log(
                     f'{_t(KeyWord.UPLOAD_TASK)}'
                     f'{_t(KeyWord.RESUME)}:"{file_path}",'
-                    f'{_t(KeyWord.RETRY_TIMES)}:{reset}/{self.max_upload_retries},'
+                    f'{_t(KeyWord.RETRY_TIMES)}:{reset}/{max_retry},'
                     f'{_t(KeyWord.REASON)}:"{e}"'
                 )
                 continue
@@ -547,11 +549,11 @@ class TelegramUploader:
                 console.log(
                     f'{_t(KeyWord.UPLOAD_TASK)}'
                     f'{_t(KeyWord.RE_UPLOAD)}:"{file_path}",'
-                    f'{_t(KeyWord.RETRY_TIMES)}:{retry + 1}/{self.max_upload_retries},'
+                    f'{_t(KeyWord.RETRY_TIMES)}:{retry + 1}/{max_retry},'
                     f'{_t(KeyWord.REASON)}:"{e}"'
                 )
                 retry += 1  # 只有非FilePartMissing异常才递增重试计数。
-                if retry == self.max_upload_retries:
+                if retry == max_retry:
                     upload_task.error_msg = str(e)
                     upload_task.status = UploadStatus.FAILURE
 
