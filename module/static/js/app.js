@@ -1458,8 +1458,12 @@ async function applyConfig() {
     }
     var maxTasks = {download: numVal('maxDownload'), upload: numVal('maxUpload')};
     var maxRetries = {download: numVal('maxRetryDownload'), upload: numVal('maxRetryUpload')};
-    if (maxTasks.download === null || maxTasks.upload === null || maxRetries.download === null || maxRetries.upload === null) {
-        tip.textContent = '并发数与重试次数都必须是大于 0 的整数。';
+    var _tasksInvalid = (maxTasks.download === null || maxTasks.download < 1 || maxTasks.download > 10 ||
+                         maxTasks.upload === null || maxTasks.upload < 1 || maxTasks.upload > 10);
+    var _retriesInvalid = (maxRetries.download === null || maxRetries.download < 1 ||
+                           maxRetries.upload === null || maxRetries.upload < 1);
+    if (_tasksInvalid || _retriesInvalid) {
+        tip.textContent = '并发数必须是1到10之间的整数，重试次数必须大于0。';
         tip.classList.remove('ok');
         tip.classList.add('err');
         return;

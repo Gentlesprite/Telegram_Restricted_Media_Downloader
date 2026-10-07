@@ -702,8 +702,8 @@ class Web:
             values = {'download': int(download), 'upload': int(upload)}
         except (TypeError, ValueError):
             return {'status': False, 'e_code': '并发数必须是整数。'}
-        if values['download'] <= 0 or values['upload'] <= 0:
-            return {'status': False, 'e_code': '并发数必须大于 0。'}
+        if values['download'] <= 0 or values['upload'] <= 0 or values['download'] > 10 or values['upload'] > 10:
+            return {'status': False, 'e_code': '并发数必须为1到10之间的整数。'}
         if not isinstance(self.app.config.get('max_tasks'), dict):
             self.app.config['max_tasks'] = {}
         self.app.config['max_tasks']['download'] = values['download']
@@ -747,7 +747,7 @@ class Web:
         except (TypeError, ValueError):
             return {'status': False, 'e_code': '重试次数必须是整数。'}
         if values['download'] <= 0 or values['upload'] <= 0:
-            return {'status': False, 'e_code': '重试次数必须大于 0。'}
+            return {'status': False, 'e_code': '重试次数必须大于0。'}
         if not isinstance(self.app.config.get('max_retries'), dict):
             self.app.config['max_retries'] = {}
         self.app.config['max_retries']['download'] = values['download']
