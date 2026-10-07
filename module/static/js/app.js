@@ -1413,7 +1413,7 @@ function initSettings() {
     }
     var apply = document.getElementById('saveDirApply');
     if (apply) {
-        apply.onclick = applySaveDirectory;
+        apply.onclick = applyConfig;
     }
     document.addEventListener('keydown', settingsEscape);  // ESC 关闭弹窗(不再响应遮罩点击关闭)。
 }
@@ -1421,9 +1421,14 @@ function initSettings() {
 function openSettings() {
     setMenuOpen(false);  // 先收起顶部菜单,避免与设置弹窗叠加。
     var modal = document.getElementById('settingsModal');
-    var input = document.getElementById('saveDirInput');
-    if (lastSnapshot && lastSnapshot.save_directory) {
-        input.value = lastSnapshot.save_directory;
+    if (lastSnapshot) {
+        if (lastSnapshot.save_directory) {
+            document.getElementById('saveDirInput').value = lastSnapshot.save_directory;
+        }
+        setNum('maxDownload', lastSnapshot.max_tasks && lastSnapshot.max_tasks.download);
+        setNum('maxUpload', lastSnapshot.max_tasks && lastSnapshot.max_tasks.upload);
+        setNum('maxRetryDownload', lastSnapshot.max_retries && lastSnapshot.max_retries.download);
+        setNum('maxRetryUpload', lastSnapshot.max_retries && lastSnapshot.max_retries.upload);
     }
     var tip = document.getElementById('saveDirTip');
     tip.textContent = '';
@@ -1441,30 +1446,59 @@ function settingsEscape(event) {
     }
 }
 
-async function applySaveDirectory() {
-    var input = document.getElementById('saveDirInput');
+async function applyConfig() {
+    var dirInput = document.getElementById('saveDirInput');
     var tip = document.getElementById('saveDirTip');
-    var path = (input.value || '').trim();
+    var path = (dirInput.value || '').trim();
     if (!path) {
         tip.textContent = '保存目录不能为空。';
+        tip.classList.remove('ok');
+        tip.classList.add('err');
+        return;
+    }
+    var maxTasks = {download: numVal('maxDownload'), upload: numVal('maxUpload')};
+    var maxRetries = {download: numVal('maxRetryDownload'), upload: numVal('maxRetryUpload')};
+    if (maxTasks.download === null || maxTasks.upload === null || maxRetries.download === null || maxRetries.upload === null) {
+        tip.textContent = '并发数与重试次数都必须是大于 0 的整数。';
+        tip.classList.remove('ok');
+        tip.classList.add('err');
         return;
     }
     try {
-        var res = await fetch('/api/config/save_directory', {
+        var r1 = await fetch('/api/config/save_directory', {
             method: 'POST',
             headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
             body: JSON.stringify({path: path})
         });
-        var data = await res.json();
-        if (data.status) {
-            tip.textContent = '已更新保存目录,后续下载将保存到新目录。';
+        var d1 = await r1.json();
+        var r2 = await fetch('/api/config/max_tasks', {
+            method: 'POST',
+            headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
+            body: JSON.stringify(maxTasks)
+        });
+        var d2 = await r2.json();
+        var r3 = await fetch('/api/config/max_retries', {
+            method: 'POST',
+            headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
+            body: JSON.stringify(maxRetries)
+        });
+        var d3 = await r3.json();
+        if (d1.status && d2.status && d3.status) {
+            tip.textContent = '配置已保存,并发参数已实时生效,重试参数重启后完全生效。';
             tip.classList.remove('err');
             tip.classList.add('ok');
             if (lastSnapshot) {
                 lastSnapshot.save_directory = path;
+                lastSnapshot.max_tasks = {download: maxTasks.download, upload: maxTasks.upload};
+                lastSnapshot.max_retries = {download: maxRetries.download, upload: maxRetries.upload};
             }
         } else {
-            tip.textContent = data.e_code || '更新失败。';
+            var msg = [
+                !d1.status && (d1.e_code || '保存目录更新失败'),
+                !d2.status && (d2.e_code || '并发数更新失败'),
+                !d3.status && (d3.e_code || '重试次数更新失败')
+            ].filter(Boolean).join('；');
+            tip.textContent = msg || '保存失败。';
             tip.classList.remove('ok');
             tip.classList.add('err');
         }
@@ -1473,6 +1507,22 @@ async function applySaveDirectory() {
         tip.classList.remove('ok');
         tip.classList.add('err');
     }
+}
+
+function setNum(id, val) {
+    var el = document.getElementById(id);
+    if (el && val !== null && val !== undefined) {
+        el.value = val;
+    }
+}
+
+function numVal(id) {
+    var raw = document.getElementById(id).value;
+    if (raw === '' || raw === null) {
+        return null;
+    }
+    var n = parseInt(raw, 10);
+    return isNaN(n) ? null : n;
 }
 
 var OUTER_LINK_IDS = {github: 'linkGithub', subscribe_channel: 'linkChannel', video_tutorial: 'linkVideo'};

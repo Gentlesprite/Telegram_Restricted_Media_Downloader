@@ -550,6 +550,16 @@ h1 {
     width: 100%;
     box-sizing: border-box;
 }
+/* 四个数字配置项用两列网格排列,label 在输入框上方。 */
+#settingsModal .cfg-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 16px;
+    margin-top: 16px;
+}
+#settingsModal .cfg-grid .login-label {
+    margin-bottom: 6px;
+}
 /* 聚焦(正在输入)时叠加毛玻璃模糊并稍加深背景:既保留默认透明玻璃感,又让输入框边界清晰可辨。 */
 #settingsModal .login-input:focus {
     background: rgba(0, 0, 0, .32);

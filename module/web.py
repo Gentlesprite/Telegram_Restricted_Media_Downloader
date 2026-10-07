@@ -100,6 +100,10 @@ class WebHandler(BaseHTTPRequestHandler):
             self.__response_remove_listener()
         elif self.path.startswith('/api/config/save_directory'):
             self.__response_set_save_directory()
+        elif self.path.startswith('/api/config/max_tasks'):
+            self.__response_set_max_tasks()
+        elif self.path.startswith('/api/config/max_retries'):
+            self.__response_set_max_retries()
         else:
             self.send_error(404)
 
@@ -274,6 +278,38 @@ class WebHandler(BaseHTTPRequestHandler):
             body: dict = {'status': False, 'e_code': '网页面板未就绪。'}
         else:
             body: dict = web.set_save_directory(path=str(payload.get('path') or ''))
+        self.__response_body(
+            body=json.dumps(body, ensure_ascii=False).encode('UTF-8'),
+            content_type='application/json; charset=utf-8'
+        )
+
+    def __response_set_max_tasks(self) -> None:
+        """处理网页面板修改最大下载/上传并发数的请求。"""
+        web: Union[Web, None] = getattr(self.server, 'web', None)
+        payload: dict = self.__read_json()
+        if web is None:
+            body: dict = {'status': False, 'e_code': '网页面板未就绪。'}
+        else:
+            body: dict = web.set_max_tasks(
+                download=payload.get('download'),
+                upload=payload.get('upload')
+            )
+        self.__response_body(
+            body=json.dumps(body, ensure_ascii=False).encode('UTF-8'),
+            content_type='application/json; charset=utf-8'
+        )
+
+    def __response_set_max_retries(self) -> None:
+        """处理网页面板修改最大下载/上传重试次数的请求。"""
+        web: Union[Web, None] = getattr(self.server, 'web', None)
+        payload: dict = self.__read_json()
+        if web is None:
+            body: dict = {'status': False, 'e_code': '网页面板未就绪。'}
+        else:
+            body: dict = web.set_max_retries(
+                download=payload.get('download'),
+                upload=payload.get('upload')
+            )
         self.__response_body(
             body=json.dumps(body, ensure_ascii=False).encode('UTF-8'),
             content_type='application/json; charset=utf-8'
@@ -648,6 +684,79 @@ class Web:
         self.app.save_config(self.app.config)
         return {'status': True}
 
+    def set_max_tasks(self, download, upload) -> dict:
+        """按网页面板的请求修改最大下载/上传并发数并持久化。
+
+        与 set_save_directory 同理,校验在后台HTTP线程中执行,不触发交互询问。
+
+        Args:
+            download: 最大下载并发数。
+            upload: 最大上传并发数。
+
+        Returns:
+            dict: status为是否成功,失败时e_code为失败原因。
+        """
+        if self.app is None:
+            return {'status': False, 'e_code': '配置未加载,无法修改。'}
+        try:
+            values = {'download': int(download), 'upload': int(upload)}
+        except (TypeError, ValueError):
+            return {'status': False, 'e_code': '并发数必须是整数。'}
+        if values['download'] <= 0 or values['upload'] <= 0:
+            return {'status': False, 'e_code': '并发数必须大于 0。'}
+        if not isinstance(self.app.config.get('max_tasks'), dict):
+            self.app.config['max_tasks'] = {}
+        self.app.config['max_tasks']['download'] = values['download']
+        self.app.config['max_tasks']['upload'] = values['upload']
+        self.app.max_download_task = values['download']
+        self.app.max_upload_task = values['upload']
+        client = getattr(self.app, 'client', None)
+        if client is not None:
+            try:
+                loop = getattr(client, 'loop', None)
+
+                def _rebuild_client_semaphores() -> None:
+                    client.get_file_semaphore = asyncio.Semaphore(values['download'])
+                    client.save_file_semaphore = asyncio.Semaphore(values['upload'])
+
+                if loop is not None and hasattr(loop, 'call_soon_threadsafe'):
+                    loop.call_soon_threadsafe(_rebuild_client_semaphores)
+                else:
+                    _rebuild_client_semaphores()
+            except Exception as e:
+                log.warning(f'实时更新并发信号量失败,原因: "{e}"')
+        self.app.save_config(self.app.config)
+        return {'status': True}
+
+    def set_max_retries(self, download, upload) -> dict:
+        """按网页面板的请求修改最大下载/上传重试次数并持久化。
+
+        与 set_save_directory 同理,校验在后台HTTP线程中执行,不触发交互询问。
+
+        Args:
+            download: 最大下载重试次数。
+            upload: 最大上传重试次数。
+
+        Returns:
+            dict: status为是否成功,失败时e_code为失败原因。
+        """
+        if self.app is None:
+            return {'status': False, 'e_code': '配置未加载,无法修改。'}
+        try:
+            values = {'download': int(download), 'upload': int(upload)}
+        except (TypeError, ValueError):
+            return {'status': False, 'e_code': '重试次数必须是整数。'}
+        if values['download'] <= 0 or values['upload'] <= 0:
+            return {'status': False, 'e_code': '重试次数必须大于 0。'}
+        if not isinstance(self.app.config.get('max_retries'), dict):
+            self.app.config['max_retries'] = {}
+        self.app.config['max_retries']['download'] = values['download']
+        self.app.config['max_retries']['upload'] = values['upload']
+        self.app.max_download_retries = values['download']
+        self.app.max_upload_retries = values['upload']
+        self.app.save_config(self.app.config)
+        return {'status': True}
+
     def get_upload_tasks(self, tasks: Union[list, None] = None) -> list:
         """获取上传任务的概要信息,并按进度条任务ID补全上传进度。"""
         result: list = []
@@ -780,7 +889,15 @@ class Web:
                 'uploads': uploads,
                 'listeners': self.get_listeners(),
                 'outer_links': self.get_outer_links(),  # 顶栏菜单使用的外部链接。
-                'save_directory': self.app.save_directory if self.app else ''
+                'save_directory': self.app.save_directory if self.app else '',
+                'max_tasks': {
+                    'download': self.app.max_download_task if self.app else 3,
+                    'upload': self.app.max_upload_task if self.app else 3
+                },
+                'max_retries': {
+                    'download': self.app.max_download_retries if self.app else 5,
+                    'upload': self.app.max_upload_retries if self.app else 3
+                }
             }
         except Exception as e:
             log.debug(f'生成进度数据时出错,{_t(KeyWord.REASON)}:"{e}"')
@@ -793,5 +910,13 @@ class Web:
                 'uploads': [],
                 'listeners': {'download': [], 'forward': []},
                 'outer_links': self.get_outer_links(),
-                'save_directory': self.app.save_directory if self.app else ''
+                'save_directory': self.app.save_directory if self.app else '',
+                'max_tasks': {
+                    'download': self.app.max_download_task if self.app else 3,
+                    'upload': self.app.max_upload_task if self.app else 3
+                },
+                'max_retries': {
+                    'download': self.app.max_download_retries if self.app else 5,
+                    'upload': self.app.max_upload_retries if self.app else 3
+                }
             }
