@@ -531,12 +531,14 @@ h1 {
     color: var(--text);
     font-family: inherit;
     font-size: 13px;
-    transition: border-color .15s ease;
+    transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
 }
 
 .login-input:focus {
     outline: none;
     border-color: var(--accent);
+    background: rgba(0, 0, 0, .32);  /* 聚焦时背景加深,与修改配置弹窗输入框一致。 */
+    box-shadow: 0 0 0 3px rgba(10, 132, 255, .25);  /* accent 蓝环。 */
 }
 
 /* 修改配置弹窗:按"保存目录 / 并发与重试"分为两个区块,每个区块带左侧竖条小标题,
@@ -600,12 +602,12 @@ h1 {
 #settingsModal .modal-foot {
     padding: 0 16px 14px;
 }
-/* 聚焦(正在输入)时叠加毛玻璃模糊并稍加深背景:既保留默认透明玻璃感,又让输入框边界清晰可辨。 */
+/* 聚焦(正在输入)时背景加深 + accent 蓝环高亮,与通用 .login-input:focus(登录弹窗)完全一致。 */
 #settingsModal .login-input:focus {
-    background: rgba(0, 0, 0, .32);
+    outline: none;
     border-color: var(--accent);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: rgba(0, 0, 0, .32);
+    box-shadow: 0 0 0 3px rgba(10, 132, 255, .25);
 }
 /* 输入框下方的状态反馈:左对齐,并区分成功/失败配色。 */
 #settingsModal .modal-tip {
