@@ -69,6 +69,13 @@ class CallerFilter(logging.Filter):
             record.caller_name = f'{caller_frame.f_globals.get("__name__", "")}.{func_name}'
         else:
             record.caller_name = func_name
+        # 组合日志调用所在文件的模块路径(相对项目根目录)与函数名,格式为"模块.函数名"。
+        try:
+            rel_path: str = os.path.relpath(record.pathname, CallerFilter.PROJECT_PATH)
+            module_path: str = os.path.splitext(rel_path)[0].replace(os.sep, '.')
+        except ValueError:
+            module_path: str = os.path.splitext(os.path.basename(record.pathname))[0]
+        record.file_func = f'{module_path}.{record.funcName}'
         return True
 
 
@@ -96,7 +103,7 @@ read_input_history(history_path=INPUT_HISTORY_PATH, max_record_len=MAX_RECORD_LE
 LOG_PATH = os.path.join(APPDATA_PATH, f'{SOFTWARE_SHORT_NAME}_LOG.log')
 MAX_LOG_SIZE = 200 * 1024 * 1024  # 200MB
 BACKUP_COUNT = 0  # 不保留日志文件。
-LOG_FORMAT = '%(name)s:%(caller_name)s:%(funcName)s:%(lineno)d - %(message)s'
+LOG_FORMAT = '%(name)s:%(caller_name)s:%(file_func)s:%(lineno)d - %(message)s'
 FILE_LOG_LEVEL: int = logging.INFO
 CONSOLE_LOG_LEVEL: int = logging.WARNING
 REFERRAL_RECORD_PATH: str = os.path.join(APPDATA_PATH, f'.{SOFTWARE_SHORT_NAME}_REFERRAL')
