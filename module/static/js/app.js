@@ -1449,6 +1449,14 @@ function openSettings() {
         setNum('maxRetryDownload', lastSnapshot.max_retries && lastSnapshot.max_retries.download);
         setNum('maxRetryUpload', lastSnapshot.max_retries && lastSnapshot.max_retries.upload);
     }
+    /* 未配置机器人(HAS_BOT)时,上传并发/重试的修改不会生效,隐藏这两项避免用户改了无效果。 */
+    var uploadAvailable = HAS_BOT;
+    ['maxUpload', 'maxRetryUpload'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el && el.parentElement) {
+            el.parentElement.style.display = uploadAvailable ? '' : 'none';
+        }
+    });
     /* 记录"打开弹窗时输入框里的值"作为改动比对基准(只读 lastSnapshot 会被轮询刷新而失准)。 */
     settingsOriginal = {
         save_directory: (document.getElementById('saveDirInput').value || '').trim(),
