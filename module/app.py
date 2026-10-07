@@ -66,7 +66,7 @@ class Application(UserConfig, StatisticalTable):
             app_version=Application.APP_VERSION,
             device_model=Application.DEVICE_MODEL
         )
-        # 用容量可调的信号量:网页面板修改并发数时只调整额度,不会丢弃正在传输所占用的名额。
+        # 用容量可调的信号量,网页面板修改并发数时只调整额度,不会丢弃正在传输所占用的名额。
         client.get_file_semaphore = AdjustableSemaphore(self.max_download_task)
         client.save_file_semaphore = AdjustableSemaphore(self.max_upload_task)
         return client

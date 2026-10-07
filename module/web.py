@@ -277,7 +277,7 @@ class WebHandler(BaseHTTPRequestHandler):
         web: Union[Web, None] = getattr(self.server, 'web', None)
         payload: dict = self.__read_json()
         if web is None:
-            body: dict = {'status': False, 'e_code': '网页面板未就绪。'}
+            body: dict = {'status': False, 'e_code': '网页面板未就绪'}  # 末尾句号由前端统一补。
         else:
             body: dict = web.set_config(
                 directory=payload.get('save_directory'),
@@ -726,7 +726,7 @@ class Web:
             dict: status为是否成功,失败时e_code为失败原因(多项问题时以全角分号分隔)。
         """
         if self.app is None:
-            return {'status': False, 'e_code': '配置未加载，无法修改。'}
+            return {'status': False, 'e_code': '配置未加载，无法修改'}  # 末尾句号由前端统一补。
         error_parts: list = []
         tasks = self.__check_number_pair(max_tasks, 1, 10, '并发数', '必须为1到10之间的整数', error_parts)
         retries = self.__check_number_pair(max_retries, 1, None, '重试次数', '必须大于0', error_parts)
