@@ -629,7 +629,7 @@ class Web:
         而网页面板运行在独立的HTTP服务线程中,因此把协程投递到事件循环并等待结果。
 
         Args:
-            kind: 监听类型,`download`为监听下载,`forward`为监听转发。
+            kind: 监听类型,download为监听下载,forward为监听转发。
             link: 监听下载为频道链接;监听转发为"监听频道 转发频道"。
 
         Returns:
@@ -653,9 +653,8 @@ class Web:
     def set_save_directory(self, path: str) -> dict:
         """按网页面板的请求修改媒体保存目录并持久化。
 
-        校验在后台HTTP线程中执行,不能复用 Validator.is_valid_save_directory
-        (其内部会 console.input 交互询问,在Web线程中会导致阻塞),
-        因此此处采用非交互校验:剥离通配符占位符后判断目录,不存在则直接创建。
+        校验在后台HTTP线程中执行,不能复用Validator.is_valid_save_directory。
+        其内部会console.input交互询问,在Web线程中会导致阻塞,因此此处采用非交互校验:剥离通配符占位符后判断目录,不存在则直接创建。
 
         Args:
             path: 新的保存目录,允许包含通配符占位符。
@@ -687,7 +686,7 @@ class Web:
     def set_max_tasks(self, download, upload) -> dict:
         """按网页面板的请求修改最大下载/上传并发数并持久化。
 
-        与 set_save_directory 同理,校验在后台HTTP线程中执行,不触发交互询问。
+        校验在后台HTTP线程中执行,不触发交互询问。
 
         Args:
             download: 最大下载并发数。
@@ -724,14 +723,14 @@ class Web:
                 else:
                     _rebuild_client_semaphores()
             except Exception as e:
-                log.warning(f'实时更新并发信号量失败,原因: "{e}"')
+                log.warning(f'实时更新并发信号量失败,原因:"{e}"')
         self.app.save_config(self.app.config)
         return {'status': True}
 
     def set_max_retries(self, download, upload) -> dict:
         """按网页面板的请求修改最大下载/上传重试次数并持久化。
 
-        与 set_save_directory 同理,校验在后台HTTP线程中执行,不触发交互询问。
+        校验在后台HTTP线程中执行,不触发交互询问。
 
         Args:
             download: 最大下载重试次数。

@@ -539,26 +539,64 @@ h1 {
     border-color: var(--accent);
 }
 
-/* 保存目录弹窗:标签独占一行作为标题,输入框占满宽度便于填写长路径。 */
+/* 修改配置弹窗:按"保存目录 / 并发与重试"分为两个区块,每个区块带左侧竖条小标题,
+   与页面 h2 分组标题风格一致,结构更清晰、不再平铺。 */
+#settingsModal .cfg-block {
+    margin-bottom: 0;
+}
+#settingsModal .cfg-block:last-of-type {
+    margin-bottom: 0;
+}
+#settingsModal .cfg-block-title {
+    padding-left: 9px;
+    border-left: 3px solid var(--accent);
+    margin-bottom: 5px;  /* 标题到下方内容的间距,与标签到输入框的 5px 协调一致。 */
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    line-height: 1;  /* 消除标题文字上下行距,避免区块间视觉留缝。 */
+}
+/* 区块内标签独占一行,柔和灰字更像表单标签;输入框占满宽度便于填写长路径。 */
 #settingsModal .login-label {
     display: block;
-    margin-bottom: 8px;
-    color: var(--text);  /* 标题用主文本色,避免沿用登录标签的灰暗色显得不协调。 */
+    margin-bottom: 0;
     font-size: 13px;
+    line-height: 1;  /* 消除标签文字上下行距。 */
 }
 #settingsModal .login-input {
     width: 100%;
     box-sizing: border-box;
+    padding: 5px 11px;  /* 上下内边距由通用 8px 收到 5px,输入框更矮、与上下文字更贴。 */
 }
-/* 四个数字配置项用两列网格排列,label 在输入框上方。 */
+/* 保存目录输入框也对齐标题文字(左缩进 9px),与下方任务数/重试数区块的输入框保持等宽一致。 */
+#settingsModal #saveDirInput {
+    margin-left: 9px;
+    width: calc(100% - 9px);
+}
+/* 四个数字配置项用两列网格排列;每个 cfg-item 内标签在上、输入框在下,间距统一交给 flex gap。 */
 #settingsModal .cfg-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px 16px;
-    margin-top: 16px;
+    gap: 0 14px;
+    padding-left: 9px;  /* 与标题文字左边缘对齐,使"下载/上传"标签及输入框与"最大任务数"标题等宽。 */
+    box-sizing: border-box;
 }
-#settingsModal .cfg-grid .login-label {
-    margin-bottom: 6px;
+#settingsModal .cfg-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;  /* 标签与输入框之间留协调间距,避免紧贴。 */
+}
+#settingsModal .cfg-item .login-label {
+    margin-bottom: 0;  /* 间距由 flex gap 控制,避免与上方 4px 叠加成双重间距。 */
+}
+/* 配置弹窗内边距收紧,减少四周留白(仅作用于本弹窗,不影响支持/确认/登录弹窗)。 */
+#settingsModal .modal-body {
+    padding: 0 14px;
+    line-height: 1.4;  /* 覆盖通用 1.6,收紧文字上下行高空间。 */
+}
+/* 弹窗底部留白归零(仅本弹窗);顶部 header 恢复默认 11px 上下,避免标题贴边太紧凑。 */
+#settingsModal .modal-foot {
+    padding: 0 16px;
 }
 /* 聚焦(正在输入)时叠加毛玻璃模糊并稍加深背景:既保留默认透明玻璃感,又让输入框边界清晰可辨。 */
 #settingsModal .login-input:focus {
@@ -570,7 +608,7 @@ h1 {
 /* 输入框下方的状态反馈:左对齐,并区分成功/失败配色。 */
 #settingsModal .modal-tip {
     text-align: left;
-    padding: 8px 2px 0;
+    padding: 0 2px;
 }
 #settingsModal .modal-tip.ok {
     color: var(--accent);
@@ -1362,5 +1400,12 @@ tbody tr:hover {
 
     .cell-progress .track .fill {
         display: none;  /* 环形已用 conic 表达,隐藏原横向填充块。 */
+    }
+}
+
+/* 配置弹窗:超窄屏下数字网格退化为单列,避免标签被压缩折行。 */
+@media (max-width: 460px) {
+    #settingsModal .cfg-grid {
+        grid-template-columns: 1fr;
     }
 }
