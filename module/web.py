@@ -710,6 +710,25 @@ class Web:
         except Exception as e:
             log.warning(f'实时更新并发信号量失败,原因:"{e}"')
 
+    def __wake_upload_waiters(self) -> None:
+        """唤醒排队等待上传名额的任务,让它们按新的并发上限重新检查。
+
+        上传任务用uploader.event.wait()阻塞等待名额,该事件只在一次上传结束(成功或失败)时被set;
+        因此只修改max_upload_task并不会唤醒它们,队列里已排队的任务会一直睡着,直到下次有上传结束
+        或新命令进来才开始——表现为"改了并发但当前上传数不变"。
+        """
+        uploader = getattr(self.downloader, 'uploader', None)
+        if uploader is None:
+            return
+        loop: Union[AbstractEventLoop, None] = getattr(self.downloader, 'loop', None)
+        try:
+            if loop is not None and hasattr(loop, 'call_soon_threadsafe'):
+                loop.call_soon_threadsafe(uploader.event.set)
+            else:
+                uploader.event.set()
+        except Exception as e:
+            log.warning(f'唤醒排队上传任务失败,原因:"{e}"')
+
     def set_config(self, directory=None, max_tasks=None, max_retries=None) -> dict:
         """按网页面板的请求一次性修改多项配置,并只落盘一次。
 
@@ -749,6 +768,7 @@ class Web:
             self.app.max_download_task = tasks['download']
             self.app.max_upload_task = tasks['upload']
             self.__adjust_client_semaphores(tasks['download'], tasks['upload'])
+            self.__wake_upload_waiters()  # 提高上传并发后,排队中的任务才会重新检查额度并开始上传。
         if retries is not None:
             self.app.max_download_retries = retries['download']
             self.app.max_upload_retries = retries['upload']
