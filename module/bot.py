@@ -1156,11 +1156,17 @@ class Bot:
             text,
             requester: Union[int, None] = None
     ):
-        # 谁创建的任务就通知谁;未指定时回退到最近一条消息(保持原有行为)。
+        # 谁创建的任务就通知谁;未指定requester时回退到最近一条消息(兼容旧行为)。
+        # 回退仅作兼容:一旦触发即打warning,避免「静默通知错人」难以察觉。
         if self.gc.get_config(BotCallbackText.NOTICE):
             chat_id = requester
-            if chat_id is None and self.last_message is not None:
-                chat_id = self.last_message.from_user.id
+            if chat_id is None:
+                if self.last_message is not None:
+                    chat_id = self.last_message.from_user.id
+                    log.warning(
+                        'done_notice未指定requester,回退到last_message(chat_id={chat_id}),请为该调用处补充owner以消除回退。')
+                else:
+                    log.warning('done_notice未指定requester且last_message为空,跳过通知。')
             if self.last_client is not None and chat_id is not None:
                 while True:
                     try:
