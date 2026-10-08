@@ -346,12 +346,12 @@ class Bot:
         if right_link:
             return {
                 'right_link': right_link,
-                'invalid_link': invalid_link if invalid_link else None,
+                'invalid_link': invalid_link,
                 'last_bot_message': await self.safe_process_message(
                     client=client, message=message, requester=requester,
                     text=self.update_text(
                         right_link=right_link,
-                        invalid_link=invalid_link if invalid_link else None
+                        invalid_link=invalid_link
                     )
                 )
             }
