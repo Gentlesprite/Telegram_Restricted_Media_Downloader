@@ -4,6 +4,7 @@
 # Time:2025/1/24 21:27
 # File:bot.py
 import os
+import re
 import copy
 import asyncio
 import datetime
@@ -104,6 +105,7 @@ class Bot:
         BotCommand(BotCommandText.AUTH[0], BotCommandText.AUTH[1].replace('`', ''))
     ]
     LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
+    REQ_MARKER = re.compile(r'#req(\d+)\s*$')
 
     def __init__(self):
         self.application = None
@@ -129,6 +131,20 @@ class Bot:
         user = getattr(update, 'from_user', None)
         uid = getattr(user, 'id', None)
         return uid is not None and uid in flt.authorized_ids
+
+    @staticmethod
+    def resolve_requester(message: pyrogram.types.Message) -> Union[int, None]:
+        """从转发命令中提取原始发令者:改写 message.from_user.id 与 message.text,
+        使后续所有反馈(含下载进度编辑)回到真正的发令者,而非转发用的 root 账号。"""
+        text: str = message.text or ''
+        m = Bot.REQ_MARKER.search(text)
+        if not m:
+            return None
+        uid: int = int(m.group(1))
+        message.text = text[:m.start()].rstrip()
+        if message.from_user is not None:
+            message.from_user.id = uid
+        return uid
 
     def add_handler(self, handler, group: int = 0):
         """添加handler到指定的group。直接操作dispatcher.groups以确保正确添加。"""
@@ -270,6 +286,7 @@ class Bot:
             message: pyrogram.types.Message,
             with_upload: Union[dict, None] = None
     ) -> Union[Dict[str, Union[set, pyrogram.types.Message]], None]:
+        self.resolve_requester(message)
         text: str = message.text
         if text == '/download':
             await client.send_message(
@@ -1013,6 +1030,7 @@ class Bot:
             message: pyrogram.types.Message
     ) -> None:
         """热添加或热移除授权用户,支持用户ID或@用户名。"""
+        self.resolve_requester(message)
         text: str = message.text
         args: list = text.split()
         if len(args) == 1:
@@ -1282,10 +1300,13 @@ class Bot:
             self.is_bot_running: bool = False
             return f'🤖「机器人」启动失败,{_t(KeyWord.REASON)}:"{e}"'
 
-    async def send_message_to_bot(self, text: str, catch: bool = False):
+    async def send_message_to_bot(self, text: str, catch: bool = False, requester: Union[int, None] = None):
         try:
             bot_username = getattr(await self.bot.get_me(), 'username', None)
             if bot_username:
+                if requester is not None:
+                    # 附加原始发令者标记,使下游反馈回给真正的发令者而非 root 账号。
+                    text = f'{text} #req{requester}'
                 return await self.user.send_message(
                     chat_id=bot_username,
                     text=text,
