@@ -212,7 +212,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                 owner=requester
             )
             dl_task = DownloadTask.get(link)
-            if dl_task is not None and dl_task.owner is None:
+            # 同一链接可能被不同用户先后下载,任务对象在 TASKS 中长期缓存,
+            # 必须每次请求都刷新归属者,否则会沿用首个用户导致完成通知发错人。
+            if dl_task is not None:
                 dl_task.owner = requester
             if isinstance(with_upload, dict) and with_upload.get('owner') is None:
                 with_upload['owner'] = requester
@@ -2110,8 +2112,9 @@ class TelegramRestrictedMediaDownloader(Bot):
 
             link_type, chat_id, message, member_num = meta.values()
             task: DownloadTask = DownloadTask.get_or_create(link)
-            # 创建任务时即锁定归属者,避免任何后续 get 取不到同一对象导致 owner 丢失、通知回退到 root。
-            if owner is not None and task.owner is None:
+            # 创建任务时即锁定归属者,且每次请求都刷新为当前请求者,
+            # 避免同一链接被不同用户先后下载时沿用首个用户的 owner、通知发错人。
+            if owner is not None:
                 task.owner = owner
             task.link_type = link_type
             task.chat_id = chat_id
