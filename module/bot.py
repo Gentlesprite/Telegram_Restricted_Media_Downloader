@@ -497,6 +497,9 @@ class Bot:
     ) -> Union[None, dict]:  # client与message都为None时,返回keyboard与text。
         web = getattr(self, 'web', None)  # 网页面板实例,用于展示认证信息。
         web_auth: str = ''
+        more_feature: str = ''
+        if message is None or not self.root or message.from_user.id == self.root[0]:
+            more_feature = f'✨ 其他功能:\n📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`类型的消息给我,即可创建下载任务。\n'
         if web is not None:
             web_auth = (
                 f'🌐 Web配置:\n'
@@ -560,8 +563,7 @@ class Bot:
             f'💬 {BotCommandText.with_description(BotCommandText.DOWNLOAD_CHAT)}\n'
             f'🔐 {BotCommandText.with_description(BotCommandText.AUTH)}\n\n'
             f'{web_auth}'
-            f'✨ 其他功能:\n'
-            f'📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`类型的消息给我,即可创建下载任务。\n'
+            f'{more_feature}'
         )
         if not all([client, message]):
             return {
