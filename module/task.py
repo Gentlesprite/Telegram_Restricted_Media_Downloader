@@ -123,6 +123,7 @@ class DownloadTask:
         if retry_count == 0:
             task.clear_error()  # 非重试(重新拉取)的任务,清空该链接此前的失败记录。
             task.clear_fail()
+            task.clear_file_name()  # 归零完成数,避免复用旧任务导致完成通知重复触发。
         for _message in messages:
             key: int = int(getattr(_message, 'id', 0))
             if retry_count != 0 and key != retry_id:
@@ -329,6 +330,15 @@ class DownloadTask:
     def clear_fail(self) -> None:
         """清空全部失败记录。"""
         self.fail_id.clear()
+
+    def clear_file_name(self) -> None:
+        """清空已完成文件名记录并归零完成数。
+
+        重新拉取(非重试)同一链接时调用,避免复用旧任务的 complete_num
+        导致 done_notice 对同一链接重复触发完成通知。
+        """
+        self.file_name.clear()
+        self.complete_num = 0
 
     def on_create_task(func):  # noqa.
         @wraps(func)  # noqa.
