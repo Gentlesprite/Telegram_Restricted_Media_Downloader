@@ -441,7 +441,8 @@ class Bot:
                 },
             'keyword': {},
             'title': {},
-            'comment': False
+            'comment': False,
+            'owner': message.from_user.id
         }
         log.info(f'"{BotCallbackText.DOWNLOAD_CHAT_ID}"已添加至:{self.download_chat_filter}。')
         format_dtype = ','.join([_t(_) for _ in DownloadType()])

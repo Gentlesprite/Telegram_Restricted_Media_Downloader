@@ -1052,11 +1052,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             # 归属给创建该监听的人,使其收到下载完成通知。
             owner = self.listen_download_chat_owner.get(getattr(getattr(message, 'chat', None), 'id', None))
-            await self.create_download_task(message_ids=message.link, single_link=True)
-            if owner is not None:
-                task = DownloadTask.get(message.link)
-                if task is not None and task.owner is None:
-                    task.owner = owner
+            await self.create_download_task(message_ids=message.link, single_link=True, owner=owner)
         except Exception as e:
             log.exception(f'监听下载出现错误,{_t(KeyWord.REASON)}:"{e}"')
 
@@ -1175,7 +1171,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             task = await self.create_download_task(
                 message_ids=user_message,
                 diy_download_type=[_ for _ in DownloadType()],
-                single_link=True
+                single_link=True,
+                owner=user_message.from_user.id
             )
             if task.get('status') == DownloadStatus.DOWNLOADING:
                 await last_message.edit_text(text=f'✅已创建下载任务`{message_id}`。')
@@ -1775,6 +1772,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             download_type: dict = download_chat_filter.get('download_type')
             keyword_filter: dict = download_chat_filter.get('keyword', {})
             include_comment: bool = download_chat_filter.get('comment', False)
+            owner = download_chat_filter.get('owner')
             active_keywords = [k for k, v in keyword_filter.items() if v]
             links: list = []
             # 第一阶段,收集匹配的消息。
@@ -2054,7 +2052,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await self.create_download_task(
                     message_ids=link,
                     single_link=True,
-                    diy_download_type=diy_download_type
+                    diy_download_type=diy_download_type,
+                    owner=owner
                 )
                 assigned_count += 1
             await _progress(
