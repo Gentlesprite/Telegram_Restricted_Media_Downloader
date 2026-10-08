@@ -994,6 +994,7 @@ class Bot:
             message: pyrogram.types.Message
     ):
         self.resolve_requester(message)
+
         async def __listen_info(_listen_chat: dict, _text: str):
             last_message = await client.send_message(
                 chat_id=message.from_user.id,
@@ -1040,6 +1041,14 @@ class Bot:
     ) -> None:
         """热添加或热移除授权用户,支持用户ID或@用户名。"""
         self.resolve_requester(message)
+        # /auth仅root可用:管理员(由root创建)使用直接提示不可用。
+        if not self.root or message.from_user.id != self.root[0]:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text='⛔该命令仅root可用。'
+            )
+            return None
         text: str = message.text
         args: list = text.split()
         if len(args) == 1:
