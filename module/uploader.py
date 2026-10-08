@@ -277,14 +277,17 @@ class TelegramUploader:
                             media_group_cache[media_group_id] = {}
 
                         # 以message_id为键存储。
+                        caption = upload_task.caption or ''
+                        caption_entities = upload_task.caption_entities
+                        entities = caption_entities or None
                         media_group_cache[media_group_id][message_id] = raw.types.InputSingleMedia(
                             media=media,
                             random_id=self.client.rnd_id(),
                             **await utils.parse_text_entities(
                                 self.client,
-                                text='',
+                                text=caption,
                                 parse_mode=None,
-                                entities=None
+                                entities=entities
                             )
                         )
                         prompt = f'[媒体组]:"{media_group_id}"已收集{len(media_group_cache[media_group_id])}个媒体,等待所有媒体上传完成。'
@@ -415,6 +418,9 @@ class TelegramUploader:
         """发送单条媒体消息。"""
         try:
             chat_id = upload_task.chat_id
+            caption = upload_task.caption or ''
+            caption_entities = upload_task.caption_entities
+            entities = caption_entities or None
             await self.client.invoke(
                 raw.functions.messages.SendMedia(
                     peer=await self.client.resolve_peer(chat_id),
@@ -422,9 +428,9 @@ class TelegramUploader:
                     random_id=self.client.rnd_id(),
                     **await utils.parse_text_entities(
                         self.client,
-                        text='',
+                        text=caption,
                         parse_mode=None,
-                        entities=None
+                        entities=entities
                     )
                 )
             )
@@ -707,7 +713,9 @@ class TelegramUploader:
                         with_delete=with_upload.get('with_delete'),
                         media_group=with_upload.get('media_group'),
                         message_id=with_upload.get('message_id'),
-                        send_as_media_group=with_upload.get('send_as_media_group', False)
+                        send_as_media_group=with_upload.get('send_as_media_group', False),
+                        caption=with_upload.get('caption'),
+                        caption_entities=with_upload.get('caption_entities')
                     )
                 )
             )

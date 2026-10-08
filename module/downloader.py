@@ -1567,6 +1567,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                             media_group = None
                         with_upload['message_id'] = message.id
                         with_upload['media_group'] = media_group
+                        with_upload['caption'] = getattr(message, 'caption', None)
+                        with_upload['caption_entities'] = getattr(message, 'caption_entities', None)
                         self.uploader.download_upload(
                             with_upload=with_upload,
                             file_path=os.path.join(self.env_save_directory(message), file_name)
@@ -1604,6 +1606,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                             media_group = None
                         with_upload['message_id'] = message.id
                         with_upload['media_group'] = media_group
+                        with_upload['caption'] = getattr(message, 'caption', None)
+                        with_upload['caption_entities'] = getattr(message, 'caption_entities', None)
                         self.uploader.download_upload(
                             with_upload=with_upload,
                             file_path=os.path.join(self.env_save_directory(message), file_name)
