@@ -1035,7 +1035,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='⛔该命令仅root可用。'
+                text='⛔该命令仅`root`可用。'
             )
             return None
         text: str = message.text
