@@ -100,7 +100,8 @@ class Bot:
         BotCommand(BotCommandText.LISTEN_INFO[0], BotCommandText.LISTEN_INFO[1]),
         BotCommand(BotCommandText.UPLOAD[0], BotCommandText.UPLOAD[1].replace('`', '')),
         BotCommand(BotCommandText.UPLOAD_R[0], BotCommandText.UPLOAD_R[1].replace('`', '')),
-        BotCommand(BotCommandText.DOWNLOAD_CHAT[0], BotCommandText.DOWNLOAD_CHAT[1].replace('`', ''))
+        BotCommand(BotCommandText.DOWNLOAD_CHAT[0], BotCommandText.DOWNLOAD_CHAT[1].replace('`', '')),
+        BotCommand(BotCommandText.AUTH[0], BotCommandText.AUTH[1].replace('`', ''))
     ]
     LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
 
@@ -112,6 +113,7 @@ class Bot:
         self.bot_task_link: set = set()
         self.gc = GlobalConfig()
         self.root: list = []
+        self.auth_filter: Union[pyrogram.filters.Filter, None] = None
         self.last_client: Union[pyrogram.Client, None] = None
         self.last_message: Union[pyrogram.types.Message, None] = None
         self.listen_download_chat: dict = {}
@@ -120,6 +122,13 @@ class Bot:
         self.download_chat_filter: dict = {}
         self.adding_keywords: list = []  # 用于跟踪正在添加的关键词列表。
         self.keyword_handler: Union[MessageHandler, None] = None  # 关键词输入模式的handler。
+
+    @staticmethod
+    async def authorized_filter(flt, _client, update) -> bool:
+        """自定义授权过滤器,实时读取授权用户列表(flt.authorized_ids),支持热更新。"""
+        user = getattr(update, 'from_user', None)
+        uid = getattr(user, 'id', None)
+        return uid is not None and uid in flt.authorized_ids
 
     def add_handler(self, handler, group: int = 0):
         """添加handler到指定的group。直接操作dispatcher.groups以确保正确添加。"""
@@ -146,7 +155,7 @@ class Bot:
             # 先创建 handler 对象，然后添加。
             self.keyword_handler = MessageHandler(
                 partial(self.handle_keyword_input, chat_id, callback_query, callback_prompt),
-                filters=pyrogram.filters.user(self.root) & pyrogram.filters.text & (
+                filters=self.auth_filter & pyrogram.filters.text & (
                     lambda client, m: isinstance(
                         m,
                         pyrogram.types.Message
@@ -535,7 +544,8 @@ class Bot:
             f'🔍 {BotCommandText.with_description(BotCommandText.LISTEN_INFO)}\n'
             f'📤 {BotCommandText.with_description(BotCommandText.UPLOAD)}\n'
             f'🌳 {BotCommandText.with_description(BotCommandText.UPLOAD_R)}\n'
-            f'💬 {BotCommandText.with_description(BotCommandText.DOWNLOAD_CHAT)}\n\n'
+            f'💬 {BotCommandText.with_description(BotCommandText.DOWNLOAD_CHAT)}\n'
+            f'🔐 {BotCommandText.with_description(BotCommandText.AUTH)}\n\n'
             f'{web_auth}'
             f'✨ 其他功能:\n'
             f'📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`类型的消息给我,即可创建下载任务。\n'
@@ -997,6 +1007,96 @@ class Bot:
             if self.listen_forward_chat:
                 await __listen_info(self.listen_forward_chat, '📲以下链接为已创建的`监听转发`频道:\n')
 
+    async def auth_user(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ) -> None:
+        """热添加或热移除授权用户,支持用户ID或@用户名。"""
+        text: str = message.text
+        args: list = text.split()
+        if len(args) == 1:
+            # 无参数时展示当前已授权的用户列表。
+            await self.show_authorized_users(client=client, message=message)
+            return None
+        target: str = args[1].lstrip('@')
+        # 智能解析:纯数字视为用户ID,否则按@用户名解析。
+        try:
+            uid = int(target) if target.isdigit() else (await self.user.get_users(target)).id
+        except Exception as e:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text=f'❌❌❌无法解析用户"{target}"❌❌❌\n{_t(KeyWord.REASON)}:"{e}"'
+            )
+            return None
+        if uid is None:
+            return None
+        # root用户本身就拥有全部权限,无需重复授权。
+        if self.root and uid == self.root[0]:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text='👑该用户即root,已拥有全部权限,无需授权。'
+            )
+            return None
+        # 已存在则展示移除按钮,不再重复添加。
+        if uid in self.gc.authorized_users:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text=f'👥用户`{uid}`已在授权列表中,是否移除?',
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton(
+                            text=BotButton.REMOVE_AUTH,
+                            callback_data=f'{BotCallbackText.REMOVE_AUTH_USER}_{uid}'
+                        ),
+                        InlineKeyboardButton(
+                            text=BotButton.LOOKUP_AUTH_INFO,
+                            callback_data=BotCallbackText.LOOKUP_AUTH_INFO
+                        )
+                    ]
+                ])
+            )
+            return None
+        # 热添加授权用户:实时写入过滤器并持久化到全局配置。
+        self.gc.authorized_users.append(uid)
+        self.root.append(uid)
+        self.gc.config['authorized_users'] = self.gc.authorized_users
+        self.gc.save_config(self.gc.config)
+        await client.send_message(
+            chat_id=message.from_user.id,
+            reply_parameters=ReplyParameters(message_id=message.id),
+            text=f'已添加授权用户:\n{uid}',
+            reply_markup=KeyboardButton.single_button(
+                text=BotButton.LOOKUP_AUTH_INFO,
+                callback_data=BotCallbackText.LOOKUP_AUTH_INFO
+            )
+        )
+        log.info(f'已热添加授权用户:{uid},当前授权用户:{self.gc.authorized_users}。')
+
+    async def show_authorized_users(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ) -> None:
+        """展示当前已授权的额外用户列表。"""
+        users = self.gc.authorized_users
+        if not users:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text='😲目前没有额外的授权用户(仅root可使用机器人)。'
+            )
+            return None
+        lines = '\n'.join(str(u) for u in users)
+        await client.send_message(
+            chat_id=message.from_user.id,
+            reply_parameters=ReplyParameters(message_id=message.id),
+            text=f'👥以下为已授权的用户ID:\n{lines}'
+        )
+
     async def handle_forwarded_media(
             self,
             user_client: pyrogram.Client,
@@ -1041,6 +1141,17 @@ class Bot:
             self.user = user_client_obj
             root = await self.user.get_me()
             self.root.append(root.id)
+            # 将全局配置中的授权用户一并纳入,使其也能操作机器人。
+            self.root.extend(
+                uid for uid in self.gc.authorized_users
+                if isinstance(uid, int) and uid != root.id
+            )
+            # 基于授权列表(self.root)构建自定义过滤器,实时读取以支持热添加/热移除。
+            self.auth_filter = pyrogram.filters.create(
+                self.authorized_filter,
+                name='AuthorizedUser',
+                authorized_ids=self.root
+            )
             await bot_client_obj.start()
             await self.bot.set_bot_commands(self.COMMANDS)
             bot = await self.bot.get_me()
@@ -1049,80 +1160,85 @@ class Bot:
             self.bot.add_handler(
                 MessageHandler(
                     self.start,
-                    filters=pyrogram.filters.command(['start']) & pyrogram.filters.user(self.root)
+                    filters=pyrogram.filters.command(['start']) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.help,
-                    filters=pyrogram.filters.command(['help']) & pyrogram.filters.user(self.root)
+                    filters=pyrogram.filters.command(['help']) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.get_download_link_from_bot,
-                    filters=pyrogram.filters.command(['download']) & pyrogram.filters.user(self.root)
+                    filters=pyrogram.filters.command(['download']) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.get_download_chat_link_from_bot,
-                    filters=pyrogram.filters.command(['download_chat']) & pyrogram.filters.user(self.root)
+                    filters=pyrogram.filters.command(['download_chat']) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.get_upload_link_from_bot,
-                    filters=pyrogram.filters.command(['upload']) & pyrogram.filters.user(self.root)
+                    filters=pyrogram.filters.command(['upload']) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.get_upload_link_from_bot,
-                    filters=pyrogram.filters.command(['upload_r']) & pyrogram.filters.user(self.root)
+                    filters=pyrogram.filters.command(['upload_r']) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.table,
-                    filters=pyrogram.filters.command(['table']) & pyrogram.filters.user(self.root)
+                    filters=pyrogram.filters.command(['table']) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.get_forward_link_from_bot,
-                    filters=pyrogram.filters.command(['forward']) & pyrogram.filters.user(self.root)
+                    filters=pyrogram.filters.command(['forward']) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.exit,
-                    filters=pyrogram.filters.command(['exit']) & pyrogram.filters.user(self.root)
+                    filters=pyrogram.filters.command(['exit']) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.on_listen,
-                    filters=pyrogram.filters.command(['listen_download', 'listen_forward']) & pyrogram.filters.user(
-                        self.root)
+                    filters=pyrogram.filters.command(['listen_download', 'listen_forward']) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.listen_info,
-                    filters=pyrogram.filters.command(['listen_info']) & pyrogram.filters.user(self.root)
+                    filters=pyrogram.filters.command(['listen_info']) & self.auth_filter
+                )
+            )
+            self.bot.add_handler(
+                MessageHandler(
+                    self.auth_user,
+                    filters=pyrogram.filters.command(['auth']) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.get_download_link_from_bot,
-                    filters=pyrogram.filters.regex(r'^https://t.me.*') & pyrogram.filters.user(self.root)
+                    filters=pyrogram.filters.regex(r'^https://t.me.*') & self.auth_filter
                 )
             )
             self.user.add_handler(
                 MessageHandler(
                     self.handle_forwarded_media,
-                    filters=pyrogram.filters.user(self.root) & pyrogram.filters.forwarded & pyrogram.filters.chat(
+                    filters=self.auth_filter & pyrogram.filters.forwarded & pyrogram.filters.chat(
                         bot_username) & (
                                     pyrogram.filters.video
                                     | pyrogram.filters.photo
@@ -1137,13 +1253,13 @@ class Bot:
             self.bot.add_handler(
                 CallbackQueryHandler(
                     self.callback_data,
-                    filters=pyrogram.filters.user(self.root)
+                    filters=self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.process_error_message,
-                    filters=pyrogram.filters.user(self.root) & ~(
+                    filters=self.auth_filter & ~(
                             pyrogram.filters.video
                             | pyrogram.filters.photo
                             | pyrogram.filters.audio
@@ -2090,6 +2206,19 @@ class ListenInfoHandler(CallbackHandler):
             log.error(f'发送查看监听信息命令失败,{_t(KeyWord.REASON)}:"{result}"')
 
 
+class LookupAuthInfoHandler(CallbackHandler):
+    exact = (BotCallbackText.LOOKUP_AUTH_INFO,)
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        # 授权用户列表由机器人命令查询,需用登录账号向机器人发送命令,直接发给用户自己会落入收藏夹。
+        result = await downloader.send_message_to_bot(text='/auth')
+        if isinstance(result, Exception) or result is None:
+            await query.message.reply_text('查看授权用户失败\n(具体原因请前往终端查看报错信息)')
+            log.error(f'发送查看授权用户命令失败,{_t(KeyWord.REASON)}:"{result}"')
+
+
 class ShutdownHandler(CallbackHandler):
     exact = (BotCallbackText.SHUTDOWN,)
 
@@ -2392,6 +2521,30 @@ class ForwardTypeHandler(CallbackHandler):
         f_p = f'已{f_s}"{param}"类型的转发。'
         console.log(f_p, style='#FF4689')
         log.info(f_p)
+
+
+class AuthUserHandler(CallbackHandler):
+    prefixes = (BotCallbackText.REMOVE_AUTH_USER,)
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        bot = ctx.downloader
+        query = ctx.query
+        uid = int(ctx.data.split('_')[-1])
+        if uid not in bot.gc.authorized_users:
+            await query.message.edit_text(f'用户`{uid}`已不在授权列表中。')
+            return None
+        # 热移除:实时从过滤器与配置中剔除,并持久化。
+        bot.gc.authorized_users.remove(uid)
+        root_id = bot.root[0] if bot.root else None
+        if uid != root_id and uid in bot.root:
+            bot.root.remove(uid)
+        bot.gc.config['authorized_users'] = bot.gc.authorized_users
+        bot.gc.save_config(bot.gc.config)
+        p = f'已热移除授权用户:`{uid}`(立即失效并持久化)。'
+        await query.message.edit_text(f'用户`{uid}`已移除授权。')
+        await query.message.edit_reply_markup(
+            KeyboardButton.single_button(text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL))
+        log.info(f'{p}当前授权用户:{bot.gc.authorized_users}')
 
 
 class ListenRemoveHandler(CallbackHandler):
@@ -2757,6 +2910,7 @@ CALLBACK_HANDLERS: tuple = (
     BackHandler(),
     TaskAssignHandler(),
     ListenInfoHandler(),
+    LookupAuthInfoHandler(),
     ShutdownHandler(),
     SettingsHandler(),
     TableHandler(),
@@ -2764,6 +2918,7 @@ CALLBACK_HANDLERS: tuple = (
     DownloadTypeHandler(),
     ForwardTypeHandler(),
     ListenRemoveHandler(),
+    AuthUserHandler(),
     DownloadChatHandler()
 )
 

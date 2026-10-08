@@ -619,7 +619,8 @@ class GlobalConfig(BaseConfig):
                 'animation': True,
                 'video_note': True,
                 'live_photo': True
-            }
+            },
+        'authorized_users': []
     }
 
     def __init__(self):
@@ -639,6 +640,7 @@ class GlobalConfig(BaseConfig):
             nesting_param='delete'
         )
         self.forward_type: dict = self.config.get('forward_type')
+        self.authorized_users: list = self.config.get('authorized_users', [])
 
     def get_nesting_config(self, default_nesting, param, nesting_param):
         return self.config.get(param, default_nesting).get(nesting_param)
@@ -656,6 +658,7 @@ class GlobalConfig(BaseConfig):
             nesting_param='delete'
         )
         self.forward_type: dict = self.config.get('forward_type')
+        self.authorized_users: list = self.config.get('authorized_users', [])
         p = '全局配置文件已重新加载。'
         console.log(p, style='#FF4689')
         log.info(f'{p.replace("。", ":")}{self.config}')
@@ -674,6 +677,15 @@ class GlobalConfig(BaseConfig):
         self.process_nesting(param_name='export_table', config=config)
         self.process_nesting(param_name='upload', config=config)
         self.process_nesting(param_name='forward_type', config=config)
+        # 校验授权用户列表,仅保留整数类型的用户ID。
+        authorized_users: Union[list, object] = config.get('authorized_users')
+        if not isinstance(authorized_users, list):
+            config['authorized_users'] = []
+        else:
+            config['authorized_users'] = [
+                uid for uid in authorized_users
+                if isinstance(uid, int)
+            ]
         # 删除父级模板中没有的字段。
         self.remove_extra_keys(
             target=config,

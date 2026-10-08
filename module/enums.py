@@ -1416,6 +1416,7 @@ class BotCommandText:
     UPLOAD: tuple = ('upload', '上传本地的文件到指定频道。`/upload 本地文件 目标频道`')
     UPLOAD_R: tuple = ('upload_r', '递归上传文件夹(包含子文件夹)到指定频道。`/upload_r 本地文件夹 目标频道`')
     DOWNLOAD_CHAT: tuple = ('download_chat', '下载指定频道并支持通过内联键盘自定义内容过滤。`/download_chat 频道链接`')
+    AUTH: tuple = ('auth', '热添加或热移除授权使用机器人的用户,支持用户ID或@用户名。\n`/auth 123456789` 或 `/auth @username`')
 
     @staticmethod
     def with_description(text: tuple) -> str:
@@ -1435,7 +1436,9 @@ class BotCallbackText:
     DOWNLOAD_UPLOAD: str = 'download_upload'
     REMOVE_LISTEN_DOWNLOAD: str = 'rld'
     REMOVE_LISTEN_FORWARD: str = 'rlf'
+    REMOVE_AUTH_USER: str = 'remove_auth'
     LOOKUP_LISTEN_INFO: str = 'lookup_listen_info'
+    LOOKUP_AUTH_INFO: str = 'lookup_auth_info'
     EXPORT_LINK_TABLE: str = 'export_link_table'
     EXPORT_COUNT_TABLE: str = 'export_count_table'
     EXPORT_UPLOAD_TABLE: str = 'export_upload_table'
@@ -1527,10 +1530,12 @@ class BotButton:
     OK: str = '✅确定'
     CANCEL: str = '❌取消'
     DROP: str = '🗑️移除'
+    REMOVE_AUTH: str = '🗑️移除授权'
     IGNORE: str = '👁️‍🗨️忽略'
     RETURN: str = '🔙返回'
     CONFIRM_AND_RETURN: str = '↩️确定并返回'
     LOOKUP_LISTEN_INFO: str = '🔍查看监听信息'
+    LOOKUP_AUTH_INFO: str = '🔍查看授权用户'
     EXPORT_TABLE: str = '📊导出表格'
     RESELECT: str = '🔄重新选择'
     SETTING: str = '⚙️设置'
