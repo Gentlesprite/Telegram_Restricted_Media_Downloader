@@ -299,7 +299,9 @@ class Bot:
             if text[len('https://t.me/'):].count('/') >= 1:
                 try:
                     await client.delete_messages(chat_id=message.from_user.id, message_ids=message.id)
-                    await self.send_message_to_bot(text=f'/download {text}', catch=True)
+                    await self.send_message_to_bot(
+                        text=f'/download {text}', catch=True, requester=message.from_user.id
+                    )
                 except Exception as e:
                     await client.send_message(
                         chat_id=message.from_user.id,
@@ -722,7 +724,7 @@ class Bot:
                         link=target_link,
                         user_client=self.user,
                         bot_client=self.bot,
-                        bot_message=self.last_message,
+                        bot_message=message,
                         error_msg=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
                     )
                 if not valid_link_cache[target_link]:
@@ -809,7 +811,8 @@ class Bot:
                         file_id=self.user.rnd_id(),
                         file_size=os.path.getsize(file_path),
                         file_part=[],
-                        status=UploadStatus.PENDING
+                        status=UploadStatus.PENDING,
+                        owner=message.from_user.id
                     )
                 }
         if not recursion:
@@ -985,6 +988,7 @@ class Bot:
             client: pyrogram.Client,
             message: pyrogram.types.Message
     ):
+        self.resolve_requester(message)
         async def __listen_info(_listen_chat: dict, _text: str):
             last_message = await client.send_message(
                 chat_id=message.from_user.id,
@@ -1126,14 +1130,19 @@ class Bot:
 
     async def done_notice(
             self,
-            text
+            text,
+            requester: Union[int, None] = None
     ):
+        # 谁创建的任务就通知谁;未指定时回退到最近一条消息(保持原有行为)。
         if self.gc.get_config(BotCallbackText.NOTICE):
-            if all([self.last_client, self.last_message]):
+            chat_id = requester
+            if chat_id is None and self.last_message is not None:
+                chat_id = self.last_message.from_user.id
+            if self.last_client is not None and chat_id is not None:
                 while True:
                     try:
                         await self.last_client.send_message(
-                            chat_id=self.last_message.from_user.id,
+                            chat_id=chat_id,
                             text=f'{BotMessage.NOTICE}{text}',
                             link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                         )
@@ -2190,6 +2199,7 @@ class TaskAssignHandler(CallbackHandler):
     async def handle(self, ctx: CallbackContext) -> None:
         downloader = ctx.downloader
         kb = ctx.kb
+        query = ctx.query
         if not isinstance(downloader.cd.data, dict):
             return None
         meta = downloader.cd.data.copy()
@@ -2198,19 +2208,22 @@ class TaskAssignHandler(CallbackHandler):
         target_link = meta.get('target_link')
         start_id = meta.get('start_id')
         end_id = meta.get('end_id')
+        # 谁点击(创建)任务就反馈给谁:以点击者所在的那条消息作为反馈载体。
+        feedback = query.message
+        feedback.from_user = query.from_user
+        feedback.text = f'/download {origin_link} {start_id} {end_id}'
         if ctx.data == BotCallbackText.DOWNLOAD:
-            downloader.last_message.text = f'/download {origin_link} {start_id} {end_id}'
-            await downloader.get_download_link_from_bot(client=downloader.last_client, message=downloader.last_message)
+            await downloader.get_download_link_from_bot(client=downloader.last_client, message=feedback)
         elif ctx.data == BotCallbackText.DOWNLOAD_UPLOAD:
-            downloader.last_message.text = f'/download {origin_link} {start_id} {end_id}'
             await downloader.get_download_link_from_bot(
                 client=downloader.last_client,
-                message=downloader.last_message,
+                message=feedback,
                 with_upload={
                     'link': target_link,
                     'file_name': None,
                     'with_delete': downloader.gc.upload_delete,
-                    'send_as_media_group': True
+                    'send_as_media_group': True,
+                    'owner': query.from_user.id
                 }
             )
         await kb.task_assign_button()
@@ -2223,7 +2236,7 @@ class ListenInfoHandler(CallbackHandler):
         downloader = ctx.downloader
         query = ctx.query
         # 监听信息由机器人命令查询,需用登录账号向机器人发送命令,直接发给用户自己会落入收藏夹。
-        result = await downloader.send_message_to_bot(text='/listen_info')
+        result = await downloader.send_message_to_bot(text='/listen_info', requester=query.from_user.id)
         if isinstance(result, Exception) or result is None:
             await query.message.reply_text('查看监听信息失败\n(具体原因请前往终端查看报错信息)')
             log.error(f'发送查看监听信息命令失败,{_t(KeyWord.REASON)}:"{result}"')
@@ -2236,7 +2249,7 @@ class LookupAuthInfoHandler(CallbackHandler):
         downloader = ctx.downloader
         query = ctx.query
         # 授权用户列表由机器人命令查询,需用登录账号向机器人发送命令,直接发给用户自己会落入收藏夹。
-        result = await downloader.send_message_to_bot(text='/auth')
+        result = await downloader.send_message_to_bot(text='/auth', requester=query.from_user.id)
         if isinstance(result, Exception) or result is None:
             await query.message.reply_text('查看授权用户失败\n(具体原因请前往终端查看报错信息)')
             log.error(f'发送查看授权用户命令失败,{_t(KeyWord.REASON)}:"{result}"')

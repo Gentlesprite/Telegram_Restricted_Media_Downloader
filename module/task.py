@@ -75,6 +75,7 @@ class DownloadTask:
         self.items: dict = {}  # 消息ID -> 待下载消息(dict,字段见add_item)。
         self.member_info: dict = {}  # 消息ID -> 该链接下消息的展示信息与状态,完成后不移除。
         self.max_retry: int = 0  # 该任务锁定的下载重试上限(首次创建时写入,重试沿用);0表示尚未锁定。
+        self.owner: Union[int, None] = None  # 创建该任务的用户ID,用于「谁创建就通知谁」。
 
     @property
     def fail_num(self) -> int:
@@ -388,7 +389,7 @@ class DownloadTask:
                     f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SUCCESS)}。'
                 )
                 task.error_msg = {}
-                asyncio.create_task(self.done_notice(f'"{link}"下载完成。'))
+                asyncio.create_task(self.done_notice(f'"{link}"下载完成。', requester=task.owner))
                 log.info(f'链接:"{link}"下载完成。')
             return res
 
@@ -420,10 +421,12 @@ class UploadTask:
             message_id: Optional[int] = None,
             send_as_media_group: bool = False,
             caption: Union[str, None] = None,
-            caption_entities: Union[list, None] = None
+            caption_entities: Union[list, None] = None,
+            owner: Union[int, None] = None
     ):
         UploadTask.TASKS.add(self)
         UploadTask.TASK_COUNTER += 1
+        self.owner: Union[int, None] = owner  # 创建该任务的用户ID,用于「谁创建就通知谁」。
         self.chat_id: Union[str, int, None] = chat_id
         self.file_path: str = file_path
         self.file_name: str = os.path.basename(file_path)
@@ -516,7 +519,7 @@ class UploadTask:
         if isinstance(self.NOTIFY, Callable):
             asyncio.create_task(
                 self.NOTIFY(
-                    message
+                    message, requester=self.owner
                 )
             )
 

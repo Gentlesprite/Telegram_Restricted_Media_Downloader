@@ -715,7 +715,8 @@ class TelegramUploader:
                         message_id=with_upload.get('message_id'),
                         send_as_media_group=with_upload.get('send_as_media_group', False),
                         caption=with_upload.get('caption'),
-                        caption_entities=with_upload.get('caption_entities')
+                        caption_entities=with_upload.get('caption_entities'),
+                        owner=with_upload.get('owner')
                     )
                 )
             )

@@ -206,6 +206,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                 retry=None,
                 with_upload=with_upload
             )
+            # 记录任务创建者:下载完成通知与「下载后上传」的后续通知都回到发令者。
+            dl_task = DownloadTask.get(link)
+            if dl_task is not None and dl_task.owner is None:
+                dl_task.owner = message.from_user.id
+            if isinstance(with_upload, dict) and with_upload.get('owner') is None:
+                with_upload['owner'] = message.from_user.id
             invalid_link.add(link) if task.get('status') == DownloadStatus.FAILURE else self.bot_task_link.add(link)
         right_link -= invalid_link
         await self.safe_edit_message(
