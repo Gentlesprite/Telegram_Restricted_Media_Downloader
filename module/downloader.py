@@ -318,7 +318,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             target_link: str,
             download_upload: Optional[bool] = False,
             media_group: Optional[list] = None,
-            done_notice: Optional[bool] = True
+            done_notice: Optional[bool] = True,
+            owner: Union[int, None] = None
     ):
         try:
             if not self.check_type(message):
@@ -333,7 +334,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         self.done_notice(
                             f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{message_id}'
                             f' ➡️ '
-                            f'"{target_chat_id}",{_t(KeyWord.FORWARD_SKIP)}(该类型已过滤)。'
+                            f'"{target_chat_id}",{_t(KeyWord.FORWARD_SKIP)}(该类型已过滤)。',
+                            requester=owner
                         )
                     )
                 return None
@@ -406,7 +408,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     self.done_notice(
                         f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{p_message_id}'
                         f' ➡️ '
-                        f'"{target_chat_id}",{_t(KeyWord.FORWARD_SUCCESS)}。'
+                        f'"{target_chat_id}",{_t(KeyWord.FORWARD_SUCCESS)}。',
+                        requester=owner
                     )
                 )
         except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
@@ -423,7 +426,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             link = message.link
             if not self.gc.download_upload:
                 await self.bot.send_message(
-                    chat_id=client.me.id,
+                    # 谁创建的转发任务就通知谁;未记录创建者时回退到登录账号自己。
+                    chat_id=owner if owner is not None else client.me.id,
                     text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n'
                          f'`{link}`\n'
                          f'存在内容保护限制(可在[设置]->[上传设置]中设置转发时遇到受限转发进行下载后上传)。',
@@ -433,17 +437,27 @@ class TelegramRestrictedMediaDownloader(Bot):
                         callback_data=BotCallbackText.SETTING
                     )]]))
                 return None
-            self.last_message.text = f'/download {link}?single'
-            await self.get_download_link_from_bot(
-                client=self.last_client,
-                message=self.last_message,
-                with_upload={
-                    'link': target_link,
-                    'file_name': None,
-                    'with_delete': self.gc.upload_delete,
-                    'send_as_media_group': True
-                }
+            # 借助 #req 标记让「受限→下载后上传」的反馈回到任务创建者。
+            self.last_message.text = (
+                f'/download {link}?single #req{owner}' if owner is not None
+                else f'/download {link}?single'
             )
+            original_uid = getattr(self.last_message.from_user, 'id', None)
+            try:
+                await self.get_download_link_from_bot(
+                    client=self.last_client,
+                    message=self.last_message,
+                    with_upload={
+                        'link': target_link,
+                        'file_name': None,
+                        'with_delete': self.gc.upload_delete,
+                        'send_as_media_group': True
+                    }
+                )
+            finally:
+                # resolve_requester 会改写 message.from_user.id,此处还原避免影响共享的 last_message。
+                if self.last_message.from_user is not None and original_uid is not None:
+                    self.last_message.from_user.id = original_uid
             p = f'{_t(KeyWord.DOWNLOAD_AND_UPLOAD_TASK)}{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.LINK)}:"{link}"。'
             console.log(p, style='#FF4689')
             log.info(p)
@@ -455,7 +469,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             origin_chat_id: Union[str, int],
             target_chat_id: Union[str, int],
             target_link: str,
-            record_id: list
+            record_id: list,
+            owner: Union[int, None] = None
     ):
         """结算媒体组,组内混合了被过滤的类型时退化为逐条转发,避免整体转发绕过过滤设置。"""
         group_ids = sorted(m.id for m in group_messages)
@@ -470,7 +485,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     origin_chat_id=origin_chat_id,
                     target_chat_id=target_chat_id,
                     target_link=target_link,
-                    done_notice=False
+                    done_notice=False,
+                    owner=owner
                 )
                 record_id.append(m.id)
             return None
@@ -482,7 +498,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             target_chat_id=target_chat_id,
             target_link=target_link,
             media_group=group_ids,
-            done_notice=False
+            done_notice=False,
+            owner=owner
         )
         record_id.extend(group_ids)
 
@@ -495,6 +512,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             return None
         self.last_client: pyrogram.Client = client
         self.last_message: pyrogram.types.Message = message
+        # 谁发起的转发就归属给谁,后续通知与「受限→下载后上传」的反馈都回到此人。
+        owner: Union[int, None] = message.from_user.id
         origin_link: str = meta.get('origin_link')
         target_link: str = meta.get('target_link')
         start_id: int = meta.get('message_range')[0]
@@ -575,7 +594,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 origin_chat_id=origin_chat_id,
                                 target_chat_id=target_chat_id,
                                 target_link=target_link,
-                                record_id=record_id
+                                record_id=record_id,
+                                owner=owner
                             )
                         continue
                     # 非媒体组消息,若前面有未结算的媒体组,先结算该媒体组。
@@ -589,7 +609,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                             origin_chat_id=origin_chat_id,
                             target_chat_id=target_chat_id,
                             target_link=target_link,
-                            record_id=record_id
+                            record_id=record_id,
+                            owner=owner
                         )
                     await self.forward(
                         client=client,
@@ -598,7 +619,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         origin_chat_id=origin_chat_id,
                         target_chat_id=target_chat_id,
                         target_link=target_link,
-                        done_notice=False
+                        done_notice=False,
+                        owner=owner
                     )
                     record_id.append(message_id)
                 except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
@@ -652,7 +674,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{i.id}'
                             f' ➡️ '
                             f'"{target_chat_id}",{_t(KeyWord.FORWARD_FAILURE)}。'
-                            f'\n(具体原因请前往终端查看报错信息)'
+                            f'\n(具体原因请前往终端查看报错信息)',
+                            requester=owner
                         )
                     )
             else:
@@ -666,7 +689,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                             origin_chat_id=origin_chat_id,
                             target_chat_id=target_chat_id,
                             target_link=target_link,
-                            record_id=record_id
+                            record_id=record_id,
+                            owner=owner
                         )
                     except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
                         # 末尾媒体组转发受限,与循环内保持一致转为整段下载后上传。
@@ -959,6 +983,11 @@ class TelegramRestrictedMediaDownloader(Bot):
             last_message: Union[pyrogram.types.Message, None] = None
             for link in links:
                 if await add_listen_chat(link, self.listen_download_chat, self.listen_download):
+                    # 记录监听创建者,后续该监听触发的下载与通知都回到此人。
+                    self.listen_download_owner[link] = message.from_user.id
+                    _meta = await parse_link(client=self.app.client, link=link)
+                    if isinstance(_meta, dict) and _meta.get('chat_id') is not None:
+                        self.listen_download_chat_owner[_meta.get('chat_id')] = message.from_user.id
                     if not last_message:
                         last_message: Union[pyrogram.types.Message, str, None] = await client.send_message(
                             chat_id=message.from_user.id,
@@ -983,6 +1012,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         elif command == '/listen_forward':
             listen_link, target_link = links
             if await add_listen_chat(f'{listen_link} {target_link}', self.listen_forward_chat, self.listen_forward):
+                # 记录监听转发的创建者,后续该监听触发的转发与通知都回到此人。
+                self.listen_forward_owner[f'{listen_link} {target_link}'] = message.from_user.id
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
@@ -1009,7 +1040,13 @@ class TelegramRestrictedMediaDownloader(Bot):
             message: pyrogram.types.Message
     ):
         try:
+            # 归属给创建该监听的人,使其收到下载完成通知。
+            owner = self.listen_download_chat_owner.get(getattr(getattr(message, 'chat', None), 'id', None))
             await self.create_download_task(message_ids=message.link, single_link=True)
+            if owner is not None:
+                task = DownloadTask.get(message.link)
+                if task is not None and task.owner is None:
+                    task.owner = owner
         except Exception as e:
             log.exception(f'监听下载出现错误,{_t(KeyWord.REASON)}:"{e}"')
 
@@ -1090,7 +1127,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 target_chat_id=_target_chat_id,
                                 target_link=target_link,
                                 download_upload=False,
-                                media_group=sorted(ids)
+                                media_group=sorted(ids),
+                                owner=self.listen_forward_owner.get(m)
                             )
                             break
                         break
@@ -1103,7 +1141,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         origin_chat_id=_listen_chat_id,
                         target_chat_id=_target_chat_id,
                         target_link=target_link,
-                        download_upload=True
+                        download_upload=True,
+                        owner=self.listen_forward_owner.get(m)
                     )
         except (ValueError, KeyError, UsernameInvalid, ChatWriteForbidden) as e:
             log.error(

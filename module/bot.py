@@ -120,6 +120,11 @@ class Bot:
         self.last_message: Union[pyrogram.types.Message, None] = None
         self.listen_download_chat: dict = {}
         self.listen_forward_chat: dict = {}
+        # 监听的创建者(谁创建就通知谁):链接/规则 -> 创建者用户ID。
+        self.listen_download_owner: dict = {}
+        self.listen_forward_owner: dict = {}
+        # 被监听频道ID -> 创建者用户ID,供监听回调按频道反查归属。
+        self.listen_download_chat_owner: dict = {}
         self.handle_media_groups: dict = {}
         self.download_chat_filter: dict = {}
         self.adding_keywords: list = []  # 用于跟踪正在添加的关键词列表。
@@ -2596,6 +2601,7 @@ class ListenRemoveHandler(CallbackHandler):
             link = args[1]
             downloader.app.client.remove_handler(downloader.listen_download_chat.get(link))
             downloader.listen_download_chat.pop(link)
+            downloader.listen_download_owner.pop(link, None)
             await query.message.edit_text(link)
             await query.message.edit_reply_markup(
                 KeyboardButton.single_button(text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL))
@@ -2610,6 +2616,7 @@ class ListenRemoveHandler(CallbackHandler):
         link = meta.get('link')
         downloader.app.client.remove_handler(downloader.listen_forward_chat.get(link))
         downloader.listen_forward_chat.pop(link)
+        downloader.listen_forward_owner.pop(link, None)
         m = link.split()
         joined = ' -> '.join(m)
         p = f'已删除监听转发,转发规则:"{joined}"。'
