@@ -201,15 +201,16 @@ class TelegramRestrictedMediaDownloader(Bot):
 
         if links is None:
             return None
+        # 记录任务创建者:下载完成通知与「下载后上传」的后续通知都回到发令者。
+        # 优先使用显式传入的 owner(受限「下载后上传」场景),否则回退到消息发送者。
+        requester = owner if owner is not None else message.from_user.id
         for link in links:
             task: dict = await self.create_download_task(
                 message_ids=link,
                 retry=None,
-                with_upload=with_upload
+                with_upload=with_upload,
+                owner=requester
             )
-            # 记录任务创建者:下载完成通知与「下载后上传」的后续通知都回到发令者。
-            # 优先使用显式传入的 owner(受限「下载后上传」场景),否则回退到消息发送者。
-            requester = owner if owner is not None else message.from_user.id
             dl_task = DownloadTask.get(link)
             if dl_task is not None and dl_task.owner is None:
                 dl_task.owner = requester
@@ -2084,7 +2085,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             retry: Union[dict, None] = None,
             single_link: bool = False,
             with_upload: Union[dict, None] = None,
-            diy_download_type: Optional[list] = None
+            diy_download_type: Optional[list] = None,
+            owner: Union[int, None] = None
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
         diy_download_type = [_ for _ in DownloadType()] if with_upload else diy_download_type
@@ -2108,6 +2110,9 @@ class TelegramRestrictedMediaDownloader(Bot):
 
             link_type, chat_id, message, member_num = meta.values()
             task: DownloadTask = DownloadTask.get_or_create(link)
+            # 创建任务时即锁定归属者,避免任何后续 get 取不到同一对象导致 owner 丢失、通知回退到 root。
+            if owner is not None and task.owner is None:
+                task.owner = owner
             task.link_type = link_type
             task.chat_id = chat_id
             task.member_num = member_num
