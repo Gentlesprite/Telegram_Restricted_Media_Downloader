@@ -176,9 +176,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             self,
             client: pyrogram.Client,
             message: pyrogram.types.Message,
-            with_upload: Union[dict, None] = None
+            with_upload: Union[dict, None] = None,
+            owner: Union[int, None] = None
     ):
-        link_meta: Union[dict, None] = await super().get_download_link_from_bot(client, message)
+        link_meta: Union[dict, None] = await super().get_download_link_from_bot(client, message, owner=owner)
         if link_meta is None:
             return None
         right_link: set = link_meta.get('right_link')
@@ -207,11 +208,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                 with_upload=with_upload
             )
             # 记录任务创建者:下载完成通知与「下载后上传」的后续通知都回到发令者。
+            # 优先使用显式传入的 owner(受限「下载后上传」场景),否则回退到消息发送者。
+            requester = owner if owner is not None else message.from_user.id
             dl_task = DownloadTask.get(link)
             if dl_task is not None and dl_task.owner is None:
-                dl_task.owner = message.from_user.id
+                dl_task.owner = requester
             if isinstance(with_upload, dict) and with_upload.get('owner') is None:
-                with_upload['owner'] = message.from_user.id
+                with_upload['owner'] = requester
             invalid_link.add(link) if task.get('status') == DownloadStatus.FAILURE else self.bot_task_link.add(link)
         right_link -= invalid_link
         await self.safe_edit_message(
@@ -437,13 +440,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                         callback_data=BotCallbackText.SETTING
                     )]]))
                 return None
-            # 借助 #req 标记让「受限→下载后上传」的反馈回到任务创建者。
-            self.last_message.text = (
-                f'/download {link}?single #req{owner}' if owner is not None
-                else f'/download {link}?single'
-            )
-            original_uid = getattr(self.last_message.from_user, 'id', None)
+            # 受限频道:无法直接转发,改为「下载后上传」。直接传 owner,不再用 #req 明文标记。
+            original_text = self.last_message.text
             try:
+                self.last_message.text = f'/download {link}?single'
                 await self.get_download_link_from_bot(
                     client=self.last_client,
                     message=self.last_message,
@@ -451,13 +451,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                         'link': target_link,
                         'file_name': None,
                         'with_delete': self.gc.upload_delete,
-                        'send_as_media_group': True
-                    }
+                        'send_as_media_group': True,
+                        'owner': owner
+                    },
+                    owner=owner
                 )
             finally:
-                # resolve_requester 会改写 message.from_user.id,此处还原避免影响共享的 last_message。
-                if self.last_message.from_user is not None and original_uid is not None:
-                    self.last_message.from_user.id = original_uid
+                self.last_message.text = original_text
             p = f'{_t(KeyWord.DOWNLOAD_AND_UPLOAD_TASK)}{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.LINK)}:"{link}"。'
             console.log(p, style='#FF4689')
             log.info(p)
@@ -650,17 +650,24 @@ class TelegramRestrictedMediaDownloader(Bot):
                         parse_mode=ParseMode.MARKDOWN,
                         reply_parameters=ReplyParameters(message_id=message.id)
                     )
-                    self.last_message.text = f'/download {origin_link} {start_id} {end_id}'
-                    await self.get_download_link_from_bot(
-                        client=self.last_client,
-                        message=self.last_message,
-                        with_upload={
-                            'link': target_link,
-                            'file_name': None,
-                            'with_delete': self.gc.upload_delete,
-                            'send_as_media_group': True
-                        }
-                    )
+                    # 受限频道范围下载:直接传 owner,不再用 #req 明文标记。
+                    original_text = self.last_message.text
+                    try:
+                        self.last_message.text = f'/download {origin_link} {start_id} {end_id}'
+                        await self.get_download_link_from_bot(
+                            client=self.last_client,
+                            message=self.last_message,
+                            with_upload={
+                                'link': target_link,
+                                'file_name': None,
+                                'with_delete': self.gc.upload_delete,
+                                'send_as_media_group': True,
+                                'owner': owner
+                            },
+                            owner=owner
+                        )
+                    finally:
+                        self.last_message.text = original_text
                     break
                 except Exception as e:
                     log.warning(

@@ -105,7 +105,6 @@ class Bot:
         BotCommand(BotCommandText.AUTH[0], BotCommandText.AUTH[1].replace('`', ''))
     ]
     LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
-    REQ_MARKER = re.compile(r'#req(\d+)\s*$')
 
     def __init__(self):
         self.application = None
@@ -136,29 +135,6 @@ class Bot:
         user = getattr(update, 'from_user', None)
         uid = getattr(user, 'id', None)
         return uid is not None and uid in flt.authorized_ids
-
-    def resolve_requester(self, message: pyrogram.types.Message) -> Union[int, None]:
-        """从转发命令中提取原始发令者:改写message.from_user.id与message.text,
-        使后续所有反馈(含下载进度编辑)回到真正的发令者,而非转发用的root账号。
-
-        安全性:标记仅当消息确实由root账号(内部重发通道)发出时才采信。
-        Telegram的发送者身份不可伪造,外部授权用户无法以root账号发消息,
-        因而无法伪造#req<root>绕过/auth的root限制,也无法把通知劫持到任意账号。
-        """
-        text: str = message.text or ''
-        m = Bot.REQ_MARKER.search(text)
-        if not m:
-            return None
-        # 仅信任来自root账号的内部重发;其余(含外部管理员手动附加的 #req)一律忽略,
-        # 此时sender即真实请求者,无需改写。
-        original_uid = getattr(message.from_user, 'id', None)
-        if original_uid != self.root[0]:
-            return None
-        uid: int = int(m.group(1))
-        message.text = text[:m.start()].rstrip()
-        if message.from_user is not None:
-            message.from_user.id = uid
-        return uid
 
     def add_handler(self, handler, group: int = 0):
         """添加handler到指定的group。直接操作dispatcher.groups以确保正确添加。"""
@@ -298,34 +274,27 @@ class Bot:
             self,
             client: pyrogram.Client,
             message: pyrogram.types.Message,
-            with_upload: Union[dict, None] = None
+            with_upload: Union[dict, None] = None,
+            owner: Union[int, None] = None
     ) -> Union[Dict[str, Union[set, pyrogram.types.Message]], None]:
-        self.resolve_requester(message)
+        # 显式接收者:受限「下载后上传」等场景直接传入 owner,不再依赖 #req 明文标记。
+        requester: int = owner if owner is not None else message.from_user.id
         text: str = message.text
         if text == '/download':
             await client.send_message(
-                chat_id=message.from_user.id,
+                chat_id=requester,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='⚠️⚠️⚠️请提供下载链接⚠️⚠️⚠️语法:\n`/download https://t.me/x/x`',
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
         elif text.startswith('https://t.me/'):
             if text[len('https://t.me/'):].count('/') >= 1:
-                try:
-                    await client.delete_messages(chat_id=message.from_user.id, message_ids=message.id)
-                    await self.send_message_to_bot(
-                        text=f'/download {text}', catch=True, requester=message.from_user.id
-                    )
-                except Exception as e:
-                    await client.send_message(
-                        chat_id=message.from_user.id,
-                        reply_parameters=ReplyParameters(message_id=message.id),
-                        text=f'{e}\n⬇️⬇️⬇️请使用以下命令分配下载任务⬇️⬇️⬇️\n`/download {text}`',
-                        link_preview_options=Bot.LINK_PREVIEW_OPTIONS
-                    )
+                # 直接规整为 /download 命令并就地解析,不再删除原消息、不再用 root 账号重发(无 #req)。
+                text = f'/download {text}'
+                return await self.parse_download_command(text, client, message, requester)
             else:
                 await client.send_message(
-                    chat_id=message.from_user.id,
+                    chat_id=requester,
                     reply_parameters=ReplyParameters(message_id=message.id),
                     text=f'⬇️⬇️⬇️请使用以下命令分配下载任务⬇️⬇️⬇️\n`/download https://t.me/x/x`',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
@@ -333,51 +302,61 @@ class Bot:
         elif len(text) <= 25 or text == '/download https://t.me/x/x' or text.endswith('.txt'):
             await self.help(client, message)
             await client.send_message(
-                chat_id=message.from_user.id,
+                chat_id=requester,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='❌❌❌链接错误❌❌❌\n请查看帮助后重试。',
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
         else:
-            link: list = text.split()
-            link.remove('/download') if '/download' in link else None
-            link = [_.rstrip('/') for _ in link]
-            if (
-                    safe_index(link, 0, '').startswith('https://t.me/') and
-                    not safe_index(link, 1, 'https://t.me/').startswith('https://t.me/') and
-                    len(link) == 3
+            return await self.parse_download_command(text, client, message, requester)
+
+    async def parse_download_command(
+            self,
+            text: str,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message,
+            requester: Union[int, None] = None
+    ) -> Union[Dict[str, Union[set, pyrogram.types.Message]], None]:
+        """解析 /download 命令(含裸链规整后的),返回链接信息;不再经由重发与 #req。"""
+        link: list = text.split()
+        link.remove('/download') if '/download' in link else None
+        link = [_.rstrip('/') for _ in link]
+        if (
+                safe_index(link, 0, '').startswith('https://t.me/') and
+                not safe_index(link, 1, 'https://t.me/').startswith('https://t.me/') and
+                len(link) == 3
+        ):
+            # v1.5.1 支持范围下载。
+            start_id: int = int(safe_index(link, 1, -1))
+            end_id: int = int(safe_index(link, 2, -1))
+            if not await self.check_download_range(
+                    start_id=start_id,
+                    end_id=end_id,
+                    client=client,
+                    message=message
             ):
-                # v1.5.1 支持范围下载。
-                start_id: int = int(safe_index(link, 1, -1))
-                end_id: int = int(safe_index(link, 2, -1))
-                if not await self.check_download_range(
-                        start_id=start_id,
-                        end_id=end_id,
-                        client=client,
-                        message=message
-                ):
-                    return None
-                right_link: set = set()
-                invalid_link: set = set()
-                for i in range(start_id, end_id + 1):
-                    right_link.add(f'{link[0]}/{i}?single')  # v1.6.7 修复范围下载链接为组时,重复下载问题。
-            else:
-                right_link: set = set([_ for _ in link if _.startswith('https://t.me/')])
-                invalid_link: set = set([_ for _ in link if not _.startswith('https://t.me/')])
-            if right_link:
-                return {
-                    'right_link': right_link,
-                    'invalid_link': invalid_link,
-                    'last_bot_message': await self.safe_process_message(
-                        client=client, message=message,
-                        text=self.update_text(
-                            right_link=right_link,
-                            invalid_link=invalid_link if invalid_link else None
-                        )
-                    )
-                }
-            else:
                 return None
+            right_link: set = set()
+            invalid_link: set = set()
+            for i in range(start_id, end_id + 1):
+                right_link.add(f'{link[0]}/{i}?single')  # v1.6.7 修复范围下载链接为组时,重复下载问题。
+        else:
+            right_link: set = set([_ for _ in link if _.startswith('https://t.me/')])
+            invalid_link: set = set([_ for _ in link if not _.startswith('https://t.me/')])
+        if right_link:
+            return {
+                'right_link': right_link,
+                'invalid_link': invalid_link if invalid_link else None,
+                'last_bot_message': await self.safe_process_message(
+                    client=client, message=message, requester=requester,
+                    text=self.update_text(
+                        right_link=right_link,
+                        invalid_link=invalid_link if invalid_link else None
+                    )
+                )
+            }
+        else:
+            return None
 
     async def get_download_chat_link_from_bot(
             self,
@@ -487,11 +466,13 @@ class Bot:
             client: pyrogram.Client,
             message: pyrogram.types.Message,
             text: list, last_message_id: int = -1,
-            reply_markup: Union[pyrogram.types.InlineKeyboardMarkup, None] = None
+            reply_markup: Union[pyrogram.types.InlineKeyboardMarkup, None] = None,
+            requester: Union[int, None] = None
     ) -> pyrogram.types.Message:
+        chat_id = requester if requester is not None else message.from_user.id
         if len(text) == 1 and last_message_id != -1:
             last_bot_message = await client.edit_message_text(
-                chat_id=message.from_user.id,
+                chat_id=chat_id,
                 message_id=last_message_id,
                 text=text[0],
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
@@ -502,7 +483,7 @@ class Bot:
         last_bot_messages: list = []
         for t in text:
             last_bot_message: pyrogram.types.Message = await client.send_message(
-                chat_id=message.from_user.id,
+                chat_id=chat_id,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text=t, link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
@@ -1000,13 +981,12 @@ class Bot:
     async def listen_info(
             self,
             client: pyrogram.Client,
-            message: pyrogram.types.Message
+            message: pyrogram.types.Message,
+            target: Union[int, None] = None
     ):
-        self.resolve_requester(message)
-
         async def __listen_info(_listen_chat: dict, _text: str):
             last_message = await client.send_message(
-                chat_id=message.from_user.id,
+                chat_id=target if target is not None else message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
                 text=_text
@@ -1049,7 +1029,6 @@ class Bot:
             message: pyrogram.types.Message
     ) -> None:
         """热添加或热移除授权用户,支持用户ID或@用户名。"""
-        self.resolve_requester(message)
         # /auth仅root可用:管理员(由root创建)使用直接提示不可用。
         if not self.root or message.from_user.id != self.root[0]:
             await client.send_message(
@@ -1126,20 +1105,22 @@ class Bot:
     async def show_authorized_users(
             self,
             client: pyrogram.Client,
-            message: pyrogram.types.Message
+            message: pyrogram.types.Message,
+            target: Union[int, None] = None
     ) -> None:
         """展示当前已授权的额外用户列表。"""
         users = self.gc.authorized_users
+        chat_id = target if target is not None else message.from_user.id
         if not users:
             await client.send_message(
-                chat_id=message.from_user.id,
+                chat_id=chat_id,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 text='😲目前没有额外的授权用户(仅root可使用机器人)。'
             )
             return None
         lines = '\n'.join(str(u) for u in users)
         await client.send_message(
-            chat_id=message.from_user.id,
+            chat_id=chat_id,
             reply_parameters=ReplyParameters(message_id=message.id),
             text=f'👥以下为已授权的用户ID:\n{lines}'
         )
@@ -1338,13 +1319,10 @@ class Bot:
             self.is_bot_running: bool = False
             return f'🤖「机器人」启动失败,{_t(KeyWord.REASON)}:"{e}"'
 
-    async def send_message_to_bot(self, text: str, catch: bool = False, requester: Union[int, None] = None):
+    async def send_message_to_bot(self, text: str, catch: bool = False):
         try:
             bot_username = getattr(await self.bot.get_me(), 'username', None)
             if bot_username:
-                if requester is not None:
-                    # 附加原始发令者标记,使下游反馈回给真正的发令者而非 root 账号。
-                    text = f'{text} #req{requester}'
                 return await self.user.send_message(
                     chat_id=bot_username,
                     text=text,
@@ -2264,11 +2242,16 @@ class ListenInfoHandler(CallbackHandler):
     async def handle(self, ctx: CallbackContext) -> None:
         downloader = ctx.downloader
         query = ctx.query
-        # 监听信息由机器人命令查询,需用登录账号向机器人发送命令,直接发给用户自己会落入收藏夹。
-        result = await downloader.send_message_to_bot(text='/listen_info', requester=query.from_user.id)
-        if isinstance(result, Exception) or result is None:
+        # 直接调用底层逻辑并显式指定接收者=点击者,不再用登录账号重发命令(避免 #req 明文与 root 重发)。
+        try:
+            await downloader.listen_info(
+                client=downloader.bot,
+                message=query.message,
+                target=query.from_user.id
+            )
+        except Exception as e:
             await query.message.reply_text('查看监听信息失败\n(具体原因请前往终端查看报错信息)')
-            log.error(f'发送查看监听信息命令失败,{_t(KeyWord.REASON)}:"{result}"')
+            log.error(f'发送查看监听信息命令失败,{_t(KeyWord.REASON)}:"{e}"')
 
 
 class LookupAuthInfoHandler(CallbackHandler):
@@ -2277,11 +2260,16 @@ class LookupAuthInfoHandler(CallbackHandler):
     async def handle(self, ctx: CallbackContext) -> None:
         downloader = ctx.downloader
         query = ctx.query
-        # 授权用户列表由机器人命令查询,需用登录账号向机器人发送命令,直接发给用户自己会落入收藏夹。
-        result = await downloader.send_message_to_bot(text='/auth', requester=query.from_user.id)
-        if isinstance(result, Exception) or result is None:
+        # 直接调用底层逻辑并显式指定接收者=点击者,不再用登录账号重发命令(避免 #req 明文与 root 重发)。
+        try:
+            await downloader.show_authorized_users(
+                client=downloader.bot,
+                message=query.message,
+                target=query.from_user.id
+            )
+        except Exception as e:
             await query.message.reply_text('查看授权用户失败\n(具体原因请前往终端查看报错信息)')
-            log.error(f'发送查看授权用户命令失败,{_t(KeyWord.REASON)}:"{result}"')
+            log.error(f'发送查看授权用户命令失败,{_t(KeyWord.REASON)}:"{e}"')
 
 
 class ShutdownHandler(CallbackHandler):
