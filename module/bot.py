@@ -4,7 +4,6 @@
 # Time:2025/1/24 21:27
 # File:bot.py
 import os
-import re
 import copy
 import asyncio
 import datetime
@@ -1053,7 +1052,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text=f'❌❌❌无法解析用户"{target}"❌❌❌\n{_t(KeyWord.REASON)}:"{e}"'
+                text=f'❌无法解析用户"{target}"\n{_t(KeyWord.REASON)}:"{e}"'
             )
             return None
         if uid is None:
@@ -1063,7 +1062,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='👑该用户即root,已拥有全部权限,无需授权。'
+                text='👑该用户为`root`,已拥有全部权限,无需授权。'
             )
             return None
         # 已存在则展示移除按钮,不再重复添加。
@@ -1094,7 +1093,7 @@ class Bot:
         await client.send_message(
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
-            text=f'已添加授权用户:\n{uid}',
+            text=f'✅已添加授权用户`ID`:\n`{uid}`',
             reply_markup=KeyboardButton.single_button(
                 text=BotButton.LOOKUP_AUTH_INFO,
                 callback_data=BotCallbackText.LOOKUP_AUTH_INFO
@@ -1115,14 +1114,14 @@ class Bot:
             await client.send_message(
                 chat_id=chat_id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='😲目前没有额外的授权用户(仅root可使用机器人)。'
+                text='😲目前没有额外的授权用户,仅`root`可使用机器人。'
             )
             return None
         lines = '\n'.join(str(u) for u in users)
         await client.send_message(
             chat_id=chat_id,
             reply_parameters=ReplyParameters(message_id=message.id),
-            text=f'👥以下为已授权的用户ID:\n{lines}'
+            text=f'👥以下为已授权的用户`ID`:\n`{lines}`'
         )
 
     async def handle_forwarded_media(
