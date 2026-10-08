@@ -1020,9 +1020,11 @@ class Bot:
             await self.show_authorized_users(client=client, message=message)
             return None
         target: str = args[1].lstrip('@')
-        # 智能解析:纯数字视为用户ID,否则按@用户名解析。
+        # 统一通过 pyrogram 校验用户是否存在,支持用户ID或@用户名。
         try:
-            uid = int(target) if target.isdigit() else (await self.user.get_users(target)).id
+            uid = (await self.user.get_users(
+                int(target) if target.isdigit() else target
+            )).id
         except Exception as e:
             await client.send_message(
                 chat_id=message.from_user.id,
