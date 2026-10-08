@@ -1416,7 +1416,8 @@ class BotCommandText:
     UPLOAD: tuple = ('upload', '上传本地的文件到指定频道。`/upload 本地文件 目标频道`')
     UPLOAD_R: tuple = ('upload_r', '递归上传文件夹(包含子文件夹)到指定频道。`/upload_r 本地文件夹 目标频道`')
     DOWNLOAD_CHAT: tuple = ('download_chat', '下载指定频道并支持通过内联键盘自定义内容过滤。`/download_chat 频道链接`')
-    AUTH: tuple = ('auth', '热添加或热移除授权使用机器人的用户,支持用户ID或@用户名。\n`/auth 123456789` 或 `/auth @username`')
+    AUTH: tuple = ('auth',
+                   '热添加或热移除授权使用机器人的用户,支持用户ID或@用户名。\n`/auth 123456789` 或 `/auth @username`')
 
     @staticmethod
     def with_description(text: tuple) -> str:
@@ -1510,8 +1511,8 @@ class BotButton:
     SUBSCRIBE_CHANNEL: str = '📌订阅频道'
     VIDEO_TUTORIAL: str = '🎬视频教程'
     PAY: str = '💰支持作者'
-    OPEN_NOTICE: str = '📢启用通知'
-    CLOSE_NOTICE: str = '🔕禁用通知'
+    OPEN_NOTICE: str = '📢通知|已禁用 ❌'
+    CLOSE_NOTICE: str = '📢通知|已启用 ✅'
     LINK_TABLE: str = '🔗链接统计表'
     COUNT_TABLE: str = '➕计数统计表'
     UPLOAD_TABLE: str = '📤上传统计表'
@@ -1545,14 +1546,14 @@ class BotButton:
     CLOSE_COUNT_TABLE: str = '🔒禁用导出计数表格'
     OPEN_UPLOAD_TABLE: str = '🔓启用导出上传表格'
     CLOSE_UPLOAD_TABLE: str = '🔒禁用导出上传表格'
-    OPEN_EXIT_SHUTDOWN: str = '✅启用退出后关机'
-    CLOSE_EXIT_SHUTDOWN: str = '❌禁用退出后关机'
+    OPEN_EXIT_SHUTDOWN: str = '🔌退出后关机|已禁用 ❌'
+    CLOSE_EXIT_SHUTDOWN: str = '🔌退出后关机|已启用 ✅'
     ALREADY_REMOVE: str = '✅已移除'
     UPLOAD_SETTING: str = '📤上传设置'
     DOWNLOAD_SETTING: str = '📥下载设置'
     FORWARD_SETTING: str = '↗️转发设置'
-    OPEN_UPLOAD_DOWNLOAD: str = '下载后上传|禁用中❌'
-    CLOSE_UPLOAD_DOWNLOAD: str = '下载后上传|启用中✅'
+    OPEN_UPLOAD_DOWNLOAD: str = '下载后上传|已禁用 ❌'
+    CLOSE_UPLOAD_DOWNLOAD: str = '下载后上传|已启用 ✅'
     OPEN_UPLOAD_DOWNLOAD_DELETE: str = '当前|本地文件保留📚'
     CLOSE_UPLOAD_DOWNLOAD_DELETE: str = '当前|本地文件删除🗑'
     VIDEO_ON: str = '🎬视频 ✅'
