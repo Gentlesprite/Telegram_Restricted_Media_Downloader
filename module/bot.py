@@ -137,13 +137,22 @@ class Bot:
         uid = getattr(user, 'id', None)
         return uid is not None and uid in flt.authorized_ids
 
-    @staticmethod
-    def resolve_requester(message: pyrogram.types.Message) -> Union[int, None]:
-        """从转发命令中提取原始发令者:改写 message.from_user.id 与 message.text,
-        使后续所有反馈(含下载进度编辑)回到真正的发令者,而非转发用的 root 账号。"""
+    def resolve_requester(self, message: pyrogram.types.Message) -> Union[int, None]:
+        """从转发命令中提取原始发令者:改写message.from_user.id与message.text,
+        使后续所有反馈(含下载进度编辑)回到真正的发令者,而非转发用的root账号。
+
+        安全性:标记仅当消息确实由root账号(内部重发通道)发出时才采信。
+        Telegram的发送者身份不可伪造,外部授权用户无法以root账号发消息,
+        因而无法伪造#req<root>绕过/auth的root限制,也无法把通知劫持到任意账号。
+        """
         text: str = message.text or ''
         m = Bot.REQ_MARKER.search(text)
         if not m:
+            return None
+        # 仅信任来自root账号的内部重发;其余(含外部管理员手动附加的 #req)一律忽略,
+        # 此时sender即真实请求者,无需改写。
+        original_uid = getattr(message.from_user, 'id', None)
+        if original_uid != self.root[0]:
             return None
         uid: int = int(m.group(1))
         message.text = text[:m.start()].rstrip()
