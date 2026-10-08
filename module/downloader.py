@@ -1772,7 +1772,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             download_type: dict = download_chat_filter.get('download_type')
             keyword_filter: dict = download_chat_filter.get('keyword', {})
             include_comment: bool = download_chat_filter.get('comment', False)
-            owner = download_chat_filter.get('owner')
+            # 归属者取点击"开始下载"按钮的人(callback_query 发起者即命令发起者,私聊场景下一致),
+            # 无需在 filter 配置里额外存 owner。
+            owner = callback_query.from_user.id
             active_keywords = [k for k, v in keyword_filter.items() if v]
             links: list = []
             # 第一阶段,收集匹配的消息。
