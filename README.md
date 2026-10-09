@@ -183,7 +183,7 @@
 
    ![image](https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/2_2_12.png)
 
-   **如果没收到**尝试尝试给机器人发送任意命令。
+   **如果没收到**尝试给机器人发送任意命令。
 
 5. 目前机器人支持的命令用法及解释如下表所示：
 
