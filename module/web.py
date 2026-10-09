@@ -273,8 +273,7 @@ class WebHandler(BaseHTTPRequestHandler):
     def __response_set_config(self) -> None:
         """处理网页面板修改配置的请求。
 
-        save_directory / max_tasks / max_retries三个历史路径在这里等价:一次性读取请求体中的
-        全部字段交由Web.set_config处理,多项改动因此只会写一次配置文件。
+        save_directory / max_tasks / max_retries三个历史路径在这里等价:一次性读取请求体中的全部字段交由Web.set_config处理,多项改动因此只会写一次配置文件。
         """
         web: Union[Web, None] = getattr(self.server, 'web', None)
         payload: dict = self.__read_json()
@@ -628,7 +627,14 @@ class Web:
             return {'status': False, 'e_code': '移除监听超时，请稍后重试。'}
 
     @staticmethod
-    def __check_number_pair(values, lower: int, upper, name: str, range_text: str, error_parts: list):
+    def __check_number_pair(
+            values: Union[dict, None],
+            lower: int,
+            upper: Union[int, None],
+            name: str,
+            range_text: str,
+            error_parts: list
+    ) -> Union[dict, None]:
         """校验一组下载/上传数值是否合法,不合法时把失败原因追加到error_parts。
 
         Args:
@@ -661,8 +667,7 @@ class Web:
     def __check_save_directory(path: str, allow_create: bool = True) -> dict:
         """非交互地校验保存目录。
 
-        Validator.is_valid_save_directory内部会console.input交互询问,在Web线程中会阻塞,因此此处
-        采用非交互校验:剥离通配符占位符后判断目录,不存在时按allow_create决定是否直接创建。
+        剥离通配符占位符后判断目录,不存在时按allow_create决定是否直接创建。
 
         Args:
             path: 新的保存目录,允许包含通配符占位符。
@@ -742,11 +747,7 @@ class Web:
             log.warning(f'唤醒排队上传任务失败,原因:"{e}"')
 
     def set_config(self, directory=None, max_tasks=None, max_retries=None, confirm_directory: bool = False) -> dict:
-        """按网页面板的请求一次性修改多项配置,并只落盘一次。
-
-        保存目录、并发数、重试次数原本各走一次save_config:同时改动会写三次盘,且其中一项失败时
-        已经写入的项无法回退,出现"部分生效"。这里改为合并提交:先把各项的错误全部收集完毕,
-        任一不合法就整体放弃;全部通过后才改写配置并只调用一次save_config。
+        """按网页面板的请求一次性修改多项配置。
 
         Args:
             directory: 新的保存目录;None表示本次不修改。

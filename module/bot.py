@@ -276,7 +276,6 @@ class Bot:
             with_upload: Union[dict, None] = None,
             owner: Union[int, None] = None
     ) -> Union[Dict[str, Union[set, pyrogram.types.Message]], None]:
-        # 显式接收者:受限「下载后上传」等场景直接传入 owner,不再依赖 #req 明文标记。
         requester: int = owner if owner is not None else message.from_user.id
         text: str = message.text
         if text == '/download':
@@ -288,7 +287,6 @@ class Bot:
             )
         elif text.startswith('https://t.me/'):
             if text[len('https://t.me/'):].count('/') >= 1:
-                # 直接规整为 /download 命令并就地解析,不再删除原消息、不再用 root 账号重发(无 #req)。
                 text = f'/download {text}'
                 return await self.parse_download_command(text, client, message, requester)
             else:
@@ -316,7 +314,7 @@ class Bot:
             message: pyrogram.types.Message,
             requester: Union[int, None] = None
     ) -> Union[Dict[str, Union[set, pyrogram.types.Message]], None]:
-        """解析 /download 命令(含裸链规整后的),返回链接信息;不再经由重发与 #req。"""
+        """解析/download命令(含裸链规整后的),返回链接信息。"""
         link: list = text.split()
         link.remove('/download') if '/download' in link else None
         link = [_.rstrip('/') for _ in link]
@@ -2243,7 +2241,7 @@ class ListenInfoHandler(CallbackHandler):
     async def handle(self, ctx: CallbackContext) -> None:
         downloader = ctx.downloader
         query = ctx.query
-        # 直接调用底层逻辑并显式指定接收者=点击者,不再用登录账号重发命令(避免 #req 明文与 root 重发)。
+        # 直接调用底层逻辑并显式指定接收者即点击者,不再用登录账号重发命令。
         try:
             await downloader.listen_info(
                 client=downloader.bot,
@@ -2261,7 +2259,7 @@ class LookupAuthInfoHandler(CallbackHandler):
     async def handle(self, ctx: CallbackContext) -> None:
         downloader = ctx.downloader
         query = ctx.query
-        # 直接调用底层逻辑并显式指定接收者=点击者,不再用登录账号重发命令(避免 #req 明文与 root 重发)。
+        # 直接调用底层逻辑并显式指定接收者即点击者,不再用登录账号重发命令。
         try:
             await downloader.show_authorized_users(
                 client=downloader.bot,

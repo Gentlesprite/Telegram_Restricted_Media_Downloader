@@ -443,7 +443,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                         callback_data=BotCallbackText.SETTING
                     )]]))
                 return None
-            # 受限频道:无法直接转发,改为「下载后上传」。直接传 owner,不再用 #req 明文标记。
             original_text = self.last_message.text
             try:
                 self.last_message.text = f'/download {link}?single'
@@ -653,7 +652,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                         parse_mode=ParseMode.MARKDOWN,
                         reply_parameters=ReplyParameters(message_id=message.id)
                     )
-                    # 受限频道范围下载:直接传 owner,不再用 #req 明文标记。
                     original_text = self.last_message.text
                     try:
                         self.last_message.text = f'/download {origin_link} {start_id} {end_id}'
