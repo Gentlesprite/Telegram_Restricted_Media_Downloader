@@ -305,45 +305,29 @@ class Bot:
             return None
         # 所有步骤收集完成,组装命令交给既有流程,并防group=0重复触发。
         data = pending['data']
-        bot_username = getattr(await self.bot.get_me(), 'username', None)
         if command == BotCommandText.DOWNLOAD[0]:
             await self.get_download_link_from_bot(client=_client, message=message)
         elif command == BotCommandText.DOWNLOAD_CHAT[0]:
-            if bot_username:
-                await self.user.send_message(
-                    chat_id=bot_username,
-                    text=f'/{BotCommandText.DOWNLOAD_CHAT[0]} {data[BotStepKeyword.LINK]}',
-                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
-                )
+            new_message = copy.copy(message)
+            new_message.text = f'/{BotCommandText.DOWNLOAD_CHAT[0]} {data[BotStepKeyword.LINK]}'
+            await self.get_download_chat_link_from_bot(client=self.bot, message=new_message)
         elif command in (BotCommandText.UPLOAD[0], BotCommandText.UPLOAD_R[0]):
-            if bot_username:
-                cmd = f'/{BotCommandText.UPLOAD[0]}' if command == BotCommandText.UPLOAD[0] else f'/{BotCommandText.UPLOAD_R[0]}'
-                await self.user.send_message(
-                    chat_id=bot_username,
-                    text=f'{cmd} {data[BotStepKeyword.PATH]} {data[BotStepKeyword.TARGET]}',
-                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
-                )
+            cmd = f'/{BotCommandText.UPLOAD[0]}' if command == BotCommandText.UPLOAD[0] else f'/{BotCommandText.UPLOAD_R[0]}'
+            new_message = copy.copy(message)
+            new_message.text = f'{cmd} {data[BotStepKeyword.PATH]} {data[BotStepKeyword.TARGET]}'
+            await self.get_upload_link_from_bot(client=self.bot, message=new_message)
         elif command == BotCommandText.FORWARD[0]:
-            if bot_username:
-                await self.user.send_message(
-                    chat_id=bot_username,
-                    text=f'/{BotCommandText.FORWARD[0]} {data[BotStepKeyword.ORIGIN]} {data[BotStepKeyword.TARGET]} {data[BotStepKeyword.START_ID]} {data[BotStepKeyword.END_ID]}',
-                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
-                )
+            new_message = copy.copy(message)
+            new_message.text = f'/{BotCommandText.FORWARD[0]} {data[BotStepKeyword.ORIGIN]} {data[BotStepKeyword.TARGET]} {data[BotStepKeyword.START_ID]} {data[BotStepKeyword.END_ID]}'
+            await self.get_forward_link_from_bot(client=self.bot, message=new_message)
         elif command == BotCommandText.LISTEN_DOWNLOAD[0]:
-            if bot_username:
-                await self.user.send_message(
-                    chat_id=bot_username,
-                    text=f'/{BotCommandText.LISTEN_DOWNLOAD[0]} {data[BotStepKeyword.ORIGIN]}',
-                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
-                )
+            new_message = copy.copy(message)
+            new_message.text = f'/{BotCommandText.LISTEN_DOWNLOAD[0]} {data[BotStepKeyword.ORIGIN]}'
+            await self.on_listen(client=self.bot, message=new_message)
         elif command == BotCommandText.LISTEN_FORWARD[0]:
-            if bot_username:
-                await self.user.send_message(
-                    chat_id=bot_username,
-                    text=f'/{BotCommandText.LISTEN_FORWARD[0]} {data[BotStepKeyword.ORIGIN]} {data[BotStepKeyword.TARGET]}',
-                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
-                )
+            new_message = copy.copy(message)
+            new_message.text = f'/{BotCommandText.LISTEN_FORWARD[0]} {data[BotStepKeyword.ORIGIN]} {data[BotStepKeyword.TARGET]}'
+            await self.on_listen(client=self.bot, message=new_message)
         self.command_processed.add(message.id)
         self.add_command_mode_handler(
             chat_id=chat_id, callback_query=callback_query, command=command, enable=False)
@@ -665,8 +649,8 @@ class Bot:
         return last_bot_messages[-1]
 
     @staticmethod
-    def menu_keyboard(level: str = 'main') -> InlineKeyboardMarkup:
-        """按层级返回内联键盘:main为分组主菜单,download/listen/upload为二级子菜单。"""
+    def menu_keyboard(level: str = 'main', is_authorized: bool = False, is_root: bool = False) -> InlineKeyboardMarkup:
+        """按层级返回内联键盘:main为分组主菜单,download/listen/upload/auth为二级子菜单。"""
         config: dict = rc.cached_config()
         if level == 'download':
             return InlineKeyboardMarkup([
@@ -700,8 +684,17 @@ class Bot:
                     InlineKeyboardButton(BotButton.MENU_BACK, callback_data=BotCallbackText.MENU_BACK)
                 ]
             ])
-        # 主菜单:常用功能(下载/上传/转发/监听)两排置顶,原有链接与设置入口下移。
-        return InlineKeyboardMarkup([
+        if level == 'auth':
+            return InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(BotButton.LOOKUP_AUTH_INFO, callback_data=BotCallbackText.LOOKUP_AUTH_INFO)
+                ],
+                [
+                    InlineKeyboardButton(BotButton.MENU_BACK, callback_data=BotCallbackText.MENU_BACK)
+                ]
+            ])
+        # 主菜单:下载/上传/转发/监听对任意授权用户可见,鉴权管理仅root可见,其余入口始终展示。
+        feature_rows = [
             [
                 InlineKeyboardButton(BotButton.MENU_DOWNLOAD, callback_data=BotCallbackText.MENU_DOWNLOAD),
                 InlineKeyboardButton(BotButton.MENU_UPLOAD, callback_data=BotCallbackText.MENU_UPLOAD)
@@ -709,19 +702,28 @@ class Bot:
             [
                 InlineKeyboardButton(BotButton.CMD_FORWARD, callback_data=BotCallbackText.COMMAND_FORWARD),
                 InlineKeyboardButton(BotButton.MENU_LISTEN, callback_data=BotCallbackText.MENU_LISTEN)
-            ],
+            ]
+        ] if is_authorized else []
+        auth_row = [
             [
-                InlineKeyboardButton(BotButton.GITHUB, url=config.get('github', rc.DEFAULT_GITHUB) + '/releases'),
-                InlineKeyboardButton(BotButton.SUBSCRIBE_CHANNEL,
-                                     url=config.get('subscribe_channel', rc.DEFAULT_SUBSCRIBE_CHANNEL))
-            ],
-            [
-                InlineKeyboardButton(BotButton.VIDEO_TUTORIAL,
-                                     url=config.get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL)),
-                InlineKeyboardButton(BotButton.PAY, callback_data=BotCallbackText.PAY)
-            ],
-            [InlineKeyboardButton(BotButton.SETTING, callback_data=BotCallbackText.SETTING)]
-        ])
+                InlineKeyboardButton(BotButton.AUTH_MENU, callback_data=BotCallbackText.MENU_AUTH)
+            ]
+        ] if is_root else []
+        return InlineKeyboardMarkup(
+            feature_rows + auth_row + [
+                [
+                    InlineKeyboardButton(BotButton.GITHUB, url=config.get('github', rc.DEFAULT_GITHUB) + '/releases'),
+                    InlineKeyboardButton(BotButton.SUBSCRIBE_CHANNEL,
+                                         url=config.get('subscribe_channel', rc.DEFAULT_SUBSCRIBE_CHANNEL))
+                ],
+                [
+                    InlineKeyboardButton(BotButton.VIDEO_TUTORIAL,
+                                         url=config.get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL)),
+                    InlineKeyboardButton(BotButton.PAY, callback_data=BotCallbackText.PAY)
+                ],
+                [InlineKeyboardButton(BotButton.SETTING, callback_data=BotCallbackText.SETTING)]
+            ]
+        )
 
     async def help(
             self,
@@ -731,6 +733,7 @@ class Bot:
         web = getattr(self, 'web', None)  # 网页面板实例,用于展示认证信息。
         web_auth: str = ''
         more_feature: str = ''
+        uid = message.from_user.id if message and message.from_user else None
         if message is None or not self.root or message.from_user.id == self.root[0]:
             more_feature = f'✨ 其他功能:\n📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`类型的消息给我,即可创建下载任务。\n'
         if web is not None:
@@ -747,7 +750,11 @@ class Bot:
             local_version=__version__
         )
         version: str = f'{VERSION_SEMVER}({update_version}⬆)' if update_version else VERSION_SEMVER
-        keyboard = self.menu_keyboard('main')
+        keyboard = self.menu_keyboard(
+            'main',
+            is_authorized=(uid is None) or (not self.root) or (uid in self.root),
+            is_root=(uid is None) or (not self.root) or (uid == self.root[0])
+        )
 
         text = (
             f'`\n💎 {SOFTWARE_SHORT_NAME} {version} 💎\n'
@@ -3216,6 +3223,7 @@ class MenuButtonHandler(CallbackHandler):
         BotCallbackText.MENU_DOWNLOAD,
         BotCallbackText.MENU_LISTEN,
         BotCallbackText.MENU_UPLOAD,
+        BotCallbackText.MENU_AUTH,
         BotCallbackText.MENU_BACK
     )
 
@@ -3229,8 +3237,15 @@ class MenuButtonHandler(CallbackHandler):
             kb = downloader.menu_keyboard('listen')
         elif data == BotCallbackText.MENU_UPLOAD:
             kb = downloader.menu_keyboard('upload')
+        elif data == BotCallbackText.MENU_AUTH:
+            kb = downloader.menu_keyboard('auth')
         elif data == BotCallbackText.MENU_BACK:
-            kb = downloader.menu_keyboard('main')
+            user_id = query.from_user.id
+            kb = downloader.menu_keyboard(
+                'main',
+                is_authorized=not (downloader.root and user_id not in downloader.root),
+                is_root=not (downloader.root and user_id != downloader.root[0])
+            )
         else:
             return None
         await query.edit_message_reply_markup(reply_markup=kb)
