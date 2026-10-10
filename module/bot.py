@@ -160,10 +160,10 @@ class Bot:
         self.handle_media_groups: dict = {}
         self.download_chat_filter: dict = {}
         self.adding_keywords: list = []  # 用于跟踪正在添加的关键词列表。
-        self.command_handler = None  # 命令输入模式的handler单例。
+        self.command_handlers: dict = {}  # 命令输入模式的handler,按chat_id隔离,支持多用户并发引导。
         self.command_processed: set = set()  # 已通过命令输入模式处理的消息ID,避免与既有handler重复触发。
         self.pending_tasks: dict = {}  # 多步引导的待收集任务状态。
-        self.keyword_handler: Union[MessageHandler, None] = None  # 关键词输入模式的handler。
+        self.keyword_handlers: dict = {}  # 关键词输入模式的handler,按chat_id隔离。
 
     @staticmethod
     async def authorized_filter(flt, _client, update) -> bool:
@@ -192,12 +192,15 @@ class Bot:
             callback_prompt: Callable,
             enable: bool
     ):
-        """添加或移除关键词输入模式的handler。"""
+        """添加或移除关键词输入模式的handler,按chat_id隔离以避免多用户互相串扰。"""
         if enable:
-            # 先创建 handler 对象，然后添加。
-            self.keyword_handler = MessageHandler(
+            # 同一用户若已有输入模式,先清退其旧handler,避免堆积。
+            old = self.keyword_handlers.pop(chat_id, None)
+            if old:
+                self.remove_handler(old, group=-1)
+            keyword_handler = MessageHandler(
                 partial(self.handle_keyword_input, chat_id, callback_query, callback_prompt),
-                filters=self.auth_filter & pyrogram.filters.text & (
+                filters=self.auth_filter & pyrogram.filters.chat(chat_id) & pyrogram.filters.text & (
                     lambda client, m: isinstance(
                         m,
                         pyrogram.types.Message
@@ -205,14 +208,14 @@ class Bot:
                         '/') and not m.text.startswith('http')
                 )
             )
-            # 使用group=-1确保在process_error_message(group=0)之前处理。
-            self.add_handler(self.keyword_handler, group=-1)
-            log.info(f'用户输入模式已打开,Handler:"{self.keyword_handler}"。')
+            self.keyword_handlers[chat_id] = keyword_handler
+            self.add_handler(keyword_handler, group=-1)
+            log.info(f'用户输入模式已打开,Handler:"{keyword_handler}"。')
         else:
-            if self.keyword_handler:
-                self.remove_handler(self.keyword_handler, group=-1)
+            old = self.keyword_handlers.pop(chat_id, None)
+            if old:
+                self.remove_handler(old, group=-1)
                 log.info('用户输入模式已关闭,Handler已清空。')
-                self.keyword_handler = None
 
     def add_command_mode_handler(
             self,
@@ -221,29 +224,30 @@ class Bot:
             command: str,
             enable: bool
     ):
-        """添加或移除命令输入模式的handler。"""
+        """添加或移除命令输入模式的handler,按chat_id隔离以避免多用户互相串扰。"""
         if enable:
-            # 开启新的命令输入模式前,先清退可能残留的旧handler,避免多个handler堆积导致旧命令误触发。
-            if self.command_handler:
-                self.remove_handler(self.command_handler, group=-1)
-                self.command_handler = None
+            # 同一用户若已有输入模式,先清退其旧handler,避免堆积。
+            old = self.command_handlers.pop(chat_id, None)
+            if old:
+                self.remove_handler(old, group=-1)
             self.pending_tasks[chat_id] = {'command': command, 'step': 0, 'data': {}}
-            self.command_handler = MessageHandler(
+            command_handler = MessageHandler(
                 partial(self.handle_command_input, chat_id, callback_query, command),
-                filters=self.auth_filter & pyrogram.filters.text & (
+                filters=self.auth_filter & pyrogram.filters.chat(chat_id) & pyrogram.filters.text & (
                     lambda client, m: isinstance(
                         m,
                         pyrogram.types.Message
                     ) and m.text and m.text.strip() and not m.text.startswith(self.COMMAND_PREFIX_BLACKLIST)
                 )
             )
-            self.add_handler(self.command_handler, group=-1)
-            log.info(f'命令输入模式已打开,Handler:"{self.command_handler}"。')
+            self.command_handlers[chat_id] = command_handler
+            self.add_handler(command_handler, group=-1)
+            log.info(f'命令输入模式已打开,Handler:"{command_handler}"。')
         else:
-            if self.command_handler:
-                self.remove_handler(self.command_handler, group=-1)
+            old = self.command_handlers.pop(chat_id, None)
+            if old:
+                self.remove_handler(old, group=-1)
                 log.info('命令输入模式已关闭,Handler已清空。')
-                self.command_handler = None
             self.pending_tasks.pop(chat_id, None)
 
     async def handle_command_input(
@@ -334,7 +338,7 @@ class Bot:
         self.pending_tasks.pop(chat_id, None)
 
     async def process_error_message(self, client: pyrogram.Client, message: pyrogram.types.Message) -> None:
-        if self.keyword_handler:
+        if message.from_user.id in self.keyword_handlers:
             return
         if message.id in self.command_processed:
             return
