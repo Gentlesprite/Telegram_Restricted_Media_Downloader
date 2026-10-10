@@ -736,13 +736,19 @@ class Bot:
     async def help(
             self,
             client: Union[pyrogram.Client, None] = None,
-            message: Union[pyrogram.types.Message, None] = None
+            message: Union[pyrogram.types.Message, None] = None,
+            user_id: Union[int, None] = None
     ) -> Union[None, dict]:  # client与message都为None时,返回keyboard与text。
         web = getattr(self, 'web', None)  # 网页面板实例,用于展示认证信息。
         web_auth: str = ''
         more_feature: bool = False
-        uid = message.from_user.id if message and message.from_user else None
-        if message is None or not self.root or message.from_user.id == self.root[0]:
+        if user_id is not None:
+            uid = user_id
+        elif message and message.from_user:
+            uid = message.from_user.id
+        else:
+            uid = None
+        if uid is None or not self.root or uid == self.root[0]:
             more_feature = True
         if web is not None:
             web_auth = (
@@ -3386,12 +3392,10 @@ class MenuButtonHandler(CallbackHandler):
         elif data == BotCallbackText.MENU_AUTH:
             kb = downloader.menu_keyboard('auth')
         elif data == BotCallbackText.MENU_BACK:
-            user_id = query.from_user.id
-            kb = downloader.menu_keyboard(
-                'main',
-                is_authorized=not (downloader.root and user_id not in downloader.root),
-                is_root=not (downloader.root and user_id != downloader.root[0])
-            )
+            # 返回主菜单时同时还原文本与键盘,避免停留在子菜单遗留的text状态。
+            menu = await downloader.help(user_id=query.from_user.id)
+            await query.edit_message_text(text=menu['text'], reply_markup=menu['keyboard'])
+            return None
         else:
             return None
         await query.edit_message_reply_markup(reply_markup=kb)
