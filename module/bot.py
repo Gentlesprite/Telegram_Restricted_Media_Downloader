@@ -3390,7 +3390,11 @@ class MenuButtonHandler(CallbackHandler):
         elif data == BotCallbackText.MENU_UPLOAD:
             kb = downloader.menu_keyboard('upload')
         elif data == BotCallbackText.MENU_AUTH:
-            kb = downloader.menu_keyboard('auth')
+            # 进入授权用户子菜单时同步刷新文本,避免仍停留在主菜单/help文本。
+            await query.edit_message_text(
+                text='🔐授权用户管理',
+                reply_markup=downloader.menu_keyboard('auth'))
+            return None
         elif data == BotCallbackText.MENU_BACK:
             # 返回主菜单时同时还原文本与键盘,避免停留在子菜单遗留的text状态。
             menu = await downloader.help(user_id=query.from_user.id)
