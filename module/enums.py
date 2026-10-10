@@ -1528,6 +1528,26 @@ class BotCallbackText:
                 yield value
 
 
+class BotCallbackPrefix:
+    """回调数据的固定前缀,其后拼接动态参数(日期、年份、关键词等)。
+
+    与BotCallbackText的区别在于这些值只做前缀匹配,实际回调数据还会追加参数,
+    压缩回调数据时同样以此为准,避免出现两处硬编码不一致。
+    """
+    TIME_INC: str = 'time_inc_'
+    TIME_DEC: str = 'time_dec_'
+    SET_TIME: str = 'set_time_'
+    SET_SPECIFIC_TIME: str = 'set_specific_time_'
+    ADJUST_STEP: str = 'adjust_step_'
+    DROP_KEYWORD: str = 'drop_keyword_'
+    IGNORE_KEYWORD: str = 'ignore_keyword'
+
+    def __iter__(self):
+        for key, value in vars(self.__class__).items():
+            if not key.startswith('__') and not callable(value):  # 排除特殊方法和属性。
+                yield value
+
+
 class BotStepKeyword:
     LINK = 'link'
     PATH = 'path'

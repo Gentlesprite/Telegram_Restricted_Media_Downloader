@@ -15,6 +15,7 @@ import logging
 import subprocess
 
 from collections import deque
+from functools import lru_cache
 
 from typing import (
     Tuple,
@@ -46,7 +47,9 @@ from module import (
 from module.enums import (
     Link,
     LinkType,
-    DownloadType
+    DownloadType,
+    BotCallbackText,
+    BotCallbackPrefix
 )
 
 
@@ -633,6 +636,110 @@ def get_message_dtype(message, download_type: Optional[list] = None) -> Union[st
         if dtype != DownloadType.LIVE_PHOTO and getattr(message, dtype, None):
             return dtype
     return None
+
+
+@lru_cache(maxsize=1)
+def callback_codes() -> Tuple[dict, dict]:
+    """生成回调数据的压缩对照表,返回(原名到短码, 短码到原名)。
+
+    短码取名称中每个单词的首字母;同一短码重复时追加递增序号以保证一一对应,
+    避免"download_chat_date_filter"与"download_chat_dtype_filter"这类首字母
+    完全相同的常量被压成同一个短码,导致两张按钮互相串改。
+    """
+    compress_map: dict = {}
+    decompress_map: dict = {}
+    for name in sorted(set(BotCallbackText()) | set(BotCallbackPrefix())):
+        words: list = [word for word in name.split('_') if word]
+        letters: str = ''.join(word[0] for word in words)
+        tail: str = '_' if name.endswith('_') else ''  # 动态前缀需保留分隔符,其后才能拼接动态参数。
+        code: str = f'{letters}{tail}'
+        index: int = 1
+        while code in decompress_map:
+            index += 1
+            code = f'{letters}{index}{tail}'
+        compress_map[name] = code
+        decompress_map[code] = name
+    # 按长度倒序重建两张表,使调用方直接迭代即为"长者优先",无需每次调用再排序。
+    sorted_names: list = sorted((len(name), name, code) for name, code in compress_map.items())
+    sorted_names.reverse()
+    sorted_codes: list = sorted((len(code), code, name) for code, name in decompress_map.items())
+    sorted_codes.reverse()
+    return (
+        dict((name, code) for _length, name, code in sorted_names),
+        dict((code, name) for _length, code, name in sorted_codes)
+    )
+
+
+def compress_callback_data(data: str) -> str:
+    """把回调数据的固定部分替换为短码,其后携带的动态参数保持原样。"""
+    compress_map, _decompress_map = callback_codes()
+    for name in compress_map:  # 表已按长度倒序,长者优先,防止被更短的前缀抢先匹配。
+        if data.startswith(name):
+            return f'{compress_map[name]}{data[len(name):]}'
+    return data
+
+
+def decompress_callback_data(data: str) -> str:
+    """还原被压缩的回调数据;若压不回原数据说明其本就是完整名称(历史消息),则原样返回。"""
+    _compress_map, decompress_map = callback_codes()
+    for code in decompress_map:
+        if not data.startswith(code):
+            continue
+        restored: str = f'{decompress_map[code]}{data[len(code):]}'
+        return restored if compress_callback_data(restored) == data else data
+    return data
+
+
+def build_task_callback(callback: str, chat_id, separator: str = '|', limit: int = 64) -> str:
+    """压缩回调数据后追加任务身份,得到形如"{短码}{分隔符}{频道id}"的结果。
+
+    Telegram限制callback_data最长64字节,超出服务端会报错,因此超限时先截断再返回。
+    """
+    data: str = f'{compress_callback_data(callback)}{separator}{chat_id}'
+    encoded: bytes = data.encode('utf-8')
+    if len(encoded) <= limit:
+        return data
+    log.warning(f'callback_data超过"{limit}"字节,已截断："{callback}"。')
+    return encoded[:limit].decode('utf-8', errors='ignore')
+
+
+def attach_task(
+        markup: pyrogram.types.InlineKeyboardMarkup,
+        chat_id,
+        separator: str = '|',
+        limit: int = 64
+) -> pyrogram.types.InlineKeyboardMarkup:
+    """为键盘上所有可点击按钮挂载任务身份,使同一用户的多个任务各写各的配置。"""
+    for row in markup.inline_keyboard:
+        for button in row:
+            data = button.callback_data
+            if not data or data == BotCallbackText.NULL:  # NULL为占位按钮,不参与回调。
+                continue
+            button.callback_data = build_task_callback(data, chat_id, separator, limit)
+    return markup
+
+
+def parse_task_callback(data: str, separator: str = '|') -> Tuple[str, Union[str, None]]:
+    """拆分回调数据与任务身份,返回(还原后的原始回调数据, 频道标识字符串或None)。"""
+    if separator not in data:  # 未挂载任务身份的历史消息,无需拆分与还原。
+        return data, None
+    payload, _point, task = data.rpartition(separator)
+    if not task:
+        return payload, None
+    return decompress_callback_data(payload), task
+
+
+def resolve_chat_id(chat_filter: dict, task: Union[str, None]):
+    """按任务身份还原真实的频道id,兼容字典原键的类型(int或str),取不到返回None。"""
+    if task is None:
+        return None
+    if task in chat_filter:
+        return task
+    try:
+        task_id: int = int(task)
+    except ValueError:
+        return None
+    return task_id if task_id in chat_filter else None
 
 
 class LimitCall:  # https://github.com/tangyoha/telegram_media_downloader/blob/master/module/app.py#L246

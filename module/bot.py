@@ -72,8 +72,11 @@ from module.util import (
     safe_index,
     check_update,
     safe_message,
+    attach_task,
+    resolve_chat_id,
     is_allow_upload,
-    get_valid_chat_id
+    get_valid_chat_id,
+    parse_task_callback
 )
 from module.enums import (
     KeyWord,
@@ -84,6 +87,7 @@ from module.enums import (
     BotCommandText,
     BotCallbackText,
     BotStepText,
+    BotCallbackPrefix,
     BotStepKeyword,
     CalenderKeyboard
 )
@@ -192,16 +196,23 @@ class Bot:
             chat_id,
             callback_query: CallbackQuery,
             callback_prompt: Callable,
-            enable: bool
+            enable: bool,
+            task_chat_id=None
     ):
-        """添加或移除关键词输入模式的handler,按chat_id隔离以避免多用户互相串扰。"""
+        """添加或移除关键词输入模式的handler。
+
+        chat_id为接收文本输入的会话(用户),以它为key保证同一用户同时只有一个输入模式;
+        task_chat_id为该输入模式绑定的下载任务(频道),使同一用户的多个任务各写各的配置。
+        """
+        if task_chat_id is None:
+            task_chat_id = chat_id
         if enable:
             # 同一用户若已有输入模式,先清退其旧handler,避免堆积。
             old = self.keyword_handlers.pop(chat_id, None)
             if old:
                 self.remove_handler(old, group=-1)
             keyword_handler = MessageHandler(
-                partial(self.handle_keyword_input, chat_id, callback_query, callback_prompt),
+                partial(self.handle_keyword_input, task_chat_id, callback_query, callback_prompt),
                 filters=self.auth_filter & pyrogram.filters.chat(chat_id) & pyrogram.filters.text & (
                     lambda client, m: isinstance(
                         m,
@@ -363,49 +374,53 @@ class Bot:
             _client: pyrogram.Client,
             message: pyrogram.types.Message
     ) -> None:
-        """处理用户输入的关键词。"""
+        """处理用户输入的关键词。chat_id为输入模式绑定的下载任务(频道)id。"""
 
         text: str = message.text.strip()
 
         if not text:
             return None
+        # 该任务若已执行或取消(配置已移除),则忽略输入,避免写回已失效的配置。
+        if chat_id not in self.download_chat_filter:
+            return None
 
         # 以空格分隔关键词。
         keywords = [kw.strip() for kw in text.split() if kw.strip()]
-        # chat_id为打开输入模式的用户id(keyword输入模式已按用户隔离),
-        # 需还原其正在引导的频道id,才能正确写回download_chat_filter。
-        channel_id = self.download_chat_active.get(chat_id)
-        if channel_id is None:
-            return None
         for keyword in keywords:
             if keyword in self.adding_keywords.get(chat_id, []):
                 try:
                     await callback_query.message.edit_text(
                         text=f'🚛`{keyword}`已被添加,选择处理方式后继续。',
-                        reply_markup=InlineKeyboardMarkup([
-                            [
-                                InlineKeyboardButton(
-                                    BotButton.DROP,
-                                    callback_data=f'{BotCallbackText.DROP_KEYWORD}_{keyword}'
-                                ),
-                                InlineKeyboardButton(
-                                    BotButton.IGNORE,
-                                    callback_data=f'{BotCallbackText.IGNORE_KEYWORD}_{keyword}'
-                                )
+                        reply_markup=attach_task(
+                            InlineKeyboardMarkup([
+                                [
+                                    InlineKeyboardButton(
+                                        BotButton.DROP,
+                                        callback_data=f'{BotCallbackText.DROP_KEYWORD}_{keyword}'
+                                    ),
+                                    InlineKeyboardButton(
+                                        BotButton.IGNORE,
+                                        callback_data=f'{BotCallbackText.IGNORE_KEYWORD}_{keyword}'
+                                    )
+                                ]
                             ]
-                        ]
+                            ),
+                            chat_id
                         )
                     )
                     return None
                 except MessageNotModified:
                     pass
             else:
-                self.download_chat_filter[channel_id]['keyword'][keyword] = True
+                self.download_chat_filter[chat_id]['keyword'][keyword] = True
                 self.adding_keywords.setdefault(chat_id, []).append(keyword)  # 添加到正在添加的关键词列表。
                 try:
                     await callback_query.message.edit_text(
                         text=callback_prompt(),
-                        reply_markup=KeyboardButton.keyword_filter_button(self.adding_keywords.get(chat_id, []))
+                        reply_markup=attach_task(
+                            KeyboardButton.keyword_filter_button(self.adding_keywords.get(chat_id, [])),
+                            chat_id
+                        )
                     )
                 except MessageNotModified:
                     pass
@@ -620,7 +635,7 @@ class Bot:
                  f'📝当前选择的下载类型为:{format_dtype}\n'
                  f'🔑当前匹配的关键词为:未定义\n'
                  f'👥包含评论区:{comment}',
-            reply_markup=KeyboardButton.download_chat_filter_button(include_comment),
+            reply_markup=attach_task(KeyboardButton.download_chat_filter_button(include_comment), chat_id),
             link_preview_options=Bot.LINK_PREVIEW_OPTIONS
         )
 
@@ -2293,7 +2308,8 @@ class KeyboardButton:
             self,
             dtype: Union[CalenderKeyboard, str],
             year: Optional[int] = datetime.datetime.now().year,
-            month: Optional[int] = datetime.datetime.now().month
+            month: Optional[int] = datetime.datetime.now().month,
+            chat_id=None
     ):
         keyboard: list = []
         prev_month: int = month - 1 if month > 1 else 12
@@ -2340,8 +2356,12 @@ class KeyboardButton:
                 )
             ]
         )
+        markup = InlineKeyboardMarkup(keyboard)
+        # 传入chat_id时才挂载任务身份,避免影响其他复用此日历的场合。
+        if chat_id is not None:
+            markup = attach_task(markup, chat_id)
         try:
-            await self.callback_query.message.edit_reply_markup(InlineKeyboardMarkup(keyboard))
+            await self.callback_query.message.edit_reply_markup(markup)
         except MessageNotModified:
             pass
 
@@ -3062,38 +3082,42 @@ class DownloadChatHandler(CallbackHandler):
         BotCallbackText.CANCEL_KEYWORD_INPUT
     )
     prefixes = (
-        'time_inc_',
-        'time_dec_',
-        'set_time_',
-        'set_specific_time_',
-        'adjust_step_',
-        'drop_keyword_',
-        'ignore_keyword'
+        BotCallbackPrefix.TIME_INC,
+        BotCallbackPrefix.TIME_DEC,
+        BotCallbackPrefix.SET_TIME,
+        BotCallbackPrefix.SET_SPECIFIC_TIME,
+        BotCallbackPrefix.ADJUST_STEP,
+        BotCallbackPrefix.DROP_KEYWORD,
+        BotCallbackPrefix.IGNORE_KEYWORD
     )
 
     def match(self, data: str) -> bool:
-        # DOWNLOAD_CHAT_ID是执行任务按钮的固定常量回调数据(不再在运行时改写为真实chat_id),
-        # 真实频道id由download_chat_active按发起回调的用户解析,因此支持多用户并发。
+        # 回调数据形如"{压缩后的回调数据}|{频道id}",先剥离任务身份再匹配。
+        payload, _task = parse_task_callback(data)
         return (
-                data in self.exact
-                or data.startswith(self.prefixes)
-                or data == BotCallbackText.DOWNLOAD_CHAT_ID
+                payload in self.exact
+                or payload.startswith(self.prefixes)
+                or payload == BotCallbackText.DOWNLOAD_CHAT_ID
         )
 
     async def handle(self, ctx: CallbackContext) -> None:
         downloader = ctx.downloader
         query = ctx.query
         kb = ctx.kb
-        data = ctx.data
-        # 根据发起操作的用户还原其正在引导的频道id,按用户隔离,避免全局状态互相串扰。
+        # 剥离挂载的任务身份:回调数据形如"{压缩后的回调数据}|{频道id}"。
+        data, task = parse_task_callback(ctx.data)
         user_id = query.from_user.id
-        chat_id = downloader.download_chat_active.get(user_id)
+        chat_id = resolve_chat_id(downloader.download_chat_filter, task)
+        # 历史消息上的按钮未挂载任务身份,降级为按用户解析。
         if chat_id is None:
+            chat_id = downloader.download_chat_active.get(user_id)
+        if chat_id is None or chat_id not in downloader.download_chat_filter:
             return None
         if data in (BotCallbackText.DOWNLOAD_CHAT_ID, BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL):
-            downloader.adding_keywords.pop(user_id, None)
+            downloader.adding_keywords.pop(chat_id, None)
             downloader.add_keyword_mode_handler(
                 chat_id=user_id,
+                task_chat_id=chat_id,
                 callback_query=query,
                 callback_prompt=partial(self.__filter_prompt, downloader, chat_id),
                 enable=False
@@ -3101,10 +3125,14 @@ class DownloadChatHandler(CallbackHandler):
             if data == BotCallbackText.DOWNLOAD_CHAT_ID:
                 await downloader.download_chat(chat_id=chat_id, callback_query=query)
                 self.__remove_chat_id(downloader, chat_id)
-                downloader.download_chat_active.pop(user_id, None)
+                # 仅当指针指向本次结束的任务时才清理,避免误清同一用户的其它任务。
+                if downloader.download_chat_active.get(user_id) == chat_id:
+                    downloader.download_chat_active.pop(user_id, None)
             elif data == BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL:
                 self.__remove_chat_id(downloader, chat_id)
-                downloader.download_chat_active.pop(user_id, None)
+                # 仅当指针指向本次结束的任务时才清理,避免误清同一用户的其它任务。
+                if downloader.download_chat_active.get(user_id) == chat_id:
+                    downloader.download_chat_active.pop(user_id, None)
                 await query.message.edit_text(
                     text=query.message.text,
                     reply_markup=kb.single_button(
@@ -3119,9 +3147,12 @@ class DownloadChatHandler(CallbackHandler):
                     return None
             await query.message.edit_text(
                 text=self.__filter_prompt(downloader, chat_id),
-                reply_markup=kb.download_chat_filter_button(
-                    downloader.download_chat_filter[chat_id][
-                        'comment']) if data == BotCallbackText.DOWNLOAD_CHAT_FILTER else kb.filter_date_range_button()
+                reply_markup=attach_task(
+                    kb.download_chat_filter_button(
+                        downloader.download_chat_filter[chat_id]['comment']
+                    ) if data == BotCallbackText.DOWNLOAD_CHAT_FILTER else kb.filter_date_range_button(),
+                    chat_id
+                )
             )
         elif data in (BotCallbackText.FILTER_START_DATE, BotCallbackText.FILTER_END_DATE):
             dtype = None
@@ -3133,7 +3164,7 @@ class DownloadChatHandler(CallbackHandler):
                 dtype = CalenderKeyboard.END_TIME_BUTTON
                 p_s_d = '结束'
             await query.message.edit_text(text=f'📅选择{p_s_d}日期:\n{self.__filter_prompt(downloader, chat_id)}')
-            await kb.calendar_keyboard(dtype=dtype)
+            await kb.calendar_keyboard(dtype=dtype, chat_id=chat_id)
         elif data.startswith('adjust_step_'):
             parts = data.split('_')
             dtype = parts[-2]
@@ -3147,10 +3178,13 @@ class DownloadChatHandler(CallbackHandler):
                 downloader.download_chat_filter[chat_id]['date_range'][f'{dtype}_date']
             ).strftime('%Y-%m-%d %H:%M:%S')
             await query.message.edit_reply_markup(
-                reply_markup=kb.time_keyboard(
-                    dtype=dtype,
-                    date=current_date,
-                    adjust_step=new_step
+                reply_markup=attach_task(
+                    kb.time_keyboard(
+                        dtype=dtype,
+                        date=current_date,
+                        adjust_step=new_step
+                    ),
+                    chat_id
                 )
             )
         elif data.startswith(('time_inc_', 'time_dec_')):
@@ -3163,7 +3197,7 @@ class DownloadChatHandler(CallbackHandler):
             if 'month' in data:
                 year = int(parts[-2])
                 month = int(parts[-1])
-                await kb.calendar_keyboard(year=year, month=month, dtype=dtype)
+                await kb.calendar_keyboard(year=year, month=month, dtype=dtype, chat_id=chat_id)
                 log.info(f'日期切换为{year}年,{month}月。')
         elif data.startswith(('set_time_', 'set_specific_time_')):
             parts = data.split('_')
@@ -3181,10 +3215,13 @@ class DownloadChatHandler(CallbackHandler):
             downloader.download_chat_filter[chat_id]['date_range'][date_type] = timestamp
             await query.message.edit_text(
                 text=f'📅选择{p_s_d}日期:\n{self.__filter_prompt(downloader, chat_id)}',
-                reply_markup=kb.time_keyboard(
-                    dtype=dtype,
-                    date=date,
-                    adjust_step=downloader.download_chat_filter[chat_id]['date_range']['adjust_step']
+                reply_markup=attach_task(
+                    kb.time_keyboard(
+                        dtype=dtype,
+                        date=date,
+                        adjust_step=downloader.download_chat_filter[chat_id]['date_range']['adjust_step']
+                    ),
+                    chat_id
                 )
             )
             log.info(
@@ -3195,10 +3232,13 @@ class DownloadChatHandler(CallbackHandler):
                 keyword = parts[-1]
                 keyword_dict = downloader.download_chat_filter.get(chat_id, {}).get('keyword', {})
                 keyword_dict.pop(keyword)
-                downloader.adding_keywords.setdefault(user_id, []).remove(keyword)
+                downloader.adding_keywords.setdefault(chat_id, []).remove(keyword)
             await query.message.edit_text(
                 text=self.__filter_prompt(downloader, chat_id),
-                reply_markup=KeyboardButton.keyword_filter_button(downloader.adding_keywords.get(user_id, []))
+                reply_markup=attach_task(
+                    KeyboardButton.keyword_filter_button(downloader.adding_keywords.get(chat_id, [])),
+                    chat_id
+                )
             )
         elif data in (
                 BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER,
@@ -3230,7 +3270,10 @@ class DownloadChatHandler(CallbackHandler):
                     self.__toggle_download_chat_dtype(downloader, chat_id, 'live_photo')
                 await query.message.edit_text(
                     text=self.__filter_prompt(downloader, chat_id),
-                    reply_markup=kb.toggle_download_chat_type_filter_button(downloader.download_chat_filter[chat_id])
+                    reply_markup=attach_task(
+                        kb.toggle_download_chat_type_filter_button(downloader.download_chat_filter[chat_id]),
+                        chat_id
+                    )
                 )
             except ValueError:
                 await query.message.reply_text('⚠️⚠️⚠️至少需要选择一个下载类型⚠️⚠️⚠️')
@@ -3246,13 +3289,17 @@ class DownloadChatHandler(CallbackHandler):
                 try:
                     await query.message.edit_text(
                         text=self.__filter_prompt(downloader, chat_id),
-                        reply_markup=kb.keyword_filter_button(downloader.adding_keywords.get(user_id, []))
+                        reply_markup=attach_task(
+                            kb.keyword_filter_button(downloader.adding_keywords.get(chat_id, [])),
+                            chat_id
+                        )
                     )
                 except MessageNotModified:
                     pass
                 downloader.add_keyword_mode_handler(
                     enable=True,
                     chat_id=user_id,
+                    task_chat_id=chat_id,
                     callback_query=query,
                     callback_prompt=partial(self.__filter_prompt, downloader, chat_id)
                 )
@@ -3260,32 +3307,43 @@ class DownloadChatHandler(CallbackHandler):
                 downloader.add_keyword_mode_handler(
                     enable=False,
                     chat_id=user_id,
+                    task_chat_id=chat_id,
                     callback_query=query,
                     callback_prompt=partial(self.__filter_prompt, downloader, chat_id)
                 )
                 await query.message.edit_text(
                     text=self.__filter_prompt(downloader, chat_id),
-                    reply_markup=kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'])
+                    reply_markup=attach_task(
+                        kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment']),
+                        chat_id
+                    )
                 )
             elif data == BotCallbackText.CANCEL_KEYWORD_INPUT:
-                downloader.adding_keywords.pop(user_id, None)
+                downloader.adding_keywords.pop(chat_id, None)
                 downloader.add_keyword_mode_handler(
                     enable=False,
                     chat_id=user_id,
+                    task_chat_id=chat_id,
                     callback_query=query,
                     callback_prompt=partial(self.__filter_prompt, downloader, chat_id)
                 )
                 downloader.download_chat_filter[chat_id]['keyword'] = {}
                 await query.message.edit_text(
                     text=self.__filter_prompt(downloader, chat_id),
-                    reply_markup=kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'])
+                    reply_markup=attach_task(
+                        kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment']),
+                        chat_id
+                    )
                 )
         elif data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_COMMENT:
             status = downloader.download_chat_filter[chat_id]['comment']
             downloader.download_chat_filter[chat_id]['comment'] = not status
             await query.message.edit_text(
                 text=self.__filter_prompt(downloader, chat_id),
-                reply_markup=kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'])
+                reply_markup=attach_task(
+                    kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment']),
+                    chat_id
+                )
             )
 
     @staticmethod
