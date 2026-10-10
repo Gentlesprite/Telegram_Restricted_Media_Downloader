@@ -88,6 +88,52 @@ from module.enums import (
 
 
 class Bot:
+    COMMAND_PREFIX_BLACKLIST: tuple = (
+        '/download',
+        '/download_chat',
+        '/upload',
+        '/upload_r',
+        '/forward',
+        '/help',
+        '/start',
+        '/table',
+        '/exit',
+        '/auth',
+        '/listen_download',
+        '/listen_forward',
+        '/listen_info'
+    )
+
+    COMMAND_STEPS: dict = {
+        'download': (
+            ('link', '⬇️请直接发送需要下载的链接。'),
+        ),
+        'download_chat': (
+            ('link', '💬请直接发送需要下载的频道链接。'),
+        ),
+        'upload': (
+            ('channel', '📤请发送上传目标频道链接。'),
+            ('path', '📤请发送要上传的本地文件路径。')
+        ),
+        'upload_r': (
+            ('channel', '📁请发送递归上传目标频道链接。'),
+            ('path', '📁请发送要递归上传的本地文件夹路径。')
+        ),
+        'forward': (
+            ('origin', '↗️请发送原始频道链接。'),
+            ('target', '↗️请发送目标频道链接。'),
+            ('start_id', '↗️请发送起始消息ID(数字)。'),
+            ('end_id', '↗️请发送结束消息ID(数字)。')
+        ),
+        'listen_download': (
+            ('links', '🕵️请发送要监听下载的频道链接。'),
+        ),
+        'listen_forward': (
+            ('listen', '📲请发送监听频道链接。'),
+            ('target', '📲请发送转发目标频道链接。')
+        )
+    }
+
     BOT_NAME: str = 'TRMD_BOT'
     COMMANDS: List[BotCommand] = [
         BotCommand(BotCommandText.HELP[0], BotCommandText.HELP[1]),
@@ -126,6 +172,9 @@ class Bot:
         self.handle_media_groups: dict = {}
         self.download_chat_filter: dict = {}
         self.adding_keywords: list = []  # 用于跟踪正在添加的关键词列表。
+        self.command_handler = None  # 命令输入模式的handler单例。
+        self.command_processed: set = set()  # 已通过命令输入模式处理的消息ID,避免与既有handler重复触发。
+        self.pending_tasks: dict = {}  # 多步引导的待收集任务状态。
         self.keyword_handler: Union[MessageHandler, None] = None  # 关键词输入模式的handler。
 
     @staticmethod
@@ -177,8 +226,155 @@ class Bot:
                 log.info('用户输入模式已关闭,Handler已清空。')
                 self.keyword_handler = None
 
+    def add_command_mode_handler(
+            self,
+            chat_id,
+            callback_query: CallbackQuery,
+            command: str,
+            enable: bool
+    ):
+        """添加或移除命令输入模式的handler。"""
+        if enable:
+            # 开启新的命令输入模式前,先清退可能残留的旧handler,避免多个handler堆积导致旧命令误触发。
+            if self.command_handler:
+                self.remove_handler(self.command_handler, group=-1)
+                self.command_handler = None
+            self.pending_tasks[chat_id] = {'command': command, 'step': 0, 'data': {}}
+            self.command_handler = MessageHandler(
+                partial(self.handle_command_input, chat_id, callback_query, command),
+                filters=self.auth_filter & pyrogram.filters.text & (
+                    lambda client, m: isinstance(
+                        m,
+                        pyrogram.types.Message
+                    ) and m.text and m.text.strip() and not m.text.startswith(self.COMMAND_PREFIX_BLACKLIST)
+                )
+            )
+            self.add_handler(self.command_handler, group=-1)
+            log.info(f'命令输入模式已打开,Handler:"{self.command_handler}"。')
+        else:
+            if self.command_handler:
+                self.remove_handler(self.command_handler, group=-1)
+                log.info('命令输入模式已关闭,Handler已清空。')
+                self.command_handler = None
+            self.pending_tasks.pop(chat_id, None)
+
+    async def handle_command_input(
+            self,
+            chat_id,
+            callback_query: CallbackQuery,
+            command: str,
+            _client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ) -> None:
+        """多步引导:按命令定义的步骤收集用户输入,收集完成后组装命令交给既有流程。"""
+        pending = self.pending_tasks.get(chat_id)
+        if not pending:
+            self.add_command_mode_handler(
+                chat_id=chat_id, callback_query=callback_query, command=command, enable=False)
+            return None
+        # 以pending中记录的最新命令为准进行路由,而非handler绑定时的旧命令参数,防止残留handler误创建任务。
+        command = pending['command']
+        steps = self.COMMAND_STEPS.get(command, ())
+        if not steps:
+            self.add_command_mode_handler(
+                chat_id=chat_id, callback_query=callback_query, command=command, enable=False)
+            return None
+        step_idx = pending['step']
+        field = steps[step_idx][0]
+        text: str = message.text.strip()
+        # 按字段类型校验用户输入,不合法则要求重新输入当前步骤。
+        if field in ('link', 'channel', 'origin', 'target', 'listen'):
+            if not text.startswith('http'):
+                await _client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
+                    text='❌请输入有效的链接,请重新发送。',
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+                )
+                return None
+        elif field == 'links':
+            lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+            if not lines or not all(ln.startswith('http') for ln in lines):
+                await _client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
+                    text='❌请每行发送一个有效的频道链接,请重新发送。',
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+                )
+                return None
+        elif field in ('start_id', 'end_id'):
+            if not text.isdigit():
+                await _client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
+                    text='❌请输入数字ID,请重新发送。',
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+                )
+                return None
+        pending['data'][field] = str(text)
+        pending['step'] += 1
+        # 还有后续步骤,防group=0的链接/错误handler干扰后,发送下一步提示并继续等待。
+        if pending['step'] < len(steps):
+            self.command_processed.add(message.id)
+            next_hint = steps[pending['step']][1]
+            await _client.send_message(
+                chat_id=message.from_user.id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                text=next_hint,
+                reply_markup=pyrogram.types.ForceReply(),
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+            )
+            return None
+        # 所有步骤收集完成,组装命令交给既有流程,并防group=0重复触发。
+        data = pending['data']
+        bot_username = getattr(await self.bot.get_me(), 'username', None)
+        if command == 'download':
+            await self.get_download_link_from_bot(client=_client, message=message)
+        elif command == 'download_chat':
+            if bot_username:
+                await self.user.send_message(
+                    chat_id=bot_username,
+                    text=f'/download_chat {data["link"]}',
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+                )
+        elif command in ('upload', 'upload_r'):
+            if bot_username:
+                cmd = '/upload' if command == 'upload' else '/upload_r'
+                await self.user.send_message(
+                    chat_id=bot_username,
+                    text=f'{cmd} {data["path"]} {data["channel"]}',
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+                )
+        elif command == 'forward':
+            if bot_username:
+                await self.user.send_message(
+                    chat_id=bot_username,
+                    text=f'/forward {data["origin"]} {data["target"]} {data["start_id"]} {data["end_id"]}',
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+                )
+        elif command == 'listen_download':
+            if bot_username:
+                await self.user.send_message(
+                    chat_id=bot_username,
+                    text=f'/listen_download {data["links"]}',
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+                )
+        elif command == 'listen_forward':
+            if bot_username:
+                await self.user.send_message(
+                    chat_id=bot_username,
+                    text=f'/listen_forward {data["listen"]} {data["target"]}',
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+                )
+        self.command_processed.add(message.id)
+        self.add_command_mode_handler(
+            chat_id=chat_id, callback_query=callback_query, command=command, enable=False)
+        self.pending_tasks.pop(chat_id, None)
+
     async def process_error_message(self, client: pyrogram.Client, message: pyrogram.types.Message) -> None:
         if self.keyword_handler:
+            return
+        if message.id in self.command_processed:
             return
         await self.help(client, message)
         await client.send_message(
@@ -276,6 +472,8 @@ class Bot:
             with_upload: Union[dict, None] = None,
             owner: Union[int, None] = None
     ) -> Union[Dict[str, Union[set, pyrogram.types.Message]], None]:
+        if message.id in self.command_processed:
+            return None
         requester: int = owner if owner is not None else message.from_user.id
         text: str = message.text
         if text == '/download':
@@ -488,6 +686,65 @@ class Bot:
                 last_bot_messages.append(last_bot_message)
         return last_bot_messages[-1]
 
+    @staticmethod
+    def menu_keyboard(level: str = 'main') -> InlineKeyboardMarkup:
+        """按层级返回内联键盘:main为分组主菜单,download/listen/upload为二级子菜单。"""
+        config: dict = rc.cached_config()
+        if level == 'download':
+            return InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(BotButton.CMD_DOWNLOAD, callback_data=BotCallbackText.COMMAND_DOWNLOAD),
+                    InlineKeyboardButton(BotButton.CMD_DOWNLOAD_CHAT,
+                                         callback_data=BotCallbackText.COMMAND_DOWNLOAD_CHAT)
+                ],
+                [
+                    InlineKeyboardButton(BotButton.MENU_BACK, callback_data=BotCallbackText.MENU_BACK)
+                ]
+            ])
+        if level == 'listen':
+            return InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(BotButton.LISTEN_DOWNLOAD_BTN,
+                                         callback_data=BotCallbackText.LISTEN_DOWNLOAD_BTN),
+                    InlineKeyboardButton(BotButton.LISTEN_FORWARD_BTN, callback_data=BotCallbackText.LISTEN_FORWARD_BTN)
+                ],
+                [
+                    InlineKeyboardButton(BotButton.MENU_BACK, callback_data=BotCallbackText.MENU_BACK)
+                ]
+            ])
+        if level == 'upload':
+            return InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(BotButton.CMD_UPLOAD, callback_data=BotCallbackText.COMMAND_UPLOAD),
+                    InlineKeyboardButton(BotButton.CMD_UPLOAD_R, callback_data=BotCallbackText.COMMAND_UPLOAD_R)
+                ],
+                [
+                    InlineKeyboardButton(BotButton.MENU_BACK, callback_data=BotCallbackText.MENU_BACK)
+                ]
+            ])
+        # 主菜单:常用功能(下载/上传/转发/监听)两排置顶,原有链接与设置入口下移。
+        return InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(BotButton.MENU_DOWNLOAD, callback_data=BotCallbackText.MENU_DOWNLOAD),
+                InlineKeyboardButton(BotButton.MENU_UPLOAD, callback_data=BotCallbackText.MENU_UPLOAD)
+            ],
+            [
+                InlineKeyboardButton(BotButton.CMD_FORWARD, callback_data=BotCallbackText.COMMAND_FORWARD),
+                InlineKeyboardButton(BotButton.MENU_LISTEN, callback_data=BotCallbackText.MENU_LISTEN)
+            ],
+            [
+                InlineKeyboardButton(BotButton.GITHUB, url=config.get('github', rc.DEFAULT_GITHUB) + '/releases'),
+                InlineKeyboardButton(BotButton.SUBSCRIBE_CHANNEL,
+                                     url=config.get('subscribe_channel', rc.DEFAULT_SUBSCRIBE_CHANNEL))
+            ],
+            [
+                InlineKeyboardButton(BotButton.VIDEO_TUTORIAL,
+                                     url=config.get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL)),
+                InlineKeyboardButton(BotButton.PAY, callback_data=BotCallbackText.PAY)
+            ],
+            [InlineKeyboardButton(BotButton.SETTING, callback_data=BotCallbackText.SETTING)]
+        ])
+
     async def help(
             self,
             client: Union[pyrogram.Client, None] = None,
@@ -512,36 +769,7 @@ class Bot:
             local_version=__version__
         )
         version: str = f'{VERSION_SEMVER}({update_version}⬆)' if update_version else VERSION_SEMVER
-        keyboard = InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        BotButton.GITHUB,
-                        url=config.get('github', rc.DEFAULT_GITHUB) + '/releases'
-                    ),
-                    InlineKeyboardButton(
-                        BotButton.SUBSCRIBE_CHANNEL,
-                        url=config.get('subscribe_channel', rc.DEFAULT_SUBSCRIBE_CHANNEL)
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        BotButton.VIDEO_TUTORIAL,
-                        url=config.get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL)
-                    ),
-                    InlineKeyboardButton(
-                        BotButton.PAY,
-                        callback_data=BotCallbackText.PAY
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        BotButton.SETTING,
-                        callback_data=BotCallbackText.SETTING
-                    )
-                ]
-            ]
-        )
+        keyboard = self.menu_keyboard('main')
 
         text = (
             f'`\n💎 {SOFTWARE_SHORT_NAME} {version} 💎\n'
@@ -1270,7 +1498,10 @@ class Bot:
             self.bot.add_handler(
                 MessageHandler(
                     self.get_download_link_from_bot,
-                    filters=pyrogram.filters.regex(r'^https://t.me.*') & self.auth_filter
+                    # 命令输入模式期间,该chat的链接只交给command_handler引导,避免与下载handler重复触发。
+                    filters=pyrogram.filters.regex(r'^https://t.me.*') & self.auth_filter & (
+                        lambda client, m: m.chat.id not in self.pending_tasks
+                    )
                 )
             )
             self.user.add_handler(
@@ -1305,7 +1536,9 @@ class Bot:
                             | pyrogram.filters.animation
                             | pyrogram.filters.document
                             | pyrogram.filters.video_note
-                    )
+                    ) & (
+                                lambda client, m: m.chat.id not in self.pending_tasks
+                            )
                 )
             )
             self.is_bot_running: bool = True
@@ -2958,7 +3191,75 @@ class DownloadChatHandler(CallbackHandler):
         log.info(f'{f_p}当前的/download_chat下载类型设置:{dtype}')
 
 
+class CommandButtonHandler(CallbackHandler):
+    exact = (
+        BotCallbackText.COMMAND_DOWNLOAD,
+        BotCallbackText.COMMAND_UPLOAD,
+        BotCallbackText.COMMAND_UPLOAD_R,
+        BotCallbackText.COMMAND_DOWNLOAD_CHAT,
+        BotCallbackText.COMMAND_FORWARD,
+        BotCallbackText.LISTEN_DOWNLOAD_BTN,
+        BotCallbackText.LISTEN_FORWARD_BTN
+    )
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        data = ctx.data
+        command_map = {
+            BotCallbackText.COMMAND_DOWNLOAD: 'download',
+            BotCallbackText.COMMAND_DOWNLOAD_CHAT: 'download_chat',
+            BotCallbackText.COMMAND_UPLOAD: 'upload',
+            BotCallbackText.COMMAND_UPLOAD_R: 'upload_r',
+            BotCallbackText.COMMAND_FORWARD: 'forward',
+            BotCallbackText.LISTEN_DOWNLOAD_BTN: 'listen_download',
+            BotCallbackText.LISTEN_FORWARD_BTN: 'listen_forward'
+        }
+        command = command_map.get(data)
+        if not command:
+            return None
+        # 发送第一步提示并开启多步引导,后续步骤由handle_command_input按COMMAND_STEPS推进。
+        first_hint = Bot.COMMAND_STEPS[command][0][1]
+        await query.message.reply(
+            text=first_hint,
+            reply_markup=pyrogram.types.ForceReply(),
+            link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+        )
+        downloader.add_command_mode_handler(
+            chat_id=query.from_user.id,
+            callback_query=query,
+            command=command,
+            enable=True
+        )
+
+
+class MenuButtonHandler(CallbackHandler):
+    exact = (
+        BotCallbackText.MENU_DOWNLOAD,
+        BotCallbackText.MENU_LISTEN,
+        BotCallbackText.MENU_UPLOAD,
+        BotCallbackText.MENU_BACK
+    )
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        data = ctx.data
+        if data == BotCallbackText.MENU_DOWNLOAD:
+            kb = downloader.menu_keyboard('download')
+        elif data == BotCallbackText.MENU_LISTEN:
+            kb = downloader.menu_keyboard('listen')
+        elif data == BotCallbackText.MENU_UPLOAD:
+            kb = downloader.menu_keyboard('upload')
+        elif data == BotCallbackText.MENU_BACK:
+            kb = downloader.menu_keyboard('main')
+        else:
+            return None
+        await query.edit_message_reply_markup(reply_markup=kb)
+
+
 CALLBACK_HANDLERS: tuple = (
+    MenuButtonHandler(),
     NoticeHandler(),
     PayHandler(),
     BackHandler(),
@@ -2973,7 +3274,8 @@ CALLBACK_HANDLERS: tuple = (
     ForwardTypeHandler(),
     ListenRemoveHandler(),
     AuthUserHandler(),
-    DownloadChatHandler()
+    DownloadChatHandler(),
+    CommandButtonHandler()
 )
 
 
