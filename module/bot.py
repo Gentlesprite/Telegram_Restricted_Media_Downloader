@@ -159,6 +159,7 @@ class Bot:
         self.listen_download_chat_owner: dict = {}
         self.handle_media_groups: dict = {}
         self.download_chat_filter: dict = {}
+        self.download_chat_active: dict = {}  # 记录正在引导download_chat的用户与其目标频道id的映射,按用户隔离,支持多用户并发。
         self.adding_keywords: list = []  # 用于跟踪正在添加的关键词列表。
         self.command_handlers: dict = {}  # 命令输入模式的handler,按chat_id隔离,支持多用户并发引导。
         self.command_processed: set = set()  # 已通过命令输入模式处理的消息ID,避免与既有handler重复触发。
@@ -524,14 +525,6 @@ class Bot:
             client: pyrogram.Client,
             message: pyrogram.types.Message,
     ):
-        if BotCallbackText.DOWNLOAD_CHAT_ID != 'download_chat_id':
-            await client.send_message(
-                chat_id=message.from_user.id,
-                reply_parameters=ReplyParameters(message_id=message.id),
-                text='⚠️⚠️⚠️请执行或取消上一次频道下载任务设置⚠️⚠️⚠️',
-                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
-            )
-            return None
         text: str = message.text
         if text == '/download_chat':
             await client.send_message(
@@ -583,7 +576,7 @@ class Bot:
             )
             return None
         BotCallbackText.DOWNLOAD_CHAT_ID = str(chat_id)
-        self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID] = {
+        self.download_chat_filter[chat_id] = {
             'date_range':
                 {
                     'start_date': None,
@@ -605,9 +598,10 @@ class Bot:
             'title': {},
             'comment': False
         }
-        log.info(f'"{BotCallbackText.DOWNLOAD_CHAT_ID}"已添加至:{self.download_chat_filter}。')
+        self.download_chat_active[message.from_user.id] = chat_id
+        log.info(f'"{chat_id}"已添加至:{self.download_chat_filter}。')
         format_dtype = ','.join([_t(_) for _ in DownloadType()])
-        include_comment = self.download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['comment']
+        include_comment = self.download_chat_filter[chat_id]['comment']
         comment: str = '开' if include_comment else '关'
         await client.send_message(
             chat_id=message.from_user.id,
@@ -1903,20 +1897,20 @@ class KeyboardButton:
 
     @staticmethod
     def toggle_download_chat_type_filter_button(
-            download_chat_filter: dict
+            filter_config: dict
     ):
         return InlineKeyboardMarkup(
             [
                 [
                     InlineKeyboardButton(
                         text=BotButton.VIDEO_ON if
-                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                        filter_config['download_type'][
                             DownloadType.VIDEO] else BotButton.VIDEO_OFF,
                         callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO
                     ),
                     InlineKeyboardButton(
                         text=BotButton.PHOTO_ON if
-                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                        filter_config['download_type'][
                             DownloadType.PHOTO] else BotButton.PHOTO_OFF,
                         callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO
                     )
@@ -1924,13 +1918,13 @@ class KeyboardButton:
                 [
                     InlineKeyboardButton(
                         text=BotButton.AUDIO_ON if
-                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                        filter_config['download_type'][
                             DownloadType.AUDIO] else BotButton.AUDIO_OFF,
                         callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO
                     ),
                     InlineKeyboardButton(
                         text=BotButton.VOICE_ON if
-                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                        filter_config['download_type'][
                             DownloadType.VOICE] else BotButton.VOICE_OFF,
                         callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE
                     )
@@ -1938,13 +1932,13 @@ class KeyboardButton:
                 [
                     InlineKeyboardButton(
                         text=BotButton.ANIMATION_ON if
-                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                        filter_config['download_type'][
                             DownloadType.ANIMATION] else BotButton.ANIMATION_OFF,
                         callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION
                     ),
                     InlineKeyboardButton(
                         text=BotButton.DOCUMENT_ON if
-                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                        filter_config['download_type'][
                             DownloadType.DOCUMENT] else BotButton.DOCUMENT_OFF,
                         callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT
                     )
@@ -1952,13 +1946,13 @@ class KeyboardButton:
                 [
                     InlineKeyboardButton(
                         text=BotButton.VIDEO_NOTE_ON if
-                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                        filter_config['download_type'][
                             DownloadType.VIDEO_NOTE] else BotButton.VIDEO_NOTE_OFF,
                         callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE
                     ),
                     InlineKeyboardButton(
                         text=BotButton.LIVE_PHOTO_ON if
-                        download_chat_filter[BotCallbackText.DOWNLOAD_CHAT_ID]['download_type'][
+                        filter_config['download_type'][
                             DownloadType.LIVE_PHOTO] else BotButton.LIVE_PHOTO_OFF,
                         callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_LIVE_PHOTO
                     )
@@ -2906,23 +2900,26 @@ class DownloadChatHandler(CallbackHandler):
         query = ctx.query
         kb = ctx.kb
         data = ctx.data
-        # 先捕获真实chat_id到局部变量,此时BotCallbackText.DOWNLOAD_CHAT_ID仍为运行时改写值。
-        chat_id = BotCallbackText.DOWNLOAD_CHAT_ID
+        # 根据发起操作的用户还原其正在引导的频道id,按用户隔离,避免全局状态互相串扰。
+        user_id = query.from_user.id
+        chat_id = downloader.download_chat_active.get(user_id)
+        if chat_id is None:
+            return None
         if data in (BotCallbackText.DOWNLOAD_CHAT_ID, BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL):
-            # 任务结束后将常量重置回字面量,作为"无进行中download_chat"的状态位。
-            BotCallbackText.DOWNLOAD_CHAT_ID = 'download_chat_id'
             downloader.adding_keywords.clear()
             downloader.add_keyword_mode_handler(
-                chat_id=chat_id,
+                chat_id=user_id,
                 callback_query=query,
                 callback_prompt=partial(self.__filter_prompt, downloader, chat_id),
                 enable=False
             )
-            if data == chat_id:
+            if data == BotCallbackText.DOWNLOAD_CHAT_ID:
                 await downloader.download_chat(chat_id=chat_id, callback_query=query)
                 self.__remove_chat_id(downloader, chat_id)
+                downloader.download_chat_active.pop(user_id, None)
             elif data == BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL:
                 self.__remove_chat_id(downloader, chat_id)
+                downloader.download_chat_active.pop(user_id, None)
                 await query.message.edit_text(
                     text=query.message.text,
                     reply_markup=kb.single_button(
@@ -3048,7 +3045,7 @@ class DownloadChatHandler(CallbackHandler):
                     self.__toggle_download_chat_dtype(downloader, chat_id, 'live_photo')
                 await query.message.edit_text(
                     text=self.__filter_prompt(downloader, chat_id),
-                    reply_markup=kb.toggle_download_chat_type_filter_button(downloader.download_chat_filter)
+                    reply_markup=kb.toggle_download_chat_type_filter_button(downloader.download_chat_filter[chat_id])
                 )
             except ValueError:
                 await query.message.reply_text('⚠️⚠️⚠️至少需要选择一个下载类型⚠️⚠️⚠️')
