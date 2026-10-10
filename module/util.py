@@ -693,14 +693,19 @@ def decompress_callback_data(data: str) -> str:
 def build_task_callback(callback: str, chat_id, separator: str = '|', limit: int = 64) -> str:
     """压缩回调数据后追加任务身份,得到形如"{短码}{分隔符}{频道id}"的结果。
 
-    Telegram限制callback_data最长64字节,超出服务端会报错,因此超限时先截断再返回。
+    Telegram限制callback_data最长64字节,超出服务端会报错,因此超限时需截断;
+    截断只截回调数据部分,任务身份完整保留,否则会因解析不到任务而降级改写其它任务。
     """
-    data: str = f'{compress_callback_data(callback)}{separator}{chat_id}'
+    payload: str = compress_callback_data(callback)
+    suffix: str = f'{separator}{chat_id}'
+    data: str = f'{payload}{suffix}'
     encoded: bytes = data.encode('utf-8')
     if len(encoded) <= limit:
         return data
-    log.warning(f'callback_data超过"{limit}"字节,已截断："{callback}"。')
-    return encoded[:limit].decode('utf-8', errors='ignore')
+    log.warning(f'callback_data超过"{limit}"字节,已截断回调数据："{payload}"。')
+    # 先按任务身份的字节数留出余量,再截回调数据,避免负切片把任务身份整段切掉。
+    kept: str = encoded[:max(limit - len(suffix.encode('utf-8')), 0)].decode('utf-8', errors='ignore')
+    return f'{kept}{suffix}'
 
 
 def attach_task(

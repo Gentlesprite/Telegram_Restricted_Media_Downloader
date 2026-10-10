@@ -388,6 +388,8 @@ class Bot:
         keywords = [kw.strip() for kw in text.split() if kw.strip()]
         for keyword in keywords:
             if keyword in self.adding_keywords.get(chat_id, []):
+                # 回调数据只携带关键词在列表中的下标,避免超长关键词把callback_data撑破64字节限制。
+                keyword_index: int = self.adding_keywords[chat_id].index(keyword)
                 try:
                     await callback_query.message.edit_text(
                         text=f'🚛`{keyword}`已被添加,选择处理方式后继续。',
@@ -396,11 +398,11 @@ class Bot:
                                 [
                                     InlineKeyboardButton(
                                         BotButton.DROP,
-                                        callback_data=f'{BotCallbackText.DROP_KEYWORD}_{keyword}'
+                                        callback_data=f'{BotCallbackText.DROP_KEYWORD}_{keyword_index}'
                                     ),
                                     InlineKeyboardButton(
                                         BotButton.IGNORE,
-                                        callback_data=f'{BotCallbackText.IGNORE_KEYWORD}_{keyword}'
+                                        callback_data=f'{BotCallbackText.IGNORE_KEYWORD}_{keyword_index}'
                                     )
                                 ]
                             ]
@@ -3228,11 +3230,16 @@ class DownloadChatHandler(CallbackHandler):
                 f'日期设置,起始日期:{self.__get_update_time(downloader, chat_id)[0]},结束日期:{self.__get_update_time(downloader, chat_id)[1]}。')
         elif data.startswith(('drop_keyword_', 'ignore_keyword')):
             if data.startswith('drop_keyword_'):
-                parts = data.split('_')
-                keyword = parts[-1]
-                keyword_dict = downloader.download_chat_filter.get(chat_id, {}).get('keyword', {})
-                keyword_dict.pop(keyword)
-                downloader.adding_keywords.setdefault(chat_id, []).remove(keyword)
+                # 回调数据只携带关键词在列表中的下标,避免超长关键词把callback_data撑破64字节限制。
+                keyword_list: list = downloader.adding_keywords.get(chat_id, [])
+                try:
+                    keyword_index: int = int(data.split('_')[-1])
+                except ValueError:  # 历史按钮携带的是关键词原文而非下标,直接忽略。
+                    keyword_index = -1
+                if 0 <= keyword_index < len(keyword_list):
+                    keyword = keyword_list[keyword_index]
+                    downloader.download_chat_filter.get(chat_id, {}).get('keyword', {}).pop(keyword, None)
+                    keyword_list.remove(keyword)
             await query.message.edit_text(
                 text=self.__filter_prompt(downloader, chat_id),
                 reply_markup=attach_task(
