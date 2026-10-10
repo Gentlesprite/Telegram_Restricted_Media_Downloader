@@ -2071,13 +2071,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                 f'{_t(KeyWord.CHANNEL)}:"{chat_id}",无法进行下载,{_t(KeyWord.REASON)}:"{e}"',
                 exc_info=True
             )
-            asyncio.create_task(callback_query.message.edit_text(
-                text=f'{origin_callback_query_text}`\n'
-                     f'⚠️由于"{e}"无法执行频道下载任务。',
-                reply_markup=KeyboardButton.single_button(
-                    text=BotButton.TASK_CANCEL,
-                    callback_data=BotCallbackText.NULL
-                )
+            # 失败提示改为发送新消息,不覆盖原菜单,保留其"执行|取消任务"按钮以便重试或取消。
+            asyncio.create_task(callback_query.message.reply_text(
+                text=f'⚠️由于"{e}"无法执行频道下载任务。\n'
+                     f'可在上方菜单重试或取消该任务。'
             ))
 
     @DownloadTask.on_create_task

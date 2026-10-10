@@ -3110,10 +3110,8 @@ class DownloadChatHandler(CallbackHandler):
         # 剥离挂载的任务身份:回调数据形如"{压缩后的回调数据}|{频道id}"。
         data, task = parse_task_callback(ctx.data)
         user_id = query.from_user.id
+        # 回调数据必带任务身份,取不到的只可能是升级前的历史按钮,其任务已随重启清空,直接忽略。
         chat_id = resolve_chat_id(downloader.download_chat_filter, task)
-        # 历史消息上的按钮未挂载任务身份,降级为按用户解析。
-        if chat_id is None:
-            chat_id = downloader.download_chat_active.get(user_id)
         if chat_id is None or chat_id not in downloader.download_chat_filter:
             return None
         if data in (BotCallbackText.DOWNLOAD_CHAT_ID, BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL):
@@ -3126,11 +3124,12 @@ class DownloadChatHandler(CallbackHandler):
                 enable=False
             )
             if data == BotCallbackText.DOWNLOAD_CHAT_ID:
-                await downloader.download_chat(chat_id=chat_id, callback_query=query)
-                self.__remove_chat_id(downloader, chat_id)
-                # 仅当指针指向本次结束的任务时才清理,避免误清同一用户的其它任务。
-                if downloader.download_chat_active.get(user_id) == chat_id:
-                    downloader.download_chat_active.pop(user_id, None)
+                # 仅派发成功(返回匹配到的链接列表)才清除配置;失败时保留配置与原菜单,便于直接重试。
+                if await downloader.download_chat(chat_id=chat_id, callback_query=query) is not None:
+                    self.__remove_chat_id(downloader, chat_id)
+                    # 仅当指针指向本次结束的任务时才清理,避免误清同一用户的其它任务。
+                    if downloader.download_chat_active.get(user_id) == chat_id:
+                        downloader.download_chat_active.pop(user_id, None)
             elif data == BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL:
                 self.__remove_chat_id(downloader, chat_id)
                 # 仅当指针指向本次结束的任务时才清理,避免误清同一用户的其它任务。
