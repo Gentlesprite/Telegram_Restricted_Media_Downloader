@@ -1402,24 +1402,32 @@ class Bot:
             self,
             client: pyrogram.Client,
             message: pyrogram.types.Message,
-            target: Union[int, None] = None
+            target: Union[int, None] = None,
+            edit_message: Union[pyrogram.types.Message, None] = None
     ) -> None:
-        """展示当前已授权的额外用户列表。"""
+        """展示当前已授权的额外用户列表。edit_message 非空时(按钮点击)直接编辑该消息。"""
         users = self.gc.authorized_users
         chat_id = target if target is not None else message.from_user.id
+        auth_kb = self.menu_keyboard('auth')
+
+        async def _respond(text: str):
+            if edit_message is not None:
+                try:
+                    await edit_message.edit_text(text=text, reply_markup=auth_kb)
+                except MessageNotModified:
+                    pass
+            else:
+                await client.send_message(
+                    chat_id=chat_id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
+                    text=text
+                )
+
         if not users:
-            await client.send_message(
-                chat_id=chat_id,
-                reply_parameters=ReplyParameters(message_id=message.id),
-                text='😲目前没有额外的授权用户,仅`root`可使用机器人。'
-            )
+            await _respond('😲目前没有额外的授权用户,仅`root`可使用机器人。')
             return None
         lines = '\n'.join(str(u) for u in users)
-        await client.send_message(
-            chat_id=chat_id,
-            reply_parameters=ReplyParameters(message_id=message.id),
-            text=f'👥以下为已授权的用户`ID`:\n`{lines}`'
-        )
+        await _respond(f'👥以下为已授权的用户`ID`:\n`{lines}`')
 
     async def handle_forwarded_media(
             self,
@@ -2562,12 +2570,13 @@ class LookupAuthInfoHandler(CallbackHandler):
     async def handle(self, ctx: CallbackContext) -> None:
         downloader = ctx.downloader
         query = ctx.query
-        # 直接调用底层逻辑并显式指定接收者即点击者,不再用登录账号重发命令。
+        # 直接编辑当前消息展示授权用户列表,不再另发一条。
         try:
             await downloader.show_authorized_users(
                 client=downloader.bot,
                 message=query.message,
-                target=query.from_user.id
+                target=query.from_user.id,
+                edit_message=query.message
             )
         except Exception as e:
             await query.message.reply_text('查看授权用户失败\n(具体原因请前往终端查看报错信息)')
@@ -2932,7 +2941,9 @@ class AuthUserHandler(CallbackHandler):
         query = ctx.query
         uid = int(ctx.data.split('_')[-1])
         if uid not in bot.gc.authorized_users:
-            await query.message.edit_text(f'用户`{uid}`已不在授权列表中。')
+            await query.message.edit_text(
+                text=f'用户`{uid}`已不在授权列表中。',
+                reply_markup=bot.menu_keyboard('auth'))
             return None
         # 热移除:实时从过滤器与配置中剔除,并持久化。
         bot.gc.authorized_users.remove(uid)
@@ -2942,9 +2953,10 @@ class AuthUserHandler(CallbackHandler):
         bot.gc.config['authorized_users'] = bot.gc.authorized_users
         bot.gc.save_config(bot.gc.config)
         p = f'已热移除授权用户:`{uid}`(立即失效并持久化)。'
-        await query.message.edit_text(f'用户`{uid}`已移除授权。')
-        await query.message.edit_reply_markup(
-            KeyboardButton.single_button(text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL))
+        # 移除结果直接显示在text中,并复位为授权用户菜单(添加/移除、查看、返回)。
+        await query.message.edit_text(
+            text=f'✅用户`{uid}`已移除授权。',
+            reply_markup=bot.menu_keyboard('auth'))
         log.info(f'{p}当前授权用户:{bot.gc.authorized_users}')
 
 
