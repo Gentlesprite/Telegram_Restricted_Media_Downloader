@@ -203,6 +203,7 @@ class Bot:
 
         chat_id为接收文本输入的会话(用户),以它为key保证同一用户同时只有一个输入模式;
         task_chat_id为该输入模式绑定的下载任务(频道),使同一用户的多个任务各写各的配置。
+        字典值为(任务频道id, handler),便于切换输入模式时判断上一个归属的任务。
         """
         if task_chat_id is None:
             task_chat_id = chat_id
@@ -210,7 +211,7 @@ class Bot:
             # 同一用户若已有输入模式,先清退其旧handler,避免堆积。
             old = self.keyword_handlers.pop(chat_id, None)
             if old:
-                self.remove_handler(old, group=-1)
+                self.remove_handler(old[1], group=-1)
             keyword_handler = MessageHandler(
                 partial(self.handle_keyword_input, task_chat_id, callback_query, callback_prompt),
                 filters=self.auth_filter & pyrogram.filters.chat(chat_id) & pyrogram.filters.text & (
@@ -221,13 +222,13 @@ class Bot:
                         '/') and not m.text.startswith('http')
                 )
             )
-            self.keyword_handlers[chat_id] = keyword_handler
+            self.keyword_handlers[chat_id] = (task_chat_id, keyword_handler)
             self.add_handler(keyword_handler, group=-1)
             log.info(f'用户输入模式已打开,Handler:"{keyword_handler}"。')
         else:
             old = self.keyword_handlers.pop(chat_id, None)
             if old:
-                self.remove_handler(old, group=-1)
+                self.remove_handler(old[1], group=-1)
                 log.info('用户输入模式已关闭,Handler已清空。')
 
     def add_command_mode_handler(
@@ -3293,9 +3294,15 @@ class DownloadChatHandler(CallbackHandler):
                 BotCallbackText.CANCEL_KEYWORD_INPUT
         ):
             if data == BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER:
+                # 同一用户同时只保留一个输入模式,从其它任务切换过来时提示归属,避免关键词被误写到上一个任务。
+                previous = downloader.keyword_handlers.get(user_id)
+                switched: bool = previous is not None and previous[0] != chat_id
+                panel_text: str = self.__filter_prompt(downloader, chat_id)
+                if switched:
+                    panel_text = f'{panel_text}\n⚠️关键词输入已切换到本任务,之后的输入将写入本任务。'
                 try:
                     await query.message.edit_text(
-                        text=self.__filter_prompt(downloader, chat_id),
+                        text=panel_text,
                         reply_markup=attach_task(
                             kb.keyword_filter_button(downloader.adding_keywords.get(chat_id, [])),
                             chat_id
