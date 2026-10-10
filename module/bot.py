@@ -3384,11 +3384,20 @@ class MenuButtonHandler(CallbackHandler):
         query = ctx.query
         data = ctx.data
         if data == BotCallbackText.MENU_DOWNLOAD:
-            kb = downloader.menu_keyboard('download')
+            await query.edit_message_text(
+                text=BotButton.DOWNLOAD_MENU_TITLE,
+                reply_markup=downloader.menu_keyboard('download'))
+            return None
         elif data == BotCallbackText.MENU_LISTEN:
-            kb = downloader.menu_keyboard('listen')
+            await query.edit_message_text(
+                text=BotButton.LISTEN_MENU_TITLE,
+                reply_markup=downloader.menu_keyboard('listen'))
+            return None
         elif data == BotCallbackText.MENU_UPLOAD:
-            kb = downloader.menu_keyboard('upload')
+            await query.edit_message_text(
+                text=BotButton.UPLOAD_MENU_TITLE,
+                reply_markup=downloader.menu_keyboard('upload'))
+            return None
         elif data == BotCallbackText.MENU_AUTH:
             # 进入授权用户子菜单时同步刷新文本,避免仍停留在主菜单/help文本。
             await query.edit_message_text(
