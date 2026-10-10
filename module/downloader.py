@@ -1763,7 +1763,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 return None
             if not isinstance(download_chat_filter, dict):
                 return None
-            chat_id: Union[str, int] = int(chat_id) if chat_id.startswith('-') else chat_id
+            # chat_id可能是整数(私密频道链接解析为int)或字符串(公开频道用户名),统一按字符串前缀判断。
+            chat_id: Union[str, int] = int(chat_id) if str(chat_id).startswith('-') else chat_id
             date_filter = download_chat_filter.get('date_range')
             start_date = date_filter.get('start_date')
             end_date = date_filter.get('end_date')
