@@ -14,6 +14,7 @@ from functools import wraps
 from dataclasses import dataclass
 from typing import (
     Any,
+    List,
     Union,
     Optional,
     Callable
@@ -1423,6 +1424,19 @@ class BotCommandText:
     def with_description(text: tuple) -> str:
         return f'/{text[0]} - {text[1]}'
 
+    def __iter__(self):
+        for key, value in vars(self.__class__).items():
+            if not key.startswith('_') and not callable(value):  # 排除特殊方法和属性。
+                yield value
+
+    @staticmethod
+    def commands() -> List[str]:
+        return [_[0] for _ in BotCommandText()]
+
+    @staticmethod
+    def commands_with_prefix() -> List[str]:
+        return [f'/{_}' for _ in BotCommandText.commands()]
+
 
 class BotCallbackText:
     NULL: str = 'null'
@@ -1509,6 +1523,31 @@ class BotCallbackText:
         for key, value in vars(self.__class__).items():
             if not key.startswith('__') and not callable(value):  # 排除特殊方法和属性。
                 yield value
+
+
+class BotStepKeyword:
+    LINK = 'link'
+    PATH = 'path'
+    TARGET = 'target'
+    ORIGIN = 'origin'
+    START_ID = 'start_id'
+    END_ID = 'end_id'
+
+
+class BotStepText:
+    DOWNLOAD_LINK: tuple = (BotStepKeyword.LINK, '⬇️请直接发送需要下载的链接。')
+    DOWNLOAD_CHAT_LINK: tuple = (BotStepKeyword.LINK, '💬请直接发送需要下载的频道链接。')
+    UPLOAD_PATH: tuple = (BotStepKeyword.PATH, '📤请发送要上传的本地文件路径。')
+    UPLOAD_TARGET: tuple = (BotStepKeyword.TARGET, '📤请发送上传目标频道链接。')
+    UPLOAD_R_PATH: tuple = (BotStepKeyword.PATH, '📁请发送要递归上传的本地文件夹路径。')
+    UPLOAD_R_TARGET: tuple = (BotStepKeyword.TARGET, '📁请发送递归上传目标频道链接。')
+    FORWARD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, '↗️请发送原始频道链接。')
+    FORWARD_TARGET: tuple = (BotStepKeyword.TARGET, '↗️请发送目标频道链接。')
+    FORWARD_START_ID: tuple = (BotStepKeyword.START_ID, '↗️请发送起始消息ID(数字)。')
+    FORWARD_END_ID: tuple = (BotStepKeyword.END_ID, '↗️请发送结束消息ID(数字)。')
+    LISTEN_DOWNLOAD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, '🕵️请发送要监听下载的频道链接。')
+    LISTEN_FORWARD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, '📲请发送监听频道链接。')
+    LISTEN_FORWARD_TARGET: tuple = (BotStepKeyword.TARGET, '📲请发送转发目标频道链接。')
 
 
 class BotMessage:

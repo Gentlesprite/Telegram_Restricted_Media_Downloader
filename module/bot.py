@@ -83,57 +83,13 @@ from module.enums import (
     DownloadType,
     BotCommandText,
     BotCallbackText,
+    BotStepText,
+    BotStepKeyword,
     CalenderKeyboard
 )
 
 
 class Bot:
-    COMMAND_PREFIX_BLACKLIST: tuple = (
-        '/download',
-        '/download_chat',
-        '/upload',
-        '/upload_r',
-        '/forward',
-        '/help',
-        '/start',
-        '/table',
-        '/exit',
-        '/auth',
-        '/listen_download',
-        '/listen_forward',
-        '/listen_info'
-    )
-
-    COMMAND_STEPS: dict = {
-        'download': (
-            ('link', '⬇️请直接发送需要下载的链接。'),
-        ),
-        'download_chat': (
-            ('link', '💬请直接发送需要下载的频道链接。'),
-        ),
-        'upload': (
-            ('channel', '📤请发送上传目标频道链接。'),
-            ('path', '📤请发送要上传的本地文件路径。')
-        ),
-        'upload_r': (
-            ('channel', '📁请发送递归上传目标频道链接。'),
-            ('path', '📁请发送要递归上传的本地文件夹路径。')
-        ),
-        'forward': (
-            ('origin', '↗️请发送原始频道链接。'),
-            ('target', '↗️请发送目标频道链接。'),
-            ('start_id', '↗️请发送起始消息ID(数字)。'),
-            ('end_id', '↗️请发送结束消息ID(数字)。')
-        ),
-        'listen_download': (
-            ('links', '🕵️请发送要监听下载的频道链接。'),
-        ),
-        'listen_forward': (
-            ('listen', '📲请发送监听频道链接。'),
-            ('target', '📲请发送转发目标频道链接。')
-        )
-    }
-
     BOT_NAME: str = 'TRMD_BOT'
     COMMANDS: List[BotCommand] = [
         BotCommand(BotCommandText.HELP[0], BotCommandText.HELP[1]),
@@ -149,6 +105,38 @@ class Bot:
         BotCommand(BotCommandText.DOWNLOAD_CHAT[0], BotCommandText.DOWNLOAD_CHAT[1].replace('`', '')),
         BotCommand(BotCommandText.AUTH[0], BotCommandText.AUTH[1].replace('`', ''))
     ]
+    COMMAND_STEPS: dict = {
+        BotCommandText.DOWNLOAD[0]: (
+            BotStepText.DOWNLOAD_LINK,
+        ),
+        BotCommandText.DOWNLOAD_CHAT[0]: (
+            BotStepText.DOWNLOAD_CHAT_LINK,
+        ),
+        BotCommandText.UPLOAD[0]: (
+            BotStepText.UPLOAD_PATH,
+            BotStepText.UPLOAD_TARGET,
+        ),
+        BotCommandText.UPLOAD_R[0]: (
+            BotStepText.UPLOAD_R_PATH,
+            BotStepText.UPLOAD_R_TARGET,
+        ),
+        BotCommandText.FORWARD[0]: (
+            BotStepText.FORWARD_ORIGIN,
+            BotStepText.FORWARD_TARGET,
+            BotStepText.FORWARD_START_ID,
+            BotStepText.FORWARD_END_ID,
+        ),
+        BotCommandText.LISTEN_DOWNLOAD[0]: (
+            BotStepText.LISTEN_DOWNLOAD_ORIGIN,
+        ),
+        BotCommandText.LISTEN_FORWARD[0]: (
+            BotStepText.LISTEN_FORWARD_ORIGIN,
+            BotStepText.LISTEN_FORWARD_TARGET,
+        )
+    }
+    COMMAND_PREFIX_BLACKLIST: tuple = tuple(
+        BotCommandText.commands_with_prefix()
+    ) + ('/start',)
     LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
 
     def __init__(self):
@@ -283,22 +271,12 @@ class Bot:
         field = steps[step_idx][0]
         text: str = message.text.strip()
         # 按字段类型校验用户输入,不合法则要求重新输入当前步骤。
-        if field in ('link', 'channel', 'origin', 'target', 'listen'):
+        if field in (BotStepKeyword.LINK, BotStepKeyword.ORIGIN, BotStepKeyword.TARGET):
             if not text.startswith('http'):
                 await _client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
                     text='❌请输入有效的链接,请重新发送。',
-                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
-                )
-                return None
-        elif field == 'links':
-            lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
-            if not lines or not all(ln.startswith('http') for ln in lines):
-                await _client.send_message(
-                    chat_id=message.from_user.id,
-                    reply_parameters=ReplyParameters(message_id=message.id),
-                    text='❌请每行发送一个有效的频道链接,请重新发送。',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
                 return None
@@ -334,7 +312,7 @@ class Bot:
             if bot_username:
                 await self.user.send_message(
                     chat_id=bot_username,
-                    text=f'/download_chat {data["link"]}',
+                    text=f'/download_chat {data[BotStepKeyword.LINK]}',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
         elif command in ('upload', 'upload_r'):
@@ -342,28 +320,28 @@ class Bot:
                 cmd = '/upload' if command == 'upload' else '/upload_r'
                 await self.user.send_message(
                     chat_id=bot_username,
-                    text=f'{cmd} {data["path"]} {data["channel"]}',
+                    text=f'{cmd} {data[BotStepKeyword.PATH]} {data[BotStepKeyword.TARGET]}',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
         elif command == 'forward':
             if bot_username:
                 await self.user.send_message(
                     chat_id=bot_username,
-                    text=f'/forward {data["origin"]} {data["target"]} {data["start_id"]} {data["end_id"]}',
+                    text=f'/forward {data[BotStepKeyword.ORIGIN]} {data[BotStepKeyword.TARGET]} {data[BotStepKeyword.START_ID]} {data[BotStepKeyword.END_ID]}',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
         elif command == 'listen_download':
             if bot_username:
                 await self.user.send_message(
                     chat_id=bot_username,
-                    text=f'/listen_download {data["links"]}',
+                    text=f'/listen_download {data[BotStepKeyword.ORIGIN]}',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
         elif command == 'listen_forward':
             if bot_username:
                 await self.user.send_message(
                     chat_id=bot_username,
-                    text=f'/listen_forward {data["listen"]} {data["target"]}',
+                    text=f'/listen_forward {data[BotStepKeyword.ORIGIN]} {data[BotStepKeyword.TARGET]}',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
         self.command_processed.add(message.id)
