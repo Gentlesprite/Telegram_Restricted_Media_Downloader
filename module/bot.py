@@ -678,6 +678,10 @@ class Bot:
                     InlineKeyboardButton(BotButton.LISTEN_FORWARD_BTN, callback_data=BotCallbackText.LISTEN_FORWARD_BTN)
                 ],
                 [
+                    InlineKeyboardButton(BotButton.LOOKUP_LISTEN_INFO,
+                                         callback_data=BotCallbackText.LOOKUP_LISTEN_INFO)
+                ],
+                [
                     InlineKeyboardButton(BotButton.MENU_BACK, callback_data=BotCallbackText.MENU_BACK)
                 ]
             ])
@@ -1208,9 +1212,26 @@ class Bot:
             self,
             client: pyrogram.Client,
             message: pyrogram.types.Message,
-            target: Union[int, None] = None
+            target: Union[int, None] = None,
+            edit_message: Union[pyrogram.types.Message, None] = None
     ):
         async def __listen_info(_listen_chat: dict, _text: str):
+            if edit_message is not None:
+                # 按钮点击:就地编辑当前消息,避免向(可能为机器人的)会话发送新消息。
+                text = _text
+                for link in _listen_chat:
+                    args: list = link.split()
+                    if len(args) == 1:
+                        text = f'{text}\n{link}'
+                    elif len(args) == 2:
+                        text = f'{text}\n{args[0]} ➡️ {args[1]}'
+                await self.safe_edit_message(
+                    client=client,
+                    message=edit_message,
+                    last_message_id=edit_message.id,
+                    text=safe_message(text)
+                )
+                return
             last_message = await client.send_message(
                 chat_id=target if target is not None else message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
@@ -1237,17 +1258,30 @@ class Bot:
                     )
 
         if not self.listen_forward_chat and not self.listen_download_chat:
-            await client.send_message(
-                chat_id=message.from_user.id,
-                reply_parameters=ReplyParameters(message_id=message.id),
-                link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                text='😲目前没有正在监听的频道。'
-            )
+            if edit_message is not None:
+                try:
+                    await edit_message.edit_text(
+                        text='😲目前没有正在监听的频道。',
+                        reply_markup=self.menu_keyboard('listen'))
+                except MessageNotModified:
+                    pass
+            else:
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
+                    text='😲目前没有正在监听的频道。'
+                )
         else:
             if self.listen_download_chat:
                 await __listen_info(self.listen_download_chat, '🕵️以下链接为已创建的`监听下载`频道:\n')
             if self.listen_forward_chat:
                 await __listen_info(self.listen_forward_chat, '📲以下链接为已创建的`监听转发`频道:\n')
+            if edit_message is not None:
+                try:
+                    await edit_message.edit_reply_markup(self.menu_keyboard('listen'))
+                except MessageNotModified:
+                    pass
 
     async def auth_user(
             self,
@@ -2558,12 +2592,13 @@ class ListenInfoHandler(CallbackHandler):
     async def handle(self, ctx: CallbackContext) -> None:
         downloader = ctx.downloader
         query = ctx.query
-        # 直接调用底层逻辑并显式指定接收者即点击者,不再用登录账号重发命令。
+        # 直接编辑当前消息展示监听信息,不再另发一条(也规避向机器人会话发送消息的限制)。
         try:
             await downloader.listen_info(
                 client=downloader.bot,
                 message=query.message,
-                target=query.from_user.id
+                target=query.from_user.id,
+                edit_message=query.message
             )
         except Exception as e:
             await query.message.reply_text('查看监听信息失败\n(具体原因请前往终端查看报错信息)')
@@ -3411,7 +3446,6 @@ class MenuButtonHandler(CallbackHandler):
             return None
         else:
             return None
-        await query.edit_message_reply_markup(reply_markup=kb)
 
 
 CALLBACK_HANDLERS: tuple = (
