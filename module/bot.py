@@ -584,7 +584,6 @@ class Bot:
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
-        BotCallbackText.DOWNLOAD_CHAT_ID = str(chat_id)
         self.download_chat_filter[chat_id] = {
             'date_range':
                 {
@@ -3073,8 +3072,8 @@ class DownloadChatHandler(CallbackHandler):
     )
 
     def match(self, data: str) -> bool:
-        # DOWNLOAD_CHAT_ID在download_chat启动时被运行时改写为真实chat_id,
-        # 因此执行任务的回调数据就是该真实chat_id,必须动态读取此常量来匹配。
+        # DOWNLOAD_CHAT_ID是执行任务按钮的固定常量回调数据(不再在运行时改写为真实chat_id),
+        # 真实频道id由download_chat_active按发起回调的用户解析,因此支持多用户并发。
         return (
                 data in self.exact
                 or data.startswith(self.prefixes)
