@@ -165,6 +165,7 @@ class Bot:
         self.command_processed: set = set()  # 已通过命令输入模式处理的消息ID,避免与既有handler重复触发。
         self.pending_tasks: dict = {}  # 多步引导的待收集任务状态。
         self.keyword_handlers: dict = {}  # 关键词输入模式的handler,按chat_id隔离。
+        self.auth_handlers: dict = {}  # 添加授权用户输入模式的handler,按chat_id隔离。
 
     @staticmethod
     async def authorized_filter(flt, _client, update) -> bool:
@@ -341,6 +342,8 @@ class Bot:
 
     async def process_error_message(self, client: pyrogram.Client, message: pyrogram.types.Message) -> None:
         if message.from_user.id in self.keyword_handlers:
+            return
+        if message.from_user.id in self.auth_handlers:
             return
         if message.id in self.command_processed:
             return
@@ -691,13 +694,14 @@ class Bot:
         if level == 'auth':
             return InlineKeyboardMarkup([
                 [
+                    InlineKeyboardButton(BotButton.AUTH, callback_data=BotCallbackText.AUTH),
                     InlineKeyboardButton(BotButton.LOOKUP_AUTH_INFO, callback_data=BotCallbackText.LOOKUP_AUTH_INFO)
                 ],
                 [
                     InlineKeyboardButton(BotButton.MENU_BACK, callback_data=BotCallbackText.MENU_BACK)
                 ]
             ])
-        # 主菜单:下载/上传/转发/监听对任意授权用户可见,鉴权管理仅root可见,其余入口始终展示。
+        # 主菜单:下载/上传/转发/监听对任意授权用户可见,授权管理仅root可见,其余入口始终展示。
         feature_rows = [
             [
                 InlineKeyboardButton(BotButton.MENU_DOWNLOAD, callback_data=BotCallbackText.MENU_DOWNLOAD),
@@ -1259,34 +1263,59 @@ class Bot:
             # 无参数时展示当前已授权的用户列表。
             await self.show_authorized_users(client=client, message=message)
             return None
-        target: str = args[1].lstrip('@')
+        await self.add_authorized_user(client=client, message=message, target=args[1])
+
+    async def add_authorized_user(
+            self,
+            client: pyrogram.Client,
+            message: pyrogram.types.Message,
+            target: str,
+            edit_message: Union[pyrogram.types.Message, None] = None
+    ) -> None:
+        """解析用户ID或@用户名并热添加为授权用户(仅root可调用,此处不校验root)。
+
+        edit_message 非空时(输入模式),结果直接编辑该消息而非另发一条,避免重复提示。
+        """
+        auth_kb = self.menu_keyboard('auth')
         # 统一通过 pyrogram 校验用户是否存在,支持用户ID或@用户名。
+        target = target.lstrip('@')
+
+        async def _respond(text: str, reply_markup=None):
+            if edit_message is not None:
+                try:
+                    await edit_message.edit_text(text=text, reply_markup=reply_markup)
+                except MessageNotModified:
+                    pass
+            else:
+                await client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
+                    text=text,
+                    reply_markup=reply_markup
+                )
+
         try:
             uid = (await self.user.get_users(
                 int(target) if target.isdigit() else target
             )).id
         except Exception as e:
-            await client.send_message(
-                chat_id=message.from_user.id,
-                reply_parameters=ReplyParameters(message_id=message.id),
-                text=f'❌无法解析用户"{target}"\n{_t(KeyWord.REASON)}:"{e}"'
+            await _respond(
+                text=f'❌无法解析用户"{target}"\n{_t(KeyWord.REASON)}:"{e}"',
+                reply_markup=auth_kb if edit_message is not None else None
             )
             return None
         if uid is None:
             return None
         # root用户本身就拥有全部权限,无需重复授权。
         if self.root and uid == self.root[0]:
-            await client.send_message(
-                chat_id=message.from_user.id,
-                reply_parameters=ReplyParameters(message_id=message.id),
-                text='👑该用户为`root`,已拥有全部权限,无需授权。'
+            await _respond(
+                text='👑该用户为`root`,已拥有全部权限,无需授权。',
+                reply_markup=auth_kb if edit_message is not None else None
             )
             return None
         # 已存在则展示移除按钮,不再重复添加。
         if uid in self.gc.authorized_users:
-            await client.send_message(
-                chat_id=message.from_user.id,
-                reply_parameters=ReplyParameters(message_id=message.id),
+            await _respond(
                 text=f'👥用户`{uid}`已在授权列表中,是否移除?',
                 reply_markup=InlineKeyboardMarkup([
                     [
@@ -1307,16 +1336,67 @@ class Bot:
         self.root.append(uid)
         self.gc.config['authorized_users'] = self.gc.authorized_users
         self.gc.save_config(self.gc.config)
-        await client.send_message(
-            chat_id=message.from_user.id,
-            reply_parameters=ReplyParameters(message_id=message.id),
+        await _respond(
             text=f'✅已添加授权用户`ID`:\n`{uid}`',
-            reply_markup=KeyboardButton.single_button(
+            reply_markup=auth_kb if edit_message is not None else KeyboardButton.single_button(
                 text=BotButton.LOOKUP_AUTH_INFO,
                 callback_data=BotCallbackText.LOOKUP_AUTH_INFO
             )
         )
         log.info(f'已热添加授权用户:{uid},当前授权用户:{self.gc.authorized_users}。')
+
+    def add_auth_mode_handler(
+            self,
+            chat_id,
+            callback_query: CallbackQuery,
+            enable: bool
+    ):
+        """添加或移除"添加授权用户"输入模式的handler,按chat_id隔离以避免多用户互相串扰。"""
+        if enable:
+            # 同一用户若已有输入模式,先清退其旧handler,避免堆积。
+            old = self.auth_handlers.pop(chat_id, None)
+            if old:
+                self.remove_handler(old, group=-1)
+            auth_handler = MessageHandler(
+                partial(self.handle_auth_input, chat_id, callback_query),
+                filters=self.auth_filter & pyrogram.filters.chat(chat_id) & pyrogram.filters.text & (
+                    lambda client, m: isinstance(
+                        m,
+                        pyrogram.types.Message
+                    ) and m.text and m.text.strip() and not m.text.startswith('/')
+                )
+            )
+            self.auth_handlers[chat_id] = auth_handler
+            self.add_handler(auth_handler, group=-1)
+            log.info(f'添加授权用户输入模式已打开,Handler:"{auth_handler}"。')
+        else:
+            old = self.auth_handlers.pop(chat_id, None)
+            if old:
+                self.remove_handler(old, group=-1)
+                log.info('添加授权用户输入模式已关闭,Handler已清空。')
+
+    async def handle_auth_input(
+            self,
+            chat_id,
+            callback_query: CallbackQuery,
+            _client: pyrogram.Client,
+            message: pyrogram.types.Message
+    ) -> None:
+        """处理root在输入模式下发送的待授权用户ID或@用户名。"""
+        # 仅root可授权,且只接收发起者自己的输入。
+        if not self.root or message.from_user.id != self.root[0] or message.from_user.id != chat_id:
+            self.add_auth_mode_handler(chat_id=chat_id, callback_query=callback_query, enable=False)
+            return None
+        # 处理结果直接编辑"🔐授权用户管理"这条消息(由 add_authorized_user 完成),避免重复提示。
+        await self.add_authorized_user(
+            client=self.bot,
+            message=message,
+            target=message.text.strip(),
+            edit_message=callback_query.message
+        )
+        # 处理完毕关闭输入模式。
+        self.add_auth_mode_handler(chat_id=chat_id, callback_query=callback_query, enable=False)
+
 
     async def show_authorized_users(
             self,
@@ -2494,6 +2574,52 @@ class LookupAuthInfoHandler(CallbackHandler):
             log.error(f'发送查看授权用户命令失败,{_t(KeyWord.REASON)}:"{e}"')
 
 
+class AddAuthHandler(CallbackHandler):
+    exact = (BotCallbackText.AUTH,)
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        # 仅root可发起授权,非root直接拒绝。
+        if not downloader.root or query.from_user.id != downloader.root[0]:
+            await query.answer('⛔该操作仅`root`可用。', show_alert=True)
+            return None
+        # 打开输入模式,提示root发送待授权用户ID或@用户名,并支持取消。
+        await query.message.edit_text(
+            text='➕请输入要授权的用户`ID`或`@用户名`:',
+            reply_markup=KeyboardButton.single_button(
+                text='🔙取消',
+                callback_data=BotCallbackText.CANCEL_AUTH_INPUT
+            )
+        )
+        downloader.add_auth_mode_handler(
+            chat_id=query.from_user.id,
+            callback_query=query,
+            enable=True
+        )
+
+
+class CancelAuthInputHandler(CallbackHandler):
+    exact = (BotCallbackText.CANCEL_AUTH_INPUT,)
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        # 关闭添加授权用户输入模式,无论是否root都安全(无该用户handler时为空操作)。
+        downloader.add_auth_mode_handler(
+            chat_id=query.from_user.id,
+            callback_query=query,
+            enable=False
+        )
+        try:
+            await query.message.edit_text(
+                text='🔐授权用户管理',
+                reply_markup=downloader.menu_keyboard('auth')
+            )
+        except MessageNotModified:
+            pass
+
+
 class ShutdownHandler(CallbackHandler):
     exact = (BotCallbackText.SHUTDOWN,)
 
@@ -3267,6 +3393,8 @@ CALLBACK_HANDLERS: tuple = (
     TaskAssignHandler(),
     ListenInfoHandler(),
     LookupAuthInfoHandler(),
+    AddAuthHandler(),
+    CancelAuthInputHandler(),
     ShutdownHandler(),
     SettingsHandler(),
     TableHandler(),
