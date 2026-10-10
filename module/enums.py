@@ -1558,19 +1558,19 @@ class BotStepKeyword:
 
 
 class BotStepText:
-    DOWNLOAD_LINK: tuple = (BotStepKeyword.LINK, '⬇️请直接发送需要下载的链接。')
-    DOWNLOAD_CHAT_LINK: tuple = (BotStepKeyword.LINK, '💬请直接发送需要下载的频道链接。')
-    UPLOAD_PATH: tuple = (BotStepKeyword.PATH, '📤请发送要上传的本地文件路径。')
-    UPLOAD_TARGET: tuple = (BotStepKeyword.TARGET, '📤请发送上传目标频道链接。')
-    UPLOAD_R_PATH: tuple = (BotStepKeyword.PATH, '📁请发送要递归上传的本地文件夹路径。')
-    UPLOAD_R_TARGET: tuple = (BotStepKeyword.TARGET, '📁请发送递归上传目标频道链接。')
-    FORWARD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, '↗️请发送原始频道链接。')
-    FORWARD_TARGET: tuple = (BotStepKeyword.TARGET, '↗️请发送目标频道链接。')
-    FORWARD_START_ID: tuple = (BotStepKeyword.START_ID, '↗️请发送起始消息ID(数字)。')
-    FORWARD_END_ID: tuple = (BotStepKeyword.END_ID, '↗️请发送结束消息ID(数字)。')
-    LISTEN_DOWNLOAD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, '🕵️请发送要监听下载的频道链接。')
-    LISTEN_FORWARD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, '📲请发送监听频道链接。')
-    LISTEN_FORWARD_TARGET: tuple = (BotStepKeyword.TARGET, '📲请发送转发目标频道链接。')
+    DOWNLOAD_LINK: tuple = (BotStepKeyword.LINK, '⬇️请直接发送需要下载的链接')
+    DOWNLOAD_CHAT_LINK: tuple = (BotStepKeyword.LINK, '💬请直接发送需要下载的频道链接')
+    UPLOAD_PATH: tuple = (BotStepKeyword.PATH, '📤请发送要上传的本地文件路径')
+    UPLOAD_TARGET: tuple = (BotStepKeyword.TARGET, '📤请发送上传目标频道链接')
+    UPLOAD_R_PATH: tuple = (BotStepKeyword.PATH, '📁请发送要递归上传的文件夹路径')
+    UPLOAD_R_TARGET: tuple = (BotStepKeyword.TARGET, '📁请发送要上传到的目标频道链接')
+    FORWARD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, '↗️请发送原始频道链接')
+    FORWARD_TARGET: tuple = (BotStepKeyword.TARGET, '↗️请发送目标频道链接')
+    FORWARD_START_ID: tuple = (BotStepKeyword.START_ID, '↗️请发送起始消息ID(数字)')
+    FORWARD_END_ID: tuple = (BotStepKeyword.END_ID, '↗️请发送结束消息ID(数字)')
+    LISTEN_DOWNLOAD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, '🕵️请发送要监听下载的频道链接')
+    LISTEN_FORWARD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, '📲请发送要监听转发的频道链接')
+    LISTEN_FORWARD_TARGET: tuple = (BotStepKeyword.TARGET, '📲请发送要转发到的目标频道链接')
 
 
 class BotMessage:
