@@ -160,7 +160,7 @@ class Bot:
         self.handle_media_groups: dict = {}
         self.download_chat_filter: dict = {}
         self.download_chat_active: dict = {}  # 记录正在引导download_chat的用户与其目标频道id的映射,按用户隔离,支持多用户并发。
-        self.adding_keywords: list = []  # 用于跟踪正在添加的关键词列表。
+        self.adding_keywords: dict = {}  # 按用户id隔离的"正在添加的关键词列表",支持多用户并发引导。
         self.command_handlers: dict = {}  # 命令输入模式的handler,按chat_id隔离,支持多用户并发引导。
         self.command_processed: set = set()  # 已通过命令输入模式处理的消息ID,避免与既有handler重复触发。
         self.pending_tasks: dict = {}  # 多步引导的待收集任务状态。
@@ -368,8 +368,13 @@ class Bot:
 
         # 以空格分隔关键词。
         keywords = [kw.strip() for kw in text.split() if kw.strip()]
+        # chat_id为打开输入模式的用户id(keyword输入模式已按用户隔离),
+        # 需还原其正在引导的频道id,才能正确写回download_chat_filter。
+        channel_id = self.download_chat_active.get(chat_id)
+        if channel_id is None:
+            return None
         for keyword in keywords:
-            if keyword in self.adding_keywords:
+            if keyword in self.adding_keywords.get(chat_id, []):
                 try:
                     await callback_query.message.edit_text(
                         text=f'🚛`{keyword}`已被添加,选择处理方式后继续。',
@@ -391,12 +396,12 @@ class Bot:
                 except MessageNotModified:
                     pass
             else:
-                self.download_chat_filter[chat_id]['keyword'][keyword] = True
-                self.adding_keywords.append(keyword)  # 添加到正在添加的关键词列表。
+                self.download_chat_filter[channel_id]['keyword'][keyword] = True
+                self.adding_keywords.setdefault(chat_id, []).append(keyword)  # 添加到正在添加的关键词列表。
                 try:
                     await callback_query.message.edit_text(
                         text=callback_prompt(),
-                        reply_markup=KeyboardButton.keyword_filter_button(self.adding_keywords)
+                        reply_markup=KeyboardButton.keyword_filter_button(self.adding_keywords.get(chat_id, []))
                     )
                 except MessageNotModified:
                     pass
@@ -2906,7 +2911,7 @@ class DownloadChatHandler(CallbackHandler):
         if chat_id is None:
             return None
         if data in (BotCallbackText.DOWNLOAD_CHAT_ID, BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL):
-            downloader.adding_keywords.clear()
+            downloader.adding_keywords.pop(user_id, None)
             downloader.add_keyword_mode_handler(
                 chat_id=user_id,
                 callback_query=query,
@@ -3010,10 +3015,10 @@ class DownloadChatHandler(CallbackHandler):
                 keyword = parts[-1]
                 keyword_dict = downloader.download_chat_filter.get(chat_id, {}).get('keyword', {})
                 keyword_dict.pop(keyword)
-                downloader.adding_keywords.remove(keyword)
+                downloader.adding_keywords.setdefault(user_id, []).remove(keyword)
             await query.message.edit_text(
                 text=self.__filter_prompt(downloader, chat_id),
-                reply_markup=KeyboardButton.keyword_filter_button(downloader.adding_keywords)
+                reply_markup=KeyboardButton.keyword_filter_button(downloader.adding_keywords.get(user_id, []))
             )
         elif data in (
                 BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER,
@@ -3061,20 +3066,20 @@ class DownloadChatHandler(CallbackHandler):
                 try:
                     await query.message.edit_text(
                         text=self.__filter_prompt(downloader, chat_id),
-                        reply_markup=kb.keyword_filter_button(downloader.adding_keywords)
+                        reply_markup=kb.keyword_filter_button(downloader.adding_keywords.get(user_id, []))
                     )
                 except MessageNotModified:
                     pass
                 downloader.add_keyword_mode_handler(
                     enable=True,
-                    chat_id=chat_id,
+                    chat_id=user_id,
                     callback_query=query,
                     callback_prompt=partial(self.__filter_prompt, downloader, chat_id)
                 )
             elif data == BotCallbackText.CONFIRM_KEYWORD:
                 downloader.add_keyword_mode_handler(
                     enable=False,
-                    chat_id=chat_id,
+                    chat_id=user_id,
                     callback_query=query,
                     callback_prompt=partial(self.__filter_prompt, downloader, chat_id)
                 )
@@ -3083,10 +3088,10 @@ class DownloadChatHandler(CallbackHandler):
                     reply_markup=kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'])
                 )
             elif data == BotCallbackText.CANCEL_KEYWORD_INPUT:
-                downloader.adding_keywords.clear()
+                downloader.adding_keywords.pop(user_id, None)
                 downloader.add_keyword_mode_handler(
                     enable=False,
-                    chat_id=chat_id,
+                    chat_id=user_id,
                     callback_query=query,
                     callback_prompt=partial(self.__filter_prompt, downloader, chat_id)
                 )
