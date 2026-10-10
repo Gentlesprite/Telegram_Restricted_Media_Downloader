@@ -306,42 +306,42 @@ class Bot:
         # 所有步骤收集完成,组装命令交给既有流程,并防group=0重复触发。
         data = pending['data']
         bot_username = getattr(await self.bot.get_me(), 'username', None)
-        if command == 'download':
+        if command == BotCommandText.DOWNLOAD[0]:
             await self.get_download_link_from_bot(client=_client, message=message)
-        elif command == 'download_chat':
+        elif command == BotCommandText.DOWNLOAD_CHAT[0]:
             if bot_username:
                 await self.user.send_message(
                     chat_id=bot_username,
-                    text=f'/download_chat {data[BotStepKeyword.LINK]}',
+                    text=f'/{BotCommandText.DOWNLOAD_CHAT[0]} {data[BotStepKeyword.LINK]}',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
-        elif command in ('upload', 'upload_r'):
+        elif command in (BotCommandText.UPLOAD[0], BotCommandText.UPLOAD_R[0]):
             if bot_username:
-                cmd = '/upload' if command == 'upload' else '/upload_r'
+                cmd = f'/{BotCommandText.UPLOAD[0]}' if command == BotCommandText.UPLOAD[0] else f'/{BotCommandText.UPLOAD_R[0]}'
                 await self.user.send_message(
                     chat_id=bot_username,
                     text=f'{cmd} {data[BotStepKeyword.PATH]} {data[BotStepKeyword.TARGET]}',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
-        elif command == 'forward':
+        elif command == BotCommandText.FORWARD[0]:
             if bot_username:
                 await self.user.send_message(
                     chat_id=bot_username,
-                    text=f'/forward {data[BotStepKeyword.ORIGIN]} {data[BotStepKeyword.TARGET]} {data[BotStepKeyword.START_ID]} {data[BotStepKeyword.END_ID]}',
+                    text=f'/{BotCommandText.FORWARD[0]} {data[BotStepKeyword.ORIGIN]} {data[BotStepKeyword.TARGET]} {data[BotStepKeyword.START_ID]} {data[BotStepKeyword.END_ID]}',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
-        elif command == 'listen_download':
+        elif command == BotCommandText.LISTEN_DOWNLOAD[0]:
             if bot_username:
                 await self.user.send_message(
                     chat_id=bot_username,
-                    text=f'/listen_download {data[BotStepKeyword.ORIGIN]}',
+                    text=f'/{BotCommandText.LISTEN_DOWNLOAD[0]} {data[BotStepKeyword.ORIGIN]}',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
-        elif command == 'listen_forward':
+        elif command == BotCommandText.LISTEN_FORWARD[0]:
             if bot_username:
                 await self.user.send_message(
                     chat_id=bot_username,
-                    text=f'/listen_forward {data[BotStepKeyword.ORIGIN]} {data[BotStepKeyword.TARGET]}',
+                    text=f'/{BotCommandText.LISTEN_FORWARD[0]} {data[BotStepKeyword.ORIGIN]} {data[BotStepKeyword.TARGET]}',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
         self.command_processed.add(message.id)
@@ -931,14 +931,14 @@ class Bot:
                     return None
             if os.path.isdir(file_path):
                 upload_folder = []
-                if command == '/upload_r':
+                if command == f'/{BotCommandText.UPLOAD_R[0]}':
                     upload_files = [os.path.join(root, filename) for root, dirs, files in os.walk(file_path) for
                                     filename in files]
                 else:
                     upload_files = safe_scan_directory_file(file_path)
                 for file_name in upload_files:
                     new_message = copy.copy(message)
-                    new_message.text = f'/upload {os.path.join(file_path, file_name)} {target_link}'
+                    new_message.text = f'/{BotCommandText.UPLOAD[0]} {os.path.join(file_path, file_name)} {target_link}'
                     upload_folder.append(
                         self.get_upload_link_from_bot(
                             client=client,
@@ -1410,67 +1410,67 @@ class Bot:
             self.bot.add_handler(
                 MessageHandler(
                     self.help,
-                    filters=pyrogram.filters.command(['help']) & self.auth_filter
+                    filters=pyrogram.filters.command([BotCommandText.HELP[0]]) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.get_download_link_from_bot,
-                    filters=pyrogram.filters.command(['download']) & self.auth_filter
+                    filters=pyrogram.filters.command([BotCommandText.DOWNLOAD[0]]) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.get_download_chat_link_from_bot,
-                    filters=pyrogram.filters.command(['download_chat']) & self.auth_filter
+                    filters=pyrogram.filters.command([BotCommandText.DOWNLOAD_CHAT[0]]) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.get_upload_link_from_bot,
-                    filters=pyrogram.filters.command(['upload']) & self.auth_filter
+                    filters=pyrogram.filters.command([BotCommandText.UPLOAD[0]]) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.get_upload_link_from_bot,
-                    filters=pyrogram.filters.command(['upload_r']) & self.auth_filter
+                    filters=pyrogram.filters.command([BotCommandText.UPLOAD_R[0]]) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.table,
-                    filters=pyrogram.filters.command(['table']) & self.auth_filter
+                    filters=pyrogram.filters.command([BotCommandText.TABLE[0]]) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.get_forward_link_from_bot,
-                    filters=pyrogram.filters.command(['forward']) & self.auth_filter
+                    filters=pyrogram.filters.command([BotCommandText.FORWARD[0]]) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.exit,
-                    filters=pyrogram.filters.command(['exit']) & self.auth_filter
+                    filters=pyrogram.filters.command([BotCommandText.EXIT[0]]) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.on_listen,
-                    filters=pyrogram.filters.command(['listen_download', 'listen_forward']) & self.auth_filter
+                    filters=pyrogram.filters.command([BotCommandText.LISTEN_DOWNLOAD[0], BotCommandText.LISTEN_FORWARD[0]]) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.listen_info,
-                    filters=pyrogram.filters.command(['listen_info']) & self.auth_filter
+                    filters=pyrogram.filters.command([BotCommandText.LISTEN_INFO[0]]) & self.auth_filter
                 )
             )
             self.bot.add_handler(
                 MessageHandler(
                     self.auth_user,
-                    filters=pyrogram.filters.command(['auth']) & self.auth_filter
+                    filters=pyrogram.filters.command([BotCommandText.AUTH[0]]) & self.auth_filter
                 )
             )
             self.bot.add_handler(
@@ -3185,13 +3185,13 @@ class CommandButtonHandler(CallbackHandler):
         query = ctx.query
         data = ctx.data
         command_map = {
-            BotCallbackText.COMMAND_DOWNLOAD: 'download',
-            BotCallbackText.COMMAND_DOWNLOAD_CHAT: 'download_chat',
-            BotCallbackText.COMMAND_UPLOAD: 'upload',
-            BotCallbackText.COMMAND_UPLOAD_R: 'upload_r',
-            BotCallbackText.COMMAND_FORWARD: 'forward',
-            BotCallbackText.LISTEN_DOWNLOAD_BTN: 'listen_download',
-            BotCallbackText.LISTEN_FORWARD_BTN: 'listen_forward'
+            BotCallbackText.COMMAND_DOWNLOAD: BotCommandText.DOWNLOAD[0],
+            BotCallbackText.COMMAND_DOWNLOAD_CHAT: BotCommandText.DOWNLOAD_CHAT[0],
+            BotCallbackText.COMMAND_UPLOAD: BotCommandText.UPLOAD[0],
+            BotCallbackText.COMMAND_UPLOAD_R: BotCommandText.UPLOAD_R[0],
+            BotCallbackText.COMMAND_FORWARD: BotCommandText.FORWARD[0],
+            BotCallbackText.LISTEN_DOWNLOAD_BTN: BotCommandText.LISTEN_DOWNLOAD[0],
+            BotCallbackText.LISTEN_FORWARD_BTN: BotCommandText.LISTEN_FORWARD[0]
         }
         command = command_map.get(data)
         if not command:
