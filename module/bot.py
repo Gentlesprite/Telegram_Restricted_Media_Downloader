@@ -317,7 +317,8 @@ class Bot:
             new_message.text = f'/{BotCommandText.DOWNLOAD_CHAT[0]} {data[BotStepKeyword.LINK]}'
             await self.get_download_chat_link_from_bot(client=self.bot, message=new_message)
         elif command in (BotCommandText.UPLOAD[0], BotCommandText.UPLOAD_R[0]):
-            cmd = f'/{BotCommandText.UPLOAD[0]}' if command == BotCommandText.UPLOAD[0] else f'/{BotCommandText.UPLOAD_R[0]}'
+            cmd = f'/{BotCommandText.UPLOAD[0]}' if command == BotCommandText.UPLOAD[
+                0] else f'/{BotCommandText.UPLOAD_R[0]}'
             new_message = copy.copy(message)
             new_message.text = f'{cmd} {data[BotStepKeyword.PATH]} {data[BotStepKeyword.TARGET]}'
             await self.get_upload_link_from_bot(client=self.bot, message=new_message)
@@ -735,10 +736,10 @@ class Bot:
     ) -> Union[None, dict]:  # client与message都为None时,返回keyboard与text。
         web = getattr(self, 'web', None)  # 网页面板实例,用于展示认证信息。
         web_auth: str = ''
-        more_feature: str = ''
+        more_feature: bool = False
         uid = message.from_user.id if message and message.from_user else None
         if message is None or not self.root or message.from_user.id == self.root[0]:
-            more_feature = f'✨ 其他功能:\n📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`类型的消息给我,即可创建下载任务。\n'
+            more_feature = True
         if web is not None:
             web_auth = (
                 f'🌐 Web配置:\n'
@@ -775,9 +776,9 @@ class Bot:
             f'📤 {BotCommandText.with_description(BotCommandText.UPLOAD)}\n'
             f'🌳 {BotCommandText.with_description(BotCommandText.UPLOAD_R)}\n'
             f'💬 {BotCommandText.with_description(BotCommandText.DOWNLOAD_CHAT)}\n'
-            f'🔐 {BotCommandText.with_description(BotCommandText.AUTH)}\n\n'
+            f'{"🔐 " + BotCommandText.with_description(BotCommandText.AUTH) + "\n\n" if more_feature else "\n"}'
             f'{web_auth}'
-            f'{more_feature}'
+            f'{"✨ 其他功能:\n📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`类型的消息给我,即可创建下载任务。\n" if more_feature else "\n"}'
         )
         if not all([client, message]):
             return {
@@ -1468,7 +1469,8 @@ class Bot:
             self.bot.add_handler(
                 MessageHandler(
                     self.on_listen,
-                    filters=pyrogram.filters.command([BotCommandText.LISTEN_DOWNLOAD[0], BotCommandText.LISTEN_FORWARD[0]]) & self.auth_filter
+                    filters=pyrogram.filters.command(
+                        [BotCommandText.LISTEN_DOWNLOAD[0], BotCommandText.LISTEN_FORWARD[0]]) & self.auth_filter
                 )
             )
             self.bot.add_handler(
