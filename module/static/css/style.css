@@ -150,7 +150,13 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+    order: 1;
 }
+
+/* 顶栏元素统一用 order 控制排列:宽屏品牌区居左、操作按钮居右;窄屏媒体查询再重排。 */
+#btnPause { order: 2; margin-left: auto; }
+#supportBtn { order: 3; }
+#menuWrap { order: 4; }
 
 .logo {
     position: relative;
@@ -269,12 +275,7 @@ h1 {
     white-space: nowrap;
 }
 
-/* 顶栏右侧:支持作者入口与更多菜单。 */
-.top-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
+/* (按钮已提升为 .topbar 直接子元素,原 .top-actions 包裹已移除。) */
 
 .support-btn {
     display: inline-flex;
@@ -290,6 +291,7 @@ h1 {
     font-weight: 700;
     letter-spacing: .5px;
     cursor: pointer;
+    white-space: nowrap;  /* 禁止中文标签折行,避免窄屏下被压成竖排(显示不全)。 */
     box-shadow: 0 4px 14px rgba(56, 249, 215, .25);
     transition: filter .18s ease, box-shadow .28s ease;
 }
@@ -1405,6 +1407,37 @@ tbody tr:hover {
 @media (max-width: 620px) {
     .stat {
         grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* 窄屏:暂停与支持作者一起在 TRMD 下方第二行并排,☰ 用绝对定位钉死在右上角,
+   无论多窄都不会被挤到左侧(避免极窄时回绕到第二行并跑到按钮左边)。 */
+@media (max-width: 600px) {
+    .topbar {
+        position: relative;  /* 作为 ☰ 绝对定位的参照。 */
+        align-items: flex-start;  /* 首行元素顶端对齐,使 ☰ 与品牌区视觉同高。 */
+        justify-content: flex-start;  /* 覆盖基础 space-between:第二行按钮左对齐并排,中间不留空。 */
+        flex-wrap: wrap;
+    }
+
+    .brand {
+        flex-basis: 100%;  /* 独占首行(内容左对齐),把暂停/支持作者挤到第二行。 */
+    }
+
+    #menuWrap {
+        position: absolute;
+        top: 0;
+        right: 0;  /* 永远钉在右上角,极窄时也不会跑到左侧。 */
+    }
+
+    #btnPause {
+        order: 2;
+        margin-left: 0;  /* 取消基础自动外边距,留在第二行。 */
+    }
+
+    #supportBtn {
+        order: 3;
+        margin-left: 0;
     }
 }
 
