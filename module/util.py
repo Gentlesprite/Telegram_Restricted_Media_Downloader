@@ -700,9 +700,11 @@ def build_task_callback(callback: str, chat_id, separator: str = '|', limit: int
     suffix: str = f'{separator}{chat_id}'
     data: str = f'{payload}{suffix}'
     encoded: bytes = data.encode('utf-8')
-    if len(encoded) <= limit:
+    encoded_length: int = len(encoded)
+    if encoded_length <= limit:
+        log.debug(f'callback_data:"{encoded}",长度:{encoded_length},未超过{limit}字节,原样返回。')
         return data
-    log.warning(f'callback_data超过"{limit}"字节,已截断回调数据："{payload}"。')
+    log.warning(f'callback_data:"{encoded}",长度:{encoded_length},已超过{limit}字节,已截断回调数据:"{payload}"。')
     # 先按任务身份的字节数留出余量,再截回调数据,避免负切片把任务身份整段切掉。
     kept: str = encoded[:max(limit - len(suffix.encode('utf-8')), 0)].decode('utf-8', errors='ignore')
     return f'{kept}{suffix}'
