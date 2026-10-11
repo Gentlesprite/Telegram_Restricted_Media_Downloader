@@ -72,12 +72,13 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             default=WebMeta.DEFAULT_PORT,
             help='设置网页面板的端口'
         )
-        self.add_argument(
-            '--test',
-            action='store_true',
-            default=False,
-            help=SUPPRESS
-        )
+        if '__compiled__' not in globals():
+            self.add_argument(
+                '--test',
+                action='store_true',
+                default=False,
+                help=SUPPRESS
+            )
 
     def print_help(self, file=None):
         console.print(
