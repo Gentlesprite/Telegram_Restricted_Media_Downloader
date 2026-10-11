@@ -339,6 +339,11 @@ class TelegramUploader:
             # 原始频道ID:下载占用键为(原始chat_id, message_id),用于精确判定本相册成员是否仍在下载中。
             origin_chat_id = getattr(getattr(media_group[0], 'chat', None), 'id', None) if media_group else None
             while self.is_bot_running:
+                # 全局暂停时不判定媒体组是否就绪、也不发送:避免暂停期间部分成员尚未被调度下载/上传,
+                # 被 has_pending_media_group_tasks 误判为"无待处理任务"而提前发出不完整的相册。恢复后继续按原逻辑判断。
+                if self.app.is_paused:
+                    await self.pause_event.wait()
+                    continue
                 await asyncio.sleep(1)  # 每1秒检查一次。
 
                 # 检查两个条件：
