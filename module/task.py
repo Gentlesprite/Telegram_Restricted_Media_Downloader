@@ -237,9 +237,12 @@ class DownloadTask:
         if not isinstance(message, pyrogram.types.Message):
             return None
         chat = getattr(message, 'chat', None)
+        inner_message_id = getattr(message, 'id', None)
         if chat is None:
+            # 这类消息下载后通常落在UNKNOWN_CHAT_ID目录,可据此反查根因。
+            log.warning(f'消息"{inner_message_id}"的chat为空(可能已删除或无权访问),无法构造下载去重键,已跳过并发去重。')
             return None
-        return chat.id, message_id if message_id is not None else message.id
+        return chat.id, message_id if message_id is not None else inner_message_id
 
     @classmethod
     def pick_pending(cls) -> Union[dict, None]:
