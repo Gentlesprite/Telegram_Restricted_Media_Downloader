@@ -162,6 +162,12 @@ body {
     font-size: 12px;
     font-weight: 800;
     letter-spacing: .5px;
+    transition: box-shadow .25s ease;
+}
+
+/* 悬停时 TRMD 呈现静态青色辉光(纯高亮,无扫光等动效)。 */
+.logo:hover {
+    box-shadow: 0 0 16px rgba(56, 249, 215, .55);
 }
 
 /* 鼠标悬停在logo上时滑出版本信息,纯CSS实现,无需点击。 */
@@ -284,27 +290,28 @@ h1 {
     font-weight: 700;
     letter-spacing: .5px;
     cursor: pointer;
-    transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
+    box-shadow: 0 4px 14px rgba(56, 249, 215, .25);
+    transition: filter .18s ease, box-shadow .28s ease;
 }
 
 .support-btn:hover {
-    transform: translateY(-1px);
-    filter: brightness(1.06);
-    box-shadow: 0 6px 18px rgba(56, 249, 215, .35);
+    filter: brightness(1.08);
+    box-shadow: 0 6px 18px rgba(56, 249, 215, .4);
 }
 
 .support-btn:active {
-    transform: translateY(0);
+    filter: brightness(.96);
 }
 
-/* 全局暂停激活态:按钮转为橙色以提示当前处于暂停中。 */
+/* 全局暂停激活态:转为橙色高亮,明确提示"已暂停"(纯静态,不带动画)。 */
 .support-btn.paused {
     background: linear-gradient(135deg, #ffb347, #ff7b54);
     color: #2a1402;
+    box-shadow: 0 4px 14px rgba(255, 123, 84, .35);
 }
 
 .support-btn.paused:hover {
-    box-shadow: 0 6px 18px rgba(255, 123, 84, .35);
+    box-shadow: 0 8px 24px rgba(255, 123, 84, .5);
 }
 
 /* 暂停/恢复两态标签等长(图标+两字),固定宽度并居中可杜绝切换时
@@ -324,6 +331,11 @@ h1 {
     color: #ff3355;
     font-size: 14px;
     line-height: 1;
+}
+
+/* 支持作者按钮:与爱心同色的粉色光晕,与暂停橙光、常规青光协调呼应(纯静态,不带动画)。 */
+#supportBtn:hover {
+    box-shadow: 0 8px 22px rgba(255, 51, 85, .38);
 }
 
 /* 顶栏更多菜单:按钮保持低调,展开的下拉面板浮在内容之上。 */
