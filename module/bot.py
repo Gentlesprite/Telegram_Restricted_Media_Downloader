@@ -673,7 +673,7 @@ class Bot:
         return last_bot_messages[-1]
 
     @staticmethod
-    def menu_keyboard(level: str = 'main', is_authorized: bool = False, is_root: bool = False) -> InlineKeyboardMarkup:
+    def menu_keyboard(level: str = 'main', is_root: bool = False) -> InlineKeyboardMarkup:
         """按层级返回内联键盘:main为分组主菜单,download/listen/upload/auth为二级子菜单。"""
         config: dict = rc.cached_config()
         if level == 'download':
@@ -722,7 +722,6 @@ class Bot:
                     InlineKeyboardButton(BotButton.MENU_BACK, callback_data=BotCallbackText.MENU_BACK)
                 ]
             ])
-        # 主菜单:下载/上传/转发/监听对任意授权用户可见,授权管理仅root可见,其余入口始终展示。
         feature_rows = [
             [
                 InlineKeyboardButton(BotButton.MENU_DOWNLOAD, callback_data=BotCallbackText.MENU_DOWNLOAD),
@@ -732,7 +731,7 @@ class Bot:
                 InlineKeyboardButton(BotButton.CMD_FORWARD, callback_data=BotCallbackText.COMMAND_FORWARD),
                 InlineKeyboardButton(BotButton.MENU_LISTEN, callback_data=BotCallbackText.MENU_LISTEN)
             ]
-        ] if is_authorized else []
+        ]
         auth_row = [
             [
                 InlineKeyboardButton(BotButton.AUTH_MENU, callback_data=BotCallbackText.MENU_AUTH)
@@ -787,7 +786,6 @@ class Bot:
         version: str = f'{VERSION_SEMVER}({update_version}⬆)' if update_version else VERSION_SEMVER
         keyboard = self.menu_keyboard(
             'main',
-            is_authorized=(uid is None) or (not self.root) or (uid in self.root),
             is_root=(uid is None) or (not self.root) or (uid == self.root[0])
         )
 
