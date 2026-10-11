@@ -1275,7 +1275,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                     task: DownloadTask = DownloadTask.get(item.get('link'))
                     message: pyrogram.types.Message = item.get('message')
                     # 标记该消息正在下载,防止其他任务(如媒体组与组内?single)并发下载同一消息导致数据竞争。
-                    DownloadTask.DOWNLOADING_KEYS.add((message.chat.id, message.id))
+                    dl_key = DownloadTask.download_key(message)
+                    if dl_key is not None:
+                        DownloadTask.DOWNLOADING_KEYS.add(dl_key)
                     task.set_item_status(message_id=message.id, status=DownloadStatus.DOWNLOADING)
                     await self.__add_task(
                         chat_id=item.get('chat_id'),
@@ -1291,14 +1293,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if item is not None:
                     task: DownloadTask = DownloadTask.get(item.get('link'))
                     task.set_item_status(message_id=item.get('message').id, status=DownloadStatus.PENDING)
-                    DownloadTask.DOWNLOADING_KEYS.discard((item.get('message').chat.id, item.get('message').id))
+                    dl_key = DownloadTask.download_key(item.get('message'))
+                    if dl_key is not None:
+                        DownloadTask.DOWNLOADING_KEYS.discard(dl_key)
                 raise
             except Exception as e:
                 log.exception(f'下载调度器派发任务时出错,{_t(KeyWord.REASON)}:"{e}"')
                 if item is not None:  # 出错的任务直接出队,避免调度器反复重试同一条消息。
                     task: DownloadTask = DownloadTask.get(item.get('link'))
                     task.remove_item(message_id=item.get('message').id)
-                    DownloadTask.DOWNLOADING_KEYS.discard((item.get('message').chat.id, item.get('message').id))
+                    dl_key = DownloadTask.download_key(item.get('message'))
+                    if dl_key is not None:
+                        DownloadTask.DOWNLOADING_KEYS.discard(dl_key)
             if dispatched:
                 continue
             self.event.clear()  # 等待任意任务完成以释放下载槽位,超时后重新检查队列避免空转。
@@ -1525,8 +1531,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             _future
     ):
         # 下载结束(成功/跳过/失败)后释放该消息的占用标记,允许其他任务继续处理同一条消息。
-        if isinstance(message, pyrogram.types.Message):
-            DownloadTask.DOWNLOADING_KEYS.discard((message.chat.id, message.id))
+        dl_key = DownloadTask.download_key(message)
+        if dl_key is not None:
+            DownloadTask.DOWNLOADING_KEYS.discard(dl_key)
         download_task: Union[DownloadTask, None] = DownloadTask.get(link)
         if download_task is not None:
             download_task.remove_item(message_id=message.id)  # 处理完毕,从队列中移除。

@@ -131,7 +131,7 @@ class DownloadTask:
             # 正在下载中的消息不降级为排队:避免面板把"下载中"误显示为"队列中",也避免被调度器重复拉起。
             # 例外: 若该消息已无活动下载协程占用(DOWNLOADING_KEYS不含其键, 说明此前崩溃/被强杀后未回写终态)。
             # 则视为孤儿并恢复为排队,避免重拉链接时永久卡在DOWNLOADING。
-            dl_key = (_message.chat.id, key) if getattr(_message, 'chat', None) else None
+            dl_key = cls.download_key(_message, key)
             orphan_downloading: bool = (
                     current_status == DownloadStatus.DOWNLOADING
                     and dl_key is not None
@@ -228,6 +228,20 @@ class DownloadTask:
         return result[:limit]
 
     @classmethod
+    def download_key(cls, message: Union['pyrogram.types.Message', None], message_id: Union[int, str, None] = None) -> Union[tuple, None]:
+        """构造下载占用键(chat_id, message_id),message.chat为空时返回None。
+
+        用于DOWNLOADING_KEYS的并发去重。部分消息(如由序列化进度重建的消息)的
+        message.chat可能为None,此时无法形成有效去重键,返回None交由调用方跳过去重判定。
+        """
+        if not isinstance(message, pyrogram.types.Message):
+            return None
+        chat = getattr(message, 'chat', None)
+        if chat is None:
+            return None
+        return chat.id, message_id if message_id is not None else message.id
+
+    @classmethod
     def pick_pending(cls) -> Union[dict, None]:
         """按链接首次出现的顺序取出一个排队(PENDING)中的消息。
 
@@ -240,7 +254,7 @@ class DownloadTask:
                 message = item.get('message')
                 if not isinstance(message, pyrogram.types.Message):
                     continue
-                if (message.chat.id, message.id) in cls.DOWNLOADING_KEYS:
+                if cls.download_key(message) in cls.DOWNLOADING_KEYS:
                     continue
                 return item
         return None
@@ -275,7 +289,9 @@ class DownloadTask:
                     continue
                 if chat_id is not None:
                     message = item.get('message')
-                    if not isinstance(message, pyrogram.types.Message) or message.chat.id != chat_id:
+                    if not isinstance(message, pyrogram.types.Message):
+                        continue
+                    if getattr(message, 'chat', None) is not None and message.chat.id != chat_id:
                         continue
                 if item.get('status') in (DownloadStatus.PENDING, DownloadStatus.DOWNLOADING):
                     return True
