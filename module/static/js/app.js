@@ -960,10 +960,9 @@ function renderPauseState(isPaused) {
     if (!btn) {
         return;  // 页面未包含暂停按钮时跳过。
     }
-    // 图标后追加文本变体选择符 U+FE0E,强制以文字字形呈现(而非 emoji 彩色字形),
-    // 避免 ⏸ 与 ▶ 两种字形行盒高度不同导致顶栏高度抖动、下方卡片下移。
-    // 用 \uFE0E 转义显式写入,确保选择符可靠生效,不依赖源码里是否保留了不可见字符。
-    btn.textContent = isPaused ? '▶\uFE0E恢复' : '⏸\uFE0E暂停';
+    // 图标用 U+FE0F 以 emoji 彩色字形呈现(⏸️ / ▶️),两种 emoji 字形高度一致,
+    // 不会造成顶栏高度抖动、下方卡片下移。
+    btn.textContent = isPaused ? '▶\uFE0F恢复' : '⏸\uFE0F暂停';
     btn.classList.toggle('paused', !!isPaused);
 }
 
