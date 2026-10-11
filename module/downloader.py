@@ -68,6 +68,7 @@ from module.remote import rc
 from module.language import _t
 from module.filter import Filter
 from module.app import Application
+from module.parser import PARSE_ARGS
 from module.uploader import TelegramUploader
 from module.task import (
     DownloadTask,
@@ -293,6 +294,9 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.last_message: pyrogram.types.Message = message
         if self.gc.config.get(BotCallbackText.NOTICE):
             chat_id = message.from_user.id
+            if PARSE_ARGS.test:
+                await super().start(client, message)
+                return None
             await asyncio.gather(
                 self.send_pay_qr(
                     client=client,
