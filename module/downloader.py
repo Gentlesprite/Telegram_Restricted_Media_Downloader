@@ -1207,11 +1207,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         log.warning(f'提供的授权字节无效(可能是短暂的问题),{_t(KeyWord.REASON)}:"{e}"')
                         break
                     except FileReferenceExpired as e:
-                        chat_id = message.chat.id
-                        message_id = message.id
-                        log.warning(
-                            f'"{message_id}"文件引用已过期,正在重新获取消息以刷新引用,{_t(KeyWord.REASON)}:"{e}"')
                         try:
+                            chat_id = message.chat.id
+                            message_id = message.id
+                            log.warning(
+                                f'"{message_id}"文件引用已过期,正在重新获取消息以刷新引用,{_t(KeyWord.REASON)}:"{e}"')
                             message = await self.app.client.get_messages(chat_id=chat_id, message_ids=message_id)
                             log.info(f'"{message_id}"已重新获取文件引用。')
                             skip_chunks: int = downloaded // chunk_size
