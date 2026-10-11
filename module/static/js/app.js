@@ -947,7 +947,12 @@ async function setPause(paused) {
     } catch (e) {
         window.alert('操作失败:无法连接程序。');
     }
-    refresh();  // 切换后立即刷新,无需等待下一次轮询。
+    // 乐观更新:服务端通过事件循环异步切换标志,立即刷新拿到的快照可能仍是旧值,
+    // 会导致按钮文字与 lastPaused 滞后约一个轮询周期、期间无法反向切换。
+    // 因此以本次请求的目标状态为准直接更新,无需等待轮询回流。
+    lastPaused = paused;
+    renderPauseState(paused);
+    refresh();  // 切换后刷新快照,与后端状态对齐。
 }
 
 function renderPauseState(isPaused) {
