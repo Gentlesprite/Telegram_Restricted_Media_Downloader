@@ -661,15 +661,15 @@ class Web:
         if loop is None or not loop.is_running():
             return {'status': False, 'e_code': '下载器未运行，无法暂停。'}
 
-        def apply() -> None:
+        def apply(_paused: bool) -> None:
             # 同一闭包内顺序切换标志与事件,避免HTTP线程读到不一致的中间状态。
-            self.app.is_paused = paused
-            if paused:
+            self.app.is_paused = _paused
+            if _paused:
                 self.downloader.pause_event.clear()
             else:
                 self.downloader.pause_event.set()
 
-        loop.call_soon_threadsafe(apply)  # 投递到事件循环线程执行,无需等待即可确认已入队。
+        loop.call_soon_threadsafe(apply, paused)  # 投递到事件循环线程执行,无需等待即可确认已入队。
         return {'status': True}
 
     @staticmethod
