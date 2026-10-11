@@ -338,6 +338,11 @@ class DownloadTask:
             e_code: Union[dict, None] = res.get('e_code')
             if status == DownloadStatus.FAILURE:
                 task.error_msg = e_code
+                # 链接级解析失败(如频道不存在/消息不存在)不会走 add_item,导致网页没有失败成员、无法归类到失败板块。
+                # 登记一个 message_id=-1 的哨兵失败成员(真实消息 id 从 1 起,-1 无歧义),让现有网页逻辑自然识别为失败。
+                fail_reason: str = (e_code or {}).get('error_msg') or (e_code or {}).get('all_member') or '下载失败'
+                task.update_member(message_id=-1, status=DownloadStatus.FAILURE, name=fail_reason)
+                task.add_fail(-1)
                 reason: str = e_code.get('error_msg')
                 if reason:
                     log.error(
@@ -353,7 +358,10 @@ class DownloadTask:
                         f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
                     )
             elif status == DownloadStatus.DOWNLOADING:
-                pass
+                # 若同一链接此前曾解析失败(登记过 -1 哨兵成员/失败计数/错误),本次成功需清除,避免残留失败计数。
+                task.member_info.pop(-1, None)
+                task.fail_id.discard(-1)
+                task.error_msg = {}
             return res
 
         return wrapper

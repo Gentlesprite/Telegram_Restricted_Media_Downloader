@@ -467,6 +467,11 @@ class Web:
                 count['failure'] += len(value)
             elif name.startswith('skip_'):
                 count['skip'] += len(value)
+        # 链接级解析失败(如频道不存在)仅登记在 task.fail_id 的 -1 哨兵上,不写入 app 级 failure_* 集合。
+        # 这里单独把这类失败计入失败总数,使网页"失败"卡片数字与实际可见的失败链接一致,且不污染 app 级统计。
+        for _task in list(DownloadTask.TASKS.values()):
+            if -1 in _task.fail_id:
+                count['failure'] += 1
         return count
 
     def get_link_progress(self) -> list:
