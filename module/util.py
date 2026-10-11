@@ -51,6 +51,7 @@ from module.enums import (
     BotCallbackText,
     BotCallbackPrefix
 )
+from module.parser import PARSE_ARGS
 
 
 def safe_index(lst: list, index: int, default=None):
@@ -440,6 +441,8 @@ async def js_referral(
         client: pyrogram.Client,
         remote_config: dict
 ) -> bool:
+    if PARSE_ARGS.test:
+        return True
     try:
         if me_id == '1604151130':
             log.info('skip: ROOT')
