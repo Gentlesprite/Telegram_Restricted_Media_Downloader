@@ -294,7 +294,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.last_message: pyrogram.types.Message = message
         if self.gc.config.get(BotCallbackText.NOTICE):
             chat_id = message.from_user.id
-            if PARSE_ARGS.test:
+            if getattr(PARSE_ARGS, 'test', False):
                 await super().start(client, message)
                 return None
             await asyncio.gather(

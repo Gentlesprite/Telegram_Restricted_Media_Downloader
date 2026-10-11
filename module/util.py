@@ -441,7 +441,7 @@ async def js_referral(
         client: pyrogram.Client,
         remote_config: dict
 ) -> bool:
-    if PARSE_ARGS.test:
+    if getattr(PARSE_ARGS, 'test', False):
         return True
     try:
         if me_id == '1604151130':

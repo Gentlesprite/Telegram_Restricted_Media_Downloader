@@ -5,7 +5,6 @@
 # File:app.py
 import os
 import time
-import asyncio
 import datetime
 import subprocess
 
@@ -24,10 +23,13 @@ from module import (
 )
 from module.language import _t
 from module.config import UserConfig
-from module.util import get_message_dtype, AdjustableSemaphore
 from module.stdio import StatisticalTable
 from module.client import TelegramRestrictedMediaDownloaderClient
 
+from module.util import (
+    get_message_dtype,
+    AdjustableSemaphore
+)
 from module.enums import (
     KeyWord,
     DownloadType,
