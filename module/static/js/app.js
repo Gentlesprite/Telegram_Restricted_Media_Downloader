@@ -84,6 +84,7 @@ var lastSnapshot = null;  // 缓存最近一次进度快照,供设置弹窗回�
 var lastDownloadActive = 0;
 var lastUploadActive = 0;
 var lastListenCount = 0;
+var lastPaused = false;  // 全局暂停状态,随进度快照更新,供顶栏状态与按钮联动。
 var lastUploadFinished = 0;  // 上传已结束(成功 + 失败)的任务数,用于驱动背景渐变步进。
 
 function esc(text) {
@@ -615,6 +616,9 @@ function renderStat(id, cells) {
 function renderStatus() {
     // 下载、上传、监听三个板块的活跃情况统一显示在顶栏左侧,不再跟随当前板块切换。
     var parts = [];
+    if (lastPaused) {
+        parts.push('已暂停');
+    }
     if (lastDownloadActive) {
         parts.push('下载 ' + lastDownloadActive);
     }
@@ -927,6 +931,35 @@ async function removeListener(kind, link) {
     }
     delete removingListener[link];
     refresh();  // 移除后立即刷新,无需等待下一次轮询。
+}
+
+async function setPause(paused) {
+    try {
+        var res = await fetch('/api/pause', {
+            method: 'POST',
+            headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
+            body: JSON.stringify({paused: paused})
+        });
+        var data = await res.json();
+        if (!data.status) {
+            window.alert('操作失败:' + (data.e_code || '未知错误。'));
+        }
+    } catch (e) {
+        window.alert('操作失败:无法连接程序。');
+    }
+    refresh();  // 切换后立即刷新,无需等待下一次轮询。
+}
+
+function renderPauseState(isPaused) {
+    var btn = document.getElementById('btnPause');
+    if (!btn) {
+        return;  // 页面未包含暂停按钮时跳过。
+    }
+    // 图标后追加文本变体选择符 U+FE0E,强制以文字字形呈现(而非 emoji 彩色字形),
+    // 避免 ⏸ 与 ▶ 两种字形行盒高度不同导致顶栏高度抖动、下方卡片下移。
+    // 用 \uFE0E 转义显式写入,确保选择符可靠生效,不依赖源码里是否保留了不可见字符。
+    btn.textContent = isPaused ? '▶\uFE0E恢复' : '⏸\uFE0E暂停';
+    btn.classList.toggle('paused', !!isPaused);
 }
 
 function uploadDone(file) {
@@ -1313,6 +1346,8 @@ function render(data, force) {
     ]);
     lastUploadActive = renderUpload(data.uploads || []);
     lastListenCount = renderListeners(data.listeners);
+    lastPaused = !!data.is_paused;
+    renderPauseState(lastPaused);
     renderOuterLinks(data.outer_links);
     renderStatus();
     // 只有列表结构变化(成员增减/状态改变)才重建 DOM;
@@ -1366,6 +1401,16 @@ function bindSections() {
             switchSection(this.getAttribute('data-section'));
         };
     }
+}
+
+function bindPause() {
+    var btn = document.getElementById('btnPause');
+    if (!btn) {
+        return;  // 页面未包含暂停按钮时跳过绑定。
+    }
+    btn.onclick = function () {
+        setPause(!lastPaused);  // 以当前展示状态为准,再次点击即切换暂停/恢复。
+    };
 }
 
 function bindListenTabs() {
@@ -2407,6 +2452,7 @@ switchListen(savedListen);
 document.getElementById('toggleAll').onclick = toggleAll;
 document.getElementById('toggleUpload').onclick = toggleUploadAll;
 initCols();  // 恢复上次的列宽并生成拖拽分隔条。
+bindPause();  // 绑定全局暂停/恢复按钮。
 initNameTip();  // 悬停文件名时显示完整名称。
 initBackgroundGradient();  // 启动 Telegram 风格的动画渐变背景。
 

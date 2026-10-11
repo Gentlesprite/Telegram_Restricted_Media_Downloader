@@ -54,6 +54,7 @@ class Application(UserConfig, StatisticalTable):
         self.client = self.build_client()
         self.check_download_type()
         self.current_task_num: int = 0
+        self.is_paused: bool = False  # 全局暂停开关,为真时调度器不再派发新下载/上传,转发操作亦等待恢复。
 
     def build_client(self) -> pyrogram.Client:
         """用填写的配置文件,构造pyrogram客户端。"""

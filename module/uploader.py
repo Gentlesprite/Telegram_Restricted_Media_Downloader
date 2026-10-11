@@ -70,6 +70,7 @@ class TelegramUploader:
         self.is_premium: bool = self.client.me.is_premium
         self.current_task_num: int = 0
         self.is_bot_running = download_object.is_bot_running
+        self.pause_event = download_object.pause_event  # 复用下载器的全局暂停事件,保证下载与上传状态一致。
         self.upload_queue: asyncio.Queue = asyncio.Queue()
         self.valid_link_cache = {}
         UploadTask.NOTIFY = download_object.done_notice
@@ -594,9 +595,16 @@ class TelegramUploader:
             'success': False
         }
         file_size = upload_task.file_size
-        while self.current_task_num >= self.app.max_upload_task:  # v1.0.7 增加上传任务数限制。
-            await self.event.wait()
-            self.event.clear()
+        # 全局暂停时不占用上传名额,等待恢复后再继续;名额满时按原逻辑等待空位。
+        while True:
+            if self.app.is_paused:
+                await self.pause_event.wait()
+                continue
+            if self.current_task_num >= self.app.max_upload_task:  # v1.0.7 增加上传任务数限制。
+                await self.event.wait()
+                self.event.clear()
+                continue
+            break
         upload_task.status = UploadStatus.UPLOADING
         console.log(f'{_t(KeyWord.UPLOAD_TASK)}{_t(KeyWord.RESUME)}:"{file_path}"。') if upload_task.file_part else None
         format_file_size: str = MetaData.suitable_units_display(file_size)

@@ -297,6 +297,29 @@ h1 {
     transform: translateY(0);
 }
 
+/* 全局暂停激活态:按钮转为橙色以提示当前处于暂停中。 */
+.support-btn.paused {
+    background: linear-gradient(135deg, #ffb347, #ff7b54);
+    color: #2a1402;
+}
+
+.support-btn.paused:hover {
+    box-shadow: 0 6px 18px rgba(255, 123, 84, .35);
+}
+
+/* 暂停/恢复两态标签等长(图标+两字),固定宽度并居中可杜绝切换时
+   相邻按钮横向位移;font-variant-emoji 作为 CSS 层面的文字字形兜底。
+   关键:把按钮盒子高度锁成恒定值,避免 ⏸/▶ 在不同字体回退下
+   行盒高度差 1px、进而撑动顶栏高度、把下方卡片顶下去。 */
+#btnPause {
+    min-width: 90px;
+    height: 32px;
+    box-sizing: border-box;
+    justify-content: center;
+    line-height: 1;
+    font-variant-emoji: text;
+}
+
 .support-icon {
     color: #ff3355;
     font-size: 14px;

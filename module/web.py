@@ -103,7 +103,9 @@ class WebHandler(BaseHTTPRequestHandler):
         elif (self.path.startswith('/api/config/save_directory')
               or self.path.startswith('/api/config/max_tasks')
               or self.path.startswith('/api/config/max_retries')):
-            self.__response_set_config()  # 三个历史路径等价:统一入口,多项改动只落盘一次。
+            self.__response_set_config()
+        elif self.path.startswith('/api/pause'):
+            self.__response_set_pause()  # 三个历史路径等价:统一入口,多项改动只落盘一次。
         else:
             self.send_error(404)
 
@@ -286,6 +288,19 @@ class WebHandler(BaseHTTPRequestHandler):
                 max_retries=payload.get('max_retries'),
                 confirm_directory=bool(payload.get('confirm_directory'))
             )
+        self.__response_body(
+            body=json.dumps(body, ensure_ascii=False).encode('UTF-8'),
+            content_type='application/json; charset=utf-8'
+        )
+
+    def __response_set_pause(self) -> None:
+        """处理全局暂停/恢复的请求。"""
+        web: Union[Web, None] = getattr(self.server, 'web', None)
+        payload: dict = self.__read_json()
+        if web is None:
+            body: dict = {'status': False, 'e_code': '网页面板未就绪。'}
+        else:
+            body: dict = web.set_pause(bool(payload.get('paused')))
         self.__response_body(
             body=json.dumps(body, ensure_ascii=False).encode('UTF-8'),
             content_type='application/json; charset=utf-8'
@@ -626,6 +641,37 @@ class Web:
             log.debug(f'移除监听失败,{_t(KeyWord.REASON)}:"{e}"')
             return {'status': False, 'e_code': '移除监听超时，请稍后重试。'}
 
+    def set_pause(self, paused: bool) -> dict:
+        """按网页面板的请求切换全局暂停状态。
+
+        切换标志与暂停事件必须在下载器的事件循环线程内完成,
+        网页面板运行在独立的HTTP服务线程中,因此通过call_soon_threadsafe把动作投递到事件循环执行。
+
+        Args:
+            paused: True为暂停,False为恢复。
+
+        Returns:
+            dict: status为是否切换成功,失败时e_code为失败原因。
+        """
+        if self.app is None:
+            return {'status': False, 'e_code': '配置未加载，无法暂停。'}
+        if self.downloader is None:
+            return {'status': False, 'e_code': '网页面板未关联下载器。'}
+        loop: Union[AbstractEventLoop, None] = self.downloader.loop
+        if loop is None or not loop.is_running():
+            return {'status': False, 'e_code': '下载器未运行，无法暂停。'}
+
+        def apply() -> None:
+            # 同一闭包内顺序切换标志与事件,避免HTTP线程读到不一致的中间状态。
+            self.app.is_paused = paused
+            if paused:
+                self.downloader.pause_event.clear()
+            else:
+                self.downloader.pause_event.set()
+
+        loop.call_soon_threadsafe(apply)  # 投递到事件循环线程执行,无需等待即可确认已入队。
+        return {'status': True}
+
     @staticmethod
     def __check_number_pair(
             values: Union[dict, None],
@@ -930,6 +976,7 @@ class Web:
                 'links': links,
                 'uploads': uploads,
                 'listeners': self.get_listeners(),
+                'is_paused': bool(self.app.is_paused) if self.app else False,  # 全局暂停状态,供前端展示与切换。
                 'outer_links': self.get_outer_links(),  # 顶栏菜单使用的外部链接。
                 'save_directory': self.app.save_directory if self.app else '',
                 'max_tasks': {
@@ -951,6 +998,7 @@ class Web:
                 'links': [],
                 'uploads': [],
                 'listeners': {'download': [], 'forward': []},
+                'is_paused': bool(self.app.is_paused) if self.app else False,  # 全局暂停状态,供前端展示与切换。
                 'outer_links': self.get_outer_links(),
                 'save_directory': self.app.save_directory if self.app else '',
                 'max_tasks': {

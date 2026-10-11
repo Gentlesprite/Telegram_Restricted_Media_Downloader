@@ -131,6 +131,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         super().__init__()
         self.loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
         self.event: asyncio.Event = asyncio.Event()
+        self.pause_event: asyncio.Event = asyncio.Event()  # 全局暂停事件,暂停时 clear,恢复时 set。
         self.queue: asyncio.Queue = asyncio.Queue()
         self.scheduler: Union[asyncio.Task, None] = None  # 下载调度器。
         self.pending_retry_tasks: Set[asyncio.Task] = set()  # 待执行的重试任务,避免主循环在重试重新入队前提前退出。
@@ -349,6 +350,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                         )
                     )
                 return None
+            # 全局暂停时不进行转发,等待恢复后再继续。
+            while self.app.is_paused:
+                await self.pause_event.wait()
             # 限制每分钟的转发次数,避免转发过快触发风控。
             await self.forward_limit_call.wait() if isinstance(self.forward_limit_call, LimitCall) else None
             if media_group:
@@ -1321,6 +1325,10 @@ class TelegramRestrictedMediaDownloader(Bot):
         while True:
             item: Union[dict, None] = None
             dispatched: bool = False
+            # 全局暂停时不派发新下载任务,等待恢复后再继续。
+            if self.app.is_paused:
+                await self.pause_event.wait()
+                continue
             try:
                 while self.app.current_task_num < self.app.max_download_task:
                     item = DownloadTask.pick_pending()
