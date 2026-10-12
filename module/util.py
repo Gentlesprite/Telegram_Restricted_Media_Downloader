@@ -49,7 +49,8 @@ from module.enums import (
     LinkType,
     DownloadType,
     BotCallbackText,
-    BotCallbackPrefix
+    BotCallbackPrefix,
+    SaveDirectoryPrefix
 )
 from module.parser import PARSE_ARGS
 
@@ -96,6 +97,38 @@ async def safe_delete_message(message: pyrogram.types.Message) -> bool:
         return True
     except Exception:  # noqa.
         return False
+
+
+async def collect_message_id(
+        message: pyrogram.types.Message,
+        save_directory: str,
+        cache: dict
+) -> Union[list, None]:
+    """预取媒体组成员id列表并写入缓存。
+
+    仅当保存路径模板含%MESSAGE_ID%通配符且消息属于媒体组时,才发起异步的
+    message.get_media_group();结果以media_group_id为键存入cache,供下载阶段
+    的 env_save_directory 同步读取,避免同步方法里await协程这一根本矛盾。
+    缓存命中则直接返回,避免同组每条消息各发一次 RPC。
+    路径不含通配符或消息非媒体组时返回None,不触碰cache。
+    """
+    if SaveDirectoryPrefix.MESSAGE_ID not in save_directory:
+        return None
+    media_group_id = getattr(message, 'media_group_id', None)
+    if not media_group_id:
+        return None
+    group_ids = cache.get(media_group_id)
+    if group_ids is not None:
+        return group_ids
+    try:
+        group = await message.get_media_group()
+    except (ValueError, AttributeError, MsgIdInvalid):
+        group = None
+    group_ids = [m.id for m in group if getattr(m, 'id', None) is not None] if group else []
+    cache[media_group_id] = group_ids
+    if len(cache) > 500:
+        cache.clear()
+    return group_ids
 
 
 async def parse_link(client: pyrogram.Client, link: str) -> dict:

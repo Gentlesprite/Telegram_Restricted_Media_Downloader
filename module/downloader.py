@@ -118,6 +118,7 @@ from module.util import (
     format_chat_link,
     check_environment,
     get_message_dtype,
+    collect_message_id,
     safe_delete_message,
     get_message_by_link,
     get_chat_with_notify,
@@ -144,6 +145,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.cd: Union[CallbackData, None] = None
         self.forward_limit_call: Union[LimitCall, None] = None  # 转发频率限制器,避免转发过快触发风控。
         self.web_remove_listen: set = set()  # 网页面板发起的移除监听命令,机器人识别后直接移除,不再发送二次确认按钮。
+        self.media_group_ids_cache: dict = {}  # 媒体组成员 id 列表缓存,键为 media_group_id,避免同组多条消息重复调用 get_media_group()。
         self.my_id: int = 0
         self.web: Web = Web(
             progress=self.pb.progress,
@@ -172,6 +174,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                     dtype: str = get_message_dtype(message, self.app.download_type)
                     if dtype:
                         save_directory = save_directory.replace(placeholder, dtype)
+                if placeholder == SaveDirectoryPrefix.MESSAGE_ID:
+                    media_group_id = getattr(message, 'media_group_id', None)
+                    if media_group_id:
+                        group_ids = self.media_group_ids_cache.get(media_group_id)
+                        group_range = f'{min(group_ids)}-{max(group_ids)}' if group_ids else None
+                        save_directory = save_directory.replace(
+                            placeholder, group_range if group_range else str(media_group_id))
+                    else:
+                        save_directory = save_directory.replace(
+                            placeholder,
+                            str(getattr(message, 'id', 'UNKNOWN_MESSAGE_ID'))
+                        )
         return save_directory
 
     async def get_download_link_from_bot(
@@ -1409,6 +1423,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'{_t(KeyWord.LINK_TYPE)}:{_t(link_type)}。'  # 链接类型。
                 )
                 task.set_item_status(message_id=message.id, status=DownloadStatus.DOWNLOADING)
+                # 若保存路径含 %MESSAGE_ID% 通配符,预取媒体组成员 id 列表并缓存。
+                # collect_message_id 内部自行判断是否含通配符,命中缓存则不再发请求。
+                await collect_message_id(message, self.app.save_directory, self.media_group_ids_cache)
                 file_id, temp_file_path, sever_file_size, file_name, save_directory, format_file_size = \
                     self.get_media_meta(
                         message=message,

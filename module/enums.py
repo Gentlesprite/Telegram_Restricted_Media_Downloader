@@ -85,6 +85,7 @@ class SaveDirectoryPrefix:
     CHAT_ID: str = '%CHAT_ID%'
     CHAT_NAME: str = '%CHAT_NAME%'
     MIME_TYPE: str = '%MIME_TYPE%'
+    MESSAGE_ID: str = '%MESSAGE_ID%'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
