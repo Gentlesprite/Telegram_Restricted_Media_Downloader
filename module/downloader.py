@@ -119,6 +119,7 @@ from module.util import (
     check_environment,
     get_message_dtype,
     collect_message_id,
+    save_message_entities,
     safe_delete_message,
     get_message_by_link,
     get_chat_with_notify,
@@ -174,7 +175,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     dtype: str = get_message_dtype(message, self.app.download_type)
                     if dtype:
                         save_directory = save_directory.replace(placeholder, dtype)
-                if placeholder == SaveDirectoryPrefix.MESSAGE_ID:
+                if placeholder in (SaveDirectoryPrefix.MESSAGE_ID, SaveDirectoryPrefix.MESSAGE_ID_WITH_ENTITIES):
                     media_group_id = getattr(message, 'media_group_id', None)
                     if media_group_id:
                         group_ids = self.media_group_ids_cache.get(media_group_id)
@@ -1662,6 +1663,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     save_directory=self.env_save_directory(message),
                     with_move=True
             ):
+                # 若保存路径含 %MESSAGE_ID_WITH_ENTITIES%,把消息文本+实体序列化为 JSON 落盘。
+                if SaveDirectoryPrefix.MESSAGE_ID_WITH_ENTITIES in self.app.save_directory:
+                    save_message_entities(
+                        message, self.env_save_directory(message), self.media_group_ids_cache)
                 MetaData.print_current_task_num(
                     prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
                     num=self.app.current_task_num

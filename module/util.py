@@ -13,6 +13,7 @@ import random
 import asyncio
 import logging
 import subprocess
+import json
 
 from collections import deque
 from functools import lru_cache
@@ -106,13 +107,14 @@ async def collect_message_id(
 ) -> Union[list, None]:
     """预取媒体组成员id列表并写入缓存。
 
-    仅当保存路径模板含%MESSAGE_ID%通配符且消息属于媒体组时,才发起异步的
+    仅当保存路径模板含%MESSAGE_ID%或%MESSAGE_ID_WITH_ENTITIES%通配符且消息属于媒体组时,才发起异步的
     message.get_media_group();结果以media_group_id为键存入cache,供下载阶段
     的 env_save_directory 同步读取,避免同步方法里await协程这一根本矛盾。
     缓存命中则直接返回,避免同组每条消息各发一次 RPC。
     路径不含通配符或消息非媒体组时返回None,不触碰cache。
     """
-    if SaveDirectoryPrefix.MESSAGE_ID not in save_directory:
+    if (SaveDirectoryPrefix.MESSAGE_ID not in save_directory
+            and SaveDirectoryPrefix.MESSAGE_ID_WITH_ENTITIES not in save_directory):
         return None
     media_group_id = getattr(message, 'media_group_id', None)
     if not media_group_id:
@@ -129,6 +131,58 @@ async def collect_message_id(
     if len(cache) > 500:
         cache.clear()
     return group_ids
+
+
+def save_message_entities(
+        message: pyrogram.types.Message,
+        save_directory: str,
+        media_group_cache: Optional[dict] = None
+) -> None:
+    """将消息文本与格式化实体序列化为 JSON 落盘,供 %MESSAGE_ID_WITH_ENTITIES% 使用。
+
+    文件名规则:媒体组以 media_group_id 缓存的成员 id 列表取 min-max 区间(与保存目录名一致,
+    每组仅一份);单条消息用 message.id。文件名形如 "{key}_entities.json",与媒体文件区分。
+    媒体消息取 caption,纯文本消息取 text;实体按 pyrogram raw 的 to_dict() 形态输出
+    (与 text.json 样例一致)。无文本且无实体(如纯媒体无 caption)时跳过,避免产生空文件。
+    """
+    caption = getattr(message, 'caption', None)
+    text = caption if caption is not None else getattr(message, 'text', None)
+    entities = (message.caption_entities if caption is not None
+                else getattr(message, 'entities', None)) or []
+    if not (text or entities):
+        return  # 纯媒体无 caption,不落盘。
+    media_group_id = getattr(message, 'media_group_id', None)
+    if media_group_id and media_group_cache:
+        group_ids = media_group_cache.get(media_group_id)
+        entity_key = f'{min(group_ids)}-{max(group_ids)}' if group_ids else str(media_group_id)
+    else:
+        entity_key = str(message.id)
+    data = {
+        'message': text or '',
+        'entities': [message_entity_to_dict(e) for e in entities],
+    }
+    file_path = os.path.join(save_directory, f'{entity_key}_entities.json')
+    try:
+        with open(file_path, 'w', encoding='UTF-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except OSError as e:
+        log.warning(f'保存消息实体JSON失败:"{file_path}",原因:"{e}"。')
+
+
+def message_entity_to_dict(entity) -> dict:
+    """将 pyrogram.types.MessageEntity 转为 raw to_dict() 形态(与 text.json 样例一致)。"""
+    e_type = str(getattr(entity.type, 'value', entity.type))
+    raw_name = 'MessageEntity' + ''.join(p.capitalize() for p in e_type.split('_'))
+    d = {
+        '_': f'types.{raw_name}',
+        'offset': entity.offset,
+        'length': entity.length,
+    }
+    for key in ('url', 'user', 'language', 'custom_emoji_id', 'collapsed'):
+        val = getattr(entity, key, None)
+        if val is not None:
+            d[key] = val.to_dict() if hasattr(val, 'to_dict') else val
+    return d
 
 
 async def parse_link(client: pyrogram.Client, link: str) -> dict:
