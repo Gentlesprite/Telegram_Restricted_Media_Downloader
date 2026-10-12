@@ -124,7 +124,8 @@ async def collect_message_id(
         return group_ids
     try:
         group = await message.get_media_group()
-    except (ValueError, AttributeError, MsgIdInvalid):
+    except Exception as e:  # noqa: BLE001  预取失败(如 FloodWait/超时)不影响主流程,错误不往外抛。
+        log.warning(f'预取媒体组成员id列表失败,原因:"{e}"。')
         group = None
     group_ids = [m.id for m in group if getattr(m, 'id', None) is not None] if group else []
     cache[media_group_id] = group_ids
@@ -152,21 +153,21 @@ def save_message_entities(
     if not (text or entities):
         return  # 纯媒体无 caption,不落盘。
     media_group_id = getattr(message, 'media_group_id', None)
-    if media_group_id and media_group_cache:
-        group_ids = media_group_cache.get(media_group_id)
-        entity_key = f'{min(group_ids)}-{max(group_ids)}' if group_ids else str(media_group_id)
-    else:
-        entity_key = str(message.id)
-    data = {
-        'message': text or '',
-        'entities': [message_entity_to_dict(e) for e in entities],
-    }
-    file_path = os.path.join(save_directory, f'{entity_key}_entities.json')
     try:
+        if media_group_id and media_group_cache:
+            group_ids = media_group_cache.get(media_group_id)
+            entity_key = f'{min(group_ids)}-{max(group_ids)}' if group_ids else str(media_group_id)
+        else:
+            entity_key = str(message.id)
+        data = {
+            'message': text or '',
+            'entities': [message_entity_to_dict(e) for e in entities],
+        }
+        file_path = os.path.join(save_directory, f'{entity_key}_entities.json')
         with open(file_path, 'w', encoding='UTF-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-    except OSError as e:
-        log.warning(f'保存消息实体JSON失败:"{file_path}",原因:"{e}"。')
+            json.dump(data, f, ensure_ascii=False, indent=2, default=str)
+    except Exception as e:  # noqa: BLE001  实体落盘失败绝不影响下载主流程,错误不往外抛。
+        log.warning(f'保存消息实体JSON失败,原因:"{e}"。')
 
 
 def message_entity_to_dict(entity) -> dict:
