@@ -1382,10 +1382,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     dl_key = DownloadTask.download_key(item.get('message'))
                     if dl_key is not None:
                         DownloadTask.DOWNLOADING_KEYS.discard(dl_key)
-                    try:
-                        self.queue.task_done()  # 配平入队计数,避免漏记导致收尾queue.join()永久卡死。
-                    except ValueError:  # 该任务已task_done过时忽略,防止重复计数抛错。
-                        pass
             if dispatched:
                 continue
             self.event.clear()  # 等待任意任务完成以释放下载槽位,超时后重新检查队列避免空转。
@@ -1667,40 +1663,41 @@ class TelegramRestrictedMediaDownloader(Bot):
                     save_directory=self.env_save_directory(message),
                     with_move=True
             ):
-                # 若保存路径含 %MESSAGE_ID_WITH_ENTITIES%,把消息文本+实体序列化为 JSON 落盘。
-                if SaveDirectoryPrefix.MESSAGE_ID_WITH_ENTITIES in self.app.save_directory:
-                    save_message_entities(
-                        message, self.env_save_directory(message), self.media_group_ids_cache)
-                MetaData.print_current_task_num(
-                    prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
-                    num=self.app.current_task_num
-                )
-                if download_task is not None:
-                    download_task.clear_error(key=file_name)  # 下载成功(含重试成功),清除该文件此前的失败记录。
-                    download_task.remove_fail(message_id=message.id)
-                    download_task.update_member(
-                        message_id=message.id,
-                        status=DownloadStatus.SUCCESS,
-                        name=file_name,
-                        size=format_file_size,
-                        size_byte=sever_file_size,
-                        date=str(getattr(message, 'date', '') or '')[:10]
+                try:
+                    if SaveDirectoryPrefix.MESSAGE_ID_WITH_ENTITIES in self.app.save_directory:
+                        save_message_entities(
+                            message, self.env_save_directory(message), self.media_group_ids_cache)
+                    MetaData.print_current_task_num(
+                        prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
+                        num=self.app.current_task_num
                     )
-                if self.uploader:
-                    if with_upload and isinstance(with_upload, dict):
-                        try:
-                            media_group = message.get_media_group()
-                        except ValueError:
-                            media_group = None
-                        with_upload['message_id'] = message.id
-                        with_upload['media_group'] = media_group
-                        with_upload['caption'] = getattr(message, 'caption', None)
-                        with_upload['caption_entities'] = getattr(message, 'caption_entities', None)
-                        self.uploader.download_upload(
-                            with_upload=with_upload,
-                            file_path=os.path.join(self.env_save_directory(message), file_name)
+                    if download_task is not None:
+                        download_task.clear_error(key=file_name)  # 下载成功(含重试成功),清除该文件此前的失败记录。
+                        download_task.remove_fail(message_id=message.id)
+                        download_task.update_member(
+                            message_id=message.id,
+                            status=DownloadStatus.SUCCESS,
+                            name=file_name,
+                            size=format_file_size,
+                            size_byte=sever_file_size,
+                            date=str(getattr(message, 'date', '') or '')[:10]
                         )
-                self.queue.task_done()
+                    if self.uploader:
+                        if with_upload and isinstance(with_upload, dict):
+                            try:
+                                media_group = message.get_media_group()
+                            except ValueError:
+                                media_group = None
+                            with_upload['message_id'] = message.id
+                            with_upload['media_group'] = media_group
+                            with_upload['caption'] = getattr(message, 'caption', None)
+                            with_upload['caption_entities'] = getattr(message, 'caption_entities', None)
+                            self.uploader.download_upload(
+                                with_upload=with_upload,
+                                file_path=os.path.join(self.env_save_directory(message), file_name)
+                            )
+                finally:
+                    self.queue.task_done()  # 收尾(实体落盘/上传/状态更新)即使出错也必配平,杜绝 queue.join() 卡死。
             else:
                 # 用任务锁定的重试上限判定(download_task为None时回退当前配置),避免运行中修改重试次数让正在重试的任务按新上限被判死。
                 _max_retry = getattr(download_task, 'max_retry', None) or self.app.max_download_retries
