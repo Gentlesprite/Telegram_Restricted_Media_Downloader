@@ -171,15 +171,14 @@ def save_message_entities(
 
 
 def message_entity_to_dict(entity) -> dict:
-    """将 pyrogram.types.MessageEntity 转为 raw to_dict() 形态(与 text.json 样例一致)。"""
-    e_type = str(getattr(entity.type, 'value', entity.type))
-    raw_name = 'MessageEntity' + ''.join(p.capitalize() for p in e_type.split('_'))
+    """将pyrogram.types.MessageEntity转为raw to_dict()形态。"""
+    _raw = getattr(entity.type, 'value', None)  # kurigram下entity.type.value即raw类型类。
     d = {
-        '_': f'types.{raw_name}',
+        '_': getattr(_raw, 'QUALNAME', None) or f'types.{getattr(_raw, "__name__", entity.type)}',
         'offset': entity.offset,
         'length': entity.length,
     }
-    for key in ('url', 'user', 'language', 'custom_emoji_id', 'collapsed'):
+    for key in ('url', 'user', 'language', 'custom_emoji_id', 'expandable', 'unix_time', 'date_time_format'):
         val = getattr(entity, key, None)
         if val is not None:
             d[key] = val.to_dict() if hasattr(val, 'to_dict') else val

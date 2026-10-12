@@ -1382,6 +1382,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     dl_key = DownloadTask.download_key(item.get('message'))
                     if dl_key is not None:
                         DownloadTask.DOWNLOADING_KEYS.discard(dl_key)
+                    try:
+                        self.queue.task_done()  # 配平入队计数,避免漏记导致收尾queue.join()永久卡死。
+                    except ValueError:  # 该任务已task_done过时忽略,防止重复计数抛错。
+                        pass
             if dispatched:
                 continue
             self.event.clear()  # 等待任意任务完成以释放下载槽位,超时后重新检查队列避免空转。
