@@ -2270,7 +2270,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                 task.owner = owner
             task.link_type = link_type
             task.chat_id = chat_id
-            task.member_num = member_num
+            # 重试会按链接重新解析(媒体组会整组展开,使member_num膨胀),覆盖将导致member_num永远
+            # 大于complete_num、"下载完成"通知不再触发,故只在首次拉取(非重试)时赋值。
+            if retry.get('count', 0) == 0:
+                task.member_num = member_num
             # 首次创建任务时锁定重试上限,同一link的重试复用该实例,因此运行中修改配置不会让正在重试的任务按新上限被判死;新任务仍按当时的配置值锁定。
             if not task.max_retry:
                 task.max_retry = self.app.max_download_retries
