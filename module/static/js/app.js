@@ -9,9 +9,9 @@ var SECTIONS = {
     download: ['download'],
     upload: ['upload'],
     listener: ['listener'],
-    record: ['record']  // 记录页:展示数据库中的下载与上传历史,不依赖机器人。
+    database: ['database']  // 记录页:展示数据库中的下载与上传历史,不依赖机器人。
 };
-var PAGES = SECTIONS.download.concat(SECTIONS.upload, SECTIONS.listener, SECTIONS.record);  // 下载、上传、记录各一个页面,监听页只在内部切换选项卡。
+var PAGES = SECTIONS.download.concat(SECTIONS.upload, SECTIONS.listener, SECTIONS.database);  // 下载、上传、记录各一个页面,监听页只在内部切换选项卡。
 var SUMMARY_IDS = {
     download: {fill: 'overallFill', percent: 'overallPercent', info: 'overallInfo', extra: 'overallExtra'},
     upload: {fill: 'uploadFill', percent: 'uploadPercent', info: 'uploadInfo', extra: 'uploadExtra'}
@@ -19,7 +19,7 @@ var SUMMARY_IDS = {
 var SECTION_KEY = 'trmd_section';
 var LISTEN_KEY = 'trmd_listen';
 var HAS_BOT = document.body.getAttribute('data-bot') === '1';  // 是否配置了机器人,决定上传/监听侧边栏是否展示(无机器人时只有下载可用)。
-var HAS_RECORDS = document.body.getAttribute('data-records') === '1';  // 记录数据库是否可用,决定记录侧边栏是否展示(记录功能不依赖机器人)。
+var HAS_DATABASE = document.body.getAttribute('data-database') === '1';  // 记录数据库是否可用,决定记录侧边栏是否展示(记录功能不依赖机器人)。
 var COLLAPSE_KEY = 'trmd_collapsed';  // 各分组折叠状态的本地存储键。
 var ALL_KEY = 'trmd_all_collapsed';  // 下载页全部折叠开关的本地存储键。
 var UPLOAD_ALL_KEY = 'trmd_upload_all_collapsed';  // 上传页全部折叠开关的本地存储键。
@@ -427,7 +427,7 @@ function applySection() {
         items[i].className = active ? 'side-item active' : 'side-item';
     }
     var dlWasHidden = document.getElementById('downloadSummary').hidden;
-    var recordWasHidden = document.getElementById('page-record').hidden;
+    var databaseWasHidden = document.getElementById('page-database').hidden;
     document.getElementById('downloadSummary').hidden = currentSection !== 'download';
     document.getElementById('uploadSummary').hidden = currentSection !== 'upload';  // 两个板块各自独立的总进度。
     for (i = 0; i < PAGES.length; i++) {
@@ -439,8 +439,8 @@ function applySection() {
     if (currentSection === 'download' && dlWasHidden) {
         refresh(true);
     }
-    if (currentSection === 'record' && recordWasHidden) {
-        refreshRecords();  // 记录页刚变为可见时立即拉取,避免展示上次的旧数据。
+    if (currentSection === 'database' && databaseWasHidden) {
+        refreshDatabase();  // 记录页刚变为可见时立即拉取,避免展示上次的旧数据。
     }
 }
 
@@ -448,10 +448,10 @@ function switchSection(name) {
     if (!SECTIONS[name]) {
         name = 'download';
     }
-    if (!HAS_BOT && name !== 'download' && name !== 'record') {  // 未配置机器人时仅允许下载页与记录页,避免停留在不可用的上传/监听页。
+    if (!HAS_BOT && name !== 'download' && name !== 'database') {  // 未配置机器人时仅允许下载页与记录页,避免停留在不可用的上传/监听页。
         name = 'download';
     }
-    if (!HAS_RECORDS && name === 'record') {  // 记录数据库不可用时回退下载页。
+    if (!HAS_DATABASE && name === 'database') {  // 记录数据库不可用时回退下载页。
         name = 'download';
     }
     currentSection = name;
@@ -461,12 +461,12 @@ function switchSection(name) {
 
 function applySectionVisibility() {
     // 记录入口只在数据库可用时展示,不可用时隐藏,避免进入空页面。
-    var recordItem = document.querySelector('.side-item[data-section="record"]');
-    if (recordItem) {
-        recordItem.hidden = !HAS_RECORDS;
+    var databaseItem = document.querySelector('.side-item[data-section="database"]');
+    if (databaseItem) {
+        databaseItem.hidden = !HAS_DATABASE;
     }
     // 未配置机器人且记录不可用时只有下载一个功能,无需用侧边栏区分页面,直接隐藏整个侧边栏并将布局退化为单栏。
-    if (HAS_BOT || HAS_RECORDS) {
+    if (HAS_BOT || HAS_DATABASE) {
         return;
     }
     var sidebar = document.getElementById('sidebar');
@@ -708,73 +708,73 @@ function renderListeners(listeners) {
 /* 记录页:展示数据库中的下载与上传历史。
    文件是否还存在由后端在读取时实时校验,不存在的条目已被丢弃,故前端只负责展示。
    扁平表格:频道与链接作为列,按频道、链接归类排序,同一归类内保持接口返回的新旧顺序。 */
-var RECORD_TABS = ['download', 'upload'];  // 记录页的选项卡:下载、上传。
-var RECORD_KEY = 'trmd_record';  // 记录页选项卡的本地存储键。
-var RECORD_POLL_INTERVAL_MS = 3000;  // 记录页的轮询间隔,比进度页稀疏,避免频繁查询数据库。
-var RECORD_UPLOAD_LINK = '本地上传';  // 上传记录没有下载链接,链接列统一显示该文案。
-var RECORD_EMPTY_TEXT = {
-    download: '暂无下载记录。',
-    upload: '暂无上传记录。'
+var DATABASE_TABS = ['download', 'upload'];  // 记录页的选项卡:下载、上传。
+var DATABASE_KEY = 'trmd_database';  // 记录页选项卡的本地存储键。
+var DATABASE_POLL_INTERVAL_MS = 3000;  // 记录页的轮询间隔,比进度页稀疏,避免频繁查询数据库。
+var DATABASE_UPLOAD_LINK = '本地上传';  // 上传储存没有下载链接,链接列统一显示该文案。
+var DATABASE_EMPTY_TEXT = {
+    download: '暂无下载储存。',
+    upload: '暂无上传储存。'
 };
-var currentRecord = 'download';
-var RECORD_TEXT = {
+var currentDatabase = 'download';
+var DATABASE_TEXT = {
     success: '成功',
     skip: '已跳过',
     failure: '失败'
 };
-var RECORD_CLASS = {
+var DATABASE_CLASS = {
     success: 'status-done',
     skip: 'status-skip',
     failure: 'status-failed'
 };
-var RECORD_ICON = {
+var DATABASE_ICON = {
     download: '📥',
     upload: '📤'
 };
 
-function applyRecordTab() {
-    var tabs = document.querySelectorAll('#recordTabs .tab');
+function applyDatabaseTab() {
+    var tabs = document.querySelectorAll('#databaseTabs .tab');
     for (var i = 0; i < tabs.length; i++) {
-        var active = tabs[i].getAttribute('data-record') === currentRecord;
+        var active = tabs[i].getAttribute('data-database') === currentDatabase;
         tabs[i].className = active ? 'tab active' : 'tab';
     }
 }
 
-function switchRecord(name) {
-    if (RECORD_TABS.indexOf(name) === -1) {
+function switchDatabase(name) {
+    if (DATABASE_TABS.indexOf(name) === -1) {
         name = 'download';
     }
-    currentRecord = name;
-    applyRecordTab();
-    saveState(RECORD_KEY, currentRecord);
-    recordPage.index = 0;  // 切换类型回到首页,避免停留在其他类型不存在的页号。
-    refreshRecords();
+    currentDatabase = name;
+    applyDatabaseTab();
+    saveState(DATABASE_KEY, currentDatabase);
+    databasePage.index = 0;  // 切换类型回到首页,避免停留在其他类型不存在的页号。
+    refreshDatabase();
 }
 
-function bindRecordTabs() {
-    var tabs = document.querySelectorAll('#recordTabs .tab');
+function bindDatabaseTabs() {
+    var tabs = document.querySelectorAll('#databaseTabs .tab');
     for (var i = 0; i < tabs.length; i++) {
         tabs[i].onclick = function () {
-            switchRecord(this.getAttribute('data-record'));
+            switchDatabase(this.getAttribute('data-database'));
         };
     }
-    var btn = document.getElementById('toggleRecord');
+    var btn = document.getElementById('toggleDatabase');
     if (btn) {
-        btn.onclick = refreshRecords;  // 手动刷新按钮。
+        btn.onclick = refreshDatabase;  // 手动刷新按钮。
     }
 }
 
 /* 归类排序:先按频道、再按链接。
    现代浏览器的Array.prototype.sort稳定,末段返回0即可保持接口返回的新旧顺序(record_id降序)。 */
-function sortRecords(records) {
+function sortDatabase(records) {
     return records.slice().sort(function (a, b) {
         var chatA = a.chat || '';
         var chatB = b.chat || '';
         if (chatA !== chatB) {
             return chatA < chatB ? -1 : 1;
         }
-        var linkA = a.link || RECORD_UPLOAD_LINK;
-        var linkB = b.link || RECORD_UPLOAD_LINK;
+        var linkA = a.link || DATABASE_UPLOAD_LINK;
+        var linkB = b.link || DATABASE_UPLOAD_LINK;
         if (linkA !== linkB) {
             return linkA < linkB ? -1 : 1;
         }
@@ -782,22 +782,22 @@ function sortRecords(records) {
     });
 }
 
-/* 记录表是单层网格:第1列为纵向合并的频道单元格,第2~8列为每条记录的单元格。
+/* 记录表是单层网格:第1列为纵向合并的频道单元格,第2~8列为每条储存的单元格。
    频道相同只显示一次并跨其所有行(Excel合并单元格的效果),链接不同则各自成行。 */
-function recordCell(column, row, cls, inner, title) {
-    return '<div class="record-cell' + cls + '" data-row="' + row + '"' +
+function databaseCell(column, row, cls, inner, title) {
+    return '<div class="database-cell' + cls + '" data-row="' + row + '"' +
         (title ? ' title="' + escAttr(title) + '"' : '') +
         ' style="grid-column:' + column + ';grid-row:' + row + '">' + inner + '</div>';
 }
 
-function recordGroupCell(group, startRow, len) {
+function databaseGroupCell(group, startRow, len) {
     var first = group[0];
     var chat = first.chat || UNGROUPED_NAME;
-    var link = first.link || RECORD_UPLOAD_LINK;  // 上传记录无链接,显示"本地上传"。
-    var badge = len > 1 ? '<span class="record-msg-count">' + len + ' 个文件</span>' : '';
-    return '<div class="record-cell record-channel-cell" style="grid-column:1;grid-row:' + startRow + ' / span ' + len + '">' +
+    var link = first.link || DATABASE_UPLOAD_LINK;  // 上传储存无链接,显示"本地上传"。
+    var badge = len > 1 ? '<span class="database-msg-count">' + len + ' 个文件</span>' : '';
+    return '<div class="database-cell database-channel-cell" style="grid-column:1;grid-row:' + startRow + ' / span ' + len + '">' +
         '<span class="fname" title="' + escAttr(chat) + '">' + esc(chat) + '</span>' +
-        '<span class="record-msg" title="' + escAttr(link) + '">' + esc(link) + '</span>' +
+        '<span class="database-msg" title="' + escAttr(link) + '">' + esc(link) + '</span>' +
         badge +
         '</div>';
 }
@@ -808,7 +808,7 @@ function recordGroupCell(group, startRow, len) {
 function memberLink(rec) {
     var link = rec.link;
     if (!link) {
-        return RECORD_UPLOAD_LINK;  // 上传记录无链接,显示"本地上传"。
+        return DATABASE_UPLOAD_LINK;  // 上传储存无链接,显示"本地上传"。
     }
     var mid = rec.message_id;
     if (mid === undefined || mid === null || mid === '') {
@@ -821,31 +821,31 @@ function memberLink(rec) {
     return m[1] + mid;
 }
 
-function recordRowCells(item, row, position, groupStart) {
+function databaseRowCells(item, row, position, groupStart) {
     var state = item.state || '';
-    var text = RECORD_TEXT[state] || item.status || '—';
-    var cls = RECORD_CLASS[state] || 'status-done';
+    var text = DATABASE_TEXT[state] || item.status || '—';
+    var cls = DATABASE_CLASS[state] || 'status-done';
     var extra = (groupStart ? ' group-start' : '') + (position % 2 ? ' alt' : '');
     var mlink = memberLink(item);
     var cells = '';
-    cells += recordCell(2, row, extra + ' cell-name',
-        '<span class="ficon">' + (RECORD_ICON[item.record_type] || '📄') + '</span>' +
+    cells += databaseCell(2, row, extra + ' cell-name',
+        '<span class="ficon">' + (DATABASE_ICON[item.record_type] || '📄') + '</span>' +
         '<span class="fname" title="' + escAttr(item.path || item.file) + '">' + esc(item.file) + '</span>',
         item.path || item.file);
-    cells += recordCell(3, row, extra + ' cell-name',
+    cells += databaseCell(3, row, extra + ' cell-name',
         '<span class="fname">' + esc(mlink) + '</span>',
         mlink);
-    cells += recordCell(4, row, extra + ' cell-size', dash(item.size));
-    cells += recordCell(5, row, extra + ' cell-speed', item.message_id ? esc(item.message_id) : '—');
-    cells += recordCell(6, row, extra + ' cell-remain', dash(item.type));
-    cells += recordCell(7, row, extra + ' cell-status ' + cls, esc(text), item.error);
-    cells += recordCell(8, row, extra + ' cell-remain', dash(item.time));
+    cells += databaseCell(4, row, extra + ' cell-size', dash(item.size));
+    cells += databaseCell(5, row, extra + ' cell-speed', item.message_id ? esc(item.message_id) : '—');
+    cells += databaseCell(6, row, extra + ' cell-remain', dash(item.type));
+    cells += databaseCell(7, row, extra + ' cell-status ' + cls, esc(text), item.error);
+    cells += databaseCell(8, row, extra + ' cell-remain', dash(item.time));
     return cells;
 }
 
 /* 记录结构指纹:记录ID + 状态,不含大小等展示字段。
    文件被删导致记录消失、或新记录写入时指纹变化,才重建列表。 */
-function recordStructKey(records) {
+function databaseStructKey(records) {
     var parts = [];
     for (var i = 0; i < records.length; i++) {
         parts.push(records[i].record_id + '|' + records[i].state);
@@ -853,10 +853,10 @@ function recordStructKey(records) {
     return parts.join(';');
 }
 
-var lastRecordKey = null;  // 上次渲染的记录指纹,内容不变则跳过重建。(初始为 null 而非 '',否则无记录时指纹也是空串,会被误判为"未变化"导致空态永远不渲染)
+var lastDatabaseKey = null;  // 上次渲染的记录指纹,内容不变则跳过重建。(初始为 null 而非 '',否则无记录时指纹也是空串,会被误判为"未变化"导致空态永远不渲染)
 
-function buildRecordRows(records) {
-    var groups = groupRecords(records);  // 已按消息分组并排序。
+function buildDatabaseRows(records) {
+    var groups = groupDatabase(records);  // 已按消息分组并排序。
     var html = '';
     var row = 1;  // 网格行号从1开始。
     var position = 0;  // 记录在整表中的序号,用于斑马纹。
@@ -865,9 +865,9 @@ function buildRecordRows(records) {
     var items;
     for (g = 0; g < groups.length; g++) {
         items = groups[g];
-        html += recordGroupCell(items, row, items.length);
+        html += databaseGroupCell(items, row, items.length);
         for (j = 0; j < items.length; j++) {
-            html += recordRowCells(items[j], row + j, position, j === 0);
+            html += databaseRowCells(items[j], row + j, position, j === 0);
             position++;
         }
         row += items.length;
@@ -875,12 +875,12 @@ function buildRecordRows(records) {
     return html;
 }
 
-var recordAll = [];  // 当前类型的全量记录(已按服务器返回排序)。
-var recordPage = {size: 100, index: 0};  // 分页状态:每页条数(0=不限)、当前页。
+var databaseAll = [];  // 当前类型的全量记录(已按服务器返回排序)。
+var databasePage = {size: 100, index: 0};  // 分页状态:每页条数(0=不限)、当前页。
 
-/* 记录分组键:同一 Telegram 消息(媒体组)共享 link,多条记录聚为一组;
-   无 link 的上传记录各成一组(以 path 区分)。 */
-function recordGroupKey(rec) {
+/* 记录分组键:同一 Telegram 消息(媒体组)共享 link,多条储存聚为一组;
+   无 link 的上传储存各成一组(以 path 区分)。 */
+function databaseGroupKey(rec) {
     if (rec.link) {
         return 'L:' + rec.link;
     }
@@ -888,7 +888,7 @@ function recordGroupKey(rec) {
 }
 
 /* 组内最大 record_id,用于组间排序(最新消息在前)。 */
-function maxRecordId(arr) {
+function maxDatabaseId(arr) {
     var m = 0;
     for (var i = 0; i < arr.length; i++) {
         var id = Number(arr[i].record_id) || 0;
@@ -900,13 +900,13 @@ function maxRecordId(arr) {
 }
 
 /* 把记录按消息分组,组间按组内最大 record_id 降序(最新消息在前)。
-   与 buildRecordRows 的分组口径一致(以 link 为准)。 */
-function groupRecords(records) {
-    var sorted = sortRecords(records);  // 先按 chat 再按 link 排,保证同消息相邻。
+   与 buildDatabaseRows 的分组口径一致(以 link 为准)。 */
+function groupDatabase(records) {
+    var sorted = sortDatabase(records);  // 先按 chat 再按 link 排,保证同消息相邻。
     var groups = [];
     var index = {};
     for (var i = 0; i < sorted.length; i++) {
-        var key = recordGroupKey(sorted[i]);
+        var key = databaseGroupKey(sorted[i]);
         var g = index[key];
         if (g === undefined) {
             g = groups.length;
@@ -916,14 +916,14 @@ function groupRecords(records) {
         groups[g].push(sorted[i]);
     }
     groups.sort(function (a, b) {
-        return maxRecordId(b) - maxRecordId(a);
+        return maxDatabaseId(b) - maxDatabaseId(a);
     });
     return groups;
 }
 
 /* 按消息把记录切成连续块,供分页使用。 */
 function messageBlocksOf(records) {
-    return groupRecords(records);
+    return groupDatabase(records);
 }
 
 /* 把消息块切分为页:尽量装到 page_size,但单个消息(相册)绝不跨页拆分;
@@ -977,63 +977,63 @@ function pageEnd(pages, index) {
     return offset;
 }
 
-function renderRecords(records) {
-    recordAll = records;
+function renderDatabase(records) {
+    databaseAll = records;
     // 不在此重置页号:轮询刷新时保持用户所在页;切换类型/改每页条数时由对应动作重置。
-    renderRecordPage();
+    renderDatabasePage();
 }
 
 /* 页面内容指纹:记录结构 + 页号 + 每页条数 + 当前tab。
    空态与非空态共用同一口径,确保切换tab后内容变化一定能触发重建。 */
-function recordPageKey(pageRecords) {
-    return recordStructKey(pageRecords) + '#' + recordPage.index + '#' + recordPage.size + '#' + currentRecord;
+function databasePageKey(pageRecords) {
+    return databaseStructKey(pageRecords) + '#' + databasePage.index + '#' + databasePage.size + '#' + currentDatabase;
 }
 
-function renderRecordPage() {
-    var blocks = messageBlocksOf(recordAll);
-    var pages = paginateGroupBlocks(blocks, recordPage.size);
+function renderDatabasePage() {
+    var blocks = messageBlocksOf(databaseAll);
+    var pages = paginateGroupBlocks(blocks, databasePage.size);
     var count = pages.length;
-    var body = document.getElementById('record');
+    var body = document.getElementById('database');
     if (count === 0) {
-        /* 空态也走指纹判定并回写lastRecordKey:否则切到空tab(如无记录的上传)再切回时,
-           lastRecordKey仍停留在前一个tab的指纹,内容看似"未变化"而跳过重建,
-           下载记录表会停留在空态,必须手动刷新才恢复。 */
-        var emptyKey = recordPageKey([]);
-        if (emptyKey !== lastRecordKey) {
-            lastRecordKey = emptyKey;
-            body.innerHTML = '<div class="empty">' + (RECORD_EMPTY_TEXT[currentRecord] || RECORD_EMPTY_TEXT.download) + '</div>';
+        /* 空态也走指纹判定并回写lastDatabaseKey:否则切到空tab(如无记录的上传)再切回时,
+           lastDatabaseKey仍停留在前一个tab的指纹,内容看似"未变化"而跳过重建,
+           下载储存表会停留在空态,必须手动刷新才恢复。 */
+        var emptyKey = databasePageKey([]);
+        if (emptyKey !== lastDatabaseKey) {
+            lastDatabaseKey = emptyKey;
+            body.innerHTML = '<div class="empty">' + (DATABASE_EMPTY_TEXT[currentDatabase] || DATABASE_EMPTY_TEXT.download) + '</div>';
         }
-        document.getElementById('badgeRecord').textContent = '0';
-        updateRecordPager(count, 0, recordAll.length, blocks.length, 0, 0);
+        document.getElementById('badgeDatabase').textContent = '0';
+        updateDatabasePager(count, 0, databaseAll.length, blocks.length, 0, 0);
         return;
     }
-    if (recordPage.index >= count) {
-        recordPage.index = count - 1;  // 数据变少时回退到末页。
+    if (databasePage.index >= count) {
+        databasePage.index = count - 1;  // 数据变少时回退到末页。
     }
-    if (recordPage.index < 0) {
-        recordPage.index = 0;
+    if (databasePage.index < 0) {
+        databasePage.index = 0;
     }
-    var pageRecords = pages[recordPage.index];
-    var key = recordPageKey(pageRecords);
-    if (key !== lastRecordKey) {
-        lastRecordKey = key;
-        body.innerHTML = buildRecordRows(pageRecords);
+    var pageRecords = pages[databasePage.index];
+    var key = databasePageKey(pageRecords);
+    if (key !== lastDatabaseKey) {
+        lastDatabaseKey = key;
+        body.innerHTML = buildDatabaseRows(pageRecords);
     }
-    document.getElementById('badgeRecord').textContent = recordAll.length;
-    updateRecordPager(count, recordPage.index, recordAll.length, blocks.length, pageStart(pages, recordPage.index), pageEnd(pages, recordPage.index));
+    document.getElementById('badgeDatabase').textContent = databaseAll.length;
+    updateDatabasePager(count, databasePage.index, databaseAll.length, blocks.length, pageStart(pages, databasePage.index), pageEnd(pages, databasePage.index));
 }
 
-function updateRecordPager(count, index, total, messages, start, end) {
-    var pager = document.getElementById('recordPager');
+function updateDatabasePager(count, index, total, messages, start, end) {
+    var pager = document.getElementById('databasePager');
     if (!pager) {
         return;
     }
     var cur = count ? index + 1 : 0;
     var curEl = pager.querySelector('.pager-cur');
     var totEl = pager.querySelector('.pager-total');
-    var prev = document.getElementById('recordPrev');
-    var next = document.getElementById('recordNext');
-    var meta = document.getElementById('recordPagerMeta');
+    var prev = document.getElementById('databasePrev');
+    var next = document.getElementById('databaseNext');
+    var meta = document.getElementById('databasePagerMeta');
     if (curEl) {
         curEl.textContent = cur;
     }
@@ -1052,18 +1052,18 @@ function updateRecordPager(count, index, total, messages, start, end) {
     }
 }
 
-function goRecordPage(delta) {
-    recordPage.index += delta;
-    renderRecordPage();
+function goDatabasePage(delta) {
+    databasePage.index += delta;
+    renderDatabasePage();
 }
 
 /* 同步每页条数下拉的显示值与高亮项,不触发渲染(供初始化使用)。 */
 function applyPageSizeLabel(size) {
-    var valEl = document.getElementById('recordPageSizeVal');
+    var valEl = document.getElementById('databasePageSizeVal');
     if (valEl) {
         valEl.textContent = size === 0 ? '全部' : String(size);
     }
-    var pop = document.getElementById('recordPageSizePop');
+    var pop = document.getElementById('databasePageSizePop');
     if (pop) {
         var opts = pop.querySelectorAll('.pager-select-opt');
         for (var i = 0; i < opts.length; i++) {
@@ -1073,32 +1073,32 @@ function applyPageSizeLabel(size) {
     }
 }
 
-function setRecordPageSize(size) {
-    recordPage.size = size;
-    recordPage.index = 0;  // 改变每页条数回到首页。
-    saveState('recordPageSize', size);
+function setDatabasePageSize(size) {
+    databasePage.size = size;
+    databasePage.index = 0;  // 改变每页条数回到首页。
+    saveState('databasePageSize', size);
     applyPageSizeLabel(size);
-    renderRecordPage();
+    renderDatabasePage();
 }
 
-function bindRecordPager() {
-    var prev = document.getElementById('recordPrev');
-    var next = document.getElementById('recordNext');
-    var wrap = document.getElementById('recordPageSize');
-    var btn = document.getElementById('recordPageSizeBtn');
-    var pop = document.getElementById('recordPageSizePop');
+function bindDatabasePager() {
+    var prev = document.getElementById('databasePrev');
+    var next = document.getElementById('databaseNext');
+    var wrap = document.getElementById('databasePageSize');
+    var btn = document.getElementById('databasePageSizeBtn');
+    var pop = document.getElementById('databasePageSizePop');
     if (prev) {
-        prev.onclick = function () { goRecordPage(-1); };
+        prev.onclick = function () { goDatabasePage(-1); };
     }
     if (next) {
-        next.onclick = function () { goRecordPage(1); };
+        next.onclick = function () { goDatabasePage(1); };
     }
     if (wrap && btn && pop) {
-        var saved = parseInt(localStorage.getItem('recordPageSize'), 10);
+        var saved = parseInt(localStorage.getItem('databasePageSize'), 10);
         if (!isNaN(saved) && (saved === 0 || (saved >= 20 && saved <= 500))) {
-            recordPage.size = saved;  // 仅在合法范围内恢复,避免脏值。
+            databasePage.size = saved;  // 仅在合法范围内恢复,避免脏值。
         }
-        applyPageSizeLabel(recordPage.size);  // 仅同步显示,不触发渲染。
+        applyPageSizeLabel(databasePage.size);  // 仅同步显示,不触发渲染。
         btn.onclick = function (event) {
             event.stopPropagation();
             pop.hidden = !pop.hidden;
@@ -1108,7 +1108,7 @@ function bindRecordPager() {
         for (var i = 0; i < opts.length; i++) {
             opts[i].onclick = function (event) {
                 event.stopPropagation();
-                setRecordPageSize(parseInt(this.getAttribute('data-size'), 10));
+                setDatabasePageSize(parseInt(this.getAttribute('data-size'), 10));
                 pop.hidden = true;
                 wrap.classList.remove('open');
             };
@@ -1124,17 +1124,17 @@ function bindRecordPager() {
 }
 
 /* 整行悬停:记录行没有行容器,按所在网格行号给同一行的单元格加高亮。 */
-function bindRecordHover() {
-    var box = document.getElementById('record');
+function bindDatabaseHover() {
+    var box = document.getElementById('database');
     if (!box) {
         return;
     }
     var setRowHover = function (node, enable) {
-        var cell = node && node.closest ? node.closest('.record-cell[data-row]') : null;
+        var cell = node && node.closest ? node.closest('.database-cell[data-row]') : null;
         if (!cell || !box.contains(cell)) {
             return;
         }
-        var cells = box.querySelectorAll('.record-cell[data-row="' + cell.getAttribute('data-row') + '"]');
+        var cells = box.querySelectorAll('.database-cell[data-row="' + cell.getAttribute('data-row') + '"]');
         for (var i = 0; i < cells.length; i++) {
             cells[i].classList.toggle('hover', enable);
         }
@@ -1147,29 +1147,29 @@ function bindRecordHover() {
     });
 }
 
-async function refreshRecords() {
+async function refreshDatabase() {
     try {
-        var res = await fetch('/api/records?type=' + encodeURIComponent(currentRecord), {cache: 'no-store', headers: authHeaders()});
+        var res = await fetch('/api/database?type=' + encodeURIComponent(currentDatabase), {cache: 'no-store', headers: authHeaders()});
         if (res.status === 401) {
             openLogin();  // 未认证:弹出登录卡片,与进度页一致。
             return;
         }
         var json = await res.json();
-        renderRecords(json.records || []);
+        renderDatabase(json.database || []);
     } catch (e) {
         // 拉取失败时保留原列表,交由进度页的断线提示统一反馈。
     }
 }
 
-var recordTimer = 0;  // 记录页的轮询定时器,只在记录页可见时查询,避免无谓的数据库访问。
+var databaseTimer = 0;  // 记录页的轮询定时器,只在记录页可见时查询,避免无谓的数据库访问。
 
-function startRecordPolling() {
-    if (!recordTimer) {
-        recordTimer = setInterval(function () {
-            if (currentSection === 'record') {
-                refreshRecords();
+function startDatabasePolling() {
+    if (!databaseTimer) {
+        databaseTimer = setInterval(function () {
+            if (currentSection === 'database') {
+                refreshDatabase();
             }
-        }, RECORD_POLL_INTERVAL_MS);
+        }, DATABASE_POLL_INTERVAL_MS);
     }
 }
 
@@ -2514,11 +2514,11 @@ window.addEventListener('resize', function () {
 
 var savedSection = '';
 var savedListen = '';
-var savedRecord = '';
+var savedDatabase = '';
 try {
     savedSection = localStorage.getItem(SECTION_KEY) || '';
     savedListen = localStorage.getItem(LISTEN_KEY) || '';
-    savedRecord = localStorage.getItem(RECORD_KEY) || '';
+    savedDatabase = localStorage.getItem(DATABASE_KEY) || '';
     collapsed = JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}') || {};  // 读回各分组折叠状态。
     allCollapsed = localStorage.getItem(ALL_KEY) === '1';
     uploadAllCollapsed = localStorage.getItem(UPLOAD_ALL_KEY) === '1';
@@ -2527,7 +2527,7 @@ try {
 } catch (e) {
     savedSection = '';
     savedListen = '';
-    savedRecord = '';
+    savedDatabase = '';
     collapsed = {};
     allCollapsed = false;
     uploadAllCollapsed = false;
@@ -2971,9 +2971,9 @@ function initBackgroundGradient() {
 
 bindSections();
 bindListenTabs();
-bindRecordTabs();
-bindRecordHover();
-bindRecordPager();
+bindDatabaseTabs();
+bindDatabaseHover();
+bindDatabasePager();
 bindListenRemove();
 bindConfirm();
 bindLogin();
@@ -2983,8 +2983,8 @@ bindSupport();
 bindMenu();
 initSettings();
 initVersion();
-currentRecord = RECORD_TABS.indexOf(savedRecord) > -1 ? savedRecord : 'download';
-applyRecordTab();  // 先按保存的选项刷新高亮,此时尚未拉取数据,列表保持空态。
+currentDatabase = DATABASE_TABS.indexOf(savedDatabase) > -1 ? savedDatabase : 'download';
+applyDatabaseTab();  // 先按保存的选项刷新高亮,此时尚未拉取数据,列表保持空态。
 applySectionVisibility();  // 按可用功能调整侧边栏,随后switchSection会锁定到可用的页面。
 switchSection(savedSection);
 switchListen(savedListen);
@@ -3024,4 +3024,4 @@ document.addEventListener('visibilitychange', function () {
 
 refresh(true);  // 首屏强制按最新数据渲染,跳过去重,确保进度条开局即正确显示。
 startPolling();
-startRecordPolling();  // 记录页轮询:内部按当前区块判断,只有停留在记录页才真正查询数据库。
+startDatabasePolling();  // 记录页轮询:内部按当前区块判断,只有停留在记录页才真正查询数据库。

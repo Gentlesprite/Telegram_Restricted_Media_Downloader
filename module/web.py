@@ -71,14 +71,14 @@ class WebHandler(BaseHTTPRequestHandler):
     # 首页<body>起始标签,用正则匹配,模板给<body>新增属性后替换依然生效。
     BODY_TAG_PATTERN: bytes = rb'<body\b[^>]*>'
     # data-auth 表示已启用密码认证,前端据此显示"退出登录"入口。
-    FIRST_LOGIN_BODY: bytes = b'<body data-auth="1" data-first-login="1" data-bot="__HAS_BOT__" data-records="__HAS_RECORDS__">'  # 首次登录时写入首页的标记,供页面自动展示卡片。
+    FIRST_LOGIN_BODY: bytes = b'<body data-auth="1" data-first-login="1" data-bot="__HAS_BOT__" data-database="__HAS_DATABASE__">'  # 首次登录时写入首页的标记,供页面自动展示卡片。
     # 已设置账号密码时注入:首屏先隐藏页面内容,避免F5刷新时闪现一瞬间的已登录界面。
-    LOGIN_BODY: bytes = b'<body data-auth="1" class="logged-out" data-bot="__HAS_BOT__" data-records="__HAS_RECORDS__">'
+    LOGIN_BODY: bytes = b'<body data-auth="1" class="logged-out" data-bot="__HAS_BOT__" data-database="__HAS_DATABASE__">'
     VERSION_PLACEHOLDER: bytes = b'__VERSION__'  # 首页模板中的TRMD版本占位符,返回页面时替换为实际版本号。
     # 首页模板中的Pyrogram版本占位符,返回页面时替换为实际版本号。
     PYROGRAM_PLACEHOLDER: bytes = b'__PYROGRAM_VERSION__'
     HAS_BOT_PLACEHOLDER: bytes = b'__HAS_BOT__'  # 是否配置了机器人(bot_token),前端据此隐藏上传与监听侧边栏。
-    HAS_RECORDS_PLACEHOLDER: bytes = b'__HAS_RECORDS__'  # 记录数据库是否可用,前端据此展示记录侧边栏。
+    HAS_DATABASE_PLACEHOLDER: bytes = b'__HAS_DATABASE__'  # 记录数据库是否可用,前端据此展示记录侧边栏。
 
     def do_GET(self) -> None:  # noqa.
         if self.path.startswith('/api/'):
@@ -87,7 +87,7 @@ class WebHandler(BaseHTTPRequestHandler):
                 return
             if self.path.startswith('/api/progress'):
                 self.__response_progress()
-            elif self.path.startswith('/api/records'):
+            elif self.path.startswith('/api/database'):
                 self.__response_records()
             else:
                 self.send_error(404)
@@ -248,16 +248,16 @@ class WebHandler(BaseHTTPRequestHandler):
         )
 
     def __response_records(self) -> None:
-        """返回网页下载/上传记录的JSON,读取时实时校验文件是否存在,不存在的条目直接丢弃。
+        """返回网页下载/上传储存的JSON,读取时实时校验文件是否存在,不存在的条目直接丢弃。
 
         返回该类型的全部记录;分页与按频道分组由前端完成。
         """
         web: Union[Web, None] = getattr(self.server, 'web', None)
         query: dict = parse_qs(urlparse(self.path).query)
         record_type: str = (query.get('type') or [''])[0]
-        records: list = web.get_records(record_type=record_type) if web else []
+        records: list = web.get_database(record_type=record_type) if web else []
         self.__response_body(
-            body=json.dumps({'records': records}, ensure_ascii=False).encode('UTF-8'),
+            body=json.dumps({'database': records}, ensure_ascii=False).encode('UTF-8'),
             content_type='application/json; charset=utf-8'
         )
 
@@ -376,8 +376,8 @@ class WebHandler(BaseHTTPRequestHandler):
                 b'1' if (web and web.has_bot) else b'0'
             )
             page = page.replace(  # 注入记录数据库是否可用,前端据此展示记录侧边栏。
-                WebHandler.HAS_RECORDS_PLACEHOLDER,
-                b'1' if (web and web.has_records) else b'0'
+                WebHandler.HAS_DATABASE_PLACEHOLDER,
+                b'1' if (web and web.has_database) else b'0'
             )
             body = page
         content_type: str = mimetypes.guess_type(file_path)[0] or 'application/octet-stream'
@@ -398,7 +398,7 @@ class Web:
     UNGROUPED: str = '未分组'
     REMOVE_LISTEN_TIMEOUT: int = 10  # 等待事件循环移除监听的超时时间,单位为秒。
     REMEMBER_COOKIE_MAX_AGE: int = 30 * 24 * 3600  # Cookie的有效期,单位为秒(30天)。
-    RECORD_TIMEOUT: int = 3  # 等待事件循环返回网页记录的超时时间,单位为秒。
+    DATABASE_TIMEOUT: int = 3  # 等待事件循环返回网页记录的超时时间,单位为秒。
     UNFINISHED_STATE: tuple = (
         DownloadStatus.PENDING,
         DownloadStatus.DOWNLOADING
@@ -423,7 +423,7 @@ class Web:
         self.thread: Union[threading.Thread, None] = None
 
     @property
-    def has_records(self) -> bool:
+    def has_database(self) -> bool:
         """记录数据库是否可用,决定前端是否展示记录入口。
 
         数据库在登录成功后才会打开,故不能像has_bot那样在初始化时确定,必须实时判断。
@@ -645,8 +645,8 @@ class Web:
             log.debug(f'获取监听信息时出错,{_t(KeyWord.REASON)}:"{e}"')
         return result
 
-    def get_records(self, record_type: str = '') -> list:
-        """读取网页下载/上传记录。
+    def get_database(self, record_type: str = '') -> list:
+        """读取网页下载/上传储存。
 
         读取动作需要投递到下载器的事件循环中执行(数据库连接由循环线程持有),
         与移除监听一致:通过run_coroutine_threadsafe投递并等待结果。
@@ -654,7 +654,7 @@ class Web:
         返回该类型的全部记录;分页与按频道分组由前端完成。
 
         Args:
-            record_type: 记录类型,download为下载记录,upload为上传记录,为空时返回全部记录。
+            record_type: 记录类型,download为下载储存,upload为上传储存,为空时返回全部记录。
 
         Returns:
             list: 记录的展示信息。
@@ -672,7 +672,7 @@ class Web:
                 database.get_records(record_type=record_type or None),
                 loop
             )
-            records: list = future.result(timeout=Web.RECORD_TIMEOUT)
+            records: list = future.result(timeout=Web.DATABASE_TIMEOUT)
         except Exception as e:
             log.debug(f'获取网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
             return []

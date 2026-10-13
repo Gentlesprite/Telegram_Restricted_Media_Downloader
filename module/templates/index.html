@@ -8,7 +8,7 @@
 <link rel="icon" type="image/x-icon" href="img/favicon.ico">
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body data-bot="__HAS_BOT__" data-records="__HAS_RECORDS__">
+<body data-bot="__HAS_BOT__" data-database="__HAS_DATABASE__">
 <canvas class="bg-gradient" id="bgGradient" width="100" height="100" data-colors="#4f5bd5,#962fbf,#dd6cb9,#fec496"></canvas>
 <div class="wrap">
 <header>
@@ -47,7 +47,7 @@
         <button class="side-item active" data-section="download" type="button">下载</button>
         <button class="side-item" data-section="upload" type="button">上传</button>
         <button class="side-item" data-section="listener" type="button">监听</button>
-        <button class="side-item" data-section="record" type="button">记录</button>
+        <button class="side-item" data-section="database" type="button">储存</button>
     </aside>
 
     <main class="content">
@@ -146,21 +146,21 @@
                 </div>
             </div>
         </div>
-        <div class="page" id="page-record" hidden>
-            <div class="tabs" id="recordTabs">
-                <button class="tab active" data-record="download" type="button">下载</button>
-                <button class="tab" data-record="upload" type="button">上传</button>
+        <div class="page" id="page-database" hidden>
+            <div class="tabs" id="databaseTabs">
+                <button class="tab active" data-database="download" type="button">下载</button>
+                <button class="tab" data-database="upload" type="button">上传</button>
             </div>
             <div class="section-head">
-                <span class="gcount">共 <b id="badgeRecord">0</b> 条记录</span>
-                <div class="record-pager" id="recordPager">
+                <span class="gcount">共 <b id="badgeDatabase">0</b> 条储存</span>
+                <div class="database-pager" id="databasePager">
                     <div class="pager-size">每页
-                        <div class="pager-select" id="recordPageSize">
-                            <button type="button" class="pager-select-btn" id="recordPageSizeBtn">
-                                <span class="pager-select-val" id="recordPageSizeVal">100</span>
+                        <div class="pager-select" id="databasePageSize">
+                            <button type="button" class="pager-select-btn" id="databasePageSizeBtn">
+                                <span class="pager-select-val" id="databasePageSizeVal">100</span>
                                 <span class="pager-select-caret"></span>
                             </button>
-                            <div class="pager-select-pop" id="recordPageSizePop" hidden>
+                            <div class="pager-select-pop" id="databasePageSizePop" hidden>
                                 <button type="button" class="pager-select-opt" data-size="20">20</button>
                                 <button type="button" class="pager-select-opt" data-size="50">50</button>
                                 <button type="button" class="pager-select-opt" data-size="100">100</button>
@@ -170,14 +170,14 @@
                             </div>
                         </div>
                     </div>
-                    <button class="pager-btn" id="recordPrev" type="button" title="上一页">‹</button>
+                    <button class="pager-btn" id="databasePrev" type="button" title="上一页">‹</button>
                     <span class="pager-ind">第 <b class="pager-cur">1</b> / <b class="pager-total">1</b> 页</span>
-                    <button class="pager-btn" id="recordNext" type="button" title="下一页">›</button>
-                    <span class="pager-meta" id="recordPagerMeta"></span>
+                    <button class="pager-btn" id="databaseNext" type="button" title="下一页">›</button>
+                    <span class="pager-meta" id="databasePagerMeta"></span>
                 </div>
-                <button class="toggle" id="toggleRecord" type="button">刷新</button>
+                <button class="toggle" id="toggleDatabase" type="button">刷新</button>
             </div>
-            <div class="list list-record" data-table="record">
+            <div class="list list-database" data-table="database">
                 <div class="list-scroll">
                     <div class="list-head">
                         <span><span class="htext">频道 / 消息</span></span>
@@ -189,7 +189,7 @@
                         <span><span class="htext">状态</span></span>
                         <span><span class="htext">时间</span></span>
                     </div>
-                    <div id="record"></div>
+                    <div id="database"></div>
                 </div>
             </div>
         </div>

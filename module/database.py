@@ -112,7 +112,7 @@ class SqliteRecordDatabase(RecordDatabase):
     """基于sqlite3的网页记录数据库实现,仿照pyrogram的SQLiteStorage组织代码。"""
 
     DATABASE_NAME: str = 'TRMDWebRecord'  # 记录库文件名(不含扩展名),保存在会话目录。
-    FILE_EXTENSION: str = '.record'  # 记录库文件的扩展名,与telegram的.session会话文件区分。
+    FILE_EXTENSION: str = '.db'  # 记录库文件的扩展名,与telegram的.session会话文件区分。
     TABLE_NAME: str = 'web_records'  # 记录表名。
     COLUMNS: tuple = (
         'record_id',
