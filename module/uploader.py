@@ -35,7 +35,14 @@ from module import (
     console
 )
 from module.language import _t
-from module.task import UploadTask
+from module.task import (
+    ChatInfo,
+    UploadTask
+)
+from module.database import (
+    RecordType,
+    WebRecord
+)
 from module.path_tool import get_mime_from_extension
 from module.stdio import (
     MetaData,
@@ -62,6 +69,7 @@ class TelegramUploader:
             self,
             download_object
     ):
+        self.downloader = download_object  # 下载器实例,网页记录经它统一落库。
         self.app = download_object.app
         self.client: pyrogram.Client = self.app.client
         self.loop: asyncio.AbstractEventLoop = download_object.loop
@@ -673,6 +681,31 @@ class TelegramUploader:
         # 不做 UploadTask.TASKS.discard:与正常上传一致地保留在任务集中,供网页面板与统计表展示。
         return None
 
+    def __record_upload(
+            self,
+            upload_task: UploadTask,
+            status: str,
+            error_msg: str = ''
+    ) -> None:
+        """登记上传记录,经下载器统一落库,失败只记日志不影响主流程。"""
+
+        file_name: str = upload_task.file_name or split_path(upload_task.file_path).get('file_name') or ''
+        self.downloader.add_web_record(
+            WebRecord(
+                record_type=RecordType.UPLOAD,
+                chat_id=upload_task.chat_id,
+                chat_name=ChatInfo.get(upload_task.chat_id),
+                message_id=upload_task.message_id,
+                file_name=file_name,
+                file_path=upload_task.file_path,
+                file_size=upload_task.file_size,
+                file_type=os.path.splitext(file_name)[1].lstrip('.'),
+                status=status,
+                error_msg=error_msg,
+                link=''
+            )
+        )
+
     def upload_complete_callback(
             self,
             upload_task,
@@ -691,6 +724,13 @@ class TelegramUploader:
                 entry['success'] = False
                 entry['event'].set()
             UploadTask.UPLOADING_KEYS.pop(upload_task.file_path, None)
+            if not isinstance(e, asyncio.CancelledError):
+                # 被取消的任务(如退出软件)不是终态,不登记记录。
+                self.__record_upload(
+                    upload_task=upload_task,
+                    status=UploadStatus.FAILURE,
+                    error_msg=upload_task.error_msg or str(e) or '上传失败。'
+                )
             log.info(e)
             return
         file_path: str = upload_task.file_path
@@ -706,6 +746,7 @@ class TelegramUploader:
         self.event.set()
         safe_delete(file_path) if upload_task.with_delete else None
         upload_task.status = UploadStatus.SUCCESS
+        self.__record_upload(upload_task=upload_task, status=UploadStatus.SUCCESS)
         MetaData.print_current_task_num(
             prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
             num=self.current_task_num

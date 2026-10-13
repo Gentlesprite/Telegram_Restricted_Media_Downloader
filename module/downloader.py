@@ -87,6 +87,12 @@ from module.bot import (
     CallbackContext,
     dispatch_callback_data
 )
+from module.database import (
+    build_record_database,
+    RecordDatabase,
+    RecordType,
+    WebRecord
+)
 from module.enums import (
     DownloadStatus,
     LinkType,
@@ -153,6 +159,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             app=self.app,
             downloader=self
         )  # 网页面板默认启用,端口由--port参数指定。
+        self.record_database: Union[RecordDatabase, None] = None  # 网页记录数据库,保存下载与上传记录。
+        self.pending_record_tasks: Set[asyncio.Task] = set()  # 待落库的记录任务,退出前统一等待,避免丢失最后的记录。
 
     def env_save_directory(
             self,
@@ -188,6 +196,51 @@ class TelegramRestrictedMediaDownloader(Bot):
                             str(getattr(message, 'id', 'UNKNOWN_MESSAGE_ID'))
                         )
         return save_directory
+
+    def add_web_record(self, record: WebRecord) -> None:
+        """登记网页下载/上传记录。
+
+        记录属于辅助操作:投递落库任务时出错只记日志,绝不影响下载与上传主流程。
+        """
+
+        if self.record_database is None:
+            return
+        try:
+            task = asyncio.create_task(self.record_database.add_record(record))
+            self.pending_record_tasks.add(task)
+            task.add_done_callback(self.pending_record_tasks.discard)
+        except Exception as e:
+            log.warning(f'登记网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
+
+    def record_download(
+            self,
+            message: pyrogram.types.Message,
+            link: str,
+            file_name: str,
+            file_size: int,
+            status: str,
+            error_msg: str = ''
+    ) -> None:
+        """登记下载记录,文件路径取下载完成后的最终保存路径。"""
+
+        if self.record_database is None:
+            return
+        chat_id = getattr(getattr(message, 'chat', None), 'id', None)
+        self.add_web_record(
+            WebRecord(
+                record_type=RecordType.DOWNLOAD,
+                chat_id=chat_id,
+                chat_name=ChatInfo.get(chat_id),
+                message_id=getattr(message, 'id', None),
+                file_name=file_name,
+                file_path=os.path.join(self.env_save_directory(message), file_name),
+                file_size=file_size,
+                file_type=get_message_dtype(message, self.app.download_type) or '',
+                status=status,
+                error_msg=error_msg,
+                link=str(link)
+            )
+        )
 
     async def get_download_link_from_bot(
             self,
@@ -1639,6 +1692,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                         size_byte=sever_file_size,
                         date=str(getattr(message, 'date', '') or '')[:10]
                     )
+                self.record_download(
+                    message=message,
+                    link=link,
+                    file_name=file_name,
+                    file_size=sever_file_size,
+                    status=DownloadStatus.SKIP
+                )
                 if self.uploader:
                     if with_upload and isinstance(with_upload, dict):
                         try:
@@ -1682,6 +1742,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                             size_byte=sever_file_size,
                             date=str(getattr(message, 'date', '') or '')[:10]
                         )
+                    self.record_download(
+                        message=message,
+                        link=link,
+                        file_name=file_name,
+                        file_size=sever_file_size,
+                        status=DownloadStatus.SUCCESS
+                    )
                     if self.uploader:
                         if with_upload and isinstance(with_upload, dict):
                             try:
@@ -1737,6 +1804,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                         name=file_name,
                         size=format_file_size,
                         size_byte=sever_file_size
+                    )
+                    self.record_download(
+                        message=message,
+                        link=link,
+                        file_name=file_name,
+                        file_size=sever_file_size,
+                        status=DownloadStatus.FAILURE,
+                        error_msg=_error.replace('。', '')
                     )
                     self.bot_task_link.discard(link)
                     self.queue.task_done()
@@ -2331,6 +2406,10 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     async def __download_media_from_links(self) -> None:
         await self.app.client.start(use_qr=False)
+        # 打开网页记录数据库,保存目录使用telegram的会话目录;打开失败时放弃记录功能,不影响下载与上传。
+        self.record_database = build_record_database(work_directory=self.app.work_directory)
+        if not await self.record_database.open():
+            self.record_database = None
         remote_config: dict = await rc.read()
         self.my_id = await get_my_id(self.app.client)
         await js_referral(
@@ -2458,6 +2537,15 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.is_running = False
             self.pb.progress.stop()
             self.web.stop()
+            if self.record_database is not None:
+                try:
+                    # 先等待登记任务落库再关闭数据库,避免退出时丢失最后的记录。
+                    self.loop.run_until_complete(
+                        asyncio.wait(self.pending_record_tasks, timeout=5)
+                    ) if self.pending_record_tasks else None
+                    self.loop.run_until_complete(self.record_database.close())
+                except Exception as e:
+                    log.warning(f'关闭网页记录数据库失败,{_t(KeyWord.REASON)}:"{e}"')
             if not record_error:
                 self.app.print_link_table(
                     link_tasks=DownloadTask.TASKS,

@@ -1053,6 +1053,64 @@ body.resizing {
     --cols: minmax(0, 1fr) 56px;
 }
 
+/* 记录表:频道、文件、链接、大小、消息ID、类型、状态、时间。
+   第1列的频道单元格纵向跨行合并(同频道只显示一次),第2列为弹性列。
+   记录表未挂data-table,不参与列宽拖拽:统一机制总把弹性列放在首位,
+   而本表第1列是固定宽的频道列,故列宽由此处直接声明。 */
+.list-record {
+    --cols: 150px minmax(200px, 1fr) 200px 100px 80px 90px 90px 150px;
+}
+
+/* 列间距改由单元格内边距承担:行分隔线要连续,不能留出gap断口。 */
+.list-record .list-head {
+    gap: 0;
+}
+
+.list-record .list-head > span {
+    padding: 3px 14px;
+}
+
+.list-record #record {
+    display: grid;
+    grid-template-columns: var(--cols);
+    min-width: min-content;
+}
+
+/* 空态文案横跨全部列,与监听板块一样占满整行,不因单列宽度而折行。 */
+.list-record .empty {
+    grid-column: 1 / -1;
+}
+
+.record-cell {
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(36, 43, 57, .6);
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* 斑马纹:按记录在整表中的序号交替,相邻行底色分明。 */
+.record-cell.alt {
+    background: rgba(255, 255, 255, .025);
+}
+
+/* 新频道的第一行顶部画分隔线,标示归类边界;内阴影避免与上一行下边框叠成双线。 */
+.record-cell.group-start {
+    box-shadow: inset 0 1px 0 var(--border);
+}
+
+/* 整行悬停:同一网格行的单元格一起高亮。 */
+.record-cell.hover {
+    background: rgba(56, 249, 215, .06);
+}
+
+/* 频道单元格:纵向居中跨行,右侧分隔线加轻微底色,与数据列区分。 */
+.record-channel-cell {
+    align-self: center;
+    border-right: 1px solid var(--border);
+    background: rgba(255, 255, 255, .04);
+    font-weight: 600;
+}
+
 .h-action {
     text-align: right;
 }

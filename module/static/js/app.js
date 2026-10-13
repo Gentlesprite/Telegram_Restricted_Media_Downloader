@@ -8,9 +8,10 @@ const EMPTY_SUMMARY = {percent: 0, info: '0.00B / 0.00B', speed: '', remaining: 
 var SECTIONS = {
     download: ['download'],
     upload: ['upload'],
-    listener: ['listener']
+    listener: ['listener'],
+    record: ['record']  // 记录页:展示数据库中的下载与上传历史,不依赖机器人。
 };
-var PAGES = SECTIONS.download.concat(SECTIONS.upload, SECTIONS.listener);  // 下载、上传各一个页面,监听页只在内部切换选项卡。
+var PAGES = SECTIONS.download.concat(SECTIONS.upload, SECTIONS.listener, SECTIONS.record);  // 下载、上传、记录各一个页面,监听页只在内部切换选项卡。
 var SUMMARY_IDS = {
     download: {fill: 'overallFill', percent: 'overallPercent', info: 'overallInfo', extra: 'overallExtra'},
     upload: {fill: 'uploadFill', percent: 'uploadPercent', info: 'uploadInfo', extra: 'uploadExtra'}
@@ -18,6 +19,7 @@ var SUMMARY_IDS = {
 var SECTION_KEY = 'trmd_section';
 var LISTEN_KEY = 'trmd_listen';
 var HAS_BOT = document.body.getAttribute('data-bot') === '1';  // 是否配置了机器人,决定上传/监听侧边栏是否展示(无机器人时只有下载可用)。
+var HAS_RECORDS = document.body.getAttribute('data-records') === '1';  // 记录数据库是否可用,决定记录侧边栏是否展示(记录功能不依赖机器人)。
 var COLLAPSE_KEY = 'trmd_collapsed';  // 各分组折叠状态的本地存储键。
 var ALL_KEY = 'trmd_all_collapsed';  // 下载页全部折叠开关的本地存储键。
 var UPLOAD_ALL_KEY = 'trmd_upload_all_collapsed';  // 上传页全部折叠开关的本地存储键。
@@ -342,7 +344,8 @@ function syncHeadLabel() {
 }
 
 function bindGroups() {
-    var nodes = document.querySelectorAll('.group-head');
+    // 只绑定下载页与上传页的分组条:记录页的分组条仅作归类展示,不参与折叠。
+    var nodes = document.querySelectorAll('#download .group-head, #upload .group-head');
     for (var i = 0; i < nodes.length; i++) {
         nodes[i].onclick = function () {
             var group = this.parentNode;
@@ -424,6 +427,7 @@ function applySection() {
         items[i].className = active ? 'side-item active' : 'side-item';
     }
     var dlWasHidden = document.getElementById('downloadSummary').hidden;
+    var recordWasHidden = document.getElementById('page-record').hidden;
     document.getElementById('downloadSummary').hidden = currentSection !== 'download';
     document.getElementById('uploadSummary').hidden = currentSection !== 'upload';  // 两个板块各自独立的总进度。
     for (i = 0; i < PAGES.length; i++) {
@@ -435,13 +439,19 @@ function applySection() {
     if (currentSection === 'download' && dlWasHidden) {
         refresh(true);
     }
+    if (currentSection === 'record' && recordWasHidden) {
+        refreshRecords();  // 记录页刚变为可见时立即拉取,避免展示上次的旧数据。
+    }
 }
 
 function switchSection(name) {
     if (!SECTIONS[name]) {
         name = 'download';
     }
-    if (!HAS_BOT && name !== 'download') {  // 未配置机器人时仅允许下载页,避免停留在不可用的上传/监听页。
+    if (!HAS_BOT && name !== 'download' && name !== 'record') {  // 未配置机器人时仅允许下载页与记录页,避免停留在不可用的上传/监听页。
+        name = 'download';
+    }
+    if (!HAS_RECORDS && name === 'record') {  // 记录数据库不可用时回退下载页。
         name = 'download';
     }
     currentSection = name;
@@ -449,9 +459,14 @@ function switchSection(name) {
     saveState(SECTION_KEY, currentSection);
 }
 
-function applyBotVisibility() {
-    // 未配置机器人时只有下载一个功能,无需用侧边栏区分页面,直接隐藏整个侧边栏并将布局退化为单栏。
-    if (HAS_BOT) {
+function applySectionVisibility() {
+    // 记录入口只在数据库可用时展示,不可用时隐藏,避免进入空页面。
+    var recordItem = document.querySelector('.side-item[data-section="record"]');
+    if (recordItem) {
+        recordItem.hidden = !HAS_RECORDS;
+    }
+    // 未配置机器人且记录不可用时只有下载一个功能,无需用侧边栏区分页面,直接隐藏整个侧边栏并将布局退化为单栏。
+    if (HAS_BOT || HAS_RECORDS) {
         return;
     }
     var sidebar = document.getElementById('sidebar');
@@ -688,6 +703,222 @@ function renderListeners(listeners) {
     }
     document.getElementById('listenDownload').innerHTML = html ? html : '<div class="empty">暂无监听下载。</div>';
     return forward.length + download.length;
+}
+
+/* 记录页:展示数据库中的下载与上传历史。
+   文件是否还存在由后端在读取时实时校验,不存在的条目已被丢弃,故前端只负责展示。
+   扁平表格:频道与链接作为列,按频道、链接归类排序,同一归类内保持接口返回的新旧顺序。 */
+var RECORD_TABS = ['download', 'upload'];  // 记录页的选项卡:下载、上传。
+var RECORD_KEY = 'trmd_record';  // 记录页选项卡的本地存储键。
+var RECORD_POLL_INTERVAL_MS = 3000;  // 记录页的轮询间隔,比进度页稀疏,避免频繁查询数据库。
+var RECORD_UPLOAD_LINK = '本地上传';  // 上传记录没有下载链接,链接列统一显示该文案。
+var RECORD_EMPTY_TEXT = {
+    download: '暂无下载记录。',
+    upload: '暂无上传记录。'
+};
+var currentRecord = 'download';
+var RECORD_TEXT = {
+    success: '成功',
+    skip: '已跳过',
+    failure: '失败'
+};
+var RECORD_CLASS = {
+    success: 'status-done',
+    skip: 'status-skip',
+    failure: 'status-failed'
+};
+var RECORD_ICON = {
+    download: '📥',
+    upload: '📤'
+};
+
+function applyRecordTab() {
+    var tabs = document.querySelectorAll('#recordTabs .tab');
+    for (var i = 0; i < tabs.length; i++) {
+        var active = tabs[i].getAttribute('data-record') === currentRecord;
+        tabs[i].className = active ? 'tab active' : 'tab';
+    }
+}
+
+function switchRecord(name) {
+    if (RECORD_TABS.indexOf(name) === -1) {
+        name = 'download';
+    }
+    currentRecord = name;
+    applyRecordTab();
+    saveState(RECORD_KEY, currentRecord);
+    refreshRecords();
+}
+
+function bindRecordTabs() {
+    var tabs = document.querySelectorAll('#recordTabs .tab');
+    for (var i = 0; i < tabs.length; i++) {
+        tabs[i].onclick = function () {
+            switchRecord(this.getAttribute('data-record'));
+        };
+    }
+    var btn = document.getElementById('toggleRecord');
+    if (btn) {
+        btn.onclick = refreshRecords;  // 手动刷新按钮。
+    }
+}
+
+/* 归类排序:先按频道、再按链接。
+   现代浏览器的Array.prototype.sort稳定,末段返回0即可保持接口返回的新旧顺序(record_id降序)。 */
+function sortRecords(records) {
+    return records.slice().sort(function (a, b) {
+        var chatA = a.chat || '';
+        var chatB = b.chat || '';
+        if (chatA !== chatB) {
+            return chatA < chatB ? -1 : 1;
+        }
+        var linkA = a.link || RECORD_UPLOAD_LINK;
+        var linkB = b.link || RECORD_UPLOAD_LINK;
+        if (linkA !== linkB) {
+            return linkA < linkB ? -1 : 1;
+        }
+        return 0;
+    });
+}
+
+/* 记录表是单层网格:第1列为纵向合并的频道单元格,第2~8列为每条记录的单元格。
+   频道相同只显示一次并跨其所有行(Excel合并单元格的效果),链接不同则各自成行。 */
+function recordCell(column, row, cls, inner, title) {
+    return '<div class="record-cell' + cls + '" data-row="' + row + '"' +
+        (title ? ' title="' + escAttr(title) + '"' : '') +
+        ' style="grid-column:' + column + ';grid-row:' + row + '">' + inner + '</div>';
+}
+
+function recordChannelCell(channel, startRow, count) {
+    return '<div class="record-cell record-channel-cell" style="grid-column:1;grid-row:' + startRow + ' / span ' + count + '">' +
+        '<span class="fname" title="' + escAttr(channel) + '">' + esc(channel) + '</span></div>';
+}
+
+function recordRowCells(item, row, position, groupStart) {
+    var state = item.state || '';
+    var text = RECORD_TEXT[state] || item.status || '—';
+    var cls = RECORD_CLASS[state] || 'status-done';
+    var extra = (groupStart ? ' group-start' : '') + (position % 2 ? ' alt' : '');
+    var cells = '';
+    cells += recordCell(2, row, extra + ' cell-name',
+        '<span class="ficon">' + (RECORD_ICON[item.record_type] || '📄') + '</span>' +
+        '<span class="fname" title="' + escAttr(item.path || item.file) + '">' + esc(item.file) + '</span>',
+        item.path || item.file);
+    cells += recordCell(3, row, extra + ' cell-name',
+        '<span class="fname">' + esc(item.link || RECORD_UPLOAD_LINK) + '</span>',
+        item.link || RECORD_UPLOAD_LINK);
+    cells += recordCell(4, row, extra + ' cell-size', dash(item.size));
+    cells += recordCell(5, row, extra + ' cell-speed', item.message_id ? esc(item.message_id) : '—');
+    cells += recordCell(6, row, extra + ' cell-remain', dash(item.type));
+    cells += recordCell(7, row, extra + ' cell-status ' + cls, esc(text), item.error);
+    cells += recordCell(8, row, extra + ' cell-remain', dash(item.time));
+    return cells;
+}
+
+/* 记录结构指纹:记录ID + 状态,不含大小等展示字段。
+   文件被删导致记录消失、或新记录写入时指纹变化,才重建列表。 */
+function recordStructKey(records) {
+    var parts = [];
+    for (var i = 0; i < records.length; i++) {
+        parts.push(records[i].record_id + '|' + records[i].state);
+    }
+    return parts.join(';');
+}
+
+var lastRecordKey = null;  // 上次渲染的记录指纹,内容不变则跳过重建。(初始为 null 而非 '',否则无记录时指纹也是空串,会被误判为"未变化"导致空态永远不渲染)
+
+function buildRecordRows(records) {
+    var sorted = sortRecords(records);
+    // 先按频道聚合,用于计算频道单元格的跨行行数;展示上仍是扁平表格,没有分组条。
+    var groups = [];
+    var index = {};
+    var i;
+    for (i = 0; i < sorted.length; i++) {
+        var channel = sorted[i].chat || UNGROUPED_NAME;
+        var group = index[channel];
+        if (!group) {
+            group = {channel: channel, records: []};
+            index[channel] = group;
+            groups.push(group);
+        }
+        group.records.push(sorted[i]);
+    }
+    var html = '';
+    var row = 1;  // 网格行号从1开始。
+    var position = 0;  // 记录在整表中的序号,用于斑马纹。
+    var g;
+    var j;
+    for (g = 0; g < groups.length; g++) {
+        var items = groups[g].records;
+        html += recordChannelCell(groups[g].channel, row, items.length);
+        for (j = 0; j < items.length; j++) {
+            html += recordRowCells(items[j], row + j, position, j === 0);
+            position++;
+        }
+        row += items.length;
+    }
+    return html;
+}
+
+function renderRecords(records) {
+    var key = recordStructKey(records);
+    if (key === lastRecordKey) {
+        return;  // 内容未变则跳过重建,避免每3秒整表重绘。
+    }
+    lastRecordKey = key;
+    document.getElementById('record').innerHTML =
+        buildRecordRows(records) || ('<div class="empty">' + (RECORD_EMPTY_TEXT[currentRecord] || RECORD_EMPTY_TEXT.download) + '</div>');
+    document.getElementById('badgeRecord').textContent = records.length;
+}
+
+/* 整行悬停:记录行没有行容器,按所在网格行号给同一行的单元格加高亮。 */
+function bindRecordHover() {
+    var box = document.getElementById('record');
+    if (!box) {
+        return;
+    }
+    var setRowHover = function (node, enable) {
+        var cell = node && node.closest ? node.closest('.record-cell[data-row]') : null;
+        if (!cell || !box.contains(cell)) {
+            return;
+        }
+        var cells = box.querySelectorAll('.record-cell[data-row="' + cell.getAttribute('data-row') + '"]');
+        for (var i = 0; i < cells.length; i++) {
+            cells[i].classList.toggle('hover', enable);
+        }
+    };
+    box.addEventListener('mouseover', function (event) {
+        setRowHover(event.target, true);
+    });
+    box.addEventListener('mouseout', function (event) {
+        setRowHover(event.target, false);
+    });
+}
+
+async function refreshRecords() {
+    try {
+        var res = await fetch('/api/records?type=' + encodeURIComponent(currentRecord), {cache: 'no-store', headers: authHeaders()});
+        if (res.status === 401) {
+            openLogin();  // 未认证:弹出登录卡片,与进度页一致。
+            return;
+        }
+        var json = await res.json();
+        renderRecords(json.records || []);
+    } catch (e) {
+        // 拉取失败时保留原列表,交由进度页的断线提示统一反馈。
+    }
+}
+
+var recordTimer = 0;  // 记录页的轮询定时器,只在记录页可见时查询,避免无谓的数据库访问。
+
+function startRecordPolling() {
+    if (!recordTimer) {
+        recordTimer = setInterval(function () {
+            if (currentSection === 'record') {
+                refreshRecords();
+            }
+        }, RECORD_POLL_INTERVAL_MS);
+    }
 }
 
 /* 与页面同风格的确认弹窗(替代原生 confirm),返回 Promise<boolean>。 */
@@ -1987,9 +2218,11 @@ window.addEventListener('resize', function () {
 
 var savedSection = '';
 var savedListen = '';
+var savedRecord = '';
 try {
     savedSection = localStorage.getItem(SECTION_KEY) || '';
     savedListen = localStorage.getItem(LISTEN_KEY) || '';
+    savedRecord = localStorage.getItem(RECORD_KEY) || '';
     collapsed = JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}') || {};  // 读回各分组折叠状态。
     allCollapsed = localStorage.getItem(ALL_KEY) === '1';
     uploadAllCollapsed = localStorage.getItem(UPLOAD_ALL_KEY) === '1';
@@ -1998,6 +2231,7 @@ try {
 } catch (e) {
     savedSection = '';
     savedListen = '';
+    savedRecord = '';
     collapsed = {};
     allCollapsed = false;
     uploadAllCollapsed = false;
@@ -2441,6 +2675,8 @@ function initBackgroundGradient() {
 
 bindSections();
 bindListenTabs();
+bindRecordTabs();
+bindRecordHover();
 bindListenRemove();
 bindConfirm();
 bindLogin();
@@ -2450,7 +2686,9 @@ bindSupport();
 bindMenu();
 initSettings();
 initVersion();
-applyBotVisibility();  // 未配置机器人时隐藏整个侧边栏,随后switchSection会强制锁定到下载页。
+currentRecord = RECORD_TABS.indexOf(savedRecord) > -1 ? savedRecord : 'download';
+applyRecordTab();  // 先按保存的选项刷新高亮,此时尚未拉取数据,列表保持空态。
+applySectionVisibility();  // 按可用功能调整侧边栏,随后switchSection会锁定到可用的页面。
 switchSection(savedSection);
 switchListen(savedListen);
 document.getElementById('toggleAll').onclick = toggleAll;
@@ -2489,3 +2727,4 @@ document.addEventListener('visibilitychange', function () {
 
 refresh(true);  // 首屏强制按最新数据渲染,跳过去重,确保进度条开局即正确显示。
 startPolling();
+startRecordPolling();  // 记录页轮询:内部按当前区块判断,只有停留在记录页才真正查询数据库。
