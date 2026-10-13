@@ -734,7 +734,7 @@ var STORAGE_ICON = {
 var STORAGE_UPLOAD_LINK = '本地上传';  // 上传储存没有下载链接,链接列统一显示该文案。
 var STORAGE_HEADERS = {
     download: ['频道 / 消息', '文件', '链接', '大小', '消息ID', '类型', '状态', '时间'],
-    upload:   ['频道', '文件', '大小', '类型', '状态', '时间']
+    upload:   ['频道', '文件路径', '大小', '类型', '状态', '时间']
 };
 var STORAGE_COLS = {
     download: '150px minmax(200px, 1fr) 200px 100px 80px 90px 90px 150px',
@@ -867,10 +867,14 @@ function storageRowCells(item, row, position, groupStart) {
     var cls = STORAGE_CLASS[state] || 'status-done';
     var extra = (groupStart ? ' group-start' : '') + (position % 2 ? ' alt' : '');
     var cells = '';
-    cells += storageCell(2, row, extra + ' cell-name',
-        '<span class="ficon">' + (STORAGE_ICON[item.storage_type] || '📄') + '</span>' +
-        '<span class="fname" title="' + escAttr(item.path || item.file) + '">' + esc(item.file) + '</span>',
-        item.path || item.file);
+    // 第2列:下载显示文件名,上传显示完整文件路径(本地上传更关注路径)。
+    var nameHtml = '<span class="ficon">' + (STORAGE_ICON[item.storage_type] || '📄') + '</span>';
+    if (currentStorage !== 'upload') {
+        nameHtml += '<span class="fname" title="' + escAttr(item.path || item.file) + '">' + esc(item.file) + '</span>';
+    } else {
+        nameHtml += '<span class="fname" title="' + escAttr(item.path || item.file) + '">' + esc(item.path || item.file) + '</span>';
+    }
+    cells += storageCell(2, row, extra + ' cell-name', nameHtml, item.path || item.file);
     if (currentStorage !== 'upload') {
         cells += storageCell(3, row, extra + ' cell-name',
             '<span class="fname">' + esc(memberLink(item)) + '</span>',
