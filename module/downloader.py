@@ -1890,6 +1890,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             messages_to_download = []
             matched_message_ids: set = set()  # 已处理过的(chat_id, message_id),含被类型/日期过滤掉但已判定过的成员,避免媒体组展开后重复处理。
             media_group_matched: set = set()  # 已展开过的media_group_id,避免对同一媒体组重复调用get_media_group。
+            media_group_added: set = set()  # 已入选的media_group_id:媒体组整组只保留一条代表消息,下发时按链接整组展开,避免同一相册被拆成多条链接。
             media_group_thread_id: dict = {}  # 媒体组评论区所在的首条成员(最小message id)id,供第二阶段检索评论区时使用。
             extra_comment_ids: set = set()  # 被类型过滤掉但评论区有内容的消息 id(非媒体组),需单独扫描其评论。
             downloaded_message_ids: set = set()  # 已进入下载列表的消息(chat_id, message_id),用于快速判断消息是否因类型被过滤。
@@ -1914,8 +1915,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                     continue
                 # 命中关键词的消息自身先按类型筛选。
                 if _filter.dtype(message, download_type):
-                    messages_to_download.append(message)
-                    downloaded_message_ids.add(msg_key)
+                    # 媒体组整组只保留一条代表消息(下发时按链接整组展开),避免同一相册被拆成多条链接;
+                    # 无link时无法按链接展开,退回逐成员入库,以免丢文件。
+                    group_id = getattr(message, 'media_group_id', None)
+                    if group_id is None or not message.link or group_id not in media_group_added:
+                        if group_id is not None and message.link:
+                            media_group_added.add(group_id)
+                        messages_to_download.append(message)
+                        downloaded_message_ids.add(msg_key)
                 matched_message_ids.add(msg_key)
                 # 命中且属于媒体组 → 主动拉取整组,组内每个成员再各自按类型/日期独立筛选,不再依赖遍历顺序,也不会因首条成员被类型过滤而丢失整组,更不会跳过成员的类型筛选。
                 # 无关键词且未开启评论区时,整组各成员会经遍历各自命中,无需RPC展开。
@@ -1966,7 +1973,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 member,
                                 download_type
                             ):
-                                messages_to_download.append(member)
+                                # 同上:整组只保留一条代表消息,下发时按链接整组展开。
+                                member_group_id = getattr(member, 'media_group_id', None)
+                                if member_group_id is None or not member.link or member_group_id not in media_group_added:
+                                    if member_group_id is not None and member.link:
+                                        media_group_added.add(member_group_id)
+                                    messages_to_download.append(member)
                             matched_message_ids.add(member_key)
                     else:
                         # 无关键词:整组由各成员遍历命中补全,无需RPC展开,仅标记该组已处理。
@@ -2028,8 +2040,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         text=BotButton.RETRIEVE_COMMENT,
                         callback_data=BotCallbackText.NULL)
                 )
+            group_links: set = set()  # 媒体组代表的链接:下发时需整组展开,其余链接保持单条语义。
             for message in messages_to_download:
                 message_link = message.link if message.link else message
+                if getattr(message, 'media_group_id', None) and message.link:
+                    group_links.add(message_link)
                 links.append(message_link)
                 processed_message_count += 1
                 if not include_comment:
@@ -2133,6 +2148,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                             callback_data=BotCallbackText.NULL)
                     )
             diy_download_type: list = [_ for _ in DownloadType()]
+            # 媒体组代表链接会整组展开,须用与检索一致的类型过滤,否则组内已被过滤掉的成员也会被下载。
+            group_diy_download_type: list = [dtype for dtype, enabled in download_type.items() if enabled] \
+                if download_type else diy_download_type
             comment_count: int = (len(links) - message_count) if include_comment else 0
             total_count: int = message_count + comment_count
             assigned_count: int = 0
@@ -2160,10 +2178,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                             _reply_markup=reply_markup
                     ) is not None:
                         last_progress_update_time = current_time
+                is_group_link: bool = link in group_links
                 await self.create_download_task(
                     message_ids=link,
-                    single_link=True,
-                    diy_download_type=diy_download_type,
+                    single_link=not is_group_link,  # 媒体组代表链接需展开整组;评论等其余链接保持单条语义。
+                    diy_download_type=group_diy_download_type if is_group_link else diy_download_type,
                     owner=owner
                 )
                 assigned_count += 1
