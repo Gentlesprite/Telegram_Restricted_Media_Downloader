@@ -843,8 +843,9 @@ function storageGroupCell(group, startRow, len) {
 }
 
 /* 链接列展示成员自身链接:相册(媒体组)所有成员的记录共用整组任务链接(指向代表消息),
-   把链接末段的消息ID替换为本行的消息ID即可还原成员自己的链接。
-   带查询参数的链接(如评论链接?comment=)或无消息ID时保持原样,不做臆测改写。 */
+   把链接中的消息ID替换为本行的消息ID即可还原成员自己的链接。
+   评论区链接带comment参数,该参数值即评论ID,同样替换为本行消息ID(评论区内媒体组同理)。
+   无法识别的链接形态或无消息ID时保持原样,不做臆测改写。 */
 function memberLink(rec) {
     var link = rec.link;
     if (!link) {
@@ -854,11 +855,17 @@ function memberLink(rec) {
     if (mid === undefined || mid === null || mid === '') {
         return link;
     }
+    // 普通消息链接:末尾一段为消息ID,替换为本行消息ID。
     var m = String(link).match(/^(.*\/)(\d+)$/);
-    if (!m || m[2] === String(mid)) {
-        return link;
+    if (m) {
+        return m[2] === String(mid) ? link : m[1] + mid;
     }
-    return m[1] + mid;
+    // 评论区链接:comment参数值为评论ID,替换为本行消息ID。
+    m = String(link).match(/^(.*[?&]comment=)(\d+)$/);
+    if (m) {
+        return m[2] === String(mid) ? link : m[1] + mid;
+    }
+    return link;  // 无法识别的形态保持原样。
 }
 
 function storageRowCells(item, row, position, groupStart) {
