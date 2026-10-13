@@ -153,6 +153,28 @@
             </div>
             <div class="section-head">
                 <span class="gcount">共 <b id="badgeRecord">0</b> 条记录</span>
+                <div class="record-pager" id="recordPager">
+                    <div class="pager-size">每页
+                        <div class="pager-select" id="recordPageSize">
+                            <button type="button" class="pager-select-btn" id="recordPageSizeBtn">
+                                <span class="pager-select-val" id="recordPageSizeVal">100</span>
+                                <span class="pager-select-caret"></span>
+                            </button>
+                            <div class="pager-select-pop" id="recordPageSizePop" hidden>
+                                <button type="button" class="pager-select-opt" data-size="20">20</button>
+                                <button type="button" class="pager-select-opt" data-size="50">50</button>
+                                <button type="button" class="pager-select-opt" data-size="100">100</button>
+                                <button type="button" class="pager-select-opt" data-size="200">200</button>
+                                <button type="button" class="pager-select-opt" data-size="500">500</button>
+                                <button type="button" class="pager-select-opt" data-size="0">全部</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="pager-btn" id="recordPrev" type="button" title="上一页">‹</button>
+                    <span class="pager-ind">第 <b class="pager-cur">1</b> / <b class="pager-total">1</b> 页</span>
+                    <button class="pager-btn" id="recordNext" type="button" title="下一页">›</button>
+                    <span class="pager-meta" id="recordPagerMeta"></span>
+                </div>
                 <button class="toggle" id="toggleRecord" type="button">刷新</button>
             </div>
             <div class="list list-record" data-table="record">

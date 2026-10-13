@@ -248,15 +248,14 @@ class WebHandler(BaseHTTPRequestHandler):
         )
 
     def __response_records(self) -> None:
-        """返回网页下载/上传记录的JSON,读取时实时校验文件是否存在,不存在的条目直接丢弃。"""
+        """返回网页下载/上传记录的JSON,读取时实时校验文件是否存在,不存在的条目直接丢弃。
+
+        返回该类型的全部记录;分页与按频道分组由前端完成。
+        """
         web: Union[Web, None] = getattr(self.server, 'web', None)
         query: dict = parse_qs(urlparse(self.path).query)
         record_type: str = (query.get('type') or [''])[0]
-        try:
-            limit: int = int((query.get('limit') or [''])[0])
-        except ValueError:
-            limit: int = Web.RECORD_LIMIT
-        records: list = web.get_records(record_type=record_type, limit=limit) if web else []
+        records: list = web.get_records(record_type=record_type) if web else []
         self.__response_body(
             body=json.dumps({'records': records}, ensure_ascii=False).encode('UTF-8'),
             content_type='application/json; charset=utf-8'
@@ -400,7 +399,6 @@ class Web:
     REMOVE_LISTEN_TIMEOUT: int = 10  # 等待事件循环移除监听的超时时间,单位为秒。
     REMEMBER_COOKIE_MAX_AGE: int = 30 * 24 * 3600  # Cookie的有效期,单位为秒(30天)。
     RECORD_TIMEOUT: int = 3  # 等待事件循环返回网页记录的超时时间,单位为秒。
-    RECORD_LIMIT: int = 500  # 单次返回的最大记录条数,超出部分截断。
     UNFINISHED_STATE: tuple = (
         DownloadStatus.PENDING,
         DownloadStatus.DOWNLOADING
@@ -647,16 +645,16 @@ class Web:
             log.debug(f'获取监听信息时出错,{_t(KeyWord.REASON)}:"{e}"')
         return result
 
-    def get_records(self, record_type: str = '', limit: int = 0) -> list:
+    def get_records(self, record_type: str = '') -> list:
         """读取网页下载/上传记录。
 
         读取动作需要投递到下载器的事件循环中执行(数据库连接由循环线程持有),
         与移除监听一致:通过run_coroutine_threadsafe投递并等待结果。
         数据库内部会先按目录mtime捷径做一次存在性校验,不存在的条目直接丢弃。
+        返回该类型的全部记录;分页与按频道分组由前端完成。
 
         Args:
             record_type: 记录类型,download为下载记录,upload为上传记录,为空时返回全部记录。
-            limit: 单次返回的最大条数,不大于0时使用默认值。
 
         Returns:
             list: 记录的展示信息。
@@ -669,10 +667,9 @@ class Web:
         loop: Union[AbstractEventLoop, None] = getattr(self.downloader, 'loop', None)
         if loop is None or not loop.is_running():
             return []
-        max_count: int = limit if limit > 0 else Web.RECORD_LIMIT
         try:
             future = asyncio.run_coroutine_threadsafe(
-                database.get_records(record_type=record_type or None, limit=max_count),
+                database.get_records(record_type=record_type or None),
                 loop
             )
             records: list = future.result(timeout=Web.RECORD_TIMEOUT)

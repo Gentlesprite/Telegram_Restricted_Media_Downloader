@@ -747,6 +747,7 @@ function switchRecord(name) {
     currentRecord = name;
     applyRecordTab();
     saveState(RECORD_KEY, currentRecord);
+    recordPage.index = 0;  // 切换类型回到首页,避免停留在其他类型不存在的页号。
     refreshRecords();
 }
 
@@ -860,15 +861,209 @@ function buildRecordRows(records) {
     return html;
 }
 
-function renderRecords(records) {
-    var key = recordStructKey(records);
-    if (key === lastRecordKey) {
-        return;  // 内容未变则跳过重建,避免每3秒整表重绘。
+var recordAll = [];  // 当前类型的全量记录(已按服务器返回排序)。
+var recordPage = {size: 100, index: 0};  // 分页状态:每页条数(0=不限)、当前页。
+
+/* 按频道把记录切成连续块;与buildRecordRows的分组口径一致(以chat为准,未命名归为"未分组")。 */
+function channelBlocksOf(records) {
+    var sorted = sortRecords(records);
+    var blocks = [];
+    var index = {};
+    for (var i = 0; i < sorted.length; i++) {
+        var channel = sorted[i].chat || UNGROUPED_NAME;
+        var b = index[channel];
+        if (b === undefined) {
+            b = blocks.length;
+            index[channel] = b;
+            blocks.push([]);
+        }
+        blocks[b].push(sorted[i]);
     }
-    lastRecordKey = key;
-    document.getElementById('record').innerHTML =
-        buildRecordRows(records) || ('<div class="empty">' + (RECORD_EMPTY_TEXT[currentRecord] || RECORD_EMPTY_TEXT.download) + '</div>');
-    document.getElementById('badgeRecord').textContent = records.length;
+    return blocks;
+}
+
+/* 把频道块切分为页:尽量装到 page_size,但单个频道绝不跨页拆分;
+   若某频道本身超过 page_size,则强制拉长当前页以完整显示它(下一页从该频道之后的频道开始)。 */
+function paginateChannelBlocks(blocks, pageSize) {
+    var pages = [];
+    if (pageSize <= 0) {  // 不限:所有频道整块放入一页。
+        var all = [];
+        for (var k = 0; k < blocks.length; k++) {
+            all = all.concat(blocks[k]);
+        }
+        if (all.length) {
+            pages.push(all);
+        }
+        return pages;
+    }
+    var page = [];
+    var count = 0;
+    for (var i = 0; i < blocks.length; i++) {
+        var block = blocks[i];
+        if (count > 0 && count + block.length > pageSize) {
+            pages.push(page);  // 放下一块会越界,先收尾本页,下一块从下一页开始。
+            page = [];
+            count = 0;
+        }
+        page = page.concat(block);  // 整块放入(若页为空且本块超长,则强制拉长本页)。
+        count += block.length;
+    }
+    if (page.length) {
+        pages.push(page);
+    }
+    return pages;
+}
+
+function pageStart(pages, index) {
+    var offset = 0;
+    for (var p = 0; p < index; p++) {
+        offset += pages[p].length;
+    }
+    return pages.length ? offset + 1 : 0;
+}
+
+function pageEnd(pages, index) {
+    if (!pages.length) {
+        return 0;
+    }
+    var offset = 0;
+    for (var p = 0; p <= index; p++) {
+        offset += pages[p].length;
+    }
+    return offset;
+}
+
+function renderRecords(records) {
+    recordAll = records;
+    // 不在此重置页号:轮询刷新时保持用户所在页;切换类型/改每页条数时由对应动作重置。
+    renderRecordPage();
+}
+
+function renderRecordPage() {
+    var blocks = channelBlocksOf(recordAll);
+    var pages = paginateChannelBlocks(blocks, recordPage.size);
+    var count = pages.length;
+    var body = document.getElementById('record');
+    if (count === 0) {
+        body.innerHTML = '<div class="empty">' + (RECORD_EMPTY_TEXT[currentRecord] || RECORD_EMPTY_TEXT.download) + '</div>';
+        document.getElementById('badgeRecord').textContent = '0';
+        updateRecordPager(count, 0, recordAll.length, blocks.length, 0, 0);
+        return;
+    }
+    if (recordPage.index >= count) {
+        recordPage.index = count - 1;  // 数据变少时回退到末页。
+    }
+    if (recordPage.index < 0) {
+        recordPage.index = 0;
+    }
+    var pageRecords = pages[recordPage.index];
+    var key = recordStructKey(pageRecords) + '#' + recordPage.index + '#' + recordPage.size + '#' + currentRecord;
+    if (key !== lastRecordKey) {
+        lastRecordKey = key;
+        body.innerHTML = buildRecordRows(pageRecords);
+    }
+    document.getElementById('badgeRecord').textContent = recordAll.length;
+    updateRecordPager(count, recordPage.index, recordAll.length, blocks.length, pageStart(pages, recordPage.index), pageEnd(pages, recordPage.index));
+}
+
+function updateRecordPager(count, index, total, channels, start, end) {
+    var pager = document.getElementById('recordPager');
+    if (!pager) {
+        return;
+    }
+    var cur = count ? index + 1 : 0;
+    var curEl = pager.querySelector('.pager-cur');
+    var totEl = pager.querySelector('.pager-total');
+    var prev = document.getElementById('recordPrev');
+    var next = document.getElementById('recordNext');
+    var meta = document.getElementById('recordPagerMeta');
+    if (curEl) {
+        curEl.textContent = cur;
+    }
+    if (totEl) {
+        totEl.textContent = count;
+    }
+    if (prev) {
+        prev.disabled = (index <= 0);
+    }
+    if (next) {
+        next.disabled = (index >= count - 1);
+    }
+    if (meta) {
+        meta.textContent = '共 ' + total + ' 条 · ' + channels + ' 个频道' +
+            (count ? (' · 本页第 ' + start + '-' + end + ' 条') : '');
+    }
+}
+
+function goRecordPage(delta) {
+    recordPage.index += delta;
+    renderRecordPage();
+}
+
+/* 同步每页条数下拉的显示值与高亮项,不触发渲染(供初始化使用)。 */
+function applyPageSizeLabel(size) {
+    var valEl = document.getElementById('recordPageSizeVal');
+    if (valEl) {
+        valEl.textContent = size === 0 ? '全部' : String(size);
+    }
+    var pop = document.getElementById('recordPageSizePop');
+    if (pop) {
+        var opts = pop.querySelectorAll('.pager-select-opt');
+        for (var i = 0; i < opts.length; i++) {
+            var s = parseInt(opts[i].getAttribute('data-size'), 10);
+            opts[i].classList.toggle('active', s === size);
+        }
+    }
+}
+
+function setRecordPageSize(size) {
+    recordPage.size = size;
+    recordPage.index = 0;  // 改变每页条数回到首页。
+    saveState('recordPageSize', size);
+    applyPageSizeLabel(size);
+    renderRecordPage();
+}
+
+function bindRecordPager() {
+    var prev = document.getElementById('recordPrev');
+    var next = document.getElementById('recordNext');
+    var wrap = document.getElementById('recordPageSize');
+    var btn = document.getElementById('recordPageSizeBtn');
+    var pop = document.getElementById('recordPageSizePop');
+    if (prev) {
+        prev.onclick = function () { goRecordPage(-1); };
+    }
+    if (next) {
+        next.onclick = function () { goRecordPage(1); };
+    }
+    if (wrap && btn && pop) {
+        var saved = parseInt(localStorage.getItem('recordPageSize'), 10);
+        if (!isNaN(saved) && (saved === 0 || (saved >= 20 && saved <= 500))) {
+            recordPage.size = saved;  // 仅在合法范围内恢复,避免脏值。
+        }
+        applyPageSizeLabel(recordPage.size);  // 仅同步显示,不触发渲染。
+        btn.onclick = function (event) {
+            event.stopPropagation();
+            pop.hidden = !pop.hidden;
+            wrap.classList.toggle('open', !pop.hidden);
+        };
+        var opts = pop.querySelectorAll('.pager-select-opt');
+        for (var i = 0; i < opts.length; i++) {
+            opts[i].onclick = function (event) {
+                event.stopPropagation();
+                setRecordPageSize(parseInt(this.getAttribute('data-size'), 10));
+                pop.hidden = true;
+                wrap.classList.remove('open');
+            };
+        }
+        document.addEventListener('click', function (event) {
+            if (wrap.contains(event.target)) {
+                return;
+            }
+            pop.hidden = true;
+            wrap.classList.remove('open');
+        });
+    }
 }
 
 /* 整行悬停:记录行没有行容器,按所在网格行号给同一行的单元格加高亮。 */
@@ -2721,6 +2916,7 @@ bindSections();
 bindListenTabs();
 bindRecordTabs();
 bindRecordHover();
+bindRecordPager();
 bindListenRemove();
 bindConfirm();
 bindLogin();

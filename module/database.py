@@ -87,18 +87,17 @@ class RecordDatabase(ABC):
     @abstractmethod
     async def get_records(
             self,
-            record_type: Union[str, None] = None,
-            limit: int = 0
+            record_type: Union[str, None] = None
     ) -> List[WebRecord]:
         """读取记录,并按需先做一次文件存在性校验。
 
         校验由实现内部完成:只stat各父目录,mtime没变的目录不再逐个stat其中的文件,
         阻塞的stat全部放到线程池执行,事件循环不卡;目录极度分散时按内部闸门限流。
         因此读取成本不随记录数线性增长,磁盘IO被压到最低。
+        返回全部仍存在的记录;按频道分组的分页由前端完成,故此处不做条数截断。
 
         Args:
             record_type: 记录类型,为空时返回全部记录。
-            limit: 单次返回的最大条数,不大于0时不限制。
 
         Returns:
             List[WebRecord]: 文件仍存在的记录,按写入时间从新到旧排列。
@@ -266,10 +265,12 @@ class SqliteRecordDatabase(RecordDatabase):
 
     async def get_records(
             self,
-            record_type: Union[str, None] = None,
-            limit: int = 0
+            record_type: Union[str, None] = None
     ) -> List[WebRecord]:
-        """读取记录,先按需做一次存在性校验,保证返回的是校验后的结果。"""
+        """读取记录,先按需做一次存在性校验,保证返回的是校验后的结果。
+
+        返回全部仍存在的记录;分页与按频道分组由前端完成,故此处不截断。
+        """
         await self.__sweep_missing()
         try:
             query: str = f'SELECT {", ".join(self.COLUMNS)} FROM {self.TABLE_NAME}'
@@ -278,9 +279,6 @@ class SqliteRecordDatabase(RecordDatabase):
                 query += ' WHERE record_type = ?'
                 params = (record_type,)
             query += ' ORDER BY record_id DESC'
-            if limit and limit > 0:
-                query += ' LIMIT ?'
-                params += (limit,)
             rows: list = self.conn.execute(query, params).fetchall()
         except Exception as e:
             log.warning(f'读取网页记录失败,{_t(KeyWord.REASON)}:"{e}"')

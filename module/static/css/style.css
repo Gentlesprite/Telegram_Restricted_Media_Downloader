@@ -930,6 +930,135 @@ h2 {
     color: var(--accent);
 }
 
+/* 记录页分页条:每页条数选择、翻页按钮与页码信息。 */
+.record-pager {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.record-pager .pager-size {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 每页条数:自定义下拉,玻璃卡片与菜单提示同一套语言(.menu-dropdown/.logo-tip)。 */
+.record-pager .pager-select {
+    position: relative;
+}
+
+.record-pager .pager-select-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.record-pager .pager-select-btn:hover,
+.record-pager .pager-select.open .pager-select-btn {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.record-pager .pager-select-caret {
+    width: 8px;
+    height: 5px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%238a93a6' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
+}
+
+.record-pager .pager-select.open .pager-select-caret {
+    transform: rotate(180deg);
+}
+
+/* 下拉弹层:与 .menu-dropdown 一致的玻璃卡片。 */
+.record-pager .pager-select-pop {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 40;
+    min-width: 84px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
+}
+
+.record-pager .pager-select-opt {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 7px 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.record-pager .pager-select-opt:hover {
+    background: rgba(56, 249, 215, .12);
+    color: var(--accent);
+}
+
+.record-pager .pager-select-opt.active {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.record-pager .pager-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel2);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.record-pager .pager-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.record-pager .pager-btn:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+.record-pager .pager-ind {
+    white-space: nowrap;
+}
+
+.record-pager .pager-ind b {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.record-pager .pager-meta {
+    white-space: nowrap;
+    margin-left: 2px;
+}
+
 /* 列表 */
 .list {
     --cols: minmax(0, 1fr) 210px 148px 92px 84px 64px;  /* 下载、上传表的列宽来源,首列为弹性列,其余列为可拖拽的固定列。 */
@@ -1055,8 +1184,7 @@ body.resizing {
 
 /* 记录表:频道、文件、链接、大小、消息ID、类型、状态、时间。
    第1列的频道单元格纵向跨行合并(同频道只显示一次),第2列为弹性列。
-   记录表未挂data-table,不参与列宽拖拽:统一机制总把弹性列放在首位,
-   而本表第1列是固定宽的频道列,故列宽由此处直接声明。 */
+   记录表已挂data-table,列宽机制按"弹性列在第2位"生成拖拽条,默认列宽由此处声明。 */
 .list-record {
     --cols: 150px minmax(200px, 1fr) 200px 100px 80px 90px 90px 150px;
 }
