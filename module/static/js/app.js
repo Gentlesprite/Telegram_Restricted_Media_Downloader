@@ -711,7 +711,7 @@ function renderListeners(listeners) {
 var STORAGE_TABS = ['download', 'upload'];  // 记录页的选项卡:下载、上传。
 var STORAGE_KEY = 'trmd_storage';  // 记录页选项卡的本地存储键。
 var STORAGE_POLL_INTERVAL_MS = 3000;  // 记录页的轮询间隔,比进度页稀疏,避免频繁查询数据库。
-var STORAGE_UPLOAD_LINK = '本地上传';  // 上传储存没有下载链接,链接列统一显示该文案。
+
 var STORAGE_EMPTY_TEXT = {
     download: '暂无下载储存。',
     upload: '暂无上传储存。'
@@ -731,6 +731,36 @@ var STORAGE_ICON = {
     download: '📥',
     upload: '📤'
 };
+var STORAGE_UPLOAD_LINK = '本地上传';  // 上传储存没有下载链接,链接列统一显示该文案。
+var STORAGE_HEADERS = {
+    download: ['频道 / 消息', '文件', '链接', '大小', '消息ID', '类型', '状态', '时间'],
+    upload:   ['频道', '文件', '大小', '类型', '状态', '时间']
+};
+var STORAGE_COLS = {
+    download: '150px minmax(200px, 1fr) 200px 100px 80px 90px 90px 150px',
+    upload:   '150px minmax(200px, 1fr) 100px 90px 90px 150px'
+};
+
+/* 按当前储存选项卡(下载/上传)重建表头、列宽与拖拽把手。
+   下载保持原始 8 列(含链接、消息ID,按消息分组);上传为 6 列(无链接/消息ID,按频道分组)。 */
+function applyStorageLayout() {
+    var list = document.querySelector('.list-storage');
+    if (!list) {
+        return;
+    }
+    var head = list.querySelector('.list-head');
+    if (!head) {
+        return;
+    }
+    var headers = STORAGE_HEADERS[currentStorage] || STORAGE_HEADERS.download;
+    var html = '';
+    for (var i = 0; i < headers.length; i++) {
+        html += '<span><span class="htext">' + esc(headers[i]) + '</span></span>';
+    }
+    head.innerHTML = html;
+    list.style.setProperty('--cols', STORAGE_COLS[currentStorage] || STORAGE_COLS.download);
+    initCols();  // 按新列数与列宽重建拖拽把手;旧把手随 head.innerHTML 一并销毁,不会重复。
+}
 
 function applyStorageTab() {
     var tabs = document.querySelectorAll('#storageTabs .tab');
@@ -738,6 +768,7 @@ function applyStorageTab() {
         var active = tabs[i].getAttribute('data-storage') === currentStorage;
         tabs[i].className = active ? 'tab active' : 'tab';
     }
+    applyStorageLayout();  // 同步表头、列宽与拖拽把手到当前选项卡布局。
 }
 
 function switchStorage(name) {
@@ -773,17 +804,22 @@ function sortStorage(storages) {
         if (chatA !== chatB) {
             return chatA < chatB ? -1 : 1;
         }
-        var linkA = a.link || STORAGE_UPLOAD_LINK;
-        var linkB = b.link || STORAGE_UPLOAD_LINK;
-        if (linkA !== linkB) {
-            return linkA < linkB ? -1 : 1;
+        if (currentStorage !== 'upload') {
+            var linkA = a.link || STORAGE_UPLOAD_LINK;
+            var linkB = b.link || STORAGE_UPLOAD_LINK;
+            if (linkA !== linkB) {
+                return linkA < linkB ? -1 : 1;
+            }
+            return 0;  // 同频道同消息保持原顺序,与上次提交一致。
         }
-        return 0;
+        var idA = Number(a.storage_id) || 0;
+        var idB = Number(b.storage_id) || 0;
+        return idB - idA;  // 上传:同频道内按记录ID降序,最新在前。
     });
 }
 
-/* 记录表是单层网格:第1列为纵向合并的频道单元格,第2~8列为每条储存的单元格。
-   频道相同只显示一次并跨其所有行(Excel合并单元格的效果),链接不同则各自成行。 */
+/* 记录表是单层网格:第1列为纵向合并的频道单元格,第2~6列为每条储存的单元格。
+   同一频道的所有记录归并为一个分组,频道名只显示一次并跨其所有行(Excel合并单元格的效果)。 */
 function storageCell(column, row, cls, inner, title) {
     return '<div class="storage-cell' + cls + '" data-row="' + row + '"' +
         (title ? ' title="' + escAttr(title) + '"' : '') +
@@ -793,11 +829,15 @@ function storageCell(column, row, cls, inner, title) {
 function storageGroupCell(group, startRow, len) {
     var first = group[0];
     var chat = first.chat || UNGROUPED_NAME;
-    var link = first.link || STORAGE_UPLOAD_LINK;  // 上传储存无链接,显示"本地上传"。
     var badge = len > 1 ? '<span class="storage-msg-count">' + len + ' 个文件</span>' : '';
+    var linkHtml = '';
+    if (currentStorage !== 'upload') {
+        var link = first.link || STORAGE_UPLOAD_LINK;  // 下载才有真实消息链接;上传无链接,显示"本地上传"。
+        linkHtml = '<span class="storage-msg" title="' + escAttr(link) + '">' + esc(link) + '</span>';
+    }
     return '<div class="storage-cell storage-channel-cell" style="grid-column:1;grid-row:' + startRow + ' / span ' + len + '">' +
         '<span class="fname" title="' + escAttr(chat) + '">' + esc(chat) + '</span>' +
-        '<span class="storage-msg" title="' + escAttr(link) + '">' + esc(link) + '</span>' +
+        linkHtml +
         badge +
         '</div>';
 }
@@ -826,20 +866,26 @@ function storageRowCells(item, row, position, groupStart) {
     var text = STORAGE_TEXT[state] || item.status || '—';
     var cls = STORAGE_CLASS[state] || 'status-done';
     var extra = (groupStart ? ' group-start' : '') + (position % 2 ? ' alt' : '');
-    var mlink = memberLink(item);
     var cells = '';
     cells += storageCell(2, row, extra + ' cell-name',
         '<span class="ficon">' + (STORAGE_ICON[item.storage_type] || '📄') + '</span>' +
         '<span class="fname" title="' + escAttr(item.path || item.file) + '">' + esc(item.file) + '</span>',
         item.path || item.file);
-    cells += storageCell(3, row, extra + ' cell-name',
-        '<span class="fname">' + esc(mlink) + '</span>',
-        mlink);
-    cells += storageCell(4, row, extra + ' cell-size', dash(item.size));
-    cells += storageCell(5, row, extra + ' cell-speed', item.message_id ? esc(item.message_id) : '—');
-    cells += storageCell(6, row, extra + ' cell-remain', dash(item.type));
-    cells += storageCell(7, row, extra + ' cell-status ' + cls, esc(text), item.error);
-    cells += storageCell(8, row, extra + ' cell-remain', dash(item.time));
+    if (currentStorage !== 'upload') {
+        cells += storageCell(3, row, extra + ' cell-name',
+            '<span class="fname">' + esc(memberLink(item)) + '</span>',
+            memberLink(item));
+        cells += storageCell(4, row, extra + ' cell-size', dash(item.size));
+        cells += storageCell(5, row, extra + ' cell-speed', item.message_id ? esc(item.message_id) : '—');
+        cells += storageCell(6, row, extra + ' cell-remain', dash(item.type));
+        cells += storageCell(7, row, extra + ' cell-status ' + cls, esc(text), item.error);
+        cells += storageCell(8, row, extra + ' cell-remain', dash(item.time));
+    } else {
+        cells += storageCell(3, row, extra + ' cell-size', dash(item.size));
+        cells += storageCell(4, row, extra + ' cell-remain', dash(item.type));
+        cells += storageCell(5, row, extra + ' cell-status ' + cls, esc(text), item.error);
+        cells += storageCell(6, row, extra + ' cell-remain', dash(item.time));
+    }
     return cells;
 }
 
@@ -856,7 +902,7 @@ function storageStructKey(storages) {
 var lastStorageKey = null;  // 上次渲染的记录指纹,内容不变则跳过重建。(初始为 null 而非 '',否则无记录时指纹也是空串,会被误判为"未变化"导致空态永远不渲染)
 
 function buildStorageRows(storages) {
-    var groups = groupStorage(storages);  // 已按消息分组并排序。
+    var groups = groupStorage(storages);  // 已按频道分组并排序。
     var html = '';
     var row = 1;  // 网格行号从1开始。
     var position = 0;  // 记录在整表中的序号,用于斑马纹。
@@ -878,13 +924,15 @@ function buildStorageRows(storages) {
 var storageAll = [];  // 当前类型的全量记录(已按服务器返回排序)。
 var storagePage = {size: 100, index: 0};  // 分页状态:每页条数(0=不限)、当前页。
 
-/* 记录分组键:同一 Telegram 消息(媒体组)共享 link,多条储存聚为一组;
-   无 link 的上传储存各成一组(以 path 区分)。 */
+/* 记录分组键:按频道归类,同一频道的多条储存聚为一组(频道名跨行合并显示)。 */
 function storageGroupKey(rec) {
-    if (rec.link) {
-        return 'L:' + rec.link;
+    if (currentStorage !== 'upload') {
+        if (rec.link) {
+            return 'L:' + rec.link;
+        }
+        return 'U:' + (rec.path || ('id' + rec.storage_id));
     }
-    return 'U:' + (rec.path || ('id' + rec.storage_id));
+    return 'C:' + (rec.chat || UNGROUPED_NAME);
 }
 
 /* 组内最大 storage_id,用于组间排序(最新消息在前)。 */
@@ -899,10 +947,10 @@ function maxStorageId(arr) {
     return m;
 }
 
-/* 把记录按消息分组,组间按组内最大 storage_id 降序(最新消息在前)。
-   与 buildStorageRows 的分组口径一致(以 link 为准)。 */
+/* 把记录按频道分组,组间按组内最大 storage_id 降序(同频道内最新在前)。
+   与 buildStorageRows 的分组口径一致(以频道为准)。 */
 function groupStorage(storages) {
-    var sorted = sortStorage(storages);  // 先按 chat 再按 link 排,保证同消息相邻。
+    var sorted = sortStorage(storages);  // 先按频道再按记录ID排,保证同频道相邻且最新在前。
     var groups = [];
     var index = {};
     for (var i = 0; i < sorted.length; i++) {
