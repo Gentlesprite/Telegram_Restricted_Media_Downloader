@@ -87,11 +87,11 @@ from module.bot import (
     CallbackContext,
     dispatch_callback_data
 )
-from module.database import (
-    build_record_database,
-    RecordDatabase,
-    RecordType,
-    WebRecord
+from module.storage import (
+    build_storage_database,
+    StorageDatabase,
+    StorageType,
+    WebStorage
 )
 from module.enums import (
     DownloadStatus,
@@ -159,8 +159,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             app=self.app,
             downloader=self
         )  # 网页面板默认启用,端口由--port参数指定。
-        self.record_database: Union[RecordDatabase, None] = None  # 网页记录数据库,保存下载与上传记录。
-        self.pending_record_tasks: Set[asyncio.Task] = set()  # 待落库的记录任务,退出前统一等待,避免丢失最后的记录。
+        self.storage_database: Union[StorageDatabase, None] = None  # 网页储存数据库,保存下载与上传储存。
+        self.pending_storage_tasks: Set[asyncio.Task] = set()  # 待落库的储存任务,退出前统一等待,避免丢失最后的储存。
 
     def env_save_directory(
             self,
@@ -197,22 +197,22 @@ class TelegramRestrictedMediaDownloader(Bot):
                         )
         return save_directory
 
-    def add_web_record(self, record: WebRecord) -> None:
-        """登记网页下载/上传记录。
+    def add_web_storage(self, storage: WebStorage) -> None:
+        """登记网页下载/上传储存。
 
-        记录属于辅助操作:投递落库任务时出错只记日志,绝不影响下载与上传主流程。
+        储存属于辅助操作:投递落库任务时出错只记日志,绝不影响下载与上传主流程。
         """
 
-        if self.record_database is None:
+        if self.storage_database is None:
             return
         try:
-            task = asyncio.create_task(self.record_database.add_record(record))
-            self.pending_record_tasks.add(task)
-            task.add_done_callback(self.pending_record_tasks.discard)
+            task = asyncio.create_task(self.storage_database.add_storage(storage))
+            self.pending_storage_tasks.add(task)
+            task.add_done_callback(self.pending_storage_tasks.discard)
         except Exception as e:
-            log.warning(f'登记网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
+            log.warning(f'登记网页储存失败,{_t(KeyWord.REASON)}:"{e}"')
 
-    def record_download(
+    def storage_download(
             self,
             message: pyrogram.types.Message,
             link: str,
@@ -223,12 +223,12 @@ class TelegramRestrictedMediaDownloader(Bot):
     ) -> None:
         """登记下载记录,文件路径取下载完成后的最终保存路径。"""
 
-        if self.record_database is None:
+        if self.storage_database is None:
             return
         chat_id = getattr(getattr(message, 'chat', None), 'id', None)
-        self.add_web_record(
-            WebRecord(
-                record_type=RecordType.DOWNLOAD,
+        self.add_web_storage(
+            WebStorage(
+                storage_type=StorageType.DOWNLOAD,
                 chat_id=chat_id,
                 chat_name=ChatInfo.get(chat_id),
                 message_id=getattr(message, 'id', None),
@@ -547,7 +547,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             origin_chat_id: Union[str, int],
             target_chat_id: Union[str, int],
             target_link: str,
-            record_id: list,
+            storage_id: list,
             owner: Union[int, None] = None
     ):
         """结算媒体组,组内混合了被过滤的类型时退化为逐条转发,避免整体转发绕过过滤设置。"""
@@ -566,7 +566,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     done_notice=False,
                     owner=owner
                 )
-                record_id.append(m.id)
+                storage_id.append(m.id)
             return None
         await self.forward(
             client=client,
@@ -579,7 +579,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             done_notice=False,
             owner=owner
         )
-        record_id.extend(group_ids)
+        storage_id.extend(group_ids)
 
     async def get_forward_link_from_bot(
             self, client: pyrogram.Client,
@@ -635,7 +635,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     reply_parameters=ReplyParameters(message_id=message.id),
                 )
                 return None
-            record_id: list = []
+            storage_id: list = []
             last_message = await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
@@ -672,7 +672,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 origin_chat_id=origin_chat_id,
                                 target_chat_id=target_chat_id,
                                 target_link=target_link,
-                                record_id=record_id,
+                                storage_id=storage_id,
                                 owner=owner
                             )
                         continue
@@ -687,7 +687,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             origin_chat_id=origin_chat_id,
                             target_chat_id=target_chat_id,
                             target_link=target_link,
-                            record_id=record_id,
+                            storage_id=storage_id,
                             owner=owner
                         )
                     await self.forward(
@@ -700,7 +700,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         done_notice=False,
                         owner=owner
                     )
-                    record_id.append(message_id)
+                    storage_id.append(message_id)
                 except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
                     # TODO 存在内容保护限制时，文本类型的消息无需下载，而是直接send_message。
                     # TODO 存在内容保护限制时，下载后上传的消息转发时无法过滤类型。
@@ -773,7 +773,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             origin_chat_id=origin_chat_id,
                             target_chat_id=target_chat_id,
                             target_link=target_link,
-                            record_id=record_id,
+                            storage_id=storage_id,
                             owner=owner
                         )
                     except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
@@ -813,7 +813,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             }
                         )
                         return None
-                if not record_id:
+                if not storage_id:
                     last_message = await self.safe_edit_message(
                         client=client,
                         message=message,
@@ -823,7 +823,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     return None
                 invalid_id: list = []
                 for i in range(start_id, end_id + 1):
-                    if i not in record_id:
+                    if i not in storage_id:
                         invalid_id.append(i)
                 if invalid_id:
                     last_message = await self.safe_edit_message(
@@ -1692,7 +1692,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         size_byte=sever_file_size,
                         date=str(getattr(message, 'date', '') or '')[:10]
                     )
-                self.record_download(
+                self.storage_download(
                     message=message,
                     link=link,
                     file_name=file_name,
@@ -1742,7 +1742,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             size_byte=sever_file_size,
                             date=str(getattr(message, 'date', '') or '')[:10]
                         )
-                    self.record_download(
+                    self.storage_download(
                         message=message,
                         link=link,
                         file_name=file_name,
@@ -1805,7 +1805,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         size=format_file_size,
                         size_byte=sever_file_size
                     )
-                    self.record_download(
+                    self.storage_download(
                         message=message,
                         link=link,
                         file_name=file_name,
@@ -2456,9 +2456,9 @@ class TelegramRestrictedMediaDownloader(Bot):
     async def __download_media_from_links(self) -> None:
         await self.app.client.start(use_qr=False)
         # 打开网页记录数据库,保存目录使用telegram的会话目录;打开失败时放弃记录功能,不影响下载与上传。
-        self.record_database = build_record_database(work_directory=self.app.work_directory)
-        if not await self.record_database.open():
-            self.record_database = None
+        self.storage_database = build_storage_database(work_directory=self.app.work_directory)
+        if not await self.storage_database.open():
+            self.storage_database = None
         remote_config: dict = await rc.read()
         self.my_id = await get_my_id(self.app.client)
         await js_referral(
@@ -2534,7 +2534,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         await self.app.client.stop() if self.app.client.is_connected else None
 
     def run(self) -> None:
-        record_error: bool = False
+        run_error: bool = False
         try:
             check_environment()
             MetaData.print_helper()
@@ -2543,14 +2543,14 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.app.print_config_table(self.app)
             self.loop.run_until_complete(self.__download_media_from_links())
         except KeyError as e:
-            record_error: bool = True
+            run_error: bool = True
             if str(e) == '0':
                 log.error('「网络」或「代理问题」,在确保当前网络连接正常情况下检查:\n「VPN」是否可用,「软件代理」是否配置正确。')
                 console.print(Issues.PROXY_NOT_CONFIGURED)
                 raise SystemExit(1)
             log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
         except BadMsgNotification as e:
-            record_error: bool = True
+            run_error: bool = True
             if str(e) in (str(BadMsgNotification(16)), str(BadMsgNotification(17))):
                 console.print(Issues.SYSTEM_TIME_NOT_SYNCHRONIZED)
                 raise SystemExit(1)
@@ -2558,44 +2558,44 @@ class TelegramRestrictedMediaDownloader(Bot):
         except (SessionRevoked, AuthKeyUnregistered, SessionExpired, Unauthorized) as e:
             log.error(f'登录时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
-            record_error: bool = True
+            run_error: bool = True
             if res:
                 log.warning('账号已失效,已删除旧会话文件,请重启软件。')
             else:
                 log.error('账号已失效,请手动删除软件目录下的sessions文件夹后重启软件。')
         except (ConnectionError, TimeoutError) as e:
-            record_error: bool = True
+            run_error: bool = True
             if not self.app.enable_proxy:
                 log.error(f'网络连接失败,请尝试配置代理,{_t(KeyWord.REASON)}:"{e}"')
                 console.print(Issues.PROXY_NOT_CONFIGURED)
             else:
                 log.error(f'网络连接失败,请检查VPN是否可用,{_t(KeyWord.REASON)}:"{e}"')
         except AttributeError as e:
-            record_error: bool = True
+            run_error: bool = True
             log.error(f'登录超时,请重新打开软件尝试登录,{_t(KeyWord.REASON)}:"{e}"')
         except KeyboardInterrupt:
             console.log('⌨️ 用户键盘中断。')
         except OperationalError as e:
-            record_error: bool = True
+            run_error: bool = True
             log.error(
                 f'检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,{_t(KeyWord.REASON)}:"{e}"')
         except Exception as e:
-            record_error: bool = True
+            run_error: bool = True
             log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
         finally:
             self.is_running = False
             self.pb.progress.stop()
             self.web.stop()
-            if self.record_database is not None:
+            if self.storage_database is not None:
                 try:
                     # 先等待登记任务落库再关闭数据库,避免退出时丢失最后的记录。
                     self.loop.run_until_complete(
-                        asyncio.wait(self.pending_record_tasks, timeout=5)
-                    ) if self.pending_record_tasks else None
-                    self.loop.run_until_complete(self.record_database.close())
+                        asyncio.wait(self.pending_storage_tasks, timeout=5)
+                    ) if self.pending_storage_tasks else None
+                    self.loop.run_until_complete(self.storage_database.close())
                 except Exception as e:
-                    log.warning(f'关闭网页记录数据库失败,{_t(KeyWord.REASON)}:"{e}"')
-            if not record_error:
+                    log.warning(f'关闭网页储存数据库失败,{_t(KeyWord.REASON)}:"{e}"')
+            if not run_error:
                 self.app.print_link_table(
                     link_tasks=DownloadTask.TASKS,
                     export=self.gc.get_config('export_table').get('link')

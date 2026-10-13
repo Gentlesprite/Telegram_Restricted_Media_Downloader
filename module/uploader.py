@@ -39,9 +39,9 @@ from module.task import (
     ChatInfo,
     UploadTask
 )
-from module.database import (
-    RecordType,
-    WebRecord
+from module.storage import (
+    StorageType,
+    WebStorage
 )
 from module.path_tool import get_mime_from_extension
 from module.stdio import (
@@ -681,7 +681,7 @@ class TelegramUploader:
         # 不做 UploadTask.TASKS.discard:与正常上传一致地保留在任务集中,供网页面板与统计表展示。
         return None
 
-    def __record_upload(
+    def __storage_upload(
             self,
             upload_task: UploadTask,
             status: str,
@@ -690,9 +690,9 @@ class TelegramUploader:
         """登记上传记录,经下载器统一落库,失败只记日志不影响主流程。"""
 
         file_name: str = upload_task.file_name or split_path(upload_task.file_path).get('file_name') or ''
-        self.downloader.add_web_record(
-            WebRecord(
-                record_type=RecordType.UPLOAD,
+        self.downloader.add_web_storage(
+            WebStorage(
+                storage_type=StorageType.UPLOAD,
                 chat_id=upload_task.chat_id,
                 chat_name=ChatInfo.get(upload_task.chat_id),
                 message_id=upload_task.message_id,
@@ -726,7 +726,7 @@ class TelegramUploader:
             UploadTask.UPLOADING_KEYS.pop(upload_task.file_path, None)
             if not isinstance(e, asyncio.CancelledError):
                 # 被取消的任务(如退出软件)不是终态,不登记记录。
-                self.__record_upload(
+                self.__storage_upload(
                     upload_task=upload_task,
                     status=UploadStatus.FAILURE,
                     error_msg=upload_task.error_msg or str(e) or '上传失败。'
@@ -746,7 +746,7 @@ class TelegramUploader:
         self.event.set()
         safe_delete(file_path) if upload_task.with_delete else None
         upload_task.status = UploadStatus.SUCCESS
-        self.__record_upload(upload_task=upload_task, status=UploadStatus.SUCCESS)
+        self.__storage_upload(upload_task=upload_task, status=UploadStatus.SUCCESS)
         MetaData.print_current_task_num(
             prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
             num=self.current_task_num

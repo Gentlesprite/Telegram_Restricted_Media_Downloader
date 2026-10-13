@@ -2,7 +2,7 @@
 # Author:Gentlesprite
 # Software:PyCharm
 # Time:2026/10/13 12:05
-# File:database.py
+# File:storage.py
 import os
 import time
 import sqlite3
@@ -29,16 +29,16 @@ from module.enums import (
 )
 
 
-class RecordType:
+class StorageType:
     """网页记录的类型。"""
     DOWNLOAD: str = 'download'  # 下载记录。
     UPLOAD: str = 'upload'  # 上传记录。
 
 
 @dataclass
-class WebRecord:
+class WebStorage:
     """网页面板的下载/上传记录,字段与数据库列一一对应。"""
-    record_type: str = RecordType.DOWNLOAD  # 记录类型,download为下载记录,upload为上传记录。
+    storage_type: str = StorageType.DOWNLOAD  # 记录类型,download为下载记录,upload为上传记录。
     chat_id: Union[str, int, None] = None  # 频道ID,下载记录为来源频道,上传记录为目标频道。
     chat_name: str = ''  # 频道标题,为空时由展示方回退为频道ID。
     message_id: Union[int, None] = None  # 消息ID,上传记录可为空。
@@ -51,13 +51,13 @@ class WebRecord:
     link: str = ''  # 下载链接,上传记录可为空。
     create_time: int = 0  # 创建时间,unix时间戳,单位为秒。
     finish_time: int = 0  # 完成时间,unix时间戳,单位为秒。
-    record_id: Union[int, None] = None  # 数据库自增ID,写入成功后回填。
+    storage_id: Union[int, None] = None  # 数据库自增ID,写入成功后回填。
 
 
-class RecordDatabase(ABC):
+class StorageDatabase(ABC):
     """网页下载/上传记录数据库的抽象类。
 
-    后续更换数据库时新增一个实现类并调整build_record_database的返回值即可,
+    后续更换数据库时新增一个实现类并调整build_storage_database的返回值即可,
     下载器、上传器与网页面板无需任何改动。
     """
 
@@ -76,11 +76,11 @@ class RecordDatabase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def add_record(self, record: WebRecord) -> bool:
+    async def add_storage(self, storage: WebStorage) -> bool:
         """写入一条记录。
 
         Args:
-            record: 待写入的记录,写入成功后回填record_id。
+            storage: 待写入的记录,写入成功后回填storage_id。
 
         Returns:
             bool: 成功返回True;失败只记日志,不影响主流程。
@@ -88,10 +88,10 @@ class RecordDatabase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_records(
+    async def get_storages(
             self,
-            record_type: Union[str, None] = None
-    ) -> List[WebRecord]:
+            storage_type: Union[str, None] = None
+    ) -> List[WebStorage]:
         """读取记录,并按需先做一次文件存在性校验。
 
         校验由实现内部完成:只stat各父目录,mtime没变的目录不再逐个stat其中的文件,
@@ -100,23 +100,23 @@ class RecordDatabase(ABC):
         返回全部仍存在的记录;按频道分组的分页由前端完成,故此处不做条数截断。
 
         Args:
-            record_type: 记录类型,为空时返回全部记录。
+            storage_type: 记录类型,为空时返回全部记录。
 
         Returns:
-            List[WebRecord]: 文件仍存在的记录,按写入时间从新到旧排列。
+            List[WebStorage]: 文件仍存在的记录,按写入时间从新到旧排列。
         """
         raise NotImplementedError
 
 
-class SqliteRecordDatabase(RecordDatabase):
+class SqliteStorageDatabase(StorageDatabase):
     """基于sqlite3的网页记录数据库实现,仿照pyrogram的SQLiteStorage组织代码。"""
 
-    DATABASE_NAME: str = 'TRMDWebRecord'  # 记录库文件名(不含扩展名),保存在会话目录。
+    STORAGE_NAME: str = 'TRMDWebStorage'  # 储存库文件名(不含扩展名),保存在会话目录。
     FILE_EXTENSION: str = '.db'  # 记录库文件的扩展名,与telegram的.session会话文件区分。
-    TABLE_NAME: str = 'web_records'  # 记录表名。
+    TABLE_NAME: str = 'web_storages'  # 记录表名。
     COLUMNS: tuple = (
-        'record_id',
-        'record_type',
+        'storage_id',
+        'storage_type',
         'chat_id',
         'chat_name',
         'message_id',
@@ -131,11 +131,11 @@ class SqliteRecordDatabase(RecordDatabase):
         'finish_time'
     )  # 记录表的全部列,查询按此顺序取值,与建表语句保持一致。
     # language=SQLite
-    RECORD_SCHEMA: str = '''
-        CREATE TABLE IF NOT EXISTS web_records
+    STORAGE_SCHEMA: str = '''
+        CREATE TABLE IF NOT EXISTS web_storages
         (
-            record_id   INTEGER PRIMARY KEY AUTOINCREMENT,
-            record_type TEXT    NOT NULL,
+            storage_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+            storage_type TEXT    NOT NULL,
             chat_id     TEXT,
             chat_name   TEXT,
             message_id  INTEGER,
@@ -158,9 +158,9 @@ class SqliteRecordDatabase(RecordDatabase):
     DELETE_CHUNK_SIZE: int = 900  # 单条DELETE语句的记录ID个数,避开SQLite变量数上限。
 
     def __init__(self, work_directory: str):
-        self.name: str = SqliteRecordDatabase.DATABASE_NAME
+        self.name: str = SqliteStorageDatabase.STORAGE_NAME
         self.work_directory: str = work_directory
-        self.database: str = os.path.join(
+        self.storage_path: str = os.path.join(
             self.work_directory,
             self.name + self.FILE_EXTENSION
         )
@@ -174,7 +174,7 @@ class SqliteRecordDatabase(RecordDatabase):
     def conn(self) -> sqlite3.Connection:
         # 仿照pyrogram:open()之前访问连接直接报错,避免在每个方法里重复判空。
         if self._conn is None:
-            msg = '`SqliteRecordDatabase.conn` accessed before `open()`'
+            msg = '`SqliteStorageDatabase.conn` accessed before `open()`'
             raise RuntimeError(msg)
 
         return self._conn
@@ -193,24 +193,24 @@ class SqliteRecordDatabase(RecordDatabase):
         recreated: bool = False
         while True:
             try:
-                self.conn = sqlite3.connect(self.database, timeout=1, check_same_thread=False)
+                self.conn = sqlite3.connect(self.storage_path, timeout=1, check_same_thread=False)
                 self.conn.execute('PRAGMA journal_mode=DELETE')
                 await self.create()
                 break
             except sqlite3.DatabaseError as e:
                 await self.close()
                 if recreated:
-                    log.error(f'打开网页记录数据库"{self.database}"失败,{_t(KeyWord.REASON)}:"{e}"')
+                    log.error(f'打开网页记录数据库"{self.storage_path}"失败,{_t(KeyWord.REASON)}:"{e}"')
                     return False
                 # 记录库文件损坏(如被其它工具改动)时删除重建,重建后仍失败则放弃记录功能。
                 recreated = True
-                log.warning(f'网页记录数据库"{self.database}"损坏,即将删除重建,{_t(KeyWord.REASON)}:"{e}"')
-                safe_delete(self.database)
+                log.warning(f'网页记录数据库"{self.storage_path}"损坏,即将删除重建,{_t(KeyWord.REASON)}:"{e}"')
+                safe_delete(self.storage_path)
             except Exception as e:
                 log.error(f'打开网页记录数据库失败,{_t(KeyWord.REASON)}:"{e}"')
                 await self.close()
                 return False
-        log.info(f'网页记录数据库已打开:"{self.database}"。')
+        log.info(f'网页记录数据库已打开:"{self.storage_path}"。')
         return True
 
     async def close(self) -> None:
@@ -227,80 +227,80 @@ class SqliteRecordDatabase(RecordDatabase):
     async def create(self) -> None:
         """建表,表已存在时无副作用,重复打开安全。"""
         with self.conn:
-            self.conn.executescript(self.RECORD_SCHEMA)
+            self.conn.executescript(self.STORAGE_SCHEMA)
 
-    async def add_record(self, record: WebRecord) -> bool:
-        """写入一条记录,成功时回填record_id,未提供时间戳时按当前时间填充。
+    async def add_storage(self, storage: WebStorage) -> bool:
+        """写入一条记录,成功时回填storage_id,未提供时间戳时按当前时间填充。
 
         同一文件(记录类型+文件路径)只保留一条:重复下载、重试成功或重新扫描时
         更新原记录而不是再插一行,避免记录表出现同一文件多条重复条目。
         """
-        if not record.file_path:
-            log.warning(f'网页记录缺少文件路径,已拒绝写入:"{record.file_name}"。')
+        if not storage.file_path:
+            log.warning(f'网页记录缺少文件路径,已拒绝写入:"{storage.file_name}"。')
             return False
         now: int = int(time.time())
-        record.create_time = record.create_time or now
-        record.finish_time = record.finish_time or now
+        storage.create_time = storage.create_time or now
+        storage.finish_time = storage.finish_time or now
         try:
             with self.conn:
                 cursor = self.conn.execute(
-                    f'SELECT record_id, status FROM {self.TABLE_NAME} '
-                    'WHERE record_type = ? AND file_path = ? '
-                    'ORDER BY record_id DESC LIMIT 1',
+                    f'SELECT storage_id, status FROM {self.TABLE_NAME} '
+                    'WHERE storage_type = ? AND file_path = ? '
+                    'ORDER BY storage_id DESC LIMIT 1',
                     (
-                        record.record_type,
-                        record.file_path
+                        storage.storage_type,
+                        storage.file_path
                     )
                 )
                 row: Union[tuple, None] = cursor.fetchone()
                 if row is not None:
-                    record.record_id = row[0]
+                    storage.storage_id = row[0]
                     # 已有同文件记录时只做更新:状态实质变化(如失败后重试成功)才改写状态;
                     # 状态相同、或因文件已存在而跳过(skip)时不动原记录,
                     # 避免重新扫描把成功记录降级或改写历史时间。
-                    if record.status != DownloadStatus.SKIP and row[1] != record.status:
+                    if storage.status != DownloadStatus.SKIP and row[1] != storage.status:
                         self.conn.execute(
                             f'UPDATE {self.TABLE_NAME} '
-                            'SET status = ?, error_msg = ?, finish_time = ? WHERE record_id = ?',
+                            'SET status = ?, error_msg = ?, finish_time = ? WHERE storage_id = ?',
                             (
-                                record.status,
-                                record.error_msg,
-                                record.finish_time,
-                                record.record_id
+                                storage.status,
+                                storage.error_msg,
+                                storage.finish_time,
+                                storage.storage_id
                             )
                         )
                     return True
                 cursor = self.conn.execute(
                     f'INSERT INTO {self.TABLE_NAME} '
-                    '(record_type, chat_id, chat_name, message_id, file_name, file_path, '
+                    '(storage_type, chat_id, chat_name, message_id, file_name, file_path, '
                     'file_size, file_type, status, error_msg, link, create_time, finish_time) '
                     'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     (
-                        record.record_type,
-                        str(record.chat_id) if record.chat_id is not None else None,
-                        record.chat_name,
-                        record.message_id,
-                        record.file_name,
-                        record.file_path,
-                        record.file_size,
-                        record.file_type,
-                        record.status,
-                        record.error_msg,
-                        record.link,
-                        record.create_time,
-                        record.finish_time
+                        storage.storage_type,
+                        str(storage.chat_id) if storage.chat_id is not None else None,
+                        storage.chat_name,
+                        storage.message_id,
+                        storage.file_name,
+                        storage.file_path,
+                        storage.file_size,
+                        storage.file_type,
+                        storage.status,
+                        storage.error_msg,
+                        storage.link,
+                        storage.create_time,
+                        storage.finish_time
                     )
                 )
-                record.record_id = cursor.lastrowid
+                storage.storage_id = cursor.lastrowid
             return True
         except Exception as e:
             log.warning(f'写入网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
             return False
 
-    async def get_records(
+    async def get_storages(
             self,
-            record_type: Union[str, None] = None
-    ) -> List[WebRecord]:
+            storage_type: Union[str, None] = None
+    ) -> List[WebStorage]:
         """读取记录,先按需做一次存在性校验,保证返回的是校验后的结果。
 
         返回全部仍存在的记录;分页与按频道分组由前端完成,故此处不截断。
@@ -309,15 +309,15 @@ class SqliteRecordDatabase(RecordDatabase):
         try:
             query: str = f'SELECT {", ".join(self.COLUMNS)} FROM {self.TABLE_NAME}'
             params: tuple = ()
-            if record_type:
-                query += ' WHERE record_type = ?'
-                params = (record_type,)
-            query += ' ORDER BY record_id DESC'
+            if storage_type:
+                query += ' WHERE storage_type = ?'
+                params = (storage_type,)
+            query += ' ORDER BY storage_id DESC'
             rows: list = self.conn.execute(query, params).fetchall()
         except Exception as e:
             log.warning(f'读取网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
             return []
-        return [self.__build_record(row) for row in rows]
+        return [self.__build_storage(row) for row in rows]
 
     async def __sweep_missing(self) -> int:
         """校验记录对应的文件是否还存在,丢弃失效记录,返回丢弃条数。
@@ -330,18 +330,18 @@ class SqliteRecordDatabase(RecordDatabase):
             return 0
         try:
             rows: List[tuple] = self.conn.execute(
-                f'SELECT record_id, file_path FROM {self.TABLE_NAME}'
+                f'SELECT storage_id, file_path FROM {self.TABLE_NAME}'
             ).fetchall()
         except Exception as e:
             log.warning(f'读取网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
             return 0
-        dirs: Dict[str, List[tuple]] = {}  # 父目录 -> [(record_id, file_path), ...]
+        dirs: Dict[str, List[tuple]] = {}  # 父目录 -> [(storage_id, file_path), ...]
         missing_ids: List[int] = []  # 直接判定失效的记录ID(没有路径的记录本就不该存在)。
-        for record_id, file_path in rows:
+        for storage_id, file_path in rows:
             if not file_path:
-                missing_ids.append(record_id)
+                missing_ids.append(storage_id)
                 continue
-            dirs.setdefault(os.path.dirname(file_path), []).append((record_id, file_path))
+            dirs.setdefault(os.path.dirname(file_path), []).append((storage_id, file_path))
         # 自适应闸门:目录少时每次读取都校验(成本仅各目录一次stat);目录极度分散时限流。
         if len(dirs) > self.SWEEP_TTL_THRESHOLD:
             if time.monotonic() - self._last_sweep_at < self.SWEEP_TTL:
@@ -358,7 +358,7 @@ class SqliteRecordDatabase(RecordDatabase):
                     self._dir_missing.pop(parent, None)
                     self._dir_mtime.pop(parent, None)
                     self._dir_checked_at.pop(parent, None)
-                    missing_ids.extend(record_id for record_id, _ in items)
+                    missing_ids.extend(storage_id for storage_id, _ in items)
                 else:
                     self._dir_missing[parent] = confirmed
                 continue
@@ -375,7 +375,7 @@ class SqliteRecordDatabase(RecordDatabase):
                     await loop.run_in_executor(None, self.__stat_files, batch)
                 )
         if missing_ids:
-            self.__remove_records(record_ids=missing_ids)
+            self.__remove_storages(storage_ids=missing_ids)
             log.info(f'已丢弃{len(missing_ids)}条文件已不存在的网页记录。')
         return len(missing_ids)
 
@@ -392,17 +392,17 @@ class SqliteRecordDatabase(RecordDatabase):
     @staticmethod
     def __stat_files(batch: List[tuple]) -> List[int]:
         """批量校验文件是否存在,返回其中不存在的记录ID。"""
-        return [record_id for record_id, file_path in batch if not os.path.isfile(file_path)]
+        return [storage_id for storage_id, file_path in batch if not os.path.isfile(file_path)]
 
-    def __remove_records(self, record_ids: List[int]) -> bool:
+    def __remove_storages(self, storage_ids: List[int]) -> bool:
         """按记录ID批量删除记录,按块切分以避开SQLite的变量数上限。"""
         try:
-            for start in range(0, len(record_ids), self.DELETE_CHUNK_SIZE):
-                chunk: List[int] = record_ids[start:start + self.DELETE_CHUNK_SIZE]
+            for start in range(0, len(storage_ids), self.DELETE_CHUNK_SIZE):
+                chunk: List[int] = storage_ids[start:start + self.DELETE_CHUNK_SIZE]
                 placeholders: str = ', '.join('?' for _ in chunk)
                 with self.conn:
                     self.conn.execute(
-                        f'DELETE FROM {self.TABLE_NAME} WHERE record_id IN ({placeholders})',
+                        f'DELETE FROM {self.TABLE_NAME} WHERE storage_id IN ({placeholders})',
                         tuple(chunk)
                     )
             return True
@@ -411,11 +411,11 @@ class SqliteRecordDatabase(RecordDatabase):
             return False
 
     @staticmethod
-    def __build_record(row: tuple) -> WebRecord:
+    def __build_storage(row: tuple) -> WebStorage:
         """把数据库行转换为记录对象。"""
-        data: dict = dict(zip(SqliteRecordDatabase.COLUMNS, row))
-        return WebRecord(
-            record_type=data.get('record_type') or '',
+        data: dict = dict(zip(SqliteStorageDatabase.COLUMNS, row))
+        return WebStorage(
+            storage_type=data.get('storage_type') or '',
             chat_id=data.get('chat_id'),
             chat_name=data.get('chat_name') or '',
             message_id=data.get('message_id'),
@@ -428,17 +428,17 @@ class SqliteRecordDatabase(RecordDatabase):
             link=data.get('link') or '',
             create_time=int(data.get('create_time') or 0),
             finish_time=int(data.get('finish_time') or 0),
-            record_id=data.get('record_id')
+            storage_id=data.get('storage_id')
         )
 
 
-def build_record_database(work_directory: str) -> RecordDatabase:
+def build_storage_database(work_directory: str) -> StorageDatabase:
     """构造网页记录数据库。
 
     Args:
         work_directory: 记录库文件的保存目录,使用telegram的会话目录。
 
     Returns:
-        RecordDatabase: 默认返回基于sqlite3的实现,存储风格仿照pyrogram的SQLiteStorage。
+        StorageDatabase: 默认返回基于sqlite3的实现,存储风格仿照pyrogram的SQLiteStorage。
     """
-    return SqliteRecordDatabase(work_directory=work_directory)
+    return SqliteStorageDatabase(work_directory=work_directory)

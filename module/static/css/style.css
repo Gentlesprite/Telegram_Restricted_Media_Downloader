@@ -931,7 +931,7 @@ h2 {
 }
 
 /* 记录页分页条:每页条数选择、翻页按钮与页码信息。 */
-.database-pager {
+.storage-pager {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -939,18 +939,18 @@ h2 {
     color: var(--muted);
 }
 
-.database-pager .pager-size {
+.storage-pager .pager-size {
     display: inline-flex;
     align-items: center;
     gap: 4px;
 }
 
 /* 每页条数:自定义下拉,玻璃卡片与菜单提示同一套语言(.menu-dropdown/.logo-tip)。 */
-.database-pager .pager-select {
+.storage-pager .pager-select {
     position: relative;
 }
 
-.database-pager .pager-select-btn {
+.storage-pager .pager-select-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -966,24 +966,24 @@ h2 {
     cursor: pointer;
 }
 
-.database-pager .pager-select-btn:hover,
-.database-pager .pager-select.open .pager-select-btn {
+.storage-pager .pager-select-btn:hover,
+.storage-pager .pager-select.open .pager-select-btn {
     border-color: var(--accent);
     color: var(--accent);
 }
 
-.database-pager .pager-select-caret {
+.storage-pager .pager-select-caret {
     width: 8px;
     height: 5px;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%238a93a6' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
 }
 
-.database-pager .pager-select.open .pager-select-caret {
+.storage-pager .pager-select.open .pager-select-caret {
     transform: rotate(180deg);
 }
 
 /* 下拉弹层:与 .menu-dropdown 一致的玻璃卡片。 */
-.database-pager .pager-select-pop {
+.storage-pager .pager-select-pop {
     position: absolute;
     top: calc(100% + 6px);
     left: 0;
@@ -996,7 +996,7 @@ h2 {
     box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
 }
 
-.database-pager .pager-select-opt {
+.storage-pager .pager-select-opt {
     display: block;
     box-sizing: border-box;
     width: 100%;
@@ -1012,17 +1012,17 @@ h2 {
     cursor: pointer;
 }
 
-.database-pager .pager-select-opt:hover {
+.storage-pager .pager-select-opt:hover {
     background: rgba(56, 249, 215, .12);
     color: var(--accent);
 }
 
-.database-pager .pager-select-opt.active {
+.storage-pager .pager-select-opt.active {
     color: var(--accent);
     font-weight: 600;
 }
 
-.database-pager .pager-btn {
+.storage-pager .pager-btn {
     width: 28px;
     height: 28px;
     padding: 0;
@@ -1035,26 +1035,26 @@ h2 {
     cursor: pointer;
 }
 
-.database-pager .pager-btn:hover:not(:disabled) {
+.storage-pager .pager-btn:hover:not(:disabled) {
     border-color: var(--accent);
     color: var(--accent);
 }
 
-.database-pager .pager-btn:disabled {
+.storage-pager .pager-btn:disabled {
     opacity: .4;
     cursor: not-allowed;
 }
 
-.database-pager .pager-ind {
+.storage-pager .pager-ind {
     white-space: nowrap;
 }
 
-.database-pager .pager-ind b {
+.storage-pager .pager-ind b {
     color: var(--text);
     font-weight: 600;
 }
 
-.database-pager .pager-meta {
+.storage-pager .pager-meta {
     white-space: nowrap;
     margin-left: 2px;
 }
@@ -1185,31 +1185,31 @@ body.resizing {
 /* 记录表:来源(频道/消息)、文件、链接、大小、消息ID、类型、状态、时间。
    第1列的来源单元格纵向跨行合并(同消息只显示一次),第2列为弹性列。
    记录表已挂data-table,列宽机制按"弹性列在第2位"生成拖拽条,默认列宽由此处声明。 */
-.list-database {
+.list-storage {
     --cols: 150px minmax(200px, 1fr) 200px 100px 80px 90px 90px 150px;
 }
 
 /* 列间距改由单元格内边距承担:行分隔线要连续,不能留出gap断口。 */
-.list-database .list-head {
+.list-storage .list-head {
     gap: 0;
 }
 
-.list-database .list-head > span {
+.list-storage .list-head > span {
     padding: 3px 14px;
 }
 
-.list-database #database {
+.list-storage #storage {
     display: grid;
     grid-template-columns: var(--cols);
     min-width: min-content;
 }
 
 /* 空态文案横跨全部列,与监听板块一样占满整行,不因单列宽度而折行。 */
-.list-database .empty {
+.list-storage .empty {
     grid-column: 1 / -1;
 }
 
-.database-cell {
+.storage-cell {
     padding: 9px 14px;
     border-bottom: 1px solid rgba(36, 43, 57, .6);
     min-width: 0;
@@ -1217,23 +1217,23 @@ body.resizing {
 }
 
 /* 斑马纹:按记录在整表中的序号交替,相邻行底色分明。 */
-.database-cell.alt {
+.storage-cell.alt {
     background: rgba(255, 255, 255, .025);
 }
 
 /* 新频道的第一行顶部画分隔线,标示归类边界;内阴影避免与上一行下边框叠成双线。 */
-.database-cell.group-start {
+.storage-cell.group-start {
     box-shadow: inset 0 1px 0 var(--border);
 }
 
 /* 整行悬停:同一网格行的单元格一起高亮。 */
-.database-cell.hover {
+.storage-cell.hover {
     background: rgba(56, 249, 215, .06);
 }
 
 /* 来源单元格:纵向跨行合并(同消息只显示一次),堆叠频道名、消息链接与文件数;
    右侧分隔线区分数据列。 */
-.database-channel-cell {
+.storage-channel-cell {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -1244,12 +1244,12 @@ body.resizing {
     padding: 9px 14px;
 }
 
-.database-channel-cell .fname {
+.storage-channel-cell .fname {
     font-weight: 600;
     color: var(--text);
 }
 
-.database-channel-cell .database-msg {
+.storage-channel-cell .storage-msg {
     font-size: 11px;
     color: var(--muted);
     white-space: nowrap;
@@ -1258,7 +1258,7 @@ body.resizing {
     max-width: 100%;
 }
 
-.database-channel-cell .database-msg-count {
+.storage-channel-cell .storage-msg-count {
     align-self: flex-start;
     font-size: 10px;
     line-height: 1.4;
