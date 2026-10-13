@@ -652,7 +652,7 @@ class Web:
 
         读取动作需要投递到下载器的事件循环中执行(数据库连接由循环线程持有),
         与移除监听一致:通过run_coroutine_threadsafe投递并等待结果。
-        读取时会实时校验文件是否存在,不存在的条目直接丢弃。
+        数据库内部会先按目录mtime捷径做一次存在性校验,不存在的条目直接丢弃。
 
         Args:
             record_type: 记录类型,download为下载记录,upload为上传记录,为空时返回全部记录。
@@ -669,17 +669,17 @@ class Web:
         loop: Union[AbstractEventLoop, None] = getattr(self.downloader, 'loop', None)
         if loop is None or not loop.is_running():
             return []
+        max_count: int = limit if limit > 0 else Web.RECORD_LIMIT
         try:
             future = asyncio.run_coroutine_threadsafe(
-                database.get_records(record_type=record_type or None),
+                database.get_records(record_type=record_type or None, limit=max_count),
                 loop
             )
             records: list = future.result(timeout=Web.RECORD_TIMEOUT)
         except Exception as e:
             log.debug(f'获取网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
             return []
-        max_count: int = limit if limit > 0 else Web.RECORD_LIMIT
-        return [Web.format_record(record) for record in records[:max_count]]
+        return [Web.format_record(record) for record in records]
 
     @staticmethod
     def format_record(record: WebRecord) -> dict:

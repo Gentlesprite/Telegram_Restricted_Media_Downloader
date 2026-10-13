@@ -2027,6 +2027,24 @@ function readDefaultCols(list) {
     return widths.length ? widths : [COLS_MIN];
 }
 
+/* 弹性列在--cols中的位置:常规表在首位,记录表的频道列固定宽、弹性列在第2位。
+   轨道按minmax(...)整体切分,避免其内部空格被当成分隔符。 */
+function flexIndexOf(list) {
+    var text = window.getComputedStyle(list).getPropertyValue('--cols') || '';
+    var tracks = text.match(/minmax\([^)]*\)|\S+/g) || [];
+    for (var i = 0; i < tracks.length; i++) {
+        if (tracks[i].indexOf('minmax(') === 0) {
+            return i;
+        }
+    }
+    return 0;  // 未声明弹性列时按首位处理,与原有行为一致。
+}
+
+/* 固定列下标 -> 所在的网格列位置:弹性列之前原序,之后整体后移一位。 */
+function fixedGridPos(index, flexIndex) {
+    return index < flexIndex ? index : index + 1;
+}
+
 var measureEl = null;  // 复用同一个隐藏元素测量文字宽度,避免频繁创建节点。
 
 function measureTextWidth(text, cs) {
@@ -2045,7 +2063,7 @@ function measureTextWidth(text, cs) {
 }
 
 // 测量每列标题完整显示所需的宽度,作为该列不可被压缩的下限。
-// 返回数组与表头列格一一对应,首项为弹性列(频道/监听频道)的下限。
+// 返回数组与表头列格一一对应,取用时按弹性列所在位置(flexIndexOf)取弹性列的下限。
 function measureColMins(list) {
     var cells = list.querySelector('.list-head').children;
     var mins = [];
@@ -2077,32 +2095,56 @@ function flexColMin(measured) {
     return min;
 }
 
-function applyCols(list, widths, flexMin) {
-    var parts = ['minmax(' + (flexMin || COLS_MIN) + 'px, 1fr)'];  // 首列弹性列不低于标题宽度,避免被其它列挤到看不见。
+function applyCols(list, widths, flexMin, flexIndex) {
+    if (flexIndex === undefined) {
+        flexIndex = 0;  // 缺省按弹性列在首位,保持既有表格的行为。
+    }
+    var flex = 'minmax(' + (flexMin || COLS_MIN) + 'px, 1fr)';  // 弹性列不低于标题宽度,避免被其它列挤到看不见。
+    var parts = [];
     for (var i = 0; i < widths.length; i++) {
+        if (i === flexIndex) {
+            parts.push(flex);
+        }
         parts.push(widths[i] + 'px');
     }
+    if (flexIndex >= widths.length) {
+        parts.push(flex);  // 弹性列位于末列时补在末尾。
+    }
     list.style.setProperty('--cols', parts.join(' '));
+}
+
+/* 分隔条的调整目标:返回{col:固定列下标, sign:拖动方向}。
+   常规分隔条调整其右侧的固定列:向右拖动变窄,空间让给弹性列(sign=-1)。
+   右侧是弹性列时弹性列没有宽度可调,改为调整左侧的固定列:向右拖动加宽,弹性列吸收差值(sign=1)。 */
+function gripTarget(index, flexIndex) {
+    var right = index + 1;  // 分隔条右侧的网格列。
+    if (right === flexIndex) {
+        return {col: index < flexIndex ? index : index - 1, sign: 1};
+    }
+    return {col: right < flexIndex ? right : right - 1, sign: -1};
 }
 
 function buildGrips(list) {
     var head = list.querySelector('.list-head');
     var cells = head.children;
     var table = list.getAttribute('data-table');
+    var flexIndex = flexIndexOf(list);
     for (var i = 0; i < cells.length - 1; i++) {  // 末列格右侧为容器边界,不生成分隔条。
         if (cells[i].querySelector('.grip')) {
             continue;  // 已存在分隔条时不重复创建。
         }
+        var target = gripTarget(i, flexIndex);
         var grip = document.createElement('span');
         grip.className = 'grip';
         grip.setAttribute('data-table', table);
-        grip.setAttribute('data-index', i);
+        grip.setAttribute('data-index', target.col);
+        grip.setAttribute('data-sign', target.sign);
         grip.onpointerdown = resizeStart;
         cells[i].appendChild(grip);
     }
 }
 
-function clampColsWidth(widths, index, value, maxFixed, mins) {
+function clampColsWidth(widths, index, value, maxFixed, mins, flexIndex) {
     var others = 0;
     for (var i = 0; i < widths.length; i++) {
         if (i !== index) {
@@ -2110,9 +2152,9 @@ function clampColsWidth(widths, index, value, maxFixed, mins) {
         }
     }
     // 下限取标题完整显示所需宽度,保证表头标题永不被压缩。
-    var floor = Math.max(COLS_MIN, (mins && mins[index + 1]) || COLS_MIN);
-    // 预留首列弹性列的最小宽度,避免固定列被拉到超出可用空间后挤压首列文字。
-    var flexMin = flexColMin(mins && mins[0]);
+    var floor = Math.max(COLS_MIN, (mins && mins[fixedGridPos(index, flexIndex)]) || COLS_MIN);
+    // 预留弹性列的最小宽度,避免固定列被拉到超出可用空间后挤压弹性列文字。
+    var flexMin = flexColMin(mins && mins[flexIndex]);
     var max;
     if (window.innerWidth <= 760) {
         // 移动端允许横向滚动,不把列宽限制在视口内,用户可自由拖宽,超出部分滚动查看。
@@ -2139,7 +2181,8 @@ function resizeStart(event) {
         table: table,
         index: index,
         col: index,  // 每个分隔条都是其右侧固定列的左边界,统一调整该列,保证每列都有且仅有一个分隔条。
-        sign: -1,  // 向右拖动缩小该列(空间让给首列弹性列),向左拖动加宽;分隔条始终跟随光标。
+        sign: Number(grip.getAttribute('data-sign')) || -1,  // 向右拖动的方向,弹性列在右侧时由分隔条指定为反向。
+        flexIndex: flexIndexOf(list),  // 弹性列所在位置,决定列宽与列下限的映射。
         origin: widths.slice(),
         widths: widths.slice(),
         startX: event.clientX,
@@ -2159,8 +2202,8 @@ function resizeMove(event) {
     }
     var delta = event.clientX - dragState.startX;
     var value = dragState.origin[dragState.col] + delta * dragState.sign;
-    dragState.widths[dragState.col] = clampColsWidth(dragState.widths, dragState.col, value, dragState.maxFixed, dragState.mins);
-    applyCols(dragState.list, dragState.widths, flexColMin(dragState.mins[0]));
+    dragState.widths[dragState.col] = clampColsWidth(dragState.widths, dragState.col, value, dragState.maxFixed, dragState.mins, dragState.flexIndex);
+    applyCols(dragState.list, dragState.widths, flexColMin(dragState.mins[dragState.flexIndex]), dragState.flexIndex);
     event.preventDefault();
 }
 
@@ -2191,6 +2234,7 @@ function initCols() {
         var list = lists[i];
         var table = list.getAttribute('data-table');
         var head = list.querySelector('.list-head');
+        var flexIndex = flexIndexOf(list);  // 弹性列位置:常规表在首列,记录表在第2列。
         var widths = colsCache[table];
         if (!widths || widths.length !== head.children.length - 1) {
             widths = readDefaultCols(list);  // 列数变化或首次加载时回退到默认列宽。
@@ -2198,10 +2242,10 @@ function initCols() {
         var mins = measureColMins(list);
         var j;
         for (j = 0; j < widths.length; j++) {
-            widths[j] = Math.max(widths[j], mins[j + 1]);  // 已保存的列宽也不得小于标题所需宽度。
+            widths[j] = Math.max(widths[j], mins[fixedGridPos(j, flexIndex)]);  // 已保存的列宽也不得小于标题所需宽度。
         }
         colsCache[table] = widths;
-        applyCols(list, widths, flexColMin(mins[0]));
+        applyCols(list, widths, flexColMin(mins[flexIndex]), flexIndex);
         buildGrips(list);
     }
 }

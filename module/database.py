@@ -6,6 +6,7 @@
 import os
 import time
 import sqlite3
+import asyncio
 
 from abc import (
     ABC,
@@ -14,7 +15,9 @@ from abc import (
 from dataclasses import dataclass
 from typing import (
     Union,
-    List
+    List,
+    Dict,
+    Tuple
 )
 
 from module import log
@@ -51,7 +54,6 @@ class WebRecord:
 class RecordDatabase(ABC):
     """网页下载/上传记录数据库的抽象类。
 
-    仿照pyrogram的Storage:只规范本项目实际用到的操作,不引入用不到的功能。
     后续更换数据库时新增一个实现类并调整build_record_database的返回值即可,
     下载器、上传器与网页面板无需任何改动。
     """
@@ -83,23 +85,20 @@ class RecordDatabase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def remove_record(self, record_id: int) -> bool:
-        """按记录ID删除一条记录。
+    async def get_records(
+            self,
+            record_type: Union[str, None] = None,
+            limit: int = 0
+    ) -> List[WebRecord]:
+        """读取记录,并按需先做一次文件存在性校验。
 
-        Args:
-            record_id: 记录ID。
-
-        Returns:
-            bool: 成功返回True。
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_records(self, record_type: Union[str, None] = None) -> List[WebRecord]:
-        """读取记录,实时校验文件是否还存在,不存在的条目直接丢弃。
+        校验由实现内部完成:只stat各父目录,mtime没变的目录不再逐个stat其中的文件,
+        阻塞的stat全部放到线程池执行,事件循环不卡;目录极度分散时按内部闸门限流。
+        因此读取成本不随记录数线性增长,磁盘IO被压到最低。
 
         Args:
             record_type: 记录类型,为空时返回全部记录。
+            limit: 单次返回的最大条数,不大于0时不限制。
 
         Returns:
             List[WebRecord]: 文件仍存在的记录,按写入时间从新到旧排列。
@@ -149,6 +148,12 @@ class SqliteRecordDatabase(RecordDatabase):
             finish_time INTEGER NOT NULL DEFAULT 0
         );
     '''
+    SWEEP_BATCH_SIZE: int = 500  # 存在性校验的单批文件数,批间通过await让出事件循环。
+    SWEEP_TTL: float = 15.0  # 目录极度分散时两次校验的最小间隔,单位为秒。
+    SWEEP_TTL_THRESHOLD: int = 200  # 父目录数超过该值时启用SWEEP_TTL限流。
+    DIR_CONFIRM_TIMES: int = 2  # 目录级缺失需连续确认几次才丢弃,防止网络盘瞬断误删。
+    FULL_CHECK_INTERVAL: float = 1800.0  # 目录mtime没变也至少隔这么久全量校验一次,兜底时间戳粒度问题。
+    DELETE_CHUNK_SIZE: int = 900  # 单条DELETE语句的记录ID个数,避开SQLite变量数上限。
 
     def __init__(self, work_directory: str):
         self.name: str = SqliteRecordDatabase.DATABASE_NAME
@@ -158,6 +163,10 @@ class SqliteRecordDatabase(RecordDatabase):
             self.name + self.FILE_EXTENSION
         )
         self._conn: Union[sqlite3.Connection, None] = None
+        self._dir_mtime: Dict[str, float] = {}  # 父目录 -> 上次校验到的mtime,没变则跳过其中的文件。
+        self._dir_checked_at: Dict[str, float] = {}  # 父目录 -> 上次全量校验文件的单调时间。
+        self._dir_missing: Dict[str, int] = {}  # 父目录 -> 连续确认缺失的次数。
+        self._last_sweep_at: float = 0.0  # 上次校验的单调时间,供自适应闸门限流。
 
     @property
     def conn(self) -> sqlite3.Connection:
@@ -255,12 +264,13 @@ class SqliteRecordDatabase(RecordDatabase):
             log.warning(f'写入网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
             return False
 
-    async def remove_record(self, record_id: int) -> bool:
-        """按记录ID删除一条记录。"""
-        return await self.__remove_records(record_ids=[record_id])
-
-    async def get_records(self, record_type: Union[str, None] = None) -> List[WebRecord]:
-        """读取记录,实时校验文件是否还存在,不存在的条目从数据库丢弃。"""
+    async def get_records(
+            self,
+            record_type: Union[str, None] = None,
+            limit: int = 0
+    ) -> List[WebRecord]:
+        """读取记录,先按需做一次存在性校验,保证返回的是校验后的结果。"""
+        await self.__sweep_missing()
         try:
             query: str = f'SELECT {", ".join(self.COLUMNS)} FROM {self.TABLE_NAME}'
             params: tuple = ()
@@ -268,22 +278,101 @@ class SqliteRecordDatabase(RecordDatabase):
                 query += ' WHERE record_type = ?'
                 params = (record_type,)
             query += ' ORDER BY record_id DESC'
+            if limit and limit > 0:
+                query += ' LIMIT ?'
+                params += (limit,)
             rows: list = self.conn.execute(query, params).fetchall()
         except Exception as e:
             log.warning(f'读取网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
             return []
-        records: List[WebRecord] = [self.__build_record(row) for row in rows]
-        return await self.__filter_existing(records)
+        return [self.__build_record(row) for row in rows]
 
-    async def __remove_records(self, record_ids: List[int]) -> bool:
-        """按记录ID批量删除记录,仿照pyrogram处理id列表的占位符写法。"""
-        placeholders: str = ', '.join('?' for _ in record_ids)
+    async def __sweep_missing(self) -> int:
+        """校验记录对应的文件是否还存在,丢弃失效记录,返回丢弃条数。
+
+        目录mtime捷径:文件的增删与改名必然更新父目录mtime,故每次只stat各父目录,
+        mtime没变的目录不再逐个stat其中的文件;阻塞的stat全部放到线程池执行。
+        目录极度分散(父目录数超过阈值)时按SWEEP_TTL限流,避免退化到逐文件校验过频。
+        """
+        if self._conn is None:
+            return 0
         try:
-            with self.conn:
-                self.conn.execute(
-                    f'DELETE FROM {self.TABLE_NAME} WHERE record_id IN ({placeholders})',
-                    tuple(record_ids)
+            rows: List[tuple] = self.conn.execute(
+                f'SELECT record_id, file_path FROM {self.TABLE_NAME}'
+            ).fetchall()
+        except Exception as e:
+            log.warning(f'读取网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
+            return 0
+        dirs: Dict[str, List[tuple]] = {}  # 父目录 -> [(record_id, file_path), ...]
+        missing_ids: List[int] = []  # 直接判定失效的记录ID(没有路径的记录本就不该存在)。
+        for record_id, file_path in rows:
+            if not file_path:
+                missing_ids.append(record_id)
+                continue
+            dirs.setdefault(os.path.dirname(file_path), []).append((record_id, file_path))
+        # 自适应闸门:目录少时每次读取都校验(成本仅各目录一次stat);目录极度分散时限流。
+        if len(dirs) > self.SWEEP_TTL_THRESHOLD:
+            if time.monotonic() - self._last_sweep_at < self.SWEEP_TTL:
+                return 0
+        self._last_sweep_at = time.monotonic()
+        loop = asyncio.get_running_loop()
+        for parent, items in dirs.items():
+            stat_result: Union[Tuple[float, bool], None] = await loop.run_in_executor(
+                None, self.__stat_dir, parent)
+            if stat_result is None:
+                # 目录级缺失不当场删:连续确认DIR_CONFIRM_TIMES次才丢弃,防网络盘瞬断误删。
+                confirmed: int = self._dir_missing.get(parent, 0) + 1
+                if confirmed >= self.DIR_CONFIRM_TIMES:
+                    self._dir_missing.pop(parent, None)
+                    self._dir_mtime.pop(parent, None)
+                    self._dir_checked_at.pop(parent, None)
+                    missing_ids.extend(record_id for record_id, _ in items)
+                else:
+                    self._dir_missing[parent] = confirmed
+                continue
+            self._dir_missing.pop(parent, None)
+            mtime, full_check_due = stat_result
+            if not full_check_due and self._dir_mtime.get(parent) == mtime:
+                continue  # 目录没变过,其中的文件无需逐个校验。
+            self._dir_mtime[parent] = mtime
+            self._dir_checked_at[parent] = time.monotonic()
+            # 目录变过(或到了全量校验时间):分批校验其中的文件,批间让出事件循环。
+            for start in range(0, len(items), self.SWEEP_BATCH_SIZE):
+                batch: List[tuple] = items[start:start + self.SWEEP_BATCH_SIZE]
+                missing_ids.extend(
+                    await loop.run_in_executor(None, self.__stat_files, batch)
                 )
+        if missing_ids:
+            self.__remove_records(record_ids=missing_ids)
+            log.info(f'已丢弃{len(missing_ids)}条文件已不存在的网页记录。')
+        return len(missing_ids)
+
+    def __stat_dir(self, parent: str) -> Union[Tuple[float, bool], None]:
+        """stat父目录,返回(mtime, 是否到了全量校验时间);目录不可访问时返回None。"""
+        try:
+            mtime: float = os.stat(parent).st_mtime
+        except OSError:
+            return None
+        checked_at: float = self._dir_checked_at.get(parent, 0.0)
+        due: bool = (time.monotonic() - checked_at) >= self.FULL_CHECK_INTERVAL
+        return mtime, due
+
+    @staticmethod
+    def __stat_files(batch: List[tuple]) -> List[int]:
+        """批量校验文件是否存在,返回其中不存在的记录ID。"""
+        return [record_id for record_id, file_path in batch if not os.path.isfile(file_path)]
+
+    def __remove_records(self, record_ids: List[int]) -> bool:
+        """按记录ID批量删除记录,按块切分以避开SQLite的变量数上限。"""
+        try:
+            for start in range(0, len(record_ids), self.DELETE_CHUNK_SIZE):
+                chunk: List[int] = record_ids[start:start + self.DELETE_CHUNK_SIZE]
+                placeholders: str = ', '.join('?' for _ in chunk)
+                with self.conn:
+                    self.conn.execute(
+                        f'DELETE FROM {self.TABLE_NAME} WHERE record_id IN ({placeholders})',
+                        tuple(chunk)
+                    )
             return True
         except Exception as e:
             log.warning(f'删除网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
@@ -309,21 +398,6 @@ class SqliteRecordDatabase(RecordDatabase):
             finish_time=int(data.get('finish_time') or 0),
             record_id=data.get('record_id')
         )
-
-    async def __filter_existing(self, records: List[WebRecord]) -> List[WebRecord]:
-        """实时校验记录对应的文件是否还存在,不存在的条目从数据库丢弃。"""
-        existing: List[WebRecord] = []
-        missing_ids: List[int] = []
-        for record in records:
-            if record.file_path and os.path.isfile(record.file_path):
-                existing.append(record)
-            else:
-                missing_ids.append(record.record_id)
-        if missing_ids:
-            # 批量删除:整目录被删时可能一次性出现大量失效记录,逐条提交会带来多次fsync。
-            await self.__remove_records(record_ids=missing_ids)
-            log.info(f'已丢弃{len(missing_ids)}条文件已不存在的网页记录。')
-        return existing
 
 
 def build_record_database(work_directory: str) -> RecordDatabase:
