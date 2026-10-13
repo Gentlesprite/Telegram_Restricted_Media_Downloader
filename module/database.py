@@ -23,7 +23,10 @@ from typing import (
 from module import log
 from module.language import _t
 from module.path_tool import safe_delete
-from module.enums import KeyWord
+from module.enums import (
+    DownloadStatus,
+    KeyWord
+)
 
 
 class RecordType:
@@ -227,7 +230,11 @@ class SqliteRecordDatabase(RecordDatabase):
             self.conn.executescript(self.RECORD_SCHEMA)
 
     async def add_record(self, record: WebRecord) -> bool:
-        """写入一条记录,成功时回填record_id,未提供时间戳时按当前时间填充。"""
+        """写入一条记录,成功时回填record_id,未提供时间戳时按当前时间填充。
+
+        同一文件(记录类型+文件路径)只保留一条:重复下载、重试成功或重新扫描时
+        更新原记录而不是再插一行,避免记录表出现同一文件多条重复条目。
+        """
         if not record.file_path:
             log.warning(f'网页记录缺少文件路径,已拒绝写入:"{record.file_name}"。')
             return False
@@ -236,6 +243,33 @@ class SqliteRecordDatabase(RecordDatabase):
         record.finish_time = record.finish_time or now
         try:
             with self.conn:
+                cursor = self.conn.execute(
+                    f'SELECT record_id, status FROM {self.TABLE_NAME} '
+                    'WHERE record_type = ? AND file_path = ? '
+                    'ORDER BY record_id DESC LIMIT 1',
+                    (
+                        record.record_type,
+                        record.file_path
+                    )
+                )
+                row: Union[tuple, None] = cursor.fetchone()
+                if row is not None:
+                    record.record_id = row[0]
+                    # 已有同文件记录时只做更新:状态实质变化(如失败后重试成功)才改写状态;
+                    # 状态相同、或因文件已存在而跳过(skip)时不动原记录,
+                    # 避免重新扫描把成功记录降级或改写历史时间。
+                    if record.status != DownloadStatus.SKIP and row[1] != record.status:
+                        self.conn.execute(
+                            f'UPDATE {self.TABLE_NAME} '
+                            'SET status = ?, error_msg = ?, finish_time = ? WHERE record_id = ?',
+                            (
+                                record.status,
+                                record.error_msg,
+                                record.finish_time,
+                                record.record_id
+                            )
+                        )
+                    return True
                 cursor = self.conn.execute(
                     f'INSERT INTO {self.TABLE_NAME} '
                     '(record_type, chat_id, chat_name, message_id, file_name, file_path, '

@@ -802,19 +802,39 @@ function recordGroupCell(group, startRow, len) {
         '</div>';
 }
 
+/* 链接列展示成员自身链接:相册(媒体组)所有成员的记录共用整组任务链接(指向代表消息),
+   把链接末段的消息ID替换为本行的消息ID即可还原成员自己的链接。
+   带查询参数的链接(如评论链接?comment=)或无消息ID时保持原样,不做臆测改写。 */
+function memberLink(rec) {
+    var link = rec.link;
+    if (!link) {
+        return RECORD_UPLOAD_LINK;  // 上传记录无链接,显示"本地上传"。
+    }
+    var mid = rec.message_id;
+    if (mid === undefined || mid === null || mid === '') {
+        return link;
+    }
+    var m = String(link).match(/^(.*\/)(\d+)$/);
+    if (!m || m[2] === String(mid)) {
+        return link;
+    }
+    return m[1] + mid;
+}
+
 function recordRowCells(item, row, position, groupStart) {
     var state = item.state || '';
     var text = RECORD_TEXT[state] || item.status || '—';
     var cls = RECORD_CLASS[state] || 'status-done';
     var extra = (groupStart ? ' group-start' : '') + (position % 2 ? ' alt' : '');
+    var mlink = memberLink(item);
     var cells = '';
     cells += recordCell(2, row, extra + ' cell-name',
         '<span class="ficon">' + (RECORD_ICON[item.record_type] || '📄') + '</span>' +
         '<span class="fname" title="' + escAttr(item.path || item.file) + '">' + esc(item.file) + '</span>',
         item.path || item.file);
     cells += recordCell(3, row, extra + ' cell-name',
-        '<span class="fname">' + esc(item.link || RECORD_UPLOAD_LINK) + '</span>',
-        item.link || RECORD_UPLOAD_LINK);
+        '<span class="fname">' + esc(mlink) + '</span>',
+        mlink);
     cells += recordCell(4, row, extra + ' cell-size', dash(item.size));
     cells += recordCell(5, row, extra + ' cell-speed', item.message_id ? esc(item.message_id) : '—');
     cells += recordCell(6, row, extra + ' cell-remain', dash(item.type));
@@ -963,13 +983,26 @@ function renderRecords(records) {
     renderRecordPage();
 }
 
+/* 页面内容指纹:记录结构 + 页号 + 每页条数 + 当前tab。
+   空态与非空态共用同一口径,确保切换tab后内容变化一定能触发重建。 */
+function recordPageKey(pageRecords) {
+    return recordStructKey(pageRecords) + '#' + recordPage.index + '#' + recordPage.size + '#' + currentRecord;
+}
+
 function renderRecordPage() {
     var blocks = messageBlocksOf(recordAll);
     var pages = paginateGroupBlocks(blocks, recordPage.size);
     var count = pages.length;
     var body = document.getElementById('record');
     if (count === 0) {
-        body.innerHTML = '<div class="empty">' + (RECORD_EMPTY_TEXT[currentRecord] || RECORD_EMPTY_TEXT.download) + '</div>';
+        /* 空态也走指纹判定并回写lastRecordKey:否则切到空tab(如无记录的上传)再切回时,
+           lastRecordKey仍停留在前一个tab的指纹,内容看似"未变化"而跳过重建,
+           下载记录表会停留在空态,必须手动刷新才恢复。 */
+        var emptyKey = recordPageKey([]);
+        if (emptyKey !== lastRecordKey) {
+            lastRecordKey = emptyKey;
+            body.innerHTML = '<div class="empty">' + (RECORD_EMPTY_TEXT[currentRecord] || RECORD_EMPTY_TEXT.download) + '</div>';
+        }
         document.getElementById('badgeRecord').textContent = '0';
         updateRecordPager(count, 0, recordAll.length, blocks.length, 0, 0);
         return;
@@ -981,7 +1014,7 @@ function renderRecordPage() {
         recordPage.index = 0;
     }
     var pageRecords = pages[recordPage.index];
-    var key = recordStructKey(pageRecords) + '#' + recordPage.index + '#' + recordPage.size + '#' + currentRecord;
+    var key = recordPageKey(pageRecords);
     if (key !== lastRecordKey) {
         lastRecordKey = key;
         body.innerHTML = buildRecordRows(pageRecords);
