@@ -790,9 +790,16 @@ function recordCell(column, row, cls, inner, title) {
         ' style="grid-column:' + column + ';grid-row:' + row + '">' + inner + '</div>';
 }
 
-function recordChannelCell(channel, startRow, count) {
-    return '<div class="record-cell record-channel-cell" style="grid-column:1;grid-row:' + startRow + ' / span ' + count + '">' +
-        '<span class="fname" title="' + escAttr(channel) + '">' + esc(channel) + '</span></div>';
+function recordGroupCell(group, startRow, len) {
+    var first = group[0];
+    var chat = first.chat || UNGROUPED_NAME;
+    var link = first.link || RECORD_UPLOAD_LINK;  // 上传记录无链接,显示"本地上传"。
+    var badge = len > 1 ? '<span class="record-msg-count">' + len + ' 个文件</span>' : '';
+    return '<div class="record-cell record-channel-cell" style="grid-column:1;grid-row:' + startRow + ' / span ' + len + '">' +
+        '<span class="fname" title="' + escAttr(chat) + '">' + esc(chat) + '</span>' +
+        '<span class="record-msg" title="' + escAttr(link) + '">' + esc(link) + '</span>' +
+        badge +
+        '</div>';
 }
 
 function recordRowCells(item, row, position, groupStart) {
@@ -829,29 +836,16 @@ function recordStructKey(records) {
 var lastRecordKey = null;  // 上次渲染的记录指纹,内容不变则跳过重建。(初始为 null 而非 '',否则无记录时指纹也是空串,会被误判为"未变化"导致空态永远不渲染)
 
 function buildRecordRows(records) {
-    var sorted = sortRecords(records);
-    // 先按频道聚合,用于计算频道单元格的跨行行数;展示上仍是扁平表格,没有分组条。
-    var groups = [];
-    var index = {};
-    var i;
-    for (i = 0; i < sorted.length; i++) {
-        var channel = sorted[i].chat || UNGROUPED_NAME;
-        var group = index[channel];
-        if (!group) {
-            group = {channel: channel, records: []};
-            index[channel] = group;
-            groups.push(group);
-        }
-        group.records.push(sorted[i]);
-    }
+    var groups = groupRecords(records);  // 已按消息分组并排序。
     var html = '';
     var row = 1;  // 网格行号从1开始。
     var position = 0;  // 记录在整表中的序号,用于斑马纹。
     var g;
     var j;
+    var items;
     for (g = 0; g < groups.length; g++) {
-        var items = groups[g].records;
-        html += recordChannelCell(groups[g].channel, row, items.length);
+        items = groups[g];
+        html += recordGroupCell(items, row, items.length);
         for (j = 0; j < items.length; j++) {
             html += recordRowCells(items[j], row + j, position, j === 0);
             position++;
@@ -864,27 +858,57 @@ function buildRecordRows(records) {
 var recordAll = [];  // 当前类型的全量记录(已按服务器返回排序)。
 var recordPage = {size: 100, index: 0};  // 分页状态:每页条数(0=不限)、当前页。
 
-/* 按频道把记录切成连续块;与buildRecordRows的分组口径一致(以chat为准,未命名归为"未分组")。 */
-function channelBlocksOf(records) {
-    var sorted = sortRecords(records);
-    var blocks = [];
-    var index = {};
-    for (var i = 0; i < sorted.length; i++) {
-        var channel = sorted[i].chat || UNGROUPED_NAME;
-        var b = index[channel];
-        if (b === undefined) {
-            b = blocks.length;
-            index[channel] = b;
-            blocks.push([]);
-        }
-        blocks[b].push(sorted[i]);
+/* 记录分组键:同一 Telegram 消息(媒体组)共享 link,多条记录聚为一组;
+   无 link 的上传记录各成一组(以 path 区分)。 */
+function recordGroupKey(rec) {
+    if (rec.link) {
+        return 'L:' + rec.link;
     }
-    return blocks;
+    return 'U:' + (rec.path || ('id' + rec.record_id));
 }
 
-/* 把频道块切分为页:尽量装到 page_size,但单个频道绝不跨页拆分;
-   若某频道本身超过 page_size,则强制拉长当前页以完整显示它(下一页从该频道之后的频道开始)。 */
-function paginateChannelBlocks(blocks, pageSize) {
+/* 组内最大 record_id,用于组间排序(最新消息在前)。 */
+function maxRecordId(arr) {
+    var m = 0;
+    for (var i = 0; i < arr.length; i++) {
+        var id = Number(arr[i].record_id) || 0;
+        if (id > m) {
+            m = id;
+        }
+    }
+    return m;
+}
+
+/* 把记录按消息分组,组间按组内最大 record_id 降序(最新消息在前)。
+   与 buildRecordRows 的分组口径一致(以 link 为准)。 */
+function groupRecords(records) {
+    var sorted = sortRecords(records);  // 先按 chat 再按 link 排,保证同消息相邻。
+    var groups = [];
+    var index = {};
+    for (var i = 0; i < sorted.length; i++) {
+        var key = recordGroupKey(sorted[i]);
+        var g = index[key];
+        if (g === undefined) {
+            g = groups.length;
+            index[key] = g;
+            groups.push([]);
+        }
+        groups[g].push(sorted[i]);
+    }
+    groups.sort(function (a, b) {
+        return maxRecordId(b) - maxRecordId(a);
+    });
+    return groups;
+}
+
+/* 按消息把记录切成连续块,供分页使用。 */
+function messageBlocksOf(records) {
+    return groupRecords(records);
+}
+
+/* 把消息块切分为页:尽量装到 page_size,但单个消息(相册)绝不跨页拆分;
+   若某消息本身超过 page_size,则强制拉长当前页以完整显示它(下一页从该消息之后的消息开始)。 */
+function paginateGroupBlocks(blocks, pageSize) {
     var pages = [];
     if (pageSize <= 0) {  // 不限:所有频道整块放入一页。
         var all = [];
@@ -940,8 +964,8 @@ function renderRecords(records) {
 }
 
 function renderRecordPage() {
-    var blocks = channelBlocksOf(recordAll);
-    var pages = paginateChannelBlocks(blocks, recordPage.size);
+    var blocks = messageBlocksOf(recordAll);
+    var pages = paginateGroupBlocks(blocks, recordPage.size);
     var count = pages.length;
     var body = document.getElementById('record');
     if (count === 0) {
@@ -966,7 +990,7 @@ function renderRecordPage() {
     updateRecordPager(count, recordPage.index, recordAll.length, blocks.length, pageStart(pages, recordPage.index), pageEnd(pages, recordPage.index));
 }
 
-function updateRecordPager(count, index, total, channels, start, end) {
+function updateRecordPager(count, index, total, messages, start, end) {
     var pager = document.getElementById('recordPager');
     if (!pager) {
         return;
@@ -990,7 +1014,7 @@ function updateRecordPager(count, index, total, channels, start, end) {
         next.disabled = (index >= count - 1);
     }
     if (meta) {
-        meta.textContent = '共 ' + total + ' 条 · ' + channels + ' 个频道' +
+        meta.textContent = '共 ' + total + ' 条 · ' + messages + ' 个消息' +
             (count ? (' · 本页第 ' + start + '-' + end + ' 条') : '');
     }
 }

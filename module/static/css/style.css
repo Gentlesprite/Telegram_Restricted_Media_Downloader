@@ -1182,8 +1182,8 @@ body.resizing {
     --cols: minmax(0, 1fr) 56px;
 }
 
-/* 记录表:频道、文件、链接、大小、消息ID、类型、状态、时间。
-   第1列的频道单元格纵向跨行合并(同频道只显示一次),第2列为弹性列。
+/* 记录表:来源(频道/消息)、文件、链接、大小、消息ID、类型、状态、时间。
+   第1列的来源单元格纵向跨行合并(同消息只显示一次),第2列为弹性列。
    记录表已挂data-table,列宽机制按"弹性列在第2位"生成拖拽条,默认列宽由此处声明。 */
 .list-record {
     --cols: 150px minmax(200px, 1fr) 200px 100px 80px 90px 90px 150px;
@@ -1231,12 +1231,41 @@ body.resizing {
     background: rgba(56, 249, 215, .06);
 }
 
-/* 频道单元格:纵向居中跨行,右侧分隔线加轻微底色,与数据列区分。 */
+/* 来源单元格:纵向跨行合并(同消息只显示一次),堆叠频道名、消息链接与文件数;
+   右侧分隔线区分数据列。 */
 .record-channel-cell {
-    align-self: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    align-self: stretch;
     border-right: 1px solid var(--border);
     background: rgba(255, 255, 255, .04);
+    padding: 9px 14px;
+}
+
+.record-channel-cell .fname {
     font-weight: 600;
+    color: var(--text);
+}
+
+.record-channel-cell .record-msg {
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.record-channel-cell .record-msg-count {
+    align-self: flex-start;
+    font-size: 10px;
+    line-height: 1.4;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: rgba(56, 249, 215, .12);
+    color: var(--accent);
 }
 
 .h-action {
