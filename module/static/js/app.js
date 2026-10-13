@@ -796,7 +796,8 @@ function bindStorageTabs() {
 }
 
 /* 归类排序:先按频道、再按链接。
-   现代浏览器的Array.prototype.sort稳定,末段返回0即可保持接口返回的新旧顺序(storage_id降序)。 */
+   同一链接(同一消息或同一条评论)内,下载按消息ID升序:评论记录的message_id即评论ID,
+   故链接列呈现为从小到大;上传按记录ID降序。现代浏览器的Array.prototype.sort为稳定排序。 */
 function sortStorage(storages) {
     return storages.slice().sort(function (a, b) {
         var chatA = a.chat || '';
@@ -810,7 +811,7 @@ function sortStorage(storages) {
             if (linkA !== linkB) {
                 return linkA < linkB ? -1 : 1;
             }
-            return 0;  // 同频道同消息保持原顺序,与上次提交一致。
+            return (Number(a.message_id) || 0) - (Number(b.message_id) || 0);  // 消息ID或评论ID升序。
         }
         var idA = Number(a.storage_id) || 0;
         var idB = Number(b.storage_id) || 0;
@@ -958,10 +959,10 @@ function maxStorageId(arr) {
     return m;
 }
 
-/* 把记录按频道分组,组间按组内最大 storage_id 降序(同频道内最新在前)。
-   与 buildStorageRows 的分组口径一致(以频道为准)。 */
+/* 把记录按归类分组:下载按消息(链接)分组,上传按频道分组。
+   组间一律按组内最大storage_id降序(最新在前),组内顺序由sortStorage决定。 */
 function groupStorage(storages) {
-    var sorted = sortStorage(storages);  // 先按频道再按记录ID排,保证同频道相邻且最新在前。
+    var sorted = sortStorage(storages);  // 先按频道归类排序,保证同一归类的记录相邻。
     var groups = [];
     var index = {};
     for (var i = 0; i < sorted.length; i++) {
