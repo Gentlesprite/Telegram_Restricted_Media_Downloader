@@ -53,7 +53,16 @@ class CallerFilter(logging.Filter):
     """为日志记录补充上层调用者信息,格式为"模块名.函数名"。"""
 
     def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            rel_path: str = os.path.relpath(record.pathname, CallerFilter.PROJECT_PATH)
+            module_path: str = os.path.splitext(rel_path)[0].replace(os.sep, '.')
+        except Exception:  # noqa.
+            module_path: str = record.module
+        # 先写入默认值,保证后续任何分支返回时格式化字段都完整。
+        # 若缺失字段,格式化日志时会抛出"Formatting field not found in record"(如在函数外直接调用日志)。
         record.name_part = '' if record.name == 'rich' else f'{record.name}:'
+        record.caller_name = ''  # 没有上层调用者时留空,连分隔符一起省略。
+        record.file_func = f'{module_path}.{record.funcName}'
         frame = sys._getframe(1)
         # 回溯到实际调用日志的帧(record的pathname与lineno即为其位置)。
         while frame is not None:
@@ -61,22 +70,14 @@ class CallerFilter(logging.Filter):
                 break
             frame = frame.f_back
         caller_frame = frame.f_back if frame is not None else None
-        if caller_frame is None:
-            record.caller_name = '-'
+        if caller_frame is None:  # 在模块顶层等没有上层调用者的位置记录日志。
             return True
         func_name: str = caller_frame.f_code.co_name
         # 项目内的调用者显示完整模块名,第三方与标准库仅显示函数名,避免名称过长导致换行。
         if caller_frame.f_code.co_filename.startswith(CallerFilter.PROJECT_PATH):
-            record.caller_name = f'{caller_frame.f_globals.get("__name__", "")}.{func_name}'
+            record.caller_name = f'{caller_frame.f_globals.get("__name__", "")}.{func_name}:'
         else:
-            record.caller_name = func_name
-        # 组合日志调用所在文件的模块路径(相对项目根目录)与函数名,格式为"模块.函数名"。
-        try:
-            rel_path: str = os.path.relpath(record.pathname, CallerFilter.PROJECT_PATH)
-            module_path: str = os.path.splitext(rel_path)[0].replace(os.sep, '.')
-        except ValueError:
-            module_path: str = os.path.splitext(os.path.basename(record.pathname))[0]
-        record.file_func = f'{module_path}.{record.funcName}'
+            record.caller_name = f'{func_name}:'
         return True
 
 
@@ -104,7 +105,7 @@ read_input_history(history_path=INPUT_HISTORY_PATH, max_record_len=MAX_RECORD_LE
 LOG_PATH = os.path.join(APPDATA_PATH, f'{SOFTWARE_SHORT_NAME}_LOG.log')
 MAX_LOG_SIZE = 200 * 1024 * 1024  # 200MB
 BACKUP_COUNT = 0  # 不保留日志文件。
-LOG_FORMAT = '%(name_part)s%(caller_name)s:%(file_func)s:%(lineno)d - %(message)s'
+LOG_FORMAT = '%(name_part)s%(caller_name)s%(file_func)s:%(lineno)d - %(message)s'
 FILE_LOG_LEVEL: int = logging.INFO
 CONSOLE_LOG_LEVEL: int = logging.WARNING
 REFERRAL_RECORD_PATH: str = os.path.join(APPDATA_PATH, f'.{SOFTWARE_SHORT_NAME}_REFERRAL')
