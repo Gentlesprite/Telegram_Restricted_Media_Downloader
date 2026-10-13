@@ -1890,7 +1890,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             messages_to_download = []
             matched_message_ids: set = set()  # 已处理过的(chat_id, message_id),含被类型/日期过滤掉但已判定过的成员,避免媒体组展开后重复处理。
             media_group_matched: set = set()  # 已展开过的media_group_id,避免对同一媒体组重复调用get_media_group。
-            media_group_added: set = set()  # 已入选的media_group_id:媒体组整组只保留一条代表消息,下发时按链接整组展开,避免同一相册被拆成多条链接。
+            media_group_added: set = set()  # 已入选的media_group_id:媒体组整组只占一条链接,避免同一相册被拆成多条链接。
+            album_members: dict = {}  # media_group_id -> 该组已按类型/日期逐个筛选通过的成员;下发时整组打包,不再RPC展开。
+            matched_file_count: int = 0  # 实际选中的媒体(文件)数,媒体组按成员计,用于检索进度显示。
             media_group_thread_id: dict = {}  # 媒体组评论区所在的首条成员(最小message id)id,供第二阶段检索评论区时使用。
             extra_comment_ids: set = set()  # 被类型过滤掉但评论区有内容的消息 id(非媒体组),需单独扫描其评论。
             downloaded_message_ids: set = set()  # 已进入下载列表的消息(chat_id, message_id),用于快速判断消息是否因类型被过滤。
@@ -1915,14 +1917,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                     continue
                 # 命中关键词的消息自身先按类型筛选。
                 if _filter.dtype(message, download_type):
-                    # 媒体组整组只保留一条代表消息(下发时按链接整组展开),避免同一相册被拆成多条链接;
-                    # 无link时无法按链接展开,退回逐成员入库,以免丢文件。
+                    matched_file_count += 1
                     group_id = getattr(message, 'media_group_id', None)
-                    if group_id is None or not message.link or group_id not in media_group_added:
-                        if group_id is not None and message.link:
-                            media_group_added.add(group_id)
+                    if group_id is None:
                         messages_to_download.append(message)
                         downloaded_message_ids.add(msg_key)
+                    else:
+                        # 媒体组:成员仍逐个按类型/日期筛选后归入该组,整组只占一条链接。
+                        album_members.setdefault(group_id, []).append(message)
+                        if group_id not in media_group_added:
+                            media_group_added.add(group_id)
+                            messages_to_download.append(message)
+                            downloaded_message_ids.add(msg_key)
                 matched_message_ids.add(msg_key)
                 # 命中且属于媒体组 → 主动拉取整组,组内每个成员再各自按类型/日期独立筛选,不再依赖遍历顺序,也不会因首条成员被类型过滤而丢失整组,更不会跳过成员的类型筛选。
                 # 无关键词且未开启评论区时,整组各成员会经遍历各自命中,无需RPC展开。
@@ -1973,12 +1979,16 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 member,
                                 download_type
                             ):
-                                # 同上:整组只保留一条代表消息,下发时按链接整组展开。
+                                matched_file_count += 1
+                                # 同上:成员逐个按类型/日期筛选后归入该组,整组只占一条链接。
                                 member_group_id = getattr(member, 'media_group_id', None)
-                                if member_group_id is None or not member.link or member_group_id not in media_group_added:
-                                    if member_group_id is not None and member.link:
-                                        media_group_added.add(member_group_id)
+                                if member_group_id is None:
                                     messages_to_download.append(member)
+                                else:
+                                    album_members.setdefault(member_group_id, []).append(member)
+                                    if member_group_id not in media_group_added:
+                                        media_group_added.add(member_group_id)
+                                        messages_to_download.append(member)
                             matched_message_ids.add(member_key)
                     else:
                         # 无关键词:整组由各成员遍历命中补全,无需RPC展开,仅标记该组已处理。
@@ -1994,7 +2004,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             extra_comment_ids.add(message.id)
                 # 使用时间节流机制,只在指定时间间隔后才更新,避免频繁API调用。
                 current_time = asyncio.get_event_loop().time()
-                current_count = len(messages_to_download)
+                current_count = matched_file_count  # 按实际选中的媒体(文件)数显示,媒体组按成员计。
                 if current_time - last_update_time >= update_interval:
                     await _progress(
                         _text=f'{callback_query_text}\n'
@@ -2006,7 +2016,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     last_displayed_count = current_count
                     last_update_time = current_time
             # 确保最后一次更新显示正确的消息数量。
-            final_count = len(messages_to_download)
+            final_count = matched_file_count
             if final_count != last_displayed_count:
                 await _progress(
                     _text=f'{callback_query_text}\n'
@@ -2040,11 +2050,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                         text=BotButton.RETRIEVE_COMMENT,
                         callback_data=BotCallbackText.NULL)
                 )
-            group_links: set = set()  # 媒体组代表的链接:下发时需整组展开,其余链接保持单条语义。
+            # 用"链接在links中的下标"作键,不能用Message对象:pyrogram的Object显式声明__hash__=None,Message不可哈希。
+            group_members_by_index: dict = {}
             for message in messages_to_download:
                 message_link = message.link if message.link else message
-                if getattr(message, 'media_group_id', None) and message.link:
-                    group_links.add(message_link)
+                group_id = getattr(message, 'media_group_id', None)
+                if group_id is not None and group_id in album_members:
+                    group_members_by_index[len(links)] = album_members[group_id]
                 links.append(message_link)
                 processed_message_count += 1
                 if not include_comment:
@@ -2148,14 +2160,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                             callback_data=BotCallbackText.NULL)
                     )
             diy_download_type: list = [_ for _ in DownloadType()]
-            # 媒体组代表链接会整组展开,须用与检索一致的类型过滤,否则组内已被过滤掉的成员也会被下载。
-            group_diy_download_type: list = [dtype for dtype, enabled in download_type.items() if enabled] \
-                if download_type else diy_download_type
             comment_count: int = (len(links) - message_count) if include_comment else 0
             total_count: int = message_count + comment_count
             assigned_count: int = 0
             last_progress_update_time: float = 0  # 记录上次分配任务更新的时间戳。
-            for link in links:
+            for index, link in enumerate(links):
                 if assigned_count == total_count:
                     reply_markup = KeyboardButton.single_button(
                         text=BotButton.TASK_ASSIGN,
@@ -2178,17 +2187,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                             _reply_markup=reply_markup
                     ) is not None:
                         last_progress_update_time = current_time
-                is_group_link: bool = link in group_links
                 await self.create_download_task(
                     message_ids=link,
-                    single_link=not is_group_link,  # 媒体组代表链接需展开整组;评论等其余链接保持单条语义。
-                    diy_download_type=group_diy_download_type if is_group_link else diy_download_type,
-                    owner=owner
+                    single_link=True,
+                    diy_download_type=diy_download_type,
+                    owner=owner,
+                    album_members=group_members_by_index.get(index),  # 媒体组传已筛选好的成员,整组打包。
+                    album_chat_id=chat_id
                 )
                 assigned_count += 1
             await _progress(
                 _text=f'{origin_callback_query_text}\n'
-                      f'🔎匹配消息:{message_count}条,评论区消息:{comment_count}条,共{total_count}条。\n',
+                      f'🔎匹配消息:{message_count}条(媒体{matched_file_count}个),评论区消息:{comment_count}条,共{total_count}条。\n',
                 _reply_markup=KeyboardButton.single_button(
                     text=BotButton.TASK_ASSIGN,
                     callback_data=BotCallbackText.NULL
@@ -2214,12 +2224,28 @@ class TelegramRestrictedMediaDownloader(Bot):
             single_link: bool = False,
             with_upload: Union[dict, None] = None,
             diy_download_type: Optional[list] = None,
-            owner: Union[int, None] = None
+            owner: Union[int, None] = None,
+            album_members: Optional[list] = None,
+            album_chat_id: Optional[Union[int, str]] = None
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
         diy_download_type = [_ for _ in DownloadType()] if with_upload else diy_download_type
         try:
-            if isinstance(message_ids, pyrogram.types.Message):
+            if album_members:
+                # 媒体组(download_chat):成员已在检索阶段逐个按类型/日期筛选通过,直接整组打包。
+                # 不再RPC展开整组(免去展开失败导致整组丢失),也不在下载阶段二次过滤
+                # (避免日期失效与实况照片等类型判定与检索阶段不一致)。
+                _first = album_members[0]
+                meta: dict = {
+                    'link_type': LinkType.GROUP if len(album_members) > 1 else LinkType.SINGLE,
+                    # 频道ID优先用调用方给的已知值:部分消息的message.chat可能为None,直接取.chat.id会抛AttributeError。
+                    'chat_id': album_chat_id if album_chat_id is not None
+                    else getattr(getattr(_first, 'chat', None), 'id', None),
+                    'message': album_members,
+                    'member_num': len(album_members)
+                }
+                link = _first.link if _first.link else _first.id
+            elif isinstance(message_ids, pyrogram.types.Message):
                 chat_id = message_ids.chat.id
                 meta: dict = {
                     'link_type': LinkType.SINGLE,
@@ -2248,7 +2274,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             # 首次创建任务时锁定重试上限,同一link的重试复用该实例,因此运行中修改配置不会让正在重试的任务按新上限被判死;新任务仍按当时的配置值锁定。
             if not task.max_retry:
                 task.max_retry = self.app.max_download_retries
-            ChatInfo.add(chat=getattr(message, 'chat', None), chat_id=chat_id)
+            # 整组打包时message是列表,取首条成员登记频道信息。
+            ChatInfo.add(chat=getattr(album_members[0] if album_members else message, 'chat', None), chat_id=chat_id)
             DownloadTask.add_item(
                 link=link,
                 chat_id=chat_id,
