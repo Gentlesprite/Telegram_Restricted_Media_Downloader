@@ -460,6 +460,13 @@ function switchSection(name) {
 }
 
 function applySectionVisibility() {
+    // 上传与监听依赖机器人,未配置时隐藏这两个入口,避免用户点击后毫无反应。
+    if (!HAS_BOT) {
+        var botItems = document.querySelectorAll('.side-item[data-section="upload"], .side-item[data-section="listener"]');
+        for (var i = 0; i < botItems.length; i++) {
+            botItems[i].hidden = true;
+        }
+    }
     // 记录入口只在数据库可用时展示,不可用时隐藏,避免进入空页面。
     var storageItem = document.querySelector('.side-item[data-section="storage"]');
     if (storageItem) {
