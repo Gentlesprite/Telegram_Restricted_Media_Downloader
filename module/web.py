@@ -252,7 +252,7 @@ class WebHandler(BaseHTTPRequestHandler):
         )
 
     def __response_storages(self) -> None:
-        """返回网页下载/上传储存的JSON,读取时实时校验文件是否存在,不存在的条目直接丢弃。
+        """返回网页下载/上传存储的JSON,读取时实时校验文件是否存在,不存在的条目直接丢弃。
 
         返回该类型的全部记录;分页与按频道分组由前端完成。
         """
@@ -662,7 +662,7 @@ class Web:
         return result
 
     def get_storage(self, storage_type: str = '') -> list:
-        """读取网页下载/上传储存。
+        """读取网页下载/上传存储。
 
         读取动作需要投递到下载器的事件循环中执行(数据库连接由循环线程持有),
         与移除监听一致:通过run_coroutine_threadsafe投递并等待结果。
@@ -670,7 +670,7 @@ class Web:
         返回该类型的全部记录;分页与按频道分组由前端完成。
 
         Args:
-            storage_type: 记录类型,download为下载储存,upload为上传储存,为空时返回全部记录。
+            storage_type: 记录类型,download为下载存储,upload为上传存储,为空时返回全部记录。
 
         Returns:
             list: 记录的展示信息。
@@ -695,7 +695,7 @@ class Web:
         return [Web.format_storage(storage) for storage in storages]
 
     def disk_usage(self) -> dict:
-        """返回保存目录所在磁盘的空间信息与缓存目录占用,供储存页展示。
+        """返回保存目录所在磁盘的空间信息与缓存目录占用,供存储页展示。
 
         Windows按盘符根查询:盘符即文件系统边界,与路径中的通配符和中间层级无关。
         类UNIX只有一个根"/",而它可能跨多个挂载点(Docker的bind mount尤甚),

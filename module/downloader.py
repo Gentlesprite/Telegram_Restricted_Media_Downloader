@@ -159,8 +159,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             app=self.app,
             downloader=self
         )  # 网页面板默认启用,端口由--port参数指定。
-        self.storage_database: Union[StorageDatabase, None] = None  # 网页储存数据库,保存下载与上传储存。
-        self.pending_storage_tasks: Set[asyncio.Task] = set()  # 待落库的储存任务,退出前统一等待,避免丢失最后的储存。
+        self.storage_database: Union[StorageDatabase, None] = None  # 网页存储数据库,保存下载与上传存储。
+        self.pending_storage_tasks: Set[asyncio.Task] = set()  # 待落库的存储任务,退出前统一等待,避免丢失最后的存储。
 
     def env_save_directory(
             self,
@@ -198,9 +198,9 @@ class TelegramRestrictedMediaDownloader(Bot):
         return save_directory
 
     def add_web_storage(self, storage: WebStorage) -> None:
-        """登记网页下载/上传储存。
+        """登记网页下载/上传存储。
 
-        储存属于辅助操作:投递落库任务时出错只记日志,绝不影响下载与上传主流程。
+        存储属于辅助操作:投递落库任务时出错只记日志,绝不影响下载与上传主流程。
         """
 
         if self.storage_database is None:
@@ -210,7 +210,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.pending_storage_tasks.add(task)
             task.add_done_callback(self.pending_storage_tasks.discard)
         except Exception as e:
-            log.warning(f'登记网页储存失败,{_t(KeyWord.REASON)}:"{e}"')
+            log.warning(f'登记网页存储失败,{_t(KeyWord.REASON)}:"{e}"')
 
     def storage_download(
             self,
@@ -2594,7 +2594,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     ) if self.pending_storage_tasks else None
                     self.loop.run_until_complete(self.storage_database.close())
                 except Exception as e:
-                    log.warning(f'关闭网页储存数据库失败,{_t(KeyWord.REASON)}:"{e}"')
+                    log.warning(f'关闭网页存储数据库失败,{_t(KeyWord.REASON)}:"{e}"')
             if not run_error:
                 self.app.print_link_table(
                     link_tasks=DownloadTask.TASKS,

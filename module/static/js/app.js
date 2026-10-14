@@ -9,7 +9,7 @@ var SECTIONS = {
     download: ['download'],
     upload: ['upload'],
     listener: ['listener'],
-    storage: ['storage']  // 储存页:展示数据库中的下载与上传历史,不依赖机器人。
+    storage: ['storage']  // 存储页:展示数据库中的下载与上传历史,不依赖机器人。
 };
 var PAGES = SECTIONS.download.concat(SECTIONS.upload, SECTIONS.listener, SECTIONS.storage);  // 下载、上传、记录各一个页面,监听页只在内部切换选项卡。
 var SUMMARY_IDS = {
@@ -713,8 +713,8 @@ var STORAGE_KEY = 'trmd_storage';  // 记录页选项卡的本地存储键。
 var STORAGE_POLL_INTERVAL_MS = 3000;  // 记录页的轮询间隔,比进度页稀疏,避免频繁查询数据库。
 
 var STORAGE_EMPTY_TEXT = {
-    download: '暂无下载储存。',
-    upload: '暂无上传储存。'
+    download: '暂无下载存储。',
+    upload: '暂无上传存储。'
 };
 var currentStorage = 'download';
 var STORAGE_TEXT = {
@@ -731,7 +731,7 @@ var STORAGE_ICON = {
     download: '📥',
     upload: '📤'
 };
-var STORAGE_UPLOAD_LINK = '本地上传';  // 上传储存没有下载链接,链接列统一显示该文案。
+var STORAGE_UPLOAD_LINK = '本地上传';  // 上传存储没有下载链接,链接列统一显示该文案。
 var STORAGE_HEADERS = {
     download: ['频道 / 消息', '文件', '链接', '大小', '消息ID', '类型', '状态', '时间'],
     upload:   ['频道', '文件路径', '大小', '类型', '状态', '时间']
@@ -741,7 +741,7 @@ var STORAGE_COLS = {
     upload:   '150px minmax(200px, 1fr) 100px 90px 90px 150px'
 };
 
-/* 按当前储存选项卡(下载/上传)重建表头、列宽与拖拽把手。
+/* 按当前存储选项卡(下载/上传)重建表头、列宽与拖拽把手。
    下载保持原始 8 列(含链接、消息ID,按消息分组);上传为 6 列(无链接/消息ID,按频道分组)。 */
 function applyStorageLayout() {
     var list = document.querySelector('.list-storage');
@@ -819,7 +819,7 @@ function sortStorage(storages) {
     });
 }
 
-/* 记录表是单层网格:第1列为纵向合并的频道单元格,第2~6列为每条储存的单元格。
+/* 记录表是单层网格:第1列为纵向合并的频道单元格,第2~6列为每条存储的单元格。
    同一频道的所有记录归并为一个分组,频道名只显示一次并跨其所有行(Excel合并单元格的效果)。 */
 function storageCell(column, row, cls, inner, title) {
     return '<div class="storage-cell' + cls + '" data-row="' + row + '"' +
@@ -850,7 +850,7 @@ function storageGroupCell(group, startRow, len) {
 function memberLink(rec) {
     var link = rec.link;
     if (!link) {
-        return STORAGE_UPLOAD_LINK;  // 上传储存无链接,显示"本地上传"。
+        return STORAGE_UPLOAD_LINK;  // 上传存储无链接,显示"本地上传"。
     }
     var mid = rec.message_id;
     if (mid === undefined || mid === null || mid === '') {
@@ -936,7 +936,7 @@ function buildStorageRows(storages) {
 var storageAll = [];  // 当前类型的全量记录(已按服务器返回排序)。
 var storagePage = {size: 100, index: 0};  // 分页状态:每页条数(0=不限)、当前页。
 
-/* 记录分组键:按频道归类,同一频道的多条储存聚为一组(频道名跨行合并显示)。 */
+/* 记录分组键:按频道归类,同一频道的多条存储聚为一组(频道名跨行合并显示)。 */
 function storageGroupKey(rec) {
     if (currentStorage !== 'upload') {
         if (rec.link) {
@@ -1057,7 +1057,7 @@ function renderStoragePage() {
     if (count === 0) {
         /* 空态也走指纹判定并回写lastStorageKey:否则切到空tab(如无记录的上传)再切回时,
            lastStorageKey仍停留在前一个tab的指纹,内容看似"未变化"而跳过重建,
-           下载储存表会停留在空态,必须手动刷新才恢复。 */
+           下载存储表会停留在空态,必须手动刷新才恢复。 */
         var emptyKey = storagePageKey([]);
         if (emptyKey !== lastStorageKey) {
             lastStorageKey = emptyKey;
@@ -1222,7 +1222,7 @@ async function refreshStorage() {
     }
 }
 
-/* 拉取并渲染储存页的磁盘空间卡片:展示下载保存目录所在磁盘的已用与总量。 */
+/* 拉取并渲染存储页的磁盘空间卡片:展示下载保存目录所在磁盘的已用与总量。 */
 async function refreshStorageDisk() {
     try {
         var res = await fetch('/api/storage/disk', {cache: 'no-store', headers: authHeaders()});

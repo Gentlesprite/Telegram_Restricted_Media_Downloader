@@ -760,7 +760,7 @@ th {
     font-variant-numeric: tabular-nums;
 }
 
-/* 储存页磁盘空间卡片:目录行 + 占用条 + 图例行。
+/* 存储页磁盘空间卡片:目录行 + 占用条 + 图例行。
    保存目录与缓存目录共用同一套行式样式:标签、路径(省略显示,悬停看全文)与右侧数值。 */
 .storage-disk .disk-row {
     display: flex;

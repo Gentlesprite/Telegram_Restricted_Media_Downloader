@@ -111,7 +111,7 @@ class StorageDatabase(ABC):
 class SqliteStorageDatabase(StorageDatabase):
     """基于sqlite3的网页记录数据库实现,仿照pyrogram的SQLiteStorage组织代码。"""
 
-    STORAGE_NAME: str = 'TRMDWebStorage'  # 储存库文件名(不含扩展名),保存在会话目录。
+    STORAGE_NAME: str = 'TRMDWebStorage'  # 存储库文件名(不含扩展名),保存在会话目录。
     FILE_EXTENSION: str = '.db'  # 记录库文件的扩展名,与telegram的.session会话文件区分。
     TABLE_NAME: str = 'web_storages'  # 记录表名。
     COLUMNS: tuple = (
