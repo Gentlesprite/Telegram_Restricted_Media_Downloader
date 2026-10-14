@@ -5,6 +5,7 @@
 # File:web.py
 import os
 import re
+import shutil
 import sys
 import json
 import base64
@@ -13,6 +14,7 @@ import socket
 import asyncio
 import mimetypes
 import threading
+import time
 
 import copy
 
@@ -87,6 +89,8 @@ class WebHandler(BaseHTTPRequestHandler):
                 return
             if self.path.startswith('/api/progress'):
                 self.__response_progress()
+            elif self.path.startswith('/api/storage/disk'):
+                self.__response_disk_usage()
             elif self.path.startswith('/api/storage'):
                 self.__response_storages()
             else:
@@ -261,6 +265,15 @@ class WebHandler(BaseHTTPRequestHandler):
             content_type='application/json; charset=utf-8'
         )
 
+    def __response_disk_usage(self) -> None:
+        """返回下载保存目录所在磁盘空间信息的JSON。"""
+        web: Union[Web, None] = getattr(self.server, 'web', None)
+        data: dict = web.disk_usage() if web else {}
+        self.__response_body(
+            body=json.dumps(data, ensure_ascii=False).encode('UTF-8'),
+            content_type='application/json; charset=utf-8'
+        )
+
     def __read_json(self) -> dict:
         """读取请求体中的JSON数据,解析失败时返回空字典。"""
         try:
@@ -399,6 +412,7 @@ class Web:
     REMOVE_LISTEN_TIMEOUT: int = 10  # 等待事件循环移除监听的超时时间,单位为秒。
     REMEMBER_COOKIE_MAX_AGE: int = 30 * 24 * 3600  # Cookie的有效期,单位为秒(30天)。
     STORAGE_TIMEOUT: int = 3  # 等待事件循环返回网页记录的超时时间,单位为秒。
+    CACHE_SIZE_INTERVAL: int = 30  # 缓存目录大小的最短重算间隔,单位为秒:全盘遍历开销大,不能跟着3秒轮询跑。
     UNFINISHED_STATE: tuple = (
         DownloadStatus.PENDING,
         DownloadStatus.DOWNLOADING
@@ -409,6 +423,8 @@ class Web:
         self.progress = progress
         self.app = app
         self.downloader = downloader  # 下载器实例,用于读取已注册的监听信息。
+        self.cache_size_stamp: float = 0.0  # 上次统计缓存目录大小的时刻,用于节流。
+        self.cache_size_value: int = 0  # 上次统计出的缓存目录字节数。
         # 是否配置了机器人,决定前端是否展示上传与监听侧边栏(无机器人时只有下载可用)。
         self.has_bot = bool(app and getattr(app, 'bot_token', None))
         self.credential: dict = gen_random_credential()
@@ -677,6 +693,91 @@ class Web:
             log.debug(f'获取网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
             return []
         return [Web.format_storage(storage) for storage in storages]
+
+    def disk_usage(self) -> dict:
+        """返回保存目录所在磁盘的空间信息与缓存目录占用,供储存页展示。
+
+        磁盘容量只取决于卷,与路径中的通配符和中间层级无关,故直接取保存目录所在卷的根
+        (Windows 为盘符根,类 UNIX 为 /),无需解析%CHAT_NAME%等占位符。
+        Windows、Linux、macOS 统一由 shutil.disk_usage 读取(内部按平台调用
+        GetDiskFreeSpaceEx 或 statvfs),因此无需按系统分支。
+
+        Returns:
+            dict: 磁盘的 directory、total、used、free、percent 及展示文本,
+                  外加缓存目录的 cache_directory、cache_size、cache_text。
+        """
+        directory: str = self.app.save_directory if self.app else ''
+        root: str = ''
+        if directory:
+            drive, _ = os.path.splitdrive(os.path.abspath(directory))
+            root = drive + os.sep if drive else os.sep
+        data: dict = {'directory': directory}
+        try:
+            usage = shutil.disk_usage(root or os.getcwd())
+        except Exception as e:
+            log.debug(f'读取磁盘空间失败,{_t(KeyWord.REASON)}:"{e}"')
+            data.update({'total': 0, 'used': 0, 'free': 0, 'percent': 0.0})
+        else:
+            total: int = int(usage.total)
+            used: int = int(usage.used)
+            free: int = int(usage.free)
+            data.update({
+                'total': total,
+                'used': used,
+                'free': free,
+                'percent': round(used * 100 / total, 1) if total else 0.0,
+                'used_text': '已用{0}'.format(MetaData.suitable_units_display(used)),
+                'free_text': '可用{0}'.format(MetaData.suitable_units_display(free)),
+                'total_text': '共{0}'.format(MetaData.suitable_units_display(total))
+            })
+        data.update(self.cache_size())
+        return data
+
+    def cache_size(self) -> dict:
+        """统计缓存目录占用的磁盘空间,并按时间节流避免每次轮询都全盘遍历。
+
+        缓存目录同样支持通配符,故逐级向上裁剪到最近的真实目录再遍历:
+        占位符只是其下更深一层的子目录,同属一份缓存。
+
+        Returns:
+            dict: cache_directory、cache_size(字节)、cache_text(展示文本)。
+        """
+        directory: str = self.app.temp_directory if self.app else ''
+        result: dict = {
+            'cache_directory': directory,
+            'cache_size': 0,
+            'cache_text': '0.00B'
+        }
+        if not directory:
+            return result
+        now: float = time.monotonic()
+        if now - self.cache_size_stamp >= Web.CACHE_SIZE_INTERVAL:
+            # 先占位再遍历:遍历期间到来的请求直接复用上次结果,避免多线程叠加遍历同一目录。
+            self.cache_size_stamp = now
+            total: int = 0
+            real: str = os.path.abspath(directory)
+            drive, _ = os.path.splitdrive(real)
+            volume: str = drive + os.sep if drive else os.sep
+            while real and not os.path.isdir(real):
+                parent: str = os.path.dirname(real.rstrip(os.sep))
+                if not parent or parent == real:
+                    real = ''
+                    break
+                real = parent
+            if real == volume:
+                # 缓存目录整条路径都不存在:不能把整个卷当成缓存统计,否则数字失去意义且遍历极慢。
+                real = ''
+            if real:
+                for walk_root, _, files in os.walk(real):
+                    for name in files:
+                        try:
+                            total += os.path.getsize(os.path.join(walk_root, name))
+                        except OSError:
+                            continue  # 文件正被下载占用或已删除,跳过即可。
+            self.cache_size_value = total
+        result['cache_size'] = self.cache_size_value
+        result['cache_text'] = MetaData.suitable_units_display(self.cache_size_value)
+        return result
 
     @staticmethod
     def format_storage(storage: WebStorage) -> dict:

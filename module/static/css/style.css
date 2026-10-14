@@ -760,6 +760,79 @@ th {
     font-variant-numeric: tabular-nums;
 }
 
+/* 储存页磁盘空间卡片:目录行 + 占用条 + 图例行。
+   保存目录与缓存目录共用同一套行式样式:标签、路径(省略显示,悬停看全文)与右侧数值。 */
+.storage-disk .disk-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.storage-disk .disk-row-label {
+    color: var(--text);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.storage-disk .disk-row-path {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.storage-disk .disk-row-value {
+    margin-left: auto;  /* 数值推到行尾。 */
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* 保存目录行:与下方占用条之间留出间距。 */
+.storage-disk .disk-row-lead {
+    margin-bottom: 10px;
+}
+
+/* 缓存目录行:与上方磁盘区隔一条发丝线。 */
+.storage-disk .disk-row-split {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--glass-edge);
+}
+
+.storage-disk .disk-legend {
+    display: flex;
+    flex-wrap: wrap;  /* 窄屏时图例与数值换行,避免挤压重叠。 */
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.storage-disk .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+}
+
+.storage-disk .dot-free {
+    margin-left: 8px;  /* 与上一项拉开距离,两个图例不贴在一起。 */
+    background: #4a5160;
+}
+
+.storage-disk .disk-value {
+    margin-left: auto;  /* 数值推到行尾,与图例左右分栏。 */
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
 /* 进度条 */
 .track {
     position: relative;

@@ -147,6 +147,25 @@
             </div>
         </div>
         <div class="page" id="page-storage" hidden>
+            <div class="panel storage-disk">
+                <div class="disk-row disk-row-lead">
+                    <span class="disk-row-label">保存目录</span>
+                    <span class="disk-row-path" id="storageDiskPath">—</span>
+                </div>
+                <div class="track track-lg disk-track">
+                    <div class="fill" id="storageDiskFill"></div>
+                </div>
+                <div class="disk-legend">
+                    <span class="dot"></span><span>磁盘已用</span>
+                    <span class="dot dot-free"></span><span>磁盘可用</span>
+                    <span class="disk-value" id="storageDiskValue">—</span>
+                </div>
+                <div class="disk-row disk-row-split">
+                    <span class="disk-row-label">缓存目录</span>
+                    <span class="disk-row-path" id="storageCachePath">—</span>
+                    <span class="disk-row-value" id="storageCacheValue">—</span>
+                </div>
+            </div>
             <div class="tabs" id="storageTabs">
                 <button class="tab active" data-storage="download" type="button">下载</button>
                 <button class="tab" data-storage="upload" type="button">上传</button>

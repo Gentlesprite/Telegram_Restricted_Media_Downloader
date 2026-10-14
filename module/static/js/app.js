@@ -1208,6 +1208,7 @@ function bindStorageHover() {
 }
 
 async function refreshStorage() {
+    refreshStorageDisk();  // 磁盘卡片与列表解耦,单独拉取,失败不影响列表。
     try {
         var res = await fetch('/api/storage?type=' + encodeURIComponent(currentStorage), {cache: 'no-store', headers: authHeaders()});
         if (res.status === 401) {
@@ -1219,6 +1220,41 @@ async function refreshStorage() {
     } catch (e) {
         // 拉取失败时保留原列表,交由进度页的断线提示统一反馈。
     }
+}
+
+/* 拉取并渲染储存页的磁盘空间卡片:展示下载保存目录所在磁盘的已用与总量。 */
+async function refreshStorageDisk() {
+    try {
+        var res = await fetch('/api/storage/disk', {cache: 'no-store', headers: authHeaders()});
+        if (res.status === 401) {
+            openLogin();  // 未认证:弹出登录卡片,与进度页一致。
+            return;
+        }
+        renderStorageDisk(await res.json());
+    } catch (e) {
+        // 拉取失败时保留上次显示,交由进度页的断线提示统一反馈。
+    }
+}
+
+function renderStorageDisk(data) {
+    var path = document.getElementById('storageDiskPath');
+    var fill = document.getElementById('storageDiskFill');
+    var value = document.getElementById('storageDiskValue');
+    var cachePath = document.getElementById('storageCachePath');
+    var cacheValue = document.getElementById('storageCacheValue');
+    data = data || {};
+    path.textContent = data.directory || '—';
+    path.title = path.textContent;  // 长路径靠悬停提示查看全文。
+    if (data.total) {
+        fill.style.width = data.percent + '%';
+        value.textContent = data.used_text + ' / ' + data.total_text;
+    } else {
+        fill.style.width = '0%';  // 磁盘读取失败退回空态,不影响缓存行显示。
+        value.textContent = '—';
+    }
+    cachePath.textContent = data.cache_directory || '—';
+    cachePath.title = cachePath.textContent;
+    cacheValue.textContent = data.cache_text || '—';
 }
 
 var storageTimer = 0;  // 记录页的轮询定时器,只在记录页可见时查询,避免无谓的数据库访问。
