@@ -67,6 +67,7 @@ from module.task import (
     UploadTask
 )
 from module.util import (
+    Issues,
     is_docker,
     parse_link,
     safe_index,
@@ -771,12 +772,13 @@ class Bot:
         if uid is None or not self.root or uid == self.root[0]:
             more_feature = True
         if web is not None:
+            docker_host_ip_tip: str = f'\n{Issues.DOCKER_HOST_IP_TIP}' if is_docker() else ''
             web_auth = (
                 f'🌐 Web配置:\n'
                 f'🔌 端口: {web.port}\n'
                 f'👤 账号: ||{web.username}||\n'
                 f'🔑 密码: ||{web.password}||\n'
-                f'🔗 链接: {web.protocol}://{web.LOCAL_IP}:{web.port}\n\n'
+                f'🔗 链接: {web.protocol}://{web.LOCAL_IP}:{web.port}{docker_host_ip_tip}\n\n'
             )
         config: dict = rc.cached_config()
         update_version: str = check_update(  # 远程版本更高时返回该版本号,用于提示可更新。

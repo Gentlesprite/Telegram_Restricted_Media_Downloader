@@ -30,6 +30,7 @@ from pyrogram import __version__ as pyrogram_version  # noqa.
 
 from module import (
     log,
+    console,
     VERSION_WITH_COMMIT
 )
 from module.remote import rc
@@ -47,7 +48,9 @@ from module.task import (
     DownloadTask
 )
 from module.util import (
+    Issues,
     is_frozen,
+    is_docker,
     get_local_ip,
     get_web_session,
     reset_web_session,
@@ -502,6 +505,7 @@ class Web:
         self.thread.start()
         log.info(f'网页面板已启动,链接:"{self.protocol}://{self.LOCAL_IP}:{self.port}"。')
         self.print_meta()
+        console.log(Issues.DOCKER_HOST_IP_TIP, style='#5AC8FA') if is_docker() else None
         return True
 
     def stop(self) -> None:
