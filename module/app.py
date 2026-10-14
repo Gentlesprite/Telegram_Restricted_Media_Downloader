@@ -17,7 +17,9 @@ from module import (
     SLEEP_THRESHOLD,
     console,
     log,
-    SOFTWARE_FULL_NAME
+    SOFTWARE_FULL_NAME,
+    SOFTWARE_SHORT_NAME,
+    VERSION_WITH_COMMIT
 )
 from module.language import _t
 from module.config import UserConfig
@@ -40,6 +42,8 @@ from module.path_tool import (
 
 
 class Application(UserConfig, StatisticalTable):
+    APP_VERSION: str = f'TRMD {VERSION_WITH_COMMIT}@Pyrogram {pyrogram.__version__}'
+    DEVICE_MODEL: str = SOFTWARE_SHORT_NAME
 
     def __init__(self):
         UserConfig.__init__(self)
@@ -58,7 +62,9 @@ class Application(UserConfig, StatisticalTable):
             proxy=self.proxy if self.enable_proxy else None,
             workdir=self.work_directory,
             max_concurrent_transmissions=self.max_download_task,
-            sleep_threshold=SLEEP_THRESHOLD
+            sleep_threshold=SLEEP_THRESHOLD,
+            app_version=Application.APP_VERSION,
+            device_model=Application.DEVICE_MODEL
         )
         # v1.3.7 新增多任务下载功能,无论是否Telegram会员。
         # https://stackoverflow.com/questions/76714896/pyrogram-download-multiple-files-at-the-same-time

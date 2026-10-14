@@ -2249,7 +2249,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                     bot_token=self.app.bot_token,
                     workdir=self.app.work_directory,
                     proxy=self.app.proxy if self.app.enable_proxy else None,
-                    sleep_threshold=SLEEP_THRESHOLD
+                    sleep_threshold=SLEEP_THRESHOLD,
+                    app_version=Application.APP_VERSION,
+                    device_model=Application.DEVICE_MODEL
                 )
             )
             self.web.start()  # 配置机器人时,在打印"机器人启动成功"之前先启动网页面板(打印访问信息表格)。
