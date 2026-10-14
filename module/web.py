@@ -697,10 +697,11 @@ class Web:
     def disk_usage(self) -> dict:
         """返回保存目录所在磁盘的空间信息与缓存目录占用,供储存页展示。
 
-        磁盘容量只取决于卷,与路径中的通配符和中间层级无关,故直接取保存目录所在卷的根
-        (Windows 为盘符根,类 UNIX 为 /),无需解析%CHAT_NAME%等占位符。
+        Windows按盘符根查询:盘符即文件系统边界,与路径中的通配符和中间层级无关。
+        类UNIX只有一个根"/",而它可能跨多个挂载点(Docker的bind mount尤甚),
+        故裁到保存目录最近的真实目录再查,才能命中真正的文件系统。
         Windows、Linux、macOS 统一由 shutil.disk_usage 读取(内部按平台调用
-        GetDiskFreeSpaceEx 或 statvfs),因此无需按系统分支。
+        GetDiskFreeSpaceEx 或 statvfs),因此读取本身无需按系统分支。
 
         Returns:
             dict: 磁盘的 directory、total、used、free、percent 及展示文本,
@@ -709,8 +710,23 @@ class Web:
         directory: str = self.app.save_directory if self.app else ''
         root: str = ''
         if directory:
-            drive, _ = os.path.splitdrive(os.path.abspath(directory))
-            root = drive + os.sep if drive else os.sep
+            if sys.platform == 'win32':
+                # Windows:盘符根即目标文件系统,无需解析%CHAT_NAME%等占位符。
+                drive, _ = os.path.splitdrive(os.path.abspath(directory))
+                root = drive + os.sep if drive else os.sep
+            else:
+                # 类UNIX:根目录可能跨挂载点,改裁到最近的真实目录再查。
+                root = os.path.abspath(directory)
+                drive, _ = os.path.splitdrive(root)
+                volume: str = drive + os.sep if drive else os.sep
+                while root and not os.path.isdir(root):
+                    parent = os.path.dirname(root.rstrip(os.sep))
+                    if not parent or parent == root:
+                        root = ''
+                        break
+                    root = parent
+                if root == volume:
+                    root = ''  # 整条路径都不存在,不能拿根目录冒充。
         data: dict = {'directory': directory}
         try:
             usage = shutil.disk_usage(root or os.getcwd())
