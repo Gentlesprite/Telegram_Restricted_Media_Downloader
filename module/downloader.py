@@ -91,7 +91,7 @@ from module.storage import (
     build_storage_database,
     StorageDatabase,
     StorageType,
-    WebStorage
+    TRMDStorage
 )
 from module.enums import (
     DownloadStatus,
@@ -197,7 +197,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         )
         return save_directory
 
-    def add_web_storage(self, storage: WebStorage) -> None:
+    def add_web_storage(self, storage: TRMDStorage) -> None:
         """登记网页下载/上传存储。
 
         存储属于辅助操作:投递落库任务时出错只记日志,绝不影响下载与上传主流程。
@@ -227,7 +227,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             return
         chat_id = getattr(getattr(message, 'chat', None), 'id', None)
         self.add_web_storage(
-            WebStorage(
+            TRMDStorage(
                 storage_type=StorageType.DOWNLOAD,
                 chat_id=chat_id,
                 chat_name=ChatInfo.get(chat_id),

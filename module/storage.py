@@ -36,7 +36,7 @@ class StorageType:
 
 
 @dataclass
-class WebStorage:
+class TRMDStorage:
     """网页面板的下载/上传记录,字段与数据库列一一对应。"""
     storage_type: str = StorageType.DOWNLOAD  # 记录类型,download为下载记录,upload为上传记录。
     chat_id: Union[str, int, None] = None  # 频道ID,下载记录为来源频道,上传记录为目标频道。
@@ -76,7 +76,7 @@ class StorageDatabase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def add_storage(self, storage: WebStorage) -> bool:
+    async def add_storage(self, storage: TRMDStorage) -> bool:
         """写入一条记录。
 
         Args:
@@ -91,7 +91,7 @@ class StorageDatabase(ABC):
     async def get_storages(
             self,
             storage_type: Union[str, None] = None
-    ) -> List[WebStorage]:
+    ) -> List[TRMDStorage]:
         """读取记录,并按需先做一次文件存在性校验。
 
         校验由实现内部完成:只stat各父目录,mtime没变的目录不再逐个stat其中的文件,
@@ -103,7 +103,7 @@ class StorageDatabase(ABC):
             storage_type: 记录类型,为空时返回全部记录。
 
         Returns:
-            List[WebStorage]: 文件仍存在的记录,按写入时间从新到旧排列。
+            List[TRMDStorage]: 文件仍存在的记录,按写入时间从新到旧排列。
         """
         raise NotImplementedError
 
@@ -111,7 +111,7 @@ class StorageDatabase(ABC):
 class SqliteStorageDatabase(StorageDatabase):
     """基于sqlite3的网页记录数据库实现,仿照pyrogram的SQLiteStorage组织代码。"""
 
-    STORAGE_NAME: str = 'TRMDWebStorage'  # 存储库文件名(不含扩展名),保存在会话目录。
+    STORAGE_NAME: str = 'TRMDStorage'  # 存储库文件名(不含扩展名),保存在会话目录。
     FILE_EXTENSION: str = '.db'  # 记录库文件的扩展名,与telegram的.session会话文件区分。
     TABLE_NAME: str = 'web_storages'  # 记录表名。
     COLUMNS: tuple = (
@@ -229,7 +229,7 @@ class SqliteStorageDatabase(StorageDatabase):
         with self.conn:
             self.conn.executescript(self.STORAGE_SCHEMA)
 
-    async def add_storage(self, storage: WebStorage) -> bool:
+    async def add_storage(self, storage: TRMDStorage) -> bool:
         """写入一条记录,成功时回填storage_id,未提供时间戳时按当前时间填充。
 
         同一文件(记录类型+文件路径)只保留一条:重复下载、重试成功或重新扫描时
@@ -300,7 +300,7 @@ class SqliteStorageDatabase(StorageDatabase):
     async def get_storages(
             self,
             storage_type: Union[str, None] = None
-    ) -> List[WebStorage]:
+    ) -> List[TRMDStorage]:
         """读取记录,先按需做一次存在性校验,保证返回的是校验后的结果。
 
         返回全部仍存在的记录;分页与按频道分组由前端完成,故此处不截断。
@@ -411,10 +411,10 @@ class SqliteStorageDatabase(StorageDatabase):
             return False
 
     @staticmethod
-    def __build_storage(row: tuple) -> WebStorage:
+    def __build_storage(row: tuple) -> TRMDStorage:
         """把数据库行转换为记录对象。"""
         data: dict = dict(zip(SqliteStorageDatabase.COLUMNS, row))
-        return WebStorage(
+        return TRMDStorage(
             storage_type=data.get('storage_type') or '',
             chat_id=data.get('chat_id'),
             chat_name=data.get('chat_name') or '',

@@ -41,7 +41,7 @@ from module.task import (
 )
 from module.storage import (
     StorageType,
-    WebStorage
+    TRMDStorage
 )
 from module.path_tool import get_mime_from_extension
 from module.stdio import (
@@ -691,7 +691,7 @@ class TelegramUploader:
 
         file_name: str = upload_task.file_name or split_path(upload_task.file_path).get('file_name') or ''
         self.downloader.add_web_storage(
-            WebStorage(
+            TRMDStorage(
                 storage_type=StorageType.UPLOAD,
                 chat_id=upload_task.chat_id,
                 chat_name=ChatInfo.get(upload_task.chat_id),

@@ -36,6 +36,7 @@ from module.remote import rc
 from module.language import _t
 from module.parser import PARSE_ARGS
 from module.path_tool import split_path
+from module.storage import TRMDStorage
 from module.stdio import (
     MetaData,
     PanelTable
@@ -45,7 +46,6 @@ from module.task import (
     UploadTask,
     DownloadTask
 )
-from module.storage import WebStorage
 from module.util import (
     is_frozen,
     get_local_ip,
@@ -796,7 +796,7 @@ class Web:
         return result
 
     @staticmethod
-    def format_storage(storage: WebStorage) -> dict:
+    def format_storage(storage: TRMDStorage) -> dict:
         """格式化网页记录的展示信息。"""
         chat_id: str = str(storage.chat_id) if storage.chat_id is not None else ''
         return {
