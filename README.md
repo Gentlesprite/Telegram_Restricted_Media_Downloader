@@ -775,6 +775,7 @@ temp_directory: F:\directory\temp\where\you\save
 > 部分参数支持通过机器人设置进行修改。
 
 ```yaml
+authorized_users: []
 console_log_level: WARNING
 export_table:
   count: false
@@ -798,14 +799,15 @@ upload:
 
 #### 参数说明
 
-| 参数 | 说明                                                                    |
-| --- |-----------------------------------------------------------------------|
-| `console_log_level` | 终端显示的最低日志级别（如`WARNING`）。                                              |
-| `export_table` | 运行结束时是否导出统计表，含`count`（下载计数统计表）与`link`（下载链接统计表）。                       |
-| `file_log_level` | `TRMD_LOG.log`文件中记录的最低日志级别（如`INFO`）。                                  |
-| `forward_type` | 控制`/listen_forward`与`/forward`命令可转发的文件类型，详见`forward_type`参数支持转发的媒体类型。 |
-| `notice` | 机器人启动时是否发送启动通知。                                                       |
-| `upload` | 受限内容处理，含`delete`（下载上传完成后是否删除本地文件）与`download_upload`（是否下载后上传到指定转发频道）。  |
+| 参数 | 说明                                                                                                           |
+| --- |--------------------------------------------------------------------------------------------------------------|
+| `authorized_users` | 通过`/auth`命令设置的记录有权限使用机器人的用户。                                                                                 |
+| `console_log_level` | 终端显示的最低日志级别（如`WARNING`）。                                                                                     |
+| `export_table` | 运行结束时是否导出统计表，含`count`（控制运行结束时是否导出下载计数统计表）、`link`（控制运行结束时是否导出下载链接统计表）、`upload`（控制运行结束时是否导出上传统计表）。             |
+| `file_log_level` | `TRMD_LOG.log`文件中记录的最低日志级别（如`INFO`）。                                                                         |
+| `forward_type` | 控制`/listen_forward`与`/forward`命令可转发的文件类型，详见`forward_type`参数支持转发的媒体类型。                                        |
+| `notice` | 控制机器人启动时是否发送启动通知。                                                                                            |
+| `upload` | 控制转发时，频道中受保护内容的处理方式，含`delete`（控制频道中受保护内容在下载上传完成后是否删除本地文件，默认关闭）与`download_upload`（控制频道中受保护内容是否回退至下载后上传，默认开启）。 |
 
 ##### `forward_type`参数支持转发的媒体类型
 
