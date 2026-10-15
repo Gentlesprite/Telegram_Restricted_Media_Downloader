@@ -107,6 +107,18 @@ class StorageDatabase(ABC):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    async def update_chat_names(self, chat_names: Dict[str, str]) -> bool:
+        """按频道ID批量补全频道标题,返回是否成功。
+
+        读取记录时若ChatInfo缓存已被其他流程补齐,把标题写回库,
+        避免写入时缓存未命中的历史记录永远只显示频道ID。
+
+        Args:
+            chat_names: 频道ID -> 频道标题,只补全库中标题为空的记录。
+        """
+        raise NotImplementedError
+
 
 class SqliteStorageDatabase(StorageDatabase):
     """基于sqlite3的网页记录数据库实现,仿照pyrogram的SQLiteStorage组织代码。"""
@@ -393,6 +405,22 @@ class SqliteStorageDatabase(StorageDatabase):
     def __stat_files(batch: List[tuple]) -> List[int]:
         """批量校验文件是否存在,返回其中不存在的记录ID。"""
         return [storage_id for storage_id, file_path in batch if not os.path.isfile(file_path)]
+
+    async def update_chat_names(self, chat_names: Dict[str, str]) -> bool:
+        """按频道ID批量补全频道标题,只补全库中标题为空的记录,已有标题不被覆盖。"""
+        if not chat_names:
+            return True
+        try:
+            with self.conn:
+                self.conn.executemany(
+                    f'UPDATE {self.TABLE_NAME} SET chat_name = ? '
+                    f'WHERE chat_id = ? AND (chat_name IS NULL OR chat_name = \'\')',
+                    [(title, chat_id) for chat_id, title in chat_names.items()]
+                )
+            return True
+        except Exception as e:
+            log.warning(f'补全网页记录频道标题失败,{_t(KeyWord.REASON)}:"{e}"')
+            return False
 
     def __remove_storages(self, storage_ids: List[int]) -> bool:
         """按记录ID批量删除记录,按块切分以避开SQLite的变量数上限。"""

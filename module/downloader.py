@@ -225,12 +225,14 @@ class TelegramRestrictedMediaDownloader(Bot):
 
         if self.storage_database is None:
             return
-        chat_id = getattr(getattr(message, 'chat', None), 'id', None)
+        chat = getattr(message, 'chat', None)
+        chat_id = getattr(chat, 'id', None)
         self.add_web_storage(
             TRMDStorage(
                 storage_type=StorageType.DOWNLOAD,
                 chat_id=chat_id,
-                chat_name=ChatInfo.get(chat_id),
+                # 缓存未命中时现场取消息上的频道标题,保证记录写入即带标题。
+                chat_name=ChatInfo.get(chat_id) or str(getattr(chat, 'title', '') or getattr(chat, 'first_name', '') or ''),
                 message_id=getattr(message, 'id', None),
                 file_name=file_name,
                 file_path=os.path.join(self.env_save_directory(message), file_name),

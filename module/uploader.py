@@ -518,6 +518,8 @@ class TelegramUploader:
                     )
                     if not target_chat:
                         raise ValueError
+                    # 缓存目标频道标题,让上传记录也能显示"标题(ID)"而非裸ID。
+                    ChatInfo.add(chat=target_chat, chat_id=chat_id)
                     self.valid_link_cache[link] = chat_id
             else:
                 chat_id: Union[int, str] = link

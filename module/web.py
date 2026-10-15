@@ -428,8 +428,8 @@ class Web:
         self.downloader = downloader  # 下载器实例,用于读取已注册的监听信息。
         self.cache_size_stamp: float = 0.0  # 上次统计缓存目录大小的时刻,用于节流。
         self.cache_size_value: int = 0  # 上次统计出的缓存目录字节数。
-        # 是否配置了机器人,决定前端是否展示上传与监听侧边栏(无机器人时只有下载可用)。
-        self.has_bot = bool(app and getattr(app, 'bot_token', None))
+        self.filled_chat_ids: set = set()  # 已补全过标题的频道ID,避免重复扫描与重复回写。
+        self.has_bot = bool(app and getattr(app, 'bot_token', None)) # 是否配置了机器人,决定前端是否展示上传与监听侧边栏(无机器人时只有下载可用)。
         self.credential: dict = gen_random_credential()
         self.protocol: str = 'http'
         self.ip: str = '0.0.0.0'
@@ -696,6 +696,7 @@ class Web:
         except Exception as e:
             log.debug(f'获取网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
             return []
+        self.__fill_storage_chat_names(storages)  # 先把缓存里已有的标题补进记录,展示即为"标题(ID)"。
         return [Web.format_storage(storage) for storage in storages]
 
     def disk_usage(self) -> dict:
@@ -801,13 +802,14 @@ class Web:
 
     @staticmethod
     def format_storage(storage: TRMDStorage) -> dict:
-        """格式化网页记录的展示信息。"""
+        """格式化网页记录的展示信息,频道列优先取记录里的标题,与下载板块的"标题(ID)"样式一致。"""
         chat_id: str = str(storage.chat_id) if storage.chat_id is not None else ''
+        chat_name: str = storage.chat_name or ChatInfo.get(chat_id)
         return {
             'storage_id': storage.storage_id,
             'storage_type': storage.storage_type,
             'channel': chat_id,
-            'chat': Web.format_channel(chat_id) if chat_id else Web.UNGROUPED,
+            'chat': f'{chat_name}({chat_id})' if chat_name and chat_id else (chat_id or Web.UNGROUPED),
             'message_id': storage.message_id if storage.message_id is not None else '',
             'file': storage.file_name,
             'path': storage.file_path,
@@ -821,6 +823,34 @@ class Web:
             'time': datetime.datetime.fromtimestamp(storage.finish_time).strftime(
                 '%Y-%m-%d %H:%M:%S') if storage.finish_time else ''
         }
+
+    def __fill_storage_chat_names(self, storages: list) -> None:
+        """把ChatInfo缓存中已有的标题补到记录上,并异步回写数据库。
+
+        写入记录时若缓存未命中,chat_name为空,之后该频道被任何下载或上传流程
+        缓存过标题;此处读取时补全,让历史记录也显示"标题(ID)"而非裸ID。
+        回写只投递不等待,失败不影响本次展示;同一频道只补一次。
+        """
+        storage_db = getattr(self.downloader, 'storage_database', None)
+        loop: Union[AbstractEventLoop, None] = getattr(self.downloader, 'loop', None)
+        if storage_db is None or loop is None or not loop.is_running():
+            return
+        pending: dict = {}
+        for storage in storages:
+            chat_id: str = str(storage.chat_id or '')
+            if not chat_id or storage.chat_name or chat_id in self.filled_chat_ids:
+                continue
+            title: str = ChatInfo.get(chat_id)
+            if title:
+                storage.chat_name = title
+                pending[chat_id] = title
+        if not pending:
+            return
+        self.filled_chat_ids.update(pending.keys())
+        try:
+            asyncio.run_coroutine_threadsafe(storage_db.update_chat_names(pending), loop)
+        except Exception as e:
+            log.debug(f'回写网页记录频道标题失败,{_t(KeyWord.REASON)}:"{e}"')
 
     def remove_listener(self, kind: str, link: str) -> dict:
         """按网页面板的请求移除已注册的监听下载或监听转发。
