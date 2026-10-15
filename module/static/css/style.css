@@ -1267,8 +1267,215 @@ body.resizing {
     gap: 0;
 }
 
+/* 记录表头改为弹性布局:标题文字可压缩省略,右侧常驻筛选按钮,列宽拖拽把手不受影响。 */
 .list-storage .list-head > span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     padding: 3px 14px;
+}
+
+.list-storage .list-head > span .htext {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 表头筛选按钮:未筛选为下拉箭头,筛选中为漏斗并高亮。 */
+.list-storage .list-head .hfilter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    box-sizing: border-box;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color .15s ease, background .15s ease;
+}
+
+.list-storage .list-head .hfilter:hover {
+    background: rgba(56, 249, 215, .12);
+    color: var(--accent);
+}
+
+.list-storage .list-head .hfilter.active {
+    color: var(--accent);
+}
+
+/* 两个图标叠放在同一按钮里:默认显示下拉箭头,激活时切换为漏斗。 */
+.list-storage .list-head .hfilter .hfilter-funnel {
+    display: none;
+}
+
+.list-storage .list-head .hfilter.active .hfilter-arrow {
+    display: none;
+}
+
+.list-storage .list-head .hfilter.active .hfilter-funnel {
+    display: block;
+}
+
+/* 筛选面板:与每页条数下拉一致的玻璃卡片,fixed定位避开表头滚动裁剪。 */
+.hfilter-pop {
+    position: fixed;
+    z-index: 50;
+    box-sizing: border-box;
+    width: 264px;
+    max-width: calc(100vw - 16px);
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
+    color: var(--text);
+    font-size: 13px;
+}
+
+.hfilter-search-input,
+.hfilter-op,
+.hfilter-arg {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.hfilter-search-input:focus,
+.hfilter-op:focus,
+.hfilter-arg:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.hfilter-list {
+    max-height: 240px;
+    margin-top: 8px;
+    overflow-y: auto;
+}
+
+.hfilter-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 6px;
+    border-radius: 8px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.hfilter-item:hover {
+    background: rgba(56, 249, 215, .12);
+}
+
+.hfilter-item input[type="checkbox"] {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.hfilter-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hfilter-count {
+    flex: none;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* (全选)项与值列表之间用分隔线区分,半选状态由JS设置indeterminate。 */
+.hfilter-all-item {
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--border);
+    border-radius: 8px 8px 0 0;
+    font-weight: 600;
+}
+
+.hfilter-none {
+    padding: 10px 6px;
+    color: var(--muted);
+    text-align: center;
+}
+
+.hfilter-custom {
+    margin-top: 8px;
+}
+
+.hfilter-args {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.hfilter-switch {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+.hfilter-custom-btn {
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.hfilter-custom-btn:hover {
+    text-decoration: underline;
+}
+
+.hfilter-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.hfilter-ok,
+.hfilter-cancel {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+
+.hfilter-ok {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.hfilter-ok:hover {
+    background: rgba(56, 249, 215, .12);
+}
+
+.hfilter-cancel:hover {
+    border-color: var(--danger);
+    color: var(--danger);
 }
 
 .list-storage #storage {

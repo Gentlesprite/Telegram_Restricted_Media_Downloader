@@ -744,9 +744,79 @@ var STORAGE_HEADERS = {
     upload:   ['频道', '文件路径', '大小', '类型', '状态', '时间']
 };
 var STORAGE_COLS = {
-    download: '150px minmax(200px, 1fr) 200px 100px 80px 90px 90px 150px',
+    download: '150px minmax(200px, 1fr) 200px 100px 90px 90px 90px 150px',
     upload:   '150px minmax(200px, 1fr) 100px 90px 90px 150px'
 };
+
+/* 筛选列定义:与STORAGE_HEADERS按序一一对应,kind决定筛选器类型(text文本/number数值/date日期)。
+   列key对应storageFilterValue的取值逻辑,值列表与单元格展示同源,用户看到什么就筛什么。 */
+var STORAGE_FILTER_COLS = {
+    download: [
+        {key: 'chat', kind: 'text'},
+        {key: 'file', kind: 'text'},
+        {key: 'link', kind: 'text'},
+        {key: 'size', kind: 'number', unit: 'MB', arg: '输入大小(MB)'},
+        {key: 'mid', kind: 'number'},
+        {key: 'type', kind: 'text'},
+        {key: 'state', kind: 'text'},
+        {key: 'time', kind: 'date'}
+    ],
+    upload: [
+        {key: 'chat', kind: 'text'},
+        {key: 'path', kind: 'text'},
+        {key: 'size', kind: 'number', unit: 'MB', arg: '输入大小(MB)'},
+        {key: 'type', kind: 'text'},
+        {key: 'state', kind: 'text'},
+        {key: 'time', kind: 'date'}
+    ]
+};
+var STORAGE_FILTER_OPS = {  // 自定义条件的运算符,按列类型分组。
+    text: [
+        {op: 'contains', label: '包含'},
+        {op: 'equals', label: '等于'},
+        {op: 'notEquals', label: '不等于'},
+        {op: 'begins', label: '开头是'},
+        {op: 'ends', label: '结尾是'}
+    ],
+    number: [
+        {op: 'greater', label: '大于'},
+        {op: 'less', label: '小于'},
+        {op: 'equals', label: '等于'},
+        {op: 'between', label: '介于'}
+    ],
+    date: [
+        {op: 'equals', label: '等于'},
+        {op: 'after', label: '晚于'},
+        {op: 'before', label: '早于'},
+        {op: 'between', label: '介于'}
+    ]
+};
+var STORAGE_FILTER_CUSTOM_LABEL = {  // 面板里切换自定义条件的入口文案。
+    text: '文本筛选',
+    number: '数字筛选',
+    date: '日期筛选'
+};
+var STORAGE_FILTER_ARG_LABEL = {  // 自定义条件输入框的占位符。
+    text: '输入关键字',
+    number: '输入数值',
+    date: '输入日期(YYYY-MM-DD)'
+};
+var STORAGE_FILTER_EMPTY = {  // 筛选后无结果时的空态文案。
+    download: '没有符合筛选条件的下载记录。',
+    upload: '没有符合筛选条件的上传记录。'
+};
+var STORAGE_FILTER_KEY = 'trmd_storage_filters';  // 筛选条件的本地存储键,刷新后仍生效。
+var FILTER_MB = 1024 * 1024;  // 大小列自定义条件按MB输入,保存时换算为字节与size_byte比较。
+/* 表头筛选按钮图标:未筛选为下拉箭头,筛选中为漏斗,由CSS切换显隐。 */
+var STORAGE_FILTER_ICONS =
+    '<svg class="hfilter-arrow" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true">' +
+    '<path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+    '<svg class="hfilter-funnel" width="11" height="10" viewBox="0 0 12 12" aria-hidden="true">' +
+    '<path d="M1.5 2h9L7.6 6.6V10L4.4 8.4V6.6L1.5 2z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/></svg>';
+var storageFilters = {download: {}, upload: {}};  // 各选项卡独立保存筛选条件:列key -> {mode:'values',values} 或 {mode:'custom',op,value,value2}。
+var storageFilterPop = null;  // 当前打开的筛选面板,同时只存在一个。
+var storageFilterPanel = null;  // 面板打开期间的临时勾选状态,确定时才写回storageFilters,取消即丢弃。
+var storageFilterCol = '';  // 面板正在筛选的列key。
 
 /* 按当前存储选项卡(下载/上传)重建表头、列宽与拖拽把手。
    下载保持原始 8 列(含链接、消息ID,按消息分组);上传为 6 列(无链接/消息ID,按频道分组)。 */
@@ -760,9 +830,13 @@ function applyStorageLayout() {
         return;
     }
     var headers = STORAGE_HEADERS[currentStorage] || STORAGE_HEADERS.download;
+    var cols = STORAGE_FILTER_COLS[currentStorage] || STORAGE_FILTER_COLS.download;
     var html = '';
     for (var i = 0; i < headers.length; i++) {
-        html += '<span><span class="htext">' + esc(headers[i]) + '</span></span>';
+        var active = cols[i] && storageFilters[currentStorage][cols[i].key] ? ' active' : '';
+        html += '<span><span class="htext">' + esc(headers[i]) + '</span>' +
+            '<button type="button" class="hfilter' + active + '" data-filter="' + cols[i].key + '" title="筛选">' +
+            STORAGE_FILTER_ICONS + '</button></span>';
     }
     head.innerHTML = html;
     list.style.setProperty('--cols', STORAGE_COLS[currentStorage] || STORAGE_COLS.download);
@@ -782,6 +856,7 @@ function switchStorage(name) {
     if (STORAGE_TABS.indexOf(name) === -1) {
         name = 'download';
     }
+    closeStorageFilterPop();  // 表头即将重建,先关面板避免与新表头错位。
     currentStorage = name;
     applyStorageTab();
     saveState(STORAGE_KEY, currentStorage);
@@ -1053,11 +1128,12 @@ function renderStorage(storages) {
 /* 页面内容指纹:记录结构 + 页号 + 每页条数 + 当前tab。
    空态与非空态共用同一口径,确保切换tab后内容变化一定能触发重建。 */
 function storagePageKey(pageStorages) {
-    return storageStructKey(pageStorages) + '#' + storagePage.index + '#' + storagePage.size + '#' + currentStorage;
+    return storageStructKey(pageStorages) + '#' + storagePage.index + '#' + storagePage.size + '#' + currentStorage + '#' + storageFilterKey();
 }
 
 function renderStoragePage() {
-    var blocks = messageBlocksOf(storageAll);
+    var filtered = filterStorage(storageAll);  // 筛选层:先按各列条件过滤,再走原有的分组与分页。
+    var blocks = messageBlocksOf(filtered);
     var pages = paginateGroupBlocks(blocks, storagePage.size);
     var count = pages.length;
     var body = document.getElementById('storage');
@@ -1068,10 +1144,13 @@ function renderStoragePage() {
         var emptyKey = storagePageKey([]);
         if (emptyKey !== lastStorageKey) {
             lastStorageKey = emptyKey;
-            body.innerHTML = '<div class="empty">' + (STORAGE_EMPTY_TEXT[currentStorage] || STORAGE_EMPTY_TEXT.download) + '</div>';
+            var emptyText = hasStorageFilter() ?
+                (STORAGE_FILTER_EMPTY[currentStorage] || STORAGE_FILTER_EMPTY.download) :
+                (STORAGE_EMPTY_TEXT[currentStorage] || STORAGE_EMPTY_TEXT.download);
+            body.innerHTML = '<div class="empty">' + emptyText + '</div>';
         }
-        document.getElementById('badgeStorage').textContent = '0';
-        updateStoragePager(count, 0, storageAll.length, blocks.length, 0, 0);
+        document.getElementById('badgeStorage').textContent = storageAll.length;
+        updateStoragePager(count, 0, filtered.length, blocks.length, 0, 0, storageAll.length);
         return;
     }
     if (storagePage.index >= count) {
@@ -1087,10 +1166,10 @@ function renderStoragePage() {
         body.innerHTML = buildStorageRows(pageStorages);
     }
     document.getElementById('badgeStorage').textContent = storageAll.length;
-    updateStoragePager(count, storagePage.index, storageAll.length, blocks.length, pageStart(pages, storagePage.index), pageEnd(pages, storagePage.index));
+    updateStoragePager(count, storagePage.index, filtered.length, blocks.length, pageStart(pages, storagePage.index), pageEnd(pages, storagePage.index), storageAll.length);
 }
 
-function updateStoragePager(count, index, total, messages, start, end) {
+function updateStoragePager(count, index, shown, messages, start, end, total) {
     var pager = document.getElementById('storagePager');
     if (!pager) {
         return;
@@ -1114,8 +1193,8 @@ function updateStoragePager(count, index, total, messages, start, end) {
         next.disabled = (index >= count - 1);
     }
     if (meta) {
-        meta.textContent = '共 ' + total + ' 条 · ' + messages + ' 个消息' +
-            (count ? (' · 本页第 ' + start + '-' + end + ' 条') : '');
+        meta.textContent = (hasStorageFilter() ? '筛选后 ' + shown + ' 条 · 共 ' + total + ' 条' : '共 ' + total + ' 条') +
+            ' · ' + messages + ' 个消息' + (count ? (' · 本页第 ' + start + '-' + end + ' 条') : '');
     }
 }
 
@@ -1186,6 +1265,591 @@ function bindStoragePager() {
             }
             pop.hidden = true;
             wrap.classList.remove('open');
+        });
+    }
+}
+
+/* Excel式列筛选:在分组与分页之前插入过滤层,无筛选条件时恒等返回,现有链路一行不动。
+   每列条件独立保存,多列之间为AND;值列表与计数只反映其他列筛选后的可见记录。 */
+function hasStorageFilter() {
+    return Object.keys(storageFilters[currentStorage]).length > 0;
+}
+
+/* 字节数转可读大小:与后端MetaData.suitable_units_display的十进制口径一致(如1.50MB),
+   供大小列筛选值列表显示,保证用户看到的就是筛出来的。 */
+function suitableSizeText(byte) {
+    var units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    var values = [Number(byte) || 0];
+    var i;
+    for (i = 0; i < units.length - 1; i++) {
+        if (values[i] >= 1000) {
+            values.push(values[i] / 1000);
+        } else {
+            break;
+        }
+    }
+    return values[values.length - 1].toFixed(2) + units[values.length - 1];
+}
+
+/* 筛选取值(原始值):与单元格展示同源,合并单元格的频道列取频道名,链接列取memberLink处理后的链接,
+   大小列取字节数、消息ID取数字,供自定义条件做数值比较。 */
+function storageFilterValue(rec, key) {
+    if (key === 'chat') {
+        return rec.chat || UNGROUPED_NAME;
+    }
+    if (key === 'file') {
+        return rec.file || '';
+    }
+    if (key === 'path') {
+        return rec.path || rec.file || '';
+    }
+    if (key === 'link') {
+        return memberLink(rec);
+    }
+    if (key === 'size') {
+        return Number(rec.size_byte) || 0;
+    }
+    if (key === 'mid') {
+        return rec.message_id ? Number(rec.message_id) : 0;
+    }
+    if (key === 'type') {
+        return rec.type || '';
+    }
+    if (key === 'state') {
+        return STORAGE_TEXT[rec.state] || rec.status || '';
+    }
+    if (key === 'time') {
+        return rec.time || '';
+    }
+    return '';
+}
+
+/* 筛选展示文本:与单元格最终显示一致,空值按破折号呈现,大小列按十进制单位格式化。 */
+function storageFilterText(rec, key) {
+    if (key === 'size') {
+        return suitableSizeText(rec.size_byte);
+    }
+    if (key === 'mid') {
+        return rec.message_id ? String(rec.message_id) : '—';
+    }
+    var value = storageFilterValue(rec, key);
+    return value === '' ? '—' : String(value);
+}
+
+function storageFilterColDef(key) {
+    var cols = STORAGE_FILTER_COLS[currentStorage] || [];
+    for (var i = 0; i < cols.length; i++) {
+        if (cols[i].key === key) {
+            return cols[i];
+        }
+    }
+    return null;
+}
+
+function storageFilterKind(key) {
+    var col = storageFilterColDef(key);
+    return col ? col.kind : 'text';
+}
+
+function defaultFilterOp(kind) {
+    var ops = STORAGE_FILTER_OPS[kind] || STORAGE_FILTER_OPS.text;
+    return ops[0].op;
+}
+
+/* 过滤层:各列条件求交集,任一列不满足即淘汰;无条件时原样返回。 */
+function filterStorage(storages) {
+    var filters = storageFilters[currentStorage];
+    var keys = Object.keys(filters);
+    if (!keys.length) {
+        return storages;
+    }
+    return storages.filter(function (rec) {
+        for (var i = 0; i < keys.length; i++) {
+            if (!matchStorageFilter(rec, keys[i], filters[keys[i]])) {
+                return false;
+            }
+        }
+        return true;
+    });
+}
+
+function matchStorageFilter(rec, key, cond) {
+    if (cond.mode === 'custom') {
+        return matchCustomFilter(storageFilterValue(rec, key), storageFilterKind(key), cond);
+    }
+    var values = cond.values || [];
+    return values.indexOf(storageFilterText(rec, key)) !== -1;
+}
+
+/* 自定义条件匹配:文本忽略大小写,数值按字节数比较,日期按时间字符串字典序比较。 */
+function matchCustomFilter(value, kind, cond) {
+    var op = cond.op;
+    if (kind === 'number') {
+        var num = Number(value) || 0;
+        if (op === 'between') {
+            return num >= (Number(cond.value) || 0) && num <= (Number(cond.value2) || 0);
+        }
+        if (op === 'equals') {
+            return num === (Number(cond.value) || 0);
+        }
+        if (op === 'greater') {
+            return num > (Number(cond.value) || 0);
+        }
+        if (op === 'less') {
+            return num < (Number(cond.value) || 0);
+        }
+        return true;
+    }
+    if (kind === 'date') {
+        var text = String(value);
+        var from = String(cond.value || '');
+        var to = String(cond.value2 || '');
+        if (op === 'equals') {
+            return text.indexOf(from) === 0;  // 日期前缀匹配:'2026-10-15'即可匹配当天全部记录。
+        }
+        if (op === 'after') {
+            return text > from;
+        }
+        if (op === 'before') {
+            return text < from;
+        }
+        if (op === 'between') {
+            return to ? (text >= from && text <= to + ' 23:59:59') : text >= from;
+        }
+        return true;
+    }
+    var target = String(value).toLowerCase();
+    var query = String(cond.value || '').toLowerCase();
+    if (op === 'equals') {
+        return target === query;
+    }
+    if (op === 'notEquals') {
+        return target !== query;
+    }
+    if (op === 'contains') {
+        return target.indexOf(query) !== -1;
+    }
+    if (op === 'notContains') {
+        return target.indexOf(query) === -1;
+    }
+    if (op === 'begins') {
+        return target.indexOf(query) === 0;
+    }
+    if (op === 'ends') {
+        return query.length > 0 && target.length >= query.length &&
+            target.lastIndexOf(query) === target.length - query.length;
+    }
+    return true;
+}
+
+/* 某列的值统计:只统计其他列筛选后的可见记录,与Excel的上下文计数行为一致。
+   数值列同时保留原始值作排序键,避免按显示文本排序时出现'10.00MB'排在'2.00MB'前的问题。 */
+function storageValueCounts(key) {
+    var filters = storageFilters[currentStorage];
+    var keys = Object.keys(filters);
+    var entries = {};
+    for (var i = 0; i < storageAll.length; i++) {
+        var rec = storageAll[i];
+        var visible = true;
+        for (var j = 0; j < keys.length; j++) {
+            if (keys[j] !== key && !matchStorageFilter(rec, keys[j], filters[keys[j]])) {
+                visible = false;
+                break;
+            }
+        }
+        if (!visible) {
+            continue;
+        }
+        var text = storageFilterText(rec, key);
+        if (entries[text] === undefined) {
+            entries[text] = {count: 0, raw: storageFilterValue(rec, key)};
+        }
+        entries[text].count++;
+    }
+    return entries;
+}
+
+/* 筛选条件的序列化指纹:条件变化必须触发重建,否则内容看似未变而跳过渲染。 */
+function storageFilterKey() {
+    var filters = storageFilters[currentStorage];
+    var keys = Object.keys(filters).sort();
+    var parts = [];
+    for (var i = 0; i < keys.length; i++) {
+        var cond = filters[keys[i]];
+        if (cond.mode === 'custom') {
+            parts.push(keys[i] + ':' + cond.op + ':' + cond.value + ':' + cond.value2);
+        } else {
+            parts.push(keys[i] + ':' + (cond.values || []).join(','));
+        }
+    }
+    return parts.join(';');
+}
+
+function saveStorageFilters() {
+    saveState(STORAGE_FILTER_KEY, JSON.stringify(storageFilters));
+}
+
+/* 恢复上次的筛选条件:逐项校验结构与列key,脏数据整项丢弃,避免损坏的本地存储拖垮记录页。 */
+function loadStorageFilters() {
+    var saved = {};
+    try {
+        saved = JSON.parse(localStorage.getItem(STORAGE_FILTER_KEY) || '{}') || {};
+    } catch (e) {
+        saved = {};
+    }
+    var tabs = ['download', 'upload'];
+    for (var t = 0; t < tabs.length; t++) {
+        var tab = tabs[t];
+        var cols = STORAGE_FILTER_COLS[tab] || [];
+        var src = saved[tab];
+        var dst = {};
+        if (src && typeof src === 'object') {
+            for (var i = 0; i < cols.length; i++) {
+                var key = cols[i].key;
+                var cond = src[key];
+                if (!cond || typeof cond !== 'object') {
+                    continue;
+                }
+                if (cond.mode === 'custom') {
+                    if (typeof cond.value === 'string' && cond.value !== '') {
+                        dst[key] = {
+                            mode: 'custom',
+                            op: String(cond.op || 'contains'),
+                            value: cond.value,
+                            value2: String(cond.value2 || '')
+                        };
+                    }
+                } else if (cond.mode === 'values' && Object.prototype.toString.call(cond.values) === '[object Array]') {
+                    var values = [];
+                    for (var j = 0; j < cond.values.length; j++) {
+                        values.push(String(cond.values[j]));
+                    }
+                    dst[key] = {mode: 'values', values: values};
+                }
+            }
+        }
+        storageFilters[tab] = dst;
+    }
+}
+
+/* 同步表头筛选按钮的激活态:有条件的列显示漏斗并高亮,不改动表头结构。 */
+function refreshStorageFilterButtons() {
+    var buttons = document.querySelectorAll('.list-storage .list-head .hfilter');
+    for (var i = 0; i < buttons.length; i++) {
+        var key = buttons[i].getAttribute('data-filter');
+        buttons[i].classList.toggle('active', !!storageFilters[currentStorage][key]);
+    }
+}
+
+/* 把面板临时状态写回筛选条件并重渲染;无有效条件时视为清除该列筛选。 */
+function commitStorageFilterPanel() {
+    var panel = storageFilterPanel;
+    var pop = storageFilterPop;
+    var customView = pop ? pop.querySelector('.hfilter-custom') : null;
+    var cond = null;
+    if (customView && !customView.hidden && panel.custom.value !== '') {
+        var col = storageFilterColDef(storageFilterCol);
+        var value = panel.custom.value;
+        var value2 = panel.custom.value2;
+        if (col && col.unit === 'MB') {  // 大小列按MB输入,换算为字节后与size_byte比较。
+            value = String((Number(value) || 0) * FILTER_MB);
+            value2 = String((Number(value2) || 0) * FILTER_MB);
+        }
+        cond = {mode: 'custom', op: panel.custom.op, value: value, value2: value2};
+    } else if (panel.values && panel.values.length &&
+        !sameStorageFilterValues(panel.values, panel.all || [])) {
+        // 勾选值与全量可见值一致时等同于本列无筛选,不写回条件,图标恢复箭头。
+        cond = {mode: 'values', values: panel.values.slice()};
+    }
+    if (cond) {
+        storageFilters[currentStorage][storageFilterCol] = cond;
+    } else {
+        delete storageFilters[currentStorage][storageFilterCol];
+    }
+    saveStorageFilters();
+    closeStorageFilterPop();
+    refreshStorageFilterButtons();
+    storagePage.index = 0;  // 条件变化回到首页,避免停留在已不存在的页号。
+    renderStoragePage();
+}
+
+function closeStorageFilterPop() {
+    if (storageFilterPop) {
+        storageFilterPop.parentNode.removeChild(storageFilterPop);
+    }
+    storageFilterPop = null;
+    storageFilterPanel = null;
+    storageFilterCol = '';
+}
+
+/* 打开某列的筛选面板:复制当前条件为临时状态,确定才写回,取消或面板外点击即丢弃。 */
+function openStorageFilterPop(button) {
+    closeStorageFilterPop();
+    var key = button.getAttribute('data-filter');
+    storageFilterCol = key;
+    var cond = storageFilters[currentStorage][key];
+    if (cond && cond.mode === 'custom') {
+        storageFilterPanel = {
+            values: [],
+            custom: {op: cond.op, value: cond.value, value2: cond.value2 || ''}
+        };
+    } else {
+        storageFilterPanel = {
+            values: cond && cond.values ? cond.values.slice() : null,  // null表示全选(无筛选)。
+            custom: {op: defaultFilterOp(storageFilterKind(key)), value: '', value2: ''}
+        };
+    }
+    var pop = buildStorageFilterPop();
+    storageFilterPop = pop;
+    document.body.appendChild(pop);
+    fillStorageFilterValues(pop);
+    placeStorageFilterPop(pop, button);
+    bindStorageFilterPop(pop);
+}
+
+function buildStorageFilterPop() {
+    var kind = storageFilterKind(storageFilterCol);
+    var col = storageFilterColDef(storageFilterCol);
+    var ops = STORAGE_FILTER_OPS[kind] || STORAGE_FILTER_OPS.text;
+    var argLabel = (col && col.arg) || STORAGE_FILTER_ARG_LABEL[kind] || STORAGE_FILTER_ARG_LABEL.text;
+    var pop = document.createElement('div');
+    pop.className = 'hfilter-pop';
+    var html = '';
+    html += '<div class="hfilter-search"><input type="text" class="hfilter-search-input" placeholder="搜索"></div>';
+    html += '<div class="hfilter-list">';
+    html += '<label class="hfilter-item hfilter-all-item"><input type="checkbox" class="hfilter-all-box">' +
+        '<span class="hfilter-label">(全选)</span></label>';
+    html += '<div class="hfilter-values"></div>';
+    html += '<div class="hfilter-none" hidden>无匹配值</div>';
+    html += '</div>';
+    html += '<div class="hfilter-custom" hidden>';
+    html += '<select class="hfilter-op">';
+    for (var i = 0; i < ops.length; i++) {
+        html += '<option value="' + escAttr(ops[i].op) + '">' + esc(ops[i].label) + '</option>';
+    }
+    html += '</select>';
+    html += '<div class="hfilter-args">' +
+        '<input type="text" class="hfilter-arg" placeholder="' + escAttr(argLabel) + '">' +
+        '<input type="text" class="hfilter-arg hfilter-arg2" placeholder="至" hidden>' +
+        '</div>';
+    html += '</div>';
+    html += '<div class="hfilter-switch">' +
+        '<button type="button" class="hfilter-custom-btn">' + esc(STORAGE_FILTER_CUSTOM_LABEL[kind]) + '</button></div>';
+    html += '<div class="hfilter-foot">' +
+        '<button type="button" class="hfilter-ok">确定</button>' +
+        '<button type="button" class="hfilter-cancel">取消</button></div>';
+    pop.innerHTML = html;
+    return pop;
+}
+
+/* 填充值列表:数值列按原始值排序,其余按展示文本排序;values为null(无筛选)时默认全选。 */
+function fillStorageFilterValues(pop) {
+    var valuesBox = pop.querySelector('.hfilter-values');
+    var entries = storageValueCounts(storageFilterCol);
+    var kind = storageFilterKind(storageFilterCol);
+    var values = Object.keys(entries);
+    values.sort(function (a, b) {
+        if (kind === 'number') {
+            return (Number(entries[a].raw) || 0) - (Number(entries[b].raw) || 0);
+        }
+        return a < b ? -1 : (a > b ? 1 : 0);
+    });
+    var panel = storageFilterPanel;
+    panel.all = values.slice();  // 打开时的全量可见值集,复原(全部勾上)时据此判定为无筛选。
+    if (panel.values === null) {
+        panel.values = values.slice();  // 无筛选:打开即全选。
+    }
+    var html = '';
+    for (var i = 0; i < values.length; i++) {
+        var value = values[i];
+        var checked = panel.values.indexOf(value) !== -1 ? ' checked' : '';
+        html += '<label class="hfilter-item" data-value="' + escAttr(value) + '" data-label="' + escAttr(value.toLowerCase()) + '">' +
+            '<input type="checkbox"' + checked + '>' +
+            '<span class="hfilter-label" title="' + escAttr(value) + '">' + esc(value) + '</span>' +
+            '<span class="hfilter-count">' + entries[value].count + '</span></label>';
+    }
+    valuesBox.innerHTML = html;
+    pop.querySelector('.hfilter-none').hidden = values.length > 0;
+    syncStorageFilterAllBox(pop);
+}
+
+/* (全选)复选框的三态:全勾选中、部分选中显示半选,与Excel一致。 */
+function syncStorageFilterAllBox(pop) {
+    var allBox = pop.querySelector('.hfilter-all-box');
+    var items = pop.querySelectorAll('.hfilter-values .hfilter-item');
+    var shown = 0;
+    var checked = 0;
+    for (var i = 0; i < items.length; i++) {
+        if (items[i].hidden) {
+            continue;
+        }
+        shown++;
+        if (items[i].querySelector('input').checked) {
+            checked++;
+        }
+    }
+    allBox.checked = shown > 0 && checked === shown;
+    allBox.indeterminate = checked > 0 && checked < shown;
+}
+
+/* 增删面板临时状态中的一个值。 */
+function setStorageFilterValue(value, checked) {
+    var values = storageFilterPanel.values;
+    var at = values.indexOf(value);
+    if (checked && at === -1) {
+        values.push(value);
+    } else if (!checked && at !== -1) {
+        values.splice(at, 1);
+    }
+}
+
+/* 勾选值与全量可见值完全一致:顺序无关,逐项比对。 */
+function sameStorageFilterValues(selected, all) {
+    if (selected.length !== all.length) {
+        return false;
+    }
+    var a = selected.slice().sort();
+    var b = all.slice().sort();
+    for (var i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/* 切换搜索后可见项的勾选态:(全选)只作用于当前可见项,隐藏项保持原状。 */
+function toggleStorageFilterVisible(pop, checked) {
+    var items = pop.querySelectorAll('.hfilter-values .hfilter-item');
+    for (var i = 0; i < items.length; i++) {
+        if (items[i].hidden) {
+            continue;
+        }
+        items[i].querySelector('input').checked = checked;
+        setStorageFilterValue(items[i].getAttribute('data-value'), checked);
+    }
+    syncStorageFilterAllBox(pop);
+}
+
+/* 面板定位:fixed避开表头滚动裁剪,右溢出时改为右对齐,小屏限制最大宽度。 */
+function placeStorageFilterPop(pop, button) {
+    var rect = button.getBoundingClientRect();
+    var width = pop.offsetWidth;
+    var left = rect.left;
+    if (left + width > window.innerWidth - 8) {
+        left = window.innerWidth - width - 8;
+    }
+    if (left < 8) {
+        left = 8;
+    }
+    pop.style.left = left + 'px';
+    pop.style.top = (rect.bottom + 6) + 'px';
+}
+
+function bindStorageFilterPop(pop) {
+    var panel = storageFilterPanel;
+    var search = pop.querySelector('.hfilter-search-input');
+    var valuesBox = pop.querySelector('.hfilter-values');
+    var none = pop.querySelector('.hfilter-none');
+    var allBox = pop.querySelector('.hfilter-all-box');
+    var customView = pop.querySelector('.hfilter-custom');
+    var opSelect = pop.querySelector('.hfilter-op');
+    var argInput = pop.querySelector('.hfilter-arg');
+    var arg2Input = pop.querySelector('.hfilter-arg2');
+    var customBtn = pop.querySelector('.hfilter-custom-btn');
+    search.addEventListener('input', function () {
+        var query = this.value.trim().toLowerCase();
+        var shown = 0;
+        var items = valuesBox.querySelectorAll('.hfilter-item');
+        for (var i = 0; i < items.length; i++) {
+            var label = items[i].getAttribute('data-label') || '';
+            items[i].hidden = query !== '' && label.indexOf(query) === -1;
+            if (!items[i].hidden) {
+                shown++;
+            }
+        }
+        none.hidden = shown > 0;
+        syncStorageFilterAllBox(pop);
+    });
+    allBox.addEventListener('change', function () {
+        toggleStorageFilterVisible(pop, this.checked);
+    });
+    valuesBox.addEventListener('change', function (event) {
+        var item = event.target.closest ? event.target.closest('.hfilter-item') : null;
+        if (item) {
+            setStorageFilterValue(item.getAttribute('data-value'), event.target.checked);
+            syncStorageFilterAllBox(pop);
+        }
+    });
+    opSelect.addEventListener('change', function () {
+        panel.custom.op = this.value;
+        arg2Input.hidden = this.value !== 'between';
+    });
+    argInput.addEventListener('input', function () {
+        panel.custom.value = this.value.trim();
+    });
+    arg2Input.addEventListener('input', function () {
+        panel.custom.value2 = this.value.trim();
+    });
+    customBtn.addEventListener('click', function () {
+        var toCustom = customView.hidden;
+        customView.hidden = !toCustom;
+        customBtn.textContent = toCustom ? '返回值列表' : STORAGE_FILTER_CUSTOM_LABEL[storageFilterKind(storageFilterCol)];
+        if (toCustom) {  // 进入自定义视图时回填当前条件,并让输入框获得焦点。
+            opSelect.value = panel.custom.op;
+            argInput.value = panel.custom.value;
+            arg2Input.value = panel.custom.value2;
+            arg2Input.hidden = panel.custom.op !== 'between';
+            argInput.focus();
+        }
+    });
+    pop.querySelector('.hfilter-ok').addEventListener('click', function () {
+        commitStorageFilterPanel();
+    });
+    pop.querySelector('.hfilter-cancel').addEventListener('click', function () {
+        closeStorageFilterPop();
+    });
+    pop.addEventListener('click', function (event) {
+        event.stopPropagation();  // 面板内点击不触发外部的关闭逻辑。
+    });
+    // 已是自定义条件的列:打开面板直接进入自定义视图并回填,与值列表视图可随时互切。
+    var cond = storageFilters[currentStorage][storageFilterCol];
+    if (cond && cond.mode === 'custom') {
+        customView.hidden = false;
+        customBtn.textContent = '返回值列表';  // 当前已在自定义视图,按钮语义切换为返回。
+        opSelect.value = panel.custom.op;
+        argInput.value = panel.custom.value;
+        arg2Input.value = panel.custom.value2;
+        arg2Input.hidden = panel.custom.op !== 'between';
+    }
+}
+
+/* 表头筛选入口:按钮由applyStorageLayout动态生成,用委托统一绑定,表头重建后依然有效。 */
+function bindStorageFilters() {
+    var list = document.querySelector('.list-storage');
+    if (!list) {
+        return;
+    }
+    list.addEventListener('click', function (event) {
+        var button = event.target.closest ? event.target.closest('.hfilter') : null;
+        if (!button) {
+            return;
+        }
+        event.stopPropagation();  // 阻止冒泡到document,否则刚打开的面板会被"面板外点击"立刻关掉。
+        openStorageFilterPop(button);
+    });
+    document.addEventListener('click', function () {
+        closeStorageFilterPop();  // 面板外点击等同取消,临时勾选状态丢弃。
+    });
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeStorageFilterPop();
+        }
+    });
+    var scroll = list.querySelector('.list-scroll');
+    if (scroll) {
+        scroll.addEventListener('scroll', function () {
+            closeStorageFilterPop();  // 表头滚出视野时关闭面板,避免面板与按钮错位。
         });
     }
 }
@@ -3077,6 +3741,7 @@ bindListenTabs();
 bindStorageTabs();
 bindStorageHover();
 bindStoragePager();
+bindStorageFilters();
 bindListenRemove();
 bindConfirm();
 bindLogin();
@@ -3086,6 +3751,7 @@ bindSupport();
 bindMenu();
 initSettings();
 initVersion();
+loadStorageFilters();  // 先恢复筛选条件,下面重建表头时才带得出漏斗激活态。
 currentStorage = STORAGE_TABS.indexOf(savedStorage) > -1 ? savedStorage : 'download';
 applyStorageTab();  // 先按保存的选项刷新高亮,此时尚未拉取数据,列表保持空态。
 applySectionVisibility();  // 按可用功能调整侧边栏,随后switchSection会锁定到可用的页面。
