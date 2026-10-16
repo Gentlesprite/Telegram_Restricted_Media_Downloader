@@ -291,7 +291,17 @@ class Bot:
         text: str = message.text.strip()
         # 按字段类型校验用户输入,不合法则要求重新输入当前步骤。
         if field in (BotStepKeyword.LINK, BotStepKeyword.ORIGIN, BotStepKeyword.TARGET):
-            if not text.startswith('http'):
+            valid_http = text.startswith('http')
+            # download_chat的链接字段,以及forward/listen_forward/upload/upload_r的目标字段,额外支持me/self,指代已登录账号本身(收藏等)。
+            valid_me = (text in ('me', 'self') and (
+                    (field == BotStepKeyword.LINK and command == BotCommandText.DOWNLOAD_CHAT[0])
+                    or (field == BotStepKeyword.TARGET and command in (
+                BotCommandText.FORWARD[0],
+                BotCommandText.LISTEN_FORWARD[0],
+                BotCommandText.UPLOAD[0],
+                BotCommandText.UPLOAD_R[0]
+            ))))
+            if not (valid_http or valid_me):
                 await _client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
