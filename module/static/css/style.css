@@ -377,6 +377,12 @@ h1 {
     box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
 }
 
+/* ☰菜单底色加实:与筛选面板、每页下拉统一为.92档(全局磨砂规则为.72,浮层上内容透出看不清)。
+   仅覆盖background-color,噪点与玻璃边缘仍由全局磨砂规则提供。 */
+.menu-wrap .menu-dropdown {
+    background-color: rgba(26, 26, 30, .92);
+}
+
 .menu-item {
     display: block;
     box-sizing: border-box;  /* 避免 width:100% 叠加 padding 超出下拉框导致水平错位。 */
@@ -424,6 +430,11 @@ h1 {
     border-radius: 14px;
     background: rgba(26, 26, 30, .42);  /* 比 --panel(.6)更透,让折射出的背景细节透出来。 */
     box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
+}
+
+/* 修改配置弹窗底色加实:与筛选面板、每页下拉统一为.92档;噪点与玻璃边缘仍由全局磨砂规则提供。 */
+#settingsModal .modal-card {
+    background-color: rgba(26, 26, 30, .92);
 }
 
 .modal-head {
@@ -647,6 +658,11 @@ h1 {
     border-color: var(--accent);
     background: rgba(0, 0, 0, .32);
     box-shadow: 0 0 0 3px rgba(10, 132, 255, .25);
+}
+
+/* 配置弹窗标题栏底色与输入框一档(.85),比--panel2(.72)实,在.92的卡片上层次更清晰。 */
+#settingsModal .modal-head {
+    background: rgba(34, 34, 39, .85);
 }
 
 /* 30天内免登录 */
@@ -1031,7 +1047,7 @@ h2 {
     padding: 4px 8px;
     border: 1px solid var(--border);
     border-radius: 8px;
-    background: var(--panel2);
+    background: rgba(34, 34, 39, .85);  /* 比--panel2(.72)实一档,与筛选面板内的控件同档,浮层上更清晰。 */
     color: var(--text);
     font-family: inherit;
     font-size: 12px;
@@ -1055,7 +1071,7 @@ h2 {
     transform: rotate(180deg);
 }
 
-/* 下拉弹层:与 .menu-dropdown 一致的玻璃卡片。 */
+/* 下拉弹层:与 .menu-dropdown 一致的玻璃卡片,底色比--panel(.6)实一档,内容透出会导致看不清。 */
 .pager-select-pop {
     position: absolute;
     top: calc(100% + 6px);
@@ -1065,7 +1081,7 @@ h2 {
     padding: 6px;
     border: 1px solid var(--border);
     border-radius: 12px;
-    background: var(--panel);
+    background: rgba(26, 26, 30, .92);
     box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
 }
 
@@ -1320,7 +1336,8 @@ body.resizing {
     display: block;
 }
 
-/* 筛选面板:与每页条数下拉一致的玻璃卡片,fixed定位避开表头滚动裁剪。 */
+/* 筛选面板:与每页条数下拉一致的玻璃卡片,fixed定位避开表头滚动裁剪。
+   底色比--panel(.6)更实:面板浮在记录列表上方,列表内容透出会导致看不清。 */
 .hfilter-pop {
     position: fixed;
     z-index: 50;
@@ -1330,7 +1347,7 @@ body.resizing {
     padding: 10px;
     border: 1px solid var(--border);
     border-radius: 12px;
-    background: var(--panel);
+    background: rgba(26, 26, 30, .92);
     box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
     color: var(--text);
     font-size: 13px;
@@ -1343,7 +1360,7 @@ body.resizing {
     padding: 6px 8px;
     border: 1px solid var(--border);
     border-radius: 8px;
-    background: var(--panel2);
+    background: rgba(34, 34, 39, .85);  /* 比--panel2(.72)实一档,在已加实的面板底上更清晰。 */
     color: var(--text);
     font-family: inherit;
     font-size: 13px;
@@ -1416,7 +1433,7 @@ body.resizing {
     margin-top: 8px;
 }
 
-/* 筛选面板中部的运算符下拉向上展开,避免弹层被视口底部裁切;样式与每页条数下拉同一套。 */
+/* 筛选面板中部的运算符下拉向上展开,避免弹层被视口底部裁切;底色与每页条数下拉同一全局规则。 */
 .hfilter-custom .pager-select-pop {
     top: auto;
     bottom: calc(100% + 6px);
