@@ -818,6 +818,7 @@ var storageFilterPop = null;  // 当前打开的筛选面板,同时只存在一�
 var storageFilterPanel = null;  // 面板打开期间的临时勾选状态,确定时才写回storageFilters,取消即丢弃。
 var storageFilterCol = '';  // 面板正在筛选的列key。
 var storageFilterInnerDown = false;  // 按下起点是否在面板内:排除输入框拖选文字时鼠标移出面板被误判为外点。
+var storageFilterEntries = null;  // 打开面板时算一次的当前列值集缓存,供matched计算与fillStorageFilterValues共用,避免重复遍历。
 
 /* 按当前存储选项卡(下载/上传)重建表头、列宽与拖拽把手。
    下载保持原始 8 列(含链接、消息ID,按消息分组);上传为 6 列(无链接/消息ID,按频道分组)。 */
@@ -1584,6 +1585,7 @@ function closeStorageFilterPop() {
     storageFilterPop = null;
     storageFilterPanel = null;
     storageFilterCol = '';
+    storageFilterEntries = null;  // 释放面板期间的值集缓存。
 }
 
 /* 打开某列的筛选面板:复制当前条件为临时状态,确定才写回,取消或面板外点击即丢弃。 */
@@ -1591,16 +1593,16 @@ function openStorageFilterPop(button) {
     closeStorageFilterPop();
     var key = button.getAttribute('data-filter');
     storageFilterCol = key;
+    storageFilterEntries = storageValueCounts(key);  // 算一次,供下方matched与fillStorageFilterValues共用,避免重复遍历。
     var cond = storageFilters[currentStorage][key];
     if (cond && cond.mode === 'custom') {
         // custom 列打开时直接算好匹配值集,避免fillStorageFilterValues里再延迟判断(matchCustom冗余)。
-        var mEntries = storageValueCounts(key);
         var mKind = storageFilterKind(key);
-        var mVals = Object.keys(mEntries);
+        var mVals = Object.keys(storageFilterEntries);
         var mC = {op: cond.op, value: cond.value, value2: cond.value2 || ''};
         var matched = [];
         for (var mi = 0; mi < mVals.length; mi++) {
-            if (matchCustomFilter(mEntries[mVals[mi]].raw, mKind, mC)) {
+            if (matchCustomFilter(storageFilterEntries[mVals[mi]].raw, mKind, mC)) {
                 matched.push(mVals[mi]);
             }
         }
@@ -1684,7 +1686,7 @@ function syncFilterOpDisplay(pop, op) {
 /* 填充值列表:数值列按原始值排序,其余按展示文本排序;values为null(无筛选)时默认全选。 */
 function fillStorageFilterValues(pop) {
     var valuesBox = pop.querySelector('.hfilter-values');
-    var entries = storageValueCounts(storageFilterCol);
+    var entries = storageFilterEntries || storageValueCounts(storageFilterCol);  // 优先复用打开时算好的缓存,避免重复遍历。
     var kind = storageFilterKind(storageFilterCol);
     var values = Object.keys(entries);
     values.sort(function (a, b) {
