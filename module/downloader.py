@@ -2266,9 +2266,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                 link = message_ids
 
             link_type, chat_id, message, member_num = meta.values()
+            if str(chat_id) in ('me', 'self'):
+                chat_id = self.my_id or chat_id  # 归一化me/self。
             task: DownloadTask = DownloadTask.get_or_create(link)
             # 创建任务时即锁定归属者,且每次请求都刷新为当前请求者,
-            # 避免同一链接被不同用户先后下载时沿用首个用户的 owner、通知发错人。
+            # 避免同一链接被不同用户先后下载时沿用首个用户的owner、通知发错人。
             if owner is not None:
                 task.owner = owner
             task.link_type = link_type
