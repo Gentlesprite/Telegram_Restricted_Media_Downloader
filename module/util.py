@@ -753,15 +753,7 @@ def is_docker() -> bool:
 
 
 def ctrl_c():
-    if PLATFORM == 'Windows':
-        subprocess.run('pause', shell=True)
-    elif is_docker():
-        return None
-    else:
-        try:
-            console.input('请按「Enter」键继续. . .')
-        except KeyboardInterrupt:
-            pass
+    subprocess.run('pause', shell=True) if PLATFORM == 'Windows' else None
 
 
 def get_message_dtype(message, download_type: Optional[list] = None) -> Union[str, None]:
