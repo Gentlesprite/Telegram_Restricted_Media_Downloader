@@ -1623,11 +1623,17 @@ function buildStorageFilterPop() {
     html += '<div class="hfilter-none" hidden>无匹配值</div>';
     html += '</div>';
     html += '<div class="hfilter-custom" hidden>';
-    html += '<select class="hfilter-op">';
+    // 运算符下拉复用每页条数的自定义下拉结构(.pager-select),不用浏览器原生select。
+    html += '<div class="pager-select hfilter-op">' +
+        '<button type="button" class="pager-select-btn hfilter-op-btn">' +
+        '<span class="pager-select-val hfilter-op-val"></span>' +
+        '<span class="pager-select-caret"></span>' +
+        '</button>' +
+        '<div class="pager-select-pop hfilter-op-pop" hidden>';
     for (var i = 0; i < ops.length; i++) {
-        html += '<option value="' + escAttr(ops[i].op) + '">' + esc(ops[i].label) + '</option>';
+        html += '<button type="button" class="pager-select-opt" data-op="' + escAttr(ops[i].op) + '">' + esc(ops[i].label) + '</button>';
     }
-    html += '</select>';
+    html += '</div></div>';
     html += '<div class="hfilter-args">' +
         '<input type="text" class="hfilter-arg" placeholder="' + escAttr(argLabel) + '">' +
         '<input type="text" class="hfilter-arg hfilter-arg2" placeholder="至" hidden>' +
@@ -1640,6 +1646,23 @@ function buildStorageFilterPop() {
         '<button type="button" class="hfilter-cancel">取消</button></div>';
     pop.innerHTML = html;
     return pop;
+}
+
+/* 同步运算符自定义下拉的显示值与选中态:显示文本取对应选项的标签。 */
+function syncFilterOpDisplay(pop, op) {
+    var val = pop.querySelector('.hfilter-op-val');
+    var opts = pop.querySelectorAll('.hfilter-op-pop .pager-select-opt');
+    var label = op;
+    for (var i = 0; i < opts.length; i++) {
+        var match = opts[i].getAttribute('data-op') === op;
+        opts[i].classList.toggle('active', match);
+        if (match) {
+            label = opts[i].textContent;
+        }
+    }
+    if (val) {
+        val.textContent = label;
+    }
 }
 
 /* 填充值列表:数值列按原始值排序,其余按展示文本排序;values为null(无筛选)时默认全选。 */
@@ -1753,7 +1776,9 @@ function bindStorageFilterPop(pop) {
     var none = pop.querySelector('.hfilter-none');
     var allBox = pop.querySelector('.hfilter-all-box');
     var customView = pop.querySelector('.hfilter-custom');
-    var opSelect = pop.querySelector('.hfilter-op');
+    var opWrap = pop.querySelector('.hfilter-op');
+    var opBtn = pop.querySelector('.hfilter-op-btn');
+    var opPop = pop.querySelector('.hfilter-op-pop');
     var argInput = pop.querySelector('.hfilter-arg');
     var arg2Input = pop.querySelector('.hfilter-arg2');
     var customBtn = pop.querySelector('.hfilter-custom-btn');
@@ -1781,10 +1806,23 @@ function bindStorageFilterPop(pop) {
             syncStorageFilterAllBox(pop);
         }
     });
-    opSelect.addEventListener('change', function () {
-        panel.custom.op = this.value;
-        arg2Input.hidden = this.value !== 'between';
+    syncFilterOpDisplay(pop, panel.custom.op);  // 初始显示当前运算符。
+    opBtn.addEventListener('click', function (event) {
+        event.stopPropagation();
+        opPop.hidden = !opPop.hidden;
+        opWrap.classList.toggle('open', !opPop.hidden);
     });
+    var opOpts = opPop.querySelectorAll('.pager-select-opt');
+    for (var i = 0; i < opOpts.length; i++) {
+        opOpts[i].addEventListener('click', function (event) {
+            event.stopPropagation();
+            panel.custom.op = this.getAttribute('data-op');
+            arg2Input.hidden = panel.custom.op !== 'between';
+            syncFilterOpDisplay(pop, panel.custom.op);
+            opPop.hidden = true;
+            opWrap.classList.remove('open');
+        });
+    }
     argInput.addEventListener('input', function () {
         panel.custom.value = this.value.trim();
     });
@@ -1796,7 +1834,7 @@ function bindStorageFilterPop(pop) {
         customView.hidden = !toCustom;
         customBtn.textContent = toCustom ? '返回值列表' : STORAGE_FILTER_CUSTOM_LABEL[storageFilterKind(storageFilterCol)];
         if (toCustom) {  // 进入自定义视图时回填当前条件,并让输入框获得焦点。
-            opSelect.value = panel.custom.op;
+            syncFilterOpDisplay(pop, panel.custom.op);
             argInput.value = panel.custom.value;
             arg2Input.value = panel.custom.value2;
             arg2Input.hidden = panel.custom.op !== 'between';
@@ -1811,13 +1849,17 @@ function bindStorageFilterPop(pop) {
     });
     pop.addEventListener('click', function (event) {
         event.stopPropagation();  // 面板内点击不触发外部的关闭逻辑。
+        if (opWrap && !opWrap.contains(event.target)) {  // 点击面板其他区域时收起运算符下拉。
+            opPop.hidden = true;
+            opWrap.classList.remove('open');
+        }
     });
     // 已是自定义条件的列:打开面板直接进入自定义视图并回填,与值列表视图可随时互切。
     var cond = storageFilters[currentStorage][storageFilterCol];
     if (cond && cond.mode === 'custom') {
         customView.hidden = false;
         customBtn.textContent = '返回值列表';  // 当前已在自定义视图,按钮语义切换为返回。
-        opSelect.value = panel.custom.op;
+        syncFilterOpDisplay(pop, panel.custom.op);
         argInput.value = panel.custom.value;
         arg2Input.value = panel.custom.value2;
         arg2Input.hidden = panel.custom.op !== 'between';

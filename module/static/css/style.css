@@ -1019,11 +1019,11 @@ h2 {
 }
 
 /* 每页条数:自定义下拉,玻璃卡片与菜单提示同一套语言(.menu-dropdown/.logo-tip)。 */
-.storage-pager .pager-select {
+.pager-select {
     position: relative;
 }
 
-.storage-pager .pager-select-btn {
+.pager-select-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -1039,24 +1039,24 @@ h2 {
     cursor: pointer;
 }
 
-.storage-pager .pager-select-btn:hover,
-.storage-pager .pager-select.open .pager-select-btn {
+.pager-select-btn:hover,
+.pager-select.open .pager-select-btn {
     border-color: var(--accent);
     color: var(--accent);
 }
 
-.storage-pager .pager-select-caret {
+.pager-select-caret {
     width: 8px;
     height: 5px;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%238a93a6' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
 }
 
-.storage-pager .pager-select.open .pager-select-caret {
+.pager-select.open .pager-select-caret {
     transform: rotate(180deg);
 }
 
 /* 下拉弹层:与 .menu-dropdown 一致的玻璃卡片。 */
-.storage-pager .pager-select-pop {
+.pager-select-pop {
     position: absolute;
     top: calc(100% + 6px);
     left: 0;
@@ -1069,7 +1069,7 @@ h2 {
     box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
 }
 
-.storage-pager .pager-select-opt {
+.pager-select-opt {
     display: block;
     box-sizing: border-box;
     width: 100%;
@@ -1085,12 +1085,12 @@ h2 {
     cursor: pointer;
 }
 
-.storage-pager .pager-select-opt:hover {
+.pager-select-opt:hover {
     background: rgba(56, 249, 215, .12);
     color: var(--accent);
 }
 
-.storage-pager .pager-select-opt.active {
+.pager-select-opt.active {
     color: var(--accent);
     font-weight: 600;
 }
@@ -1337,7 +1337,6 @@ body.resizing {
 }
 
 .hfilter-search-input,
-.hfilter-op,
 .hfilter-arg {
     box-sizing: border-box;
     width: 100%;
@@ -1352,7 +1351,6 @@ body.resizing {
 }
 
 .hfilter-search-input:focus,
-.hfilter-op:focus,
 .hfilter-arg:focus {
     border-color: var(--accent);
     outline: none;
@@ -1416,6 +1414,12 @@ body.resizing {
 
 .hfilter-custom {
     margin-top: 8px;
+}
+
+/* 筛选面板中部的运算符下拉向上展开,避免弹层被视口底部裁切;样式与每页条数下拉同一套。 */
+.hfilter-custom .pager-select-pop {
+    top: auto;
+    bottom: calc(100% + 6px);
 }
 
 .hfilter-args {
