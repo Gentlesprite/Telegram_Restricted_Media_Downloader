@@ -1832,7 +1832,7 @@ function bindStorageFilterPop(pop) {
     customBtn.addEventListener('click', function () {
         var toCustom = customView.hidden;
         customView.hidden = !toCustom;
-        customBtn.textContent = toCustom ? '返回值列表' : STORAGE_FILTER_CUSTOM_LABEL[storageFilterKind(storageFilterCol)];
+        customBtn.textContent = toCustom ? '重置' : STORAGE_FILTER_CUSTOM_LABEL[storageFilterKind(storageFilterCol)];
         if (toCustom) {  // 进入自定义视图时回填当前条件,并让输入框获得焦点。
             syncFilterOpDisplay(pop, panel.custom.op);
             argInput.value = panel.custom.value;
@@ -1858,7 +1858,7 @@ function bindStorageFilterPop(pop) {
     var cond = storageFilters[currentStorage][storageFilterCol];
     if (cond && cond.mode === 'custom') {
         customView.hidden = false;
-        customBtn.textContent = '返回值列表';  // 当前已在自定义视图,按钮语义切换为返回。
+        customBtn.textContent = '重置';  // 当前已在自定义视图,按钮语义为放弃自定义条件回到值列表。
         syncFilterOpDisplay(pop, panel.custom.op);
         argInput.value = panel.custom.value;
         arg2Input.value = panel.custom.value2;
