@@ -1373,6 +1373,22 @@ body.resizing {
     outline: none;
 }
 
+.hfilter-arg:hover {
+    background: rgba(0, 0, 0, .25);  /* 鼠标悬停时背景加深,与修改配置输入框风格一致。 */
+}
+
+.hfilter-arg:focus {
+    background: rgba(0, 0, 0, .32);  /* 聚焦时进一步加深,与修改配置输入框:focus完全一致。 */
+}
+
+.hfilter-search-input:hover {
+    background: rgba(0, 0, 0, .25);  /* 搜索框同样悬停加深,与修改配置输入框风格一致。 */
+}
+
+.hfilter-search-input:focus {
+    background: rgba(0, 0, 0, .32);  /* 搜索框聚焦加深,与修改配置输入框:focus一致。 */
+}
+
 .hfilter-list {
     max-height: 240px;
     margin-top: 8px;
