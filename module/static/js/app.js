@@ -1548,7 +1548,10 @@ function commitStorageFilterPanel() {
     var pop = storageFilterPop;
     var customView = pop ? pop.querySelector('.hfilter-custom') : null;
     var cond = null;
-    if (customView && !customView.hidden && panel.custom.value !== '') {
+    if (panel.matchCustom && customView && customView.hidden) {
+        // 以自定义条件打开且未进入自定义编辑视图:值列表勾选仅作展示,确定即保持原条件,不降级为values。
+        cond = storageFilters[currentStorage][storageFilterCol];
+    } else if (customView && !customView.hidden && panel.custom.value !== '') {
         var col = storageFilterColDef(storageFilterCol);
         var value = panel.custom.value;
         var value2 = panel.custom.value2;
@@ -1866,15 +1869,23 @@ function bindStorageFilterPop(pop) {
     argInput.addEventListener('input', filterAdvance);
     arg2Input.addEventListener('input', filterAdvance);
     customBtn.addEventListener('click', function () {
-        var toCustom = customView.hidden;
-        customView.hidden = !toCustom;
-        customBtn.textContent = toCustom ? '重置' : STORAGE_FILTER_CUSTOM_LABEL[storageFilterKind(storageFilterCol)];
-        if (toCustom) {  // 进入自定义视图时回填当前条件,并让输入框获得焦点。
+        if (customView.hidden) {
+            // 值列表视图:进入自定义视图(保留设置自定义条件的入口)。
+            customView.hidden = false;
+            customBtn.textContent = '重置';
             syncFilterOpDisplay(pop, panel.custom.op);
             argInput.value = panel.custom.value;
             arg2Input.value = panel.custom.value2;
             arg2Input.hidden = panel.custom.op !== 'between';
             argInput.focus();
+        } else {
+            // 自定义视图:重置=清除该列筛选,等同在此条目勾选(全选)。
+            delete storageFilters[currentStorage][storageFilterCol];
+            saveStorageFilters();
+            closeStorageFilterPop();
+            refreshStorageFilterButtons();
+            storagePage.index = 0;
+            renderStoragePage();
         }
     });
     pop.querySelector('.hfilter-ok').addEventListener('click', function () {
