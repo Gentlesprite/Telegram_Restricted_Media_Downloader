@@ -1808,6 +1808,22 @@ function bindStorageFilterPop(pop) {
     var customBtn = pop.querySelector('.hfilter-custom-btn');
     var col = storageFilterColDef(storageFilterCol);  // 当前列的筛选定义,用于判断大小列(MB)回填时换算。
     var searchSnapshot = null;  // 搜索开始前的勾选快照,清空搜索时还原,避免误伤原筛选。
+    // 自定义视图下校验"确定"可用性:between必须两端都填,其余只需首值非空;值列表模式不限制。
+    function syncConfirmState() {
+        var ok = pop.querySelector('.hfilter-ok');
+        if (!ok) {
+            return;
+        }
+        var valid = true;
+        if (customView && !customView.hidden) {
+            if (panel.custom.op === 'between') {
+                valid = panel.custom.value.trim() !== '' && panel.custom.value2.trim() !== '';
+            } else {
+                valid = panel.custom.value.trim() !== '';
+            }
+        }
+        ok.disabled = !valid;
+    }
     // custom 列:值列表仅作条件匹配展示,禁用勾选交互,避免"能勾却改不了"的困惑。
     if (panel.isCustom) {
         var initItems = valuesBox.querySelectorAll('.hfilter-item');
@@ -1886,15 +1902,18 @@ function bindStorageFilterPop(pop) {
             panel.custom.op = this.getAttribute('data-op');
             arg2Input.hidden = panel.custom.op !== 'between';
             syncFilterOpDisplay(pop, panel.custom.op);
+            syncConfirmState();
             opPop.hidden = true;
             opWrap.classList.remove('open');
         });
     }
     argInput.addEventListener('input', function () {
         panel.custom.value = this.value.trim();
+        syncConfirmState();
     });
     arg2Input.addEventListener('input', function () {
         panel.custom.value2 = this.value.trim();
+        syncConfirmState();
     });
     // 筛选输入时每输入一个字符也推进背景涂鸦渐变,与登录框、修改配置弹窗一致(复用官方推进逻辑)。
     var filterAdvance = function () {
@@ -1921,6 +1940,7 @@ function bindStorageFilterPop(pop) {
             // 回填同步:commit按MB乘FILTER_MB存字节,若panel.custom仍为字节会被二次乘导致指数膨胀。
             panel.custom.value = argInput.value;
             panel.custom.value2 = arg2Input.value;
+            syncConfirmState();  // 进入自定义视图立即校验,避免首次打开确定按钮可误点。
             argInput.focus();
         } else {
             // 自定义视图:重置=清除该列筛选,等同在此条目勾选(全选)。
@@ -1960,6 +1980,7 @@ function bindStorageFilterPop(pop) {
         // 回填同步:commit按MB乘FILTER_MB存储,若panel.custom仍为字节会被二次乘导致指数膨胀。
         panel.custom.value = argInput.value;
         panel.custom.value2 = arg2Input.value;
+        syncConfirmState();
     }
 }
 

@@ -1494,6 +1494,14 @@ body.resizing {
     background: rgba(56, 249, 215, .12);
 }
 
+.hfilter-ok:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+    border-color: var(--border);
+    color: var(--text);
+    background: var(--panel2);
+}
+
 .hfilter-cancel:hover {
     border-color: var(--danger);
     color: var(--danger);
