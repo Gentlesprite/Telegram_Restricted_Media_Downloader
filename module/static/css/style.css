@@ -1917,6 +1917,17 @@ tbody tr:hover {
     .gname {
         -webkit-line-clamp: 3;
     }
+
+    /* 窄屏分页条:统计信息较长,允许换行并独占一行,避免挤压每页/翻页控件或溢出容器。 */
+    .storage-pager {
+        flex-wrap: wrap;
+    }
+
+    .pager-meta {
+        flex-basis: 100%;
+        min-width: 0;
+        white-space: normal;
+    }
 }
 
 @media (max-width: 620px) {
