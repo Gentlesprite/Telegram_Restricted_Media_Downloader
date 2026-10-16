@@ -1800,6 +1800,7 @@ function bindStorageFilterPop(pop) {
     var arg2Input = pop.querySelector('.hfilter-arg2');
     var customBtn = pop.querySelector('.hfilter-custom-btn');
     var col = storageFilterColDef(storageFilterCol);  // 当前列的筛选定义,用于判断大小列(MB)回填时换算。
+    var searchSnapshot = null;  // 搜索开始前的勾选快照,清空搜索时还原,避免误伤原筛选。
     search.addEventListener('input', function () {
         var query = this.value.trim().toLowerCase();
         var shown = 0;
@@ -1813,8 +1814,12 @@ function bindStorageFilterPop(pop) {
         }
         none.hidden = shown > 0;
         // 输入即筛选:有关键字时勾选与可见项完全一致(符合条件即选中,不符合的取消),
-        // 搜索后直接确定即为该条件;清空关键字时保持原勾选不动,避免误伤打开时的条件。
+        // 搜索后直接确定即为该条件。
         if (query !== '') {
+            // 首次从空进入搜索时记录快照,供清空时还原到搜索前的勾选。
+            if (searchSnapshot === null) {
+                searchSnapshot = panel.values.slice();
+            }
             for (var i = 0; i < items.length; i++) {
                 var visible = !items[i].hidden;
                 var box = items[i].querySelector('input');
@@ -1823,6 +1828,18 @@ function bindStorageFilterPop(pop) {
                     setStorageFilterValue(items[i].getAttribute('data-value'), visible);
                 }
             }
+        } else if (searchSnapshot !== null) {
+            // 清空搜索:还原到搜索前的勾选,而非停在搜索子集,避免全选等原筛选被悄悄缩小。
+            for (var i = 0; i < items.length; i++) {
+                var v = items[i].getAttribute('data-value');
+                var should = searchSnapshot.indexOf(v) !== -1;
+                var box = items[i].querySelector('input');
+                if (box && box.checked !== should) {
+                    box.checked = should;
+                    setStorageFilterValue(v, should);
+                }
+            }
+            searchSnapshot = null;
         }
         syncStorageFilterAllBox(pop);
     });
