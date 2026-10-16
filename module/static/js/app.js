@@ -817,6 +817,7 @@ var storageFilters = {download: {}, upload: {}};  // 各选项卡独立保存筛
 var storageFilterPop = null;  // 当前打开的筛选面板,同时只存在一个。
 var storageFilterPanel = null;  // 面板打开期间的临时勾选状态,确定时才写回storageFilters,取消即丢弃。
 var storageFilterCol = '';  // 面板正在筛选的列key。
+var storageFilterInnerDown = false;  // 按下起点是否在面板内:排除输入框拖选文字时鼠标移出面板被误判为外点。
 
 /* 按当前存储选项卡(下载/上传)重建表头、列宽与拖拽把手。
    下载保持原始 8 列(含链接、消息ID,按消息分组);上传为 6 列(无链接/消息ID,按频道分组)。 */
@@ -1890,7 +1891,15 @@ function bindStorageFilters() {
         event.stopPropagation();  // 阻止冒泡到document,否则刚打开的面板会被"面板外点击"立刻关掉。
         openStorageFilterPop(button);
     });
+    document.addEventListener('mousedown', function (event) {
+        // 记录按下起点是否在面板内:输入框拖选文字时按住不放移出面板,松手时click的
+        // target是共同祖先( document 级),不记录起点会把面板误关。
+        storageFilterInnerDown = !!(storageFilterPop && storageFilterPop.contains(event.target));
+    });
     document.addEventListener('click', function () {
+        if (storageFilterInnerDown) {
+            return;  // 从面板内开始的拖拽(如选字),松手即使在外面也不关闭。
+        }
         closeStorageFilterPop();  // 面板外点击等同取消,临时勾选状态丢弃。
     });
     document.addEventListener('keydown', function (event) {
