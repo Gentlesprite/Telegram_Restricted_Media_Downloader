@@ -1499,6 +1499,38 @@ body.resizing {
     color: var(--danger);
 }
 
+/* 窄屏:筛选面板改为底部全宽弹层,内容区滚动、"确定/取消"固定在底部,避免被手机视口裁切。 */
+@media (max-width: 760px) {
+    .hfilter-pop {
+        left: 8px !important;
+        right: 8px !important;
+        width: auto !important;
+        top: auto !important;
+        bottom: 8px !important;
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 16px);
+        overflow: hidden;
+    }
+
+    .hfilter-pop .hfilter-search {
+        flex: none;
+    }
+
+    .hfilter-pop .hfilter-list,
+    .hfilter-pop .hfilter-custom {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;  /* 取消基础240限制,由面板整体高度接管。 */
+        overflow-y: auto;
+    }
+
+    .hfilter-pop .hfilter-switch,
+    .hfilter-pop .hfilter-foot {
+        flex: none;
+    }
+}
+
 .list-storage #storage {
     display: grid;
     grid-template-columns: var(--cols);
