@@ -1548,7 +1548,7 @@ function commitStorageFilterPanel() {
     var pop = storageFilterPop;
     var customView = pop ? pop.querySelector('.hfilter-custom') : null;
     var cond = null;
-    if (panel.matchCustom && customView && customView.hidden) {
+    if (panel.isCustom && customView && customView.hidden) {
         // 以自定义条件打开且未进入自定义编辑视图:值列表勾选仅作展示,确定即保持原条件,不降级为values。
         cond = storageFilters[currentStorage][storageFilterCol];
     } else if (customView && !customView.hidden && panel.custom.value !== '') {
@@ -1593,10 +1593,21 @@ function openStorageFilterPop(button) {
     storageFilterCol = key;
     var cond = storageFilters[currentStorage][key];
     if (cond && cond.mode === 'custom') {
+        // custom 列打开时直接算好匹配值集,避免fillStorageFilterValues里再延迟判断(matchCustom冗余)。
+        var mEntries = storageValueCounts(key);
+        var mKind = storageFilterKind(key);
+        var mVals = Object.keys(mEntries);
+        var mC = {op: cond.op, value: cond.value, value2: cond.value2 || ''};
+        var matched = [];
+        for (var mi = 0; mi < mVals.length; mi++) {
+            if (matchCustomFilter(mEntries[mVals[mi]].raw, mKind, mC)) {
+                matched.push(mVals[mi]);
+            }
+        }
         storageFilterPanel = {
-            values: null,  // 由fillStorageFilterValues按custom条件匹配回填。
+            values: matched,
             custom: {op: cond.op, value: cond.value, value2: cond.value2 || ''},
-            matchCustom: true  // 打开时按自定义条件勾选值列表,让勾选反映当前筛选涉及的值。
+            isCustom: true
         };
     } else {
         storageFilterPanel = {
@@ -1685,22 +1696,10 @@ function fillStorageFilterValues(pop) {
     var panel = storageFilterPanel;
     panel.all = values.slice();  // 打开时的全量可见值集,复原(全部勾上)时据此判定为无筛选。
     if (panel.values === null) {
-        if (panel.matchCustom && panel.custom) {
-            // 自定义条件打开:按条件逐值匹配回填勾选(复用记录级同一套matchCustomFilter),
-            // 让值列表反映当前筛选涉及的值;匹配不到任何值时全不勾。
-            var matched = [];
-            for (var i = 0; i < values.length; i++) {
-                if (matchCustomFilter(entries[values[i]].raw, kind, panel.custom)) {
-                    matched.push(values[i]);
-                }
-            }
-            panel.values = matched;
-        } else {
-            panel.values = values.slice();  // 无筛选:打开即全选。
-        }
+        panel.values = values.slice();  // 无筛选:打开即全选(custom列已在openStorageFilterPop算好matched,不会进此分支)。
     }
     // custom 列:勾选项(当前条件匹配)排在前,未勾选的非匹配项排在后,便于一眼看清生效范围。
-    if (panel.matchCustom) {
+    if (panel.isCustom) {
         values = values.slice().sort(function (a, b) {
             var ia = panel.values.indexOf(a) !== -1 ? 0 : 1;
             var ib = panel.values.indexOf(b) !== -1 ? 0 : 1;
@@ -1809,8 +1808,8 @@ function bindStorageFilterPop(pop) {
     var customBtn = pop.querySelector('.hfilter-custom-btn');
     var col = storageFilterColDef(storageFilterCol);  // 当前列的筛选定义,用于判断大小列(MB)回填时换算。
     var searchSnapshot = null;  // 搜索开始前的勾选快照,清空搜索时还原,避免误伤原筛选。
-    // custom 列:值列表仅作条件匹配展示(见matchCustom回填),禁用勾选交互,避免"能勾却改不了"的困惑。
-    if (panel.matchCustom) {
+    // custom 列:值列表仅作条件匹配展示,禁用勾选交互,避免"能勾却改不了"的困惑。
+    if (panel.isCustom) {
         var initItems = valuesBox.querySelectorAll('.hfilter-item');
         for (var mi = 0; mi < initItems.length; mi++) {
             var mb = initItems[mi].querySelector('input');
@@ -1836,7 +1835,7 @@ function bindStorageFilterPop(pop) {
         none.hidden = shown > 0;
         // 输入即筛选:有关键字时勾选与可见项完全一致(符合条件即选中,不符合的取消),
         // 搜索后直接确定即为该条件。
-        if (query !== '' && !panel.matchCustom) {
+        if (query !== '' && !panel.isCustom) {
             // 首次从空进入搜索时记录快照,供清空时还原到搜索前的勾选。
             if (searchSnapshot === null) {
                 searchSnapshot = panel.values.slice();
