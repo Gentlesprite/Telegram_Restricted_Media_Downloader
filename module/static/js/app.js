@@ -1829,6 +1829,16 @@ function bindStorageFilterPop(pop) {
     arg2Input.addEventListener('input', function () {
         panel.custom.value2 = this.value.trim();
     });
+    // 筛选输入时每输入一个字符也推进背景涂鸦渐变,与登录框、修改配置弹窗一致(复用官方推进逻辑)。
+    var filterAdvance = function () {
+        if (!bgCtx) {
+            return;  // 渐变背景未初始化成功时跳过。
+        }
+        bgAdvancePosition();
+    };
+    search.addEventListener('input', filterAdvance);
+    argInput.addEventListener('input', filterAdvance);
+    arg2Input.addEventListener('input', filterAdvance);
     customBtn.addEventListener('click', function () {
         var toCustom = customView.hidden;
         customView.hidden = !toCustom;
