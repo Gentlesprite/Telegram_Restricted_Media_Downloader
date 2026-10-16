@@ -67,7 +67,6 @@ from module.task import (
     UploadTask
 )
 from module.util import (
-    Issues,
     is_docker,
     parse_link,
     safe_index,
@@ -80,6 +79,7 @@ from module.util import (
     parse_task_callback
 )
 from module.enums import (
+    Issues,
     KeyWord,
     BotButton,
     BotMessage,

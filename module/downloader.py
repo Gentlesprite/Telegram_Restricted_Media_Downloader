@@ -93,12 +93,13 @@ from module.storage import (
     TRMDStorage
 )
 from module.enums import (
-    DownloadStatus,
+    Issues,
     LinkType,
     KeyWord,
     BotButton,
     BotMessage,
     DownloadType,
+    DownloadStatus,
     BotCallbackText,
     SaveDirectoryPrefix
 )
@@ -113,7 +114,6 @@ from module.path_tool import (
     move_to_save_directory
 )
 from module.util import (
-    Issues,
     ChatInfo,
     LimitCall,
     ctrl_c,
@@ -2581,7 +2581,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         except OperationalError as e:
             run_error: bool = True
             log.error(
-                f'检测到软件多开使用同一SESSION,请关闭多余实例或使用--session指定新的SESSION位置后重试,{_t(KeyWord.REASON)}:"{e}"')
+                f'检测到软件多开使用同一SESSION,{_t(KeyWord.REASON)}:"{e}"')
+            console.print(Issues.MULTI_SESSION_TIP)
         except Exception as e:
             run_error: bool = True
             log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"')

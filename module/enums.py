@@ -131,6 +131,19 @@ class KeyWord:
     UPLOAD_FILE_PART: str = 'upload file part'
 
 
+class Issues:
+    PROXY_NOT_CONFIGURED = '🛡️ [#79FCD4]代理配置方法[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\n[link=https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#问题14-error-运行出错原因0-keyerror-0]https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#问题14-error-运行出错原因0-keyerror-0[/link]\n[#FCFF79]若[/#FCFF79][#FF4689]无法[/#FF4689][#FF7979]访问[/#FF7979][#79FCD4],[/#79FCD4][#FCFF79]可[/#FCFF79][#d4fc79]查阅[/#d4fc79][#FC79A5]软件压缩包所提供的[/#FC79A5][#79E2FC]"使用手册"[/#79E2FC][#79FCD4]文件夹下的[/#79FCD4][#FFB579]"常见问题及解决方案汇总.pdf"[/#FFB579][#79FCB5]中的[/#79FCB5][#D479FC]【问题14】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6]。[/#FC79A6]'  # noqa.
+    SYSTEM_TIME_NOT_SYNCHRONIZED = '🕒 [#FCFF79]检测到[/#FCFF79][#FF7979]系统时间[/#FF7979][#FC79A5]未同步[/#FC79A5][#79E2FC],[/#79E2FC][#79FCD4]解决方法[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\nhttps://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/issues/5#issuecomment-2580677184\n[#FCFF79]若[/#FCFF79][#FF4689]无法[/#FF4689][#FF7979]访问[/#FF7979][#79FCD4],[/#79FCD4][#FCFF79]可[/#FCFF79][#d4fc79]查阅[/#d4fc79][#FC79A5]软件压缩包所提供的[/#FC79A5][#79E2FC]"使用手册"[/#79E2FC][#79FCB5]中的[/#79FCB5][#D479FC]【问题4】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6],[/#FC79A6][#79FCD4]并[/#79FCD4][#79FCB5]重启软件[/#79FCB5]。'  # noqa.
+    DOCKER_HOST_IP_TIP = '🐳 Docker环境下链接中的IP为容器IP并非宿主机IP,请使用宿主机IP加端口访问。'
+    PROXY_CONFIG_TIP = '❓ [#79FCD4]如果对代理配置有疑问[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\n🌐 [link=https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#配置代理时在代理在本机的情况下]https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#配置代理时在代理在本机的情况下[/link]\n🛑 [#FCFF79]若[/#FCFF79][#FF4689]无法[/#FF4689][#FF7979]访问:[/#FF7979][#79FCD4]\n🔎 [/#79FCD4][#FCFF79]可[/#FCFF79][#d4fc79]查阅[/#d4fc79][#FC79A5]软件压缩包所提供的[/#FC79A5][#79E2FC]"使用手册"[/#79E2FC][#79FCD4]文件夹下的[/#79FCD4][#FFB579]"常见问题及解决方案汇总.pdf"[/#FFB579][#79FCB5]中的[/#79FCB5][#D479FC]【问题14】里的【解决方案】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6]。[/#FC79A6]'
+    MULTI_SESSION_TIP = f'🔧 [#FF79D4]解决方法[/#FF79D4][#FCFF79](任选其一):[/#FCFF79]\n[#D4FC79]1.关闭多余实例。[/#D4FC79]\n[#D4FC79]2.使用[/#D4FC79]"[#79FCD4]{sys.executable} --session SESSION[/#79FCD4]"[#D4FC79]指定新的SESSION位置后重试[/#D4FC79]([#FFB579]将SESSION替换为实际路径[/#FFB579])。'
+
+    def __iter__(self):
+        for key, value in vars(self.__class__).items():
+            if not key.startswith('_') and not callable(value):  # 排除特殊方法和属性。
+                yield value
+
+
 class Extension:
     PHOTO = {
         'image/avif': 'avif',
@@ -812,16 +825,7 @@ class ProcessConfig:
                 advance_account_truth_table.append(_[1])
         if all(basic_truth_table) is False:  # noqa.
             console.print('请配置代理!', style=ProcessConfig.stdio_style('config_proxy'))
-            console.print(
-                '[#79FCD4]如果对代理配置有疑问[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\n'
-                '[link=https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#配置代理时在代理在本机的情况下]'
-                'https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#配置代理时在代理在本机的情况下[/link]'
-                '\n[#FCFF79]若[/#FCFF79][#FF4689]无法[/#FF4689][#FF7979]访问[/#FF7979][#79FCD4],[/#79FCD4]'
-                '[#FCFF79]可[/#FCFF79][#d4fc79]查阅[/#d4fc79]'
-                '[#FC79A5]软件压缩包所提供的[/#FC79A5][#79E2FC]"使用手册"[/#79E2FC]'
-                '[#79FCD4]文件夹下的[/#79FCD4][#FFB579]"常见问题及解决方案汇总.pdf"[/#FFB579]'
-                '[#79FCB5]中的[/#79FCB5][#D479FC]【问题14】里的【解决方案】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6]。[/#FC79A6]'
-            )
+            console.print(Issues.PROXY_CONFIG_TIP)
             result: bool = True
         if any(advance_account_truth_table) and all(advance_account_truth_table) is False:
             log.warning('代理账号或密码未输入!')

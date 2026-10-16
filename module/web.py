@@ -50,7 +50,6 @@ from module.task import (
     DownloadTask
 )
 from module.util import (
-    Issues,
     ChatInfo,
     is_frozen,
     is_docker,
@@ -63,6 +62,7 @@ from module.util import (
     gen_random_credential
 )
 from module.enums import (
+    Issues,
     WebMeta,
     KeyWord,
     UploadStatus,
