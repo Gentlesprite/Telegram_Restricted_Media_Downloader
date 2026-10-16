@@ -37,25 +37,6 @@ from module.enums import (
 )
 
 
-class ChatInfo:
-    TITLE: dict = {}
-
-    @staticmethod
-    def add(chat: Union[pyrogram.types.Chat, None], chat_id: Union[str, int, None] = None) -> None:
-        """缓存频道的标题,避免网页面板只显示频道ID。"""
-        if chat is None:
-            return
-        _chat_id: str = str(chat_id if chat_id is not None else getattr(chat, 'id', ''))
-        title: str = str(getattr(chat, 'title', '') or getattr(chat, 'first_name', '') or '')
-        if _chat_id and title:
-            ChatInfo.TITLE[_chat_id] = title
-
-    @staticmethod
-    def get(chat_id: Union[str, int, None]) -> str:
-        """获取缓存的频道标题,不存在时返回空字符串。"""
-        return ChatInfo.TITLE.get(str(chat_id), '')
-
-
 class DownloadTask:
     """下载任务,按链接维护待下载的消息与其下载进度统计。"""
 
@@ -231,7 +212,8 @@ class DownloadTask:
         return result[:limit]
 
     @classmethod
-    def download_key(cls, message: Union['pyrogram.types.Message', None], message_id: Union[int, str, None] = None) -> Union[tuple, None]:
+    def download_key(cls, message: Union['pyrogram.types.Message', None], message_id: Union[int, str, None] = None) -> \
+            Union[tuple, None]:
         """构造下载占用键(chat_id, message_id),message.chat为空时返回None。
 
         用于DOWNLOADING_KEYS的并发去重。部分消息(如由序列化进度重建的消息)的

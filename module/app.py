@@ -36,8 +36,8 @@ from module.enums import (
     DownloadStatus
 )
 from module.path_tool import (
-    validate_title,
     get_extension,
+    validate_title,
     truncate_filename,
     is_compressed_file,
     extract_full_extension

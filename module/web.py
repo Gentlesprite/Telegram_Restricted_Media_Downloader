@@ -5,22 +5,25 @@
 # File:web.py
 import os
 import re
-import shutil
 import sys
 import json
+import time
+import copy
 import base64
-import datetime
+import shutil
 import socket
 import asyncio
+import datetime
 import mimetypes
 import threading
-import time
-
-import copy
 
 from typing import Union
-from urllib.parse import unquote, urlparse, parse_qs
 from asyncio import AbstractEventLoop
+from urllib.parse import (
+    unquote,
+    urlparse,
+    parse_qs
+)
 from http.server import (
     ThreadingHTTPServer,
     BaseHTTPRequestHandler
@@ -43,21 +46,21 @@ from module.stdio import (
     PanelTable
 )
 from module.task import (
-    ChatInfo,
     UploadTask,
     DownloadTask
 )
 from module.util import (
     Issues,
+    ChatInfo,
     is_frozen,
     is_docker,
     get_local_ip,
+    parse_chat_id,
     get_web_session,
     reset_web_session,
     get_message_dtype,
     get_work_directory,
-    gen_random_credential,
-    parse_chat_id
+    gen_random_credential
 )
 from module.enums import (
     WebMeta,
@@ -430,7 +433,7 @@ class Web:
         self.cache_size_stamp: float = 0.0  # 上次统计缓存目录大小的时刻,用于节流。
         self.cache_size_value: int = 0  # 上次统计出的缓存目录字节数。
         self.filled_chat_ids: set = set()  # 已补全过标题的频道ID,避免重复扫描与重复回写。
-        self.has_bot = bool(app and getattr(app, 'bot_token', None)) # 是否配置了机器人,决定前端是否展示上传与监听侧边栏(无机器人时只有下载可用)。
+        self.has_bot = bool(app and getattr(app, 'bot_token', None))  # 是否配置了机器人,决定前端是否展示上传与监听侧边栏(无机器人时只有下载可用)。
         self.credential: dict = gen_random_credential()
         self.protocol: str = 'http'
         self.ip: str = '0.0.0.0'

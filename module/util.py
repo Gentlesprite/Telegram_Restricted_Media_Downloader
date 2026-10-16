@@ -7,13 +7,13 @@ import os
 import re
 import sys
 import time
+import json
 import socket
 import string
 import random
 import asyncio
 import logging
 import subprocess
-import json
 
 from collections import deque
 from functools import lru_cache
@@ -888,6 +888,25 @@ def resolve_chat_id(chat_filter: dict, task: Union[str, None]):
     except ValueError:
         return None
     return task_id if task_id in chat_filter else None
+
+
+class ChatInfo:
+    TITLE: dict = {}
+
+    @staticmethod
+    def add(chat: Union[pyrogram.types.Chat, None], chat_id: Union[str, int, None] = None) -> None:
+        """缓存频道的标题,避免网页面板只显示频道ID。"""
+        if chat is None:
+            return
+        _chat_id: str = str(chat_id if chat_id is not None else getattr(chat, 'id', ''))
+        title: str = str(getattr(chat, 'title', '') or getattr(chat, 'first_name', '') or '')
+        if _chat_id and title:
+            ChatInfo.TITLE[_chat_id] = title
+
+    @staticmethod
+    def get(chat_id: Union[str, int, None]) -> str:
+        """获取缓存的频道标题,不存在时返回空字符串。"""
+        return ChatInfo.TITLE.get(str(chat_id), '')
 
 
 class LimitCall:  # https://github.com/tangyoha/telegram_media_downloader/blob/master/module/app.py#L246

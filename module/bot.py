@@ -83,14 +83,14 @@ from module.enums import (
     KeyWord,
     BotButton,
     BotMessage,
+    BotStepText,
     UploadStatus,
     DownloadType,
+    BotStepKeyword,
     BotCommandText,
     BotCallbackText,
-    BotStepText,
-    BotCallbackPrefix,
-    BotStepKeyword,
-    CalenderKeyboard
+    CalenderKeyboard,
+    BotCallbackPrefix
 )
 
 
@@ -1453,7 +1453,6 @@ class Bot:
         )
         # 处理完毕关闭输入模式。
         self.add_auth_mode_handler(chat_id=chat_id, callback_query=callback_query, enable=False)
-
 
     async def show_authorized_users(
             self,

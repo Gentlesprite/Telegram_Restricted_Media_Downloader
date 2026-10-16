@@ -35,10 +35,7 @@ from module import (
     console
 )
 from module.language import _t
-from module.task import (
-    ChatInfo,
-    UploadTask
-)
+from module.task import UploadTask
 from module.storage import (
     StorageType,
     TRMDStorage
@@ -57,6 +54,7 @@ from module.enums import (
     UploadStatus
 )
 from module.util import (
+    ChatInfo,
     parse_link,
     is_allow_upload,
     get_chat_with_notify,

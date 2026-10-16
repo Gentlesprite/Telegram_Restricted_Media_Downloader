@@ -72,8 +72,7 @@ from module.parser import PARSE_ARGS
 from module.uploader import TelegramUploader
 from module.task import (
     DownloadTask,
-    UploadTask,
-    ChatInfo
+    UploadTask
 )
 from module.stdio import (
     ProgressBar,
@@ -115,6 +114,7 @@ from module.path_tool import (
 )
 from module.util import (
     Issues,
+    ChatInfo,
     LimitCall,
     ctrl_c,
     get_my_id,
@@ -126,10 +126,10 @@ from module.util import (
     check_environment,
     get_message_dtype,
     collect_message_id,
-    save_message_entities,
     safe_delete_message,
     get_message_by_link,
     get_chat_with_notify,
+    save_message_entities,
     truncate_display_filename
 )
 
@@ -232,8 +232,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             TRMDStorage(
                 storage_type=StorageType.DOWNLOAD,
                 chat_id=chat_id,
-                # 缓存未命中时现场取消息上的频道标题,保证记录写入即带标题。
-                chat_name=ChatInfo.get(chat_id) or str(getattr(chat, 'title', '') or getattr(chat, 'first_name', '') or ''),
+                chat_name=ChatInfo.get(chat_id) or str(
+                    getattr(chat, 'title', '') or getattr(chat, 'first_name', '') or ''),
                 message_id=getattr(message, 'id', None),
                 file_name=file_name,
                 file_path=os.path.join(self.env_save_directory(message), file_name),
