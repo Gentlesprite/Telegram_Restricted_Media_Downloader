@@ -2581,7 +2581,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         except OperationalError as e:
             run_error: bool = True
             log.error(
-                f'检测到多开软件时,由于在上一个实例中「下载完成」后窗口没有被关闭的行为,请在关闭后重试,{_t(KeyWord.REASON)}:"{e}"')
+                f'检测到软件多开使用同一SESSION,请关闭多余实例或使用--session指定新的SESSION位置后重试,{_t(KeyWord.REASON)}:"{e}"')
         except Exception as e:
             run_error: bool = True
             log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
