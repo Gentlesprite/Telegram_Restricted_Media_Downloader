@@ -1908,11 +1908,16 @@ class TelegramRestrictedMediaDownloader(Bot):
                     chat_id=chat_id,
                     reverse=True
             ):
+                # 极少数消息(匿名发送/from_id缺失等)解析不出来源chat,与create_download_task中"部分消息的message.chat可能为None"是同一现象;直接跳过,避免整个检索崩溃。
+                if message.chat is None:
+                    log.info(
+                        f'在/download_chat命令过程中,跳过一条无法解析频道的消息(ID:{getattr(message, "id", "未知")})。')
+                    continue
                 msg_key = (message.chat.id, message.id)
                 # 已处理过的消息(含媒体组被整体展开的成员)直接跳过,避免重复。
                 if msg_key in matched_message_ids:
                     continue
-                # 关键词/日期命中即选中该消息(不要求类型:媒体组内成员类型可能不同,关键词只挂在首条 caption 上,命中即代表整组命中)。
+                # 关键词/日期命中即选中该消息(不要求类型:媒体组内成员类型可能不同,关键词只挂在首条caption上,命中即代表整组命中)。
                 if not (_filter.date_range(message, start_date, end_date) and
                         _filter.keyword_filter(message, active_keywords)):
                     continue
@@ -1968,6 +1973,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                             log.warning(
                                 f'在/download_chat命令过程中,获取媒体组失败(消息ID:{message.id}),该组其余成员可能无法下载。')
                         for member in group_members:
+                            # 同上:媒体组成员也可能解析不出chat,跳过避免整个检索崩溃。
+                            if member.chat is None:
+                                log.info(
+                                    f'在/download_chat命令过程中,跳过一条无法解析频道的媒体组成员(ID:{getattr(member, "id", "未知")})。')
+                                continue
                             member_key = (member.chat.id, member.id)
                             if member_key in matched_message_ids:
                                 continue

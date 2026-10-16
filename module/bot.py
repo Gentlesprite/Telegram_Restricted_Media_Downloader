@@ -3156,15 +3156,18 @@ class DownloadChatHandler(CallbackHandler):
                 start_time, end_time = self.__get_update_time(downloader, chat_id)
                 if not await self.__verification_time(query, start_time, end_time):
                     return None
-            await query.message.edit_text(
-                text=self.__filter_prompt(downloader, chat_id),
-                reply_markup=attach_task(
-                    kb.download_chat_filter_button(
-                        downloader.download_chat_filter[chat_id]['comment']
-                    ) if data == BotCallbackText.DOWNLOAD_CHAT_FILTER else kb.filter_date_range_button(),
-                    chat_id
+            try:
+                await query.message.edit_text(
+                    text=self.__filter_prompt(downloader, chat_id),
+                    reply_markup=attach_task(
+                        kb.download_chat_filter_button(
+                            downloader.download_chat_filter[chat_id]['comment']
+                        ) if data == BotCallbackText.DOWNLOAD_CHAT_FILTER else kb.filter_date_range_button(),
+                        chat_id
+                    )
                 )
-            )
+            except MessageNotModified:
+                pass  # 菜单内容未变化(如重复设置同一日期),属良性no-op。
         elif data in (BotCallbackText.FILTER_START_DATE, BotCallbackText.FILTER_END_DATE):
             dtype = None
             p_s_d = ''
