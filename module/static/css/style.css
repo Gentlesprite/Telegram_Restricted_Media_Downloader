@@ -571,28 +571,31 @@ h1 {
     font-size: 13px;
 }
 
-.login-input {
+.trmd-input {
+    box-sizing: border-box;
     flex: 1;
     min-width: 0;
-    padding: 8px 11px;
+    width: 100%;
+    padding: 6px 10px;
     border: 1px solid var(--border);
     border-radius: 8px;
-    background: rgba(0, 0, 0, .2);
+    background: rgba(34, 34, 39, .85);  /* 与筛选输入框一致,在面板/弹窗底上更清晰。 */
     color: var(--text);
     font-family: inherit;
     font-size: 13px;
+    line-height: 1.5;
     transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
 }
 
-.login-input:hover {
-    background: rgba(0, 0, 0, .25);  /* 鼠标悬停时背景加深,与筛选输入框一致。 */
+.trmd-input:hover {
+    background: rgba(0, 0, 0, .25);  /* 鼠标悬停时背景加深。 */
 }
 
-.login-input:focus {
+.trmd-input:focus {
     outline: none;
     border-color: var(--accent);
-    background: rgba(0, 0, 0, .32);  /* 聚焦时背景加深,与修改配置弹窗输入框一致。 */
-    box-shadow: 0 0 0 3px rgba(10, 132, 255, .25);  /* accent 蓝环。 */
+    background: rgba(0, 0, 0, .32);  /* 聚焦时背景加深。 */
+    box-shadow: 0 0 0 3px rgba(10, 132, 255, .25);  /* accent 蓝环,所有输入框统一。 */
 }
 
 /* 修改配置弹窗:按"保存目录 / 并发与重试"分为两个区块,每个区块带左侧竖条小标题,
@@ -619,10 +622,7 @@ h1 {
     font-size: 13px;
     line-height: 1;  /* 消除标签文字上下行距。 */
 }
-#settingsModal .login-input {
-    width: 100%;
-    box-sizing: border-box;  /* 输入框高度用通用 8px 上下内边距,恢复舒适、不再为紧凑压扁。 */
-}
+
 /* 保存目录输入框也对齐标题文字(左缩进 9px),与下方任务数/重试数区块的输入框保持等宽一致。 */
 #settingsModal #saveDirInput {
     margin-left: 9px;
@@ -656,13 +656,7 @@ h1 {
 #settingsModal .modal-foot {
     padding: 0 16px 14px;
 }
-/* 聚焦(正在输入)时背景加深 + accent 蓝环高亮,与通用 .login-input:focus(登录弹窗)完全一致。 */
-#settingsModal .login-input:focus {
-    outline: none;
-    border-color: var(--accent);
-    background: rgba(0, 0, 0, .32);
-    box-shadow: 0 0 0 3px rgba(10, 132, 255, .25);
-}
+
 
 /* 配置弹窗标题栏底色与输入框一档(.85),比--panel2(.72)实,在.92的卡片上层次更清晰。 */
 #settingsModal .modal-head {
@@ -1357,41 +1351,7 @@ body.resizing {
     font-size: 13px;
 }
 
-.hfilter-search-input,
-.hfilter-arg {
-    box-sizing: border-box;
-    width: 100%;
-    padding: 6px 8px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: rgba(34, 34, 39, .85);  /* 比--panel2(.72)实一档,在已加实的面板底上更清晰。 */
-    color: var(--text);
-    font-family: inherit;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.hfilter-search-input:focus,
-.hfilter-arg:focus {
-    border-color: var(--accent);
-    outline: none;
-}
-
-.hfilter-arg:hover {
-    background: rgba(0, 0, 0, .25);  /* 鼠标悬停时背景加深,与修改配置输入框风格一致。 */
-}
-
-.hfilter-arg:focus {
-    background: rgba(0, 0, 0, .32);  /* 聚焦时进一步加深,与修改配置输入框:focus完全一致。 */
-}
-
-.hfilter-search-input:hover {
-    background: rgba(0, 0, 0, .25);  /* 搜索框同样悬停加深,与修改配置输入框风格一致。 */
-}
-
-.hfilter-search-input:focus {
-    background: rgba(0, 0, 0, .32);  /* 搜索框聚焦加深,与修改配置输入框:focus一致。 */
-}
+/* 筛选面板内输入框(.hfilter-arg/.hfilter-search-input)的样式统一收敛到 .trmd-input,此处不再重复定义。 */
 
 .hfilter-list {
     max-height: 240px;

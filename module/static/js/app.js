@@ -1,8 +1,3 @@
-/* TRMD Web UI — 前端脚本(含从 telegram-tt 移植的渐变背景实现)
- * Copyright © 2024-2026 Gentlesprite
- * SPDX-License-Identifier: GPL-3.0-only
- * 本文件整体以 GNU GPL-3.0 授权;完整许可见仓库根目录 LICENCE。
- */
 const EMPTY_SUMMARY = {percent: 0, info: '0.00B / 0.00B', speed: '', remaining: ''};
 
 var SECTIONS = {
@@ -1633,7 +1628,7 @@ function buildStorageFilterPop() {
     var pop = document.createElement('div');
     pop.className = 'hfilter-pop';
     var html = '';
-    html += '<div class="hfilter-search"><input type="text" class="hfilter-search-input" placeholder="搜索"></div>';
+    html += '<div class="hfilter-search"><input type="text" class="hfilter-search-input trmd-input" placeholder="搜索"></div>';
     html += '<div class="hfilter-list">';
     html += '<label class="hfilter-item hfilter-all-item"><input type="checkbox" class="hfilter-all-box">' +
         '<span class="hfilter-label">(全选)</span></label>';
@@ -1653,8 +1648,8 @@ function buildStorageFilterPop() {
     }
     html += '</div></div>';
     html += '<div class="hfilter-args">' +
-        '<input type="text" class="hfilter-arg" placeholder="' + escAttr(argLabel) + '">' +
-        '<input type="text" class="hfilter-arg hfilter-arg2" placeholder="至" hidden>' +
+        '<input type="text" class="hfilter-arg trmd-input" placeholder="' + escAttr(argLabel) + '">' +
+        '<input type="text" class="hfilter-arg hfilter-arg2 trmd-input" placeholder="至" hidden>' +
         '</div>';
     html += '</div>';
     html += '<div class="hfilter-switch">' +
