@@ -1918,15 +1918,28 @@ tbody tr:hover {
         -webkit-line-clamp: 3;
     }
 
-    /* 窄屏分页条:统计信息较长,允许换行并独占一行,避免挤压每页/翻页控件或溢出容器。 */
+    /* 窄屏分页条:统计信息较长,允许换行并独占底行,避免挤压每页/翻页控件或溢出容器。 */
     .storage-pager {
         flex-wrap: wrap;
+        flex-basis: 100%;  /* 独占底行,把"共X条"与"刷新"留在顶部一行。 */
+        order: 2;
     }
 
     .pager-meta {
         flex-basis: 100%;
         min-width: 0;
         white-space: normal;
+    }
+
+    /* 窄屏标题栏:允许换行,避免刷新按钮等被挤压致文字竖排。 */
+    .section-head {
+        flex-wrap: wrap;
+    }
+
+    .section-head .gcount,
+    .toggle {
+        flex: none;
+        white-space: nowrap;
     }
 }
 
