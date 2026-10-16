@@ -1591,8 +1591,9 @@ function openStorageFilterPop(button) {
     var cond = storageFilters[currentStorage][key];
     if (cond && cond.mode === 'custom') {
         storageFilterPanel = {
-            values: [],
-            custom: {op: cond.op, value: cond.value, value2: cond.value2 || ''}
+            values: null,  // 由fillStorageFilterValues按custom条件匹配回填。
+            custom: {op: cond.op, value: cond.value, value2: cond.value2 || ''},
+            matchCustom: true  // 打开时按自定义条件勾选值列表,让勾选反映当前筛选涉及的值。
         };
     } else {
         storageFilterPanel = {
@@ -1681,7 +1682,19 @@ function fillStorageFilterValues(pop) {
     var panel = storageFilterPanel;
     panel.all = values.slice();  // 打开时的全量可见值集,复原(全部勾上)时据此判定为无筛选。
     if (panel.values === null) {
-        panel.values = values.slice();  // 无筛选:打开即全选。
+        if (panel.matchCustom && panel.custom) {
+            // 自定义条件打开:按条件逐值匹配回填勾选(复用记录级同一套matchCustomFilter),
+            // 让值列表反映当前筛选涉及的值;匹配不到任何值时全不勾。
+            var matched = [];
+            for (var i = 0; i < values.length; i++) {
+                if (matchCustomFilter(entries[values[i]].raw, kind, panel.custom)) {
+                    matched.push(values[i]);
+                }
+            }
+            panel.values = matched;
+        } else {
+            panel.values = values.slice();  // 无筛选:打开即全选。
+        }
     }
     var html = '';
     for (var i = 0; i < values.length; i++) {
@@ -1795,6 +1808,18 @@ function bindStorageFilterPop(pop) {
             }
         }
         none.hidden = shown > 0;
+        // 输入即筛选:有关键字时勾选与可见项完全一致(符合条件即选中,不符合的取消),
+        // 搜索后直接确定即为该条件;清空关键字时保持原勾选不动,避免误伤打开时的条件。
+        if (query !== '') {
+            for (var i = 0; i < items.length; i++) {
+                var visible = !items[i].hidden;
+                var box = items[i].querySelector('input');
+                if (box && box.checked !== visible) {
+                    box.checked = visible;
+                    setStorageFilterValue(items[i].getAttribute('data-value'), visible);
+                }
+            }
+        }
         syncStorageFilterAllBox(pop);
     });
     allBox.addEventListener('change', function () {
