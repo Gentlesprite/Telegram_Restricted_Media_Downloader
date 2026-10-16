@@ -584,6 +584,10 @@ h1 {
     transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
 }
 
+.login-input:hover {
+    background: rgba(0, 0, 0, .25);  /* 鼠标悬停时背景加深,与筛选输入框一致。 */
+}
+
 .login-input:focus {
     outline: none;
     border-color: var(--accent);
