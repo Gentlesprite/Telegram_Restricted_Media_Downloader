@@ -1799,6 +1799,7 @@ function bindStorageFilterPop(pop) {
     var argInput = pop.querySelector('.hfilter-arg');
     var arg2Input = pop.querySelector('.hfilter-arg2');
     var customBtn = pop.querySelector('.hfilter-custom-btn');
+    var col = storageFilterColDef(storageFilterCol);  // 当前列的筛选定义,用于判断大小列(MB)回填时换算。
     search.addEventListener('input', function () {
         var query = this.value.trim().toLowerCase();
         var shown = 0;
@@ -1874,9 +1875,15 @@ function bindStorageFilterPop(pop) {
             customView.hidden = false;
             customBtn.textContent = '重置';
             syncFilterOpDisplay(pop, panel.custom.op);
-            argInput.value = panel.custom.value;
-            arg2Input.value = panel.custom.value2;
+            // 大小列按MB输入,回填时把存储的字节换算回MB显示,与输入框占位符单位一致。
+            argInput.value = (col && col.unit === 'MB' && panel.custom.value !== '')
+                ? String((Number(panel.custom.value) || 0) / FILTER_MB) : panel.custom.value;
+            arg2Input.value = (col && col.unit === 'MB' && panel.custom.value2)
+                ? String((Number(panel.custom.value2) || 0) / FILTER_MB) : (panel.custom.value2 || '');
             arg2Input.hidden = panel.custom.op !== 'between';
+            // 回填同步:commit按MB乘FILTER_MB存字节,若panel.custom仍为字节会被二次乘导致指数膨胀。
+            panel.custom.value = argInput.value;
+            panel.custom.value2 = arg2Input.value;
             argInput.focus();
         } else {
             // 自定义视图:重置=清除该列筛选,等同在此条目勾选(全选)。
@@ -1907,9 +1914,15 @@ function bindStorageFilterPop(pop) {
         customView.hidden = false;
         customBtn.textContent = '重置';  // 当前已在自定义视图,按钮语义为放弃自定义条件回到值列表。
         syncFilterOpDisplay(pop, panel.custom.op);
-        argInput.value = panel.custom.value;
-        arg2Input.value = panel.custom.value2;
+        // 大小列按MB输入,回填时把存储的字节换算回MB显示,与输入框占位符单位一致。
+        argInput.value = (col && col.unit === 'MB' && panel.custom.value !== '')
+            ? String((Number(panel.custom.value) || 0) / FILTER_MB) : panel.custom.value;
+        arg2Input.value = (col && col.unit === 'MB' && panel.custom.value2)
+            ? String((Number(panel.custom.value2) || 0) / FILTER_MB) : (panel.custom.value2 || '');
         arg2Input.hidden = panel.custom.op !== 'between';
+        // 回填同步:commit按MB乘FILTER_MB存储,若panel.custom仍为字节会被二次乘导致指数膨胀。
+        panel.custom.value = argInput.value;
+        panel.custom.value2 = arg2Input.value;
     }
 }
 
