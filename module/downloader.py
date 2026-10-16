@@ -119,6 +119,7 @@ from module.util import (
     ctrl_c,
     get_my_id,
     parse_link,
+    parse_chat_id,
     js_referral,
     safe_message,
     format_chat_link,
@@ -226,7 +227,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         if self.storage_database is None:
             return
         chat = getattr(message, 'chat', None)
-        chat_id = getattr(chat, 'id', None)
+        chat_id = parse_chat_id(link, getattr(chat, 'id', None))
         self.add_web_storage(
             TRMDStorage(
                 storage_type=StorageType.DOWNLOAD,

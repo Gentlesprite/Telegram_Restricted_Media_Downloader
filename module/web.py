@@ -56,7 +56,8 @@ from module.util import (
     reset_web_session,
     get_message_dtype,
     get_work_directory,
-    gen_random_credential
+    gen_random_credential,
+    parse_chat_id
 )
 from module.enums import (
     WebMeta,
@@ -804,12 +805,13 @@ class Web:
     def format_storage(storage: TRMDStorage) -> dict:
         """格式化网页记录的展示信息,频道列优先取记录里的标题,与下载板块的"标题(ID)"样式一致。"""
         chat_id: str = str(storage.chat_id) if storage.chat_id is not None else ''
-        chat_name: str = storage.chat_name or ChatInfo.get(chat_id)
+        display_id: str = parse_chat_id(storage.link, chat_id)
+        chat_name: str = storage.chat_name or ChatInfo.get(display_id)
         return {
             'storage_id': storage.storage_id,
             'storage_type': storage.storage_type,
             'channel': chat_id,
-            'chat': f'{chat_name}({chat_id})' if chat_name and chat_id else (chat_id or Web.UNGROUPED),
+            'chat': f'{chat_name}({display_id})' if chat_name and display_id else (display_id or Web.UNGROUPED),
             'message_id': storage.message_id if storage.message_id is not None else '',
             'file': storage.file_name,
             'path': storage.file_path,

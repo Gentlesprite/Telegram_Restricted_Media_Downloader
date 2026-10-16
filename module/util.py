@@ -207,6 +207,35 @@ async def parse_link(client: pyrogram.Client, link: str) -> dict:
         raise ValueError('Invalid message link.')
 
 
+def parse_chat_id(
+        link: str,
+        fallback: Union[str, int, None] = None
+) -> str:
+    """从链接解析频道显示口径的chat_id。
+
+    与下载板块的get_message_by_link同源:该函数用正则取group(1)原样作chat_id(用户名链接保留
+    用户名),仅/c/私密链接经utils.get_channel_id转为-100数字ID;评论?comment=在解析前已被剥离,
+    故评论链接同样按原频道用户名解析。此处用extract_chat_id_from_link复刻该口径:
+    - 用户名链接(含评论与话题链接)返回用户名;
+    - 私密/c/链接解析出数字ID时回退fallback(记录入库的message.chat.id,同为-100数字ID);
+    - 链接非t.me域名或解析失败同样回退fallback。
+    fallback本身已是展示口径(非空且非-100数字ID,如用户名)时直接采用,不再解析,避免覆盖。
+    """
+    if fallback is not None and not str(fallback).startswith('-100'):
+        return str(fallback)
+    # 域名口径与下载板块的链接正则一致(接受无协议与www/telegram.me等变体),大小写不敏感;
+    # 杂串由域名校验挡下:extract_chat_id_from_link本身不校验域名。
+    url: str = str(link) if link else ''
+    if url and not re.match(r'^https?://', url, re.I):
+        url = f'https://{url}'
+    if not url or not re.match(r'^https?://(?:www\.)?t(?:elegram)?\.(?:org|me|dog)/', url, re.I):
+        return str(fallback) if fallback is not None else ''
+    chat_id = extract_chat_id_from_link(url)
+    if chat_id is not None and not str(chat_id).startswith('-100'):
+        return str(chat_id)
+    return str(fallback) if fallback is not None else ''
+
+
 def extract_info_from_link(link: str) -> Link:
     # https://github.com/tangyoha/telegram_media_downloader/blob/master/utils/format.py#L220
     if link in ('me', 'self'):
@@ -246,6 +275,28 @@ def extract_info_from_link(link: str) -> Link:
         result.post_id = int(paths[3])
 
     return result
+
+
+def extract_chat_id_from_link(link: str) -> Union[str, int, None]:
+    """从消息链接提取chat_id,借鉴extract_info_from_link的本地解析,仅取parse_chat_id所需内容。
+
+    与extract_info_from_link的区别:不解析comment、topic_id、post_id,也不读取query——
+    评论?comment=是parse_link触发get_chat的RPC条件,此处无需评论信息,从根上不碰。
+    域名合法性由调用方校验;用户名保留链接中的原始大小写,不做lower改写。
+    """
+    try:
+        u = urlparse(link)
+        paths = [p for p in u.path.split('/') if p]
+    except ValueError:
+        return None
+    if not paths:
+        return None
+    if paths[0] == 'c':
+        if len(paths) >= 2 and paths[1].isascii() and paths[1].isdigit():
+            return int(f'-100{int(paths[1])}')
+        return None
+    # 用户名链接(含话题三段):第一段即用户名。
+    return paths[0]
 
 
 async def get_message_by_link(
