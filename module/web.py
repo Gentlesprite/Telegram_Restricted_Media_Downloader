@@ -586,7 +586,7 @@ class Web:
                 result.append({
                     'link': str(link),
                     'channel': str(task.chat_id or ''),
-                    'channel_name': Web.format_channel(str(task.chat_id or '')),
+                    'channel_name': Web.format_channel(str(task.chat_id or ''), parse_chat_id(task.link)),
                     'complete': complete_num,
                     'member': member_num,
                     'failed': fail_num,
@@ -1172,15 +1172,20 @@ class Web:
         }
 
     @staticmethod
-    def format_channel(channel: str) -> str:
-        """格式化频道的显示名称,有标题时显示为"标题(ID)"。"""
+    def format_channel(channel: str, display: str = '') -> str:
+        """格式化频道的显示名称,有标题时显示为"标题(显示值)"。
+
+        channel为标题缓存键(下载流程以小写口径写入缓存),display为括号内的显示值,
+        默认同channel;传入时用于保留链接中的原始大小写,与网页面板存储记录一致。
+        """
         if not channel or channel == Web.UNGROUPED:
             return Web.UNGROUPED
         title: str = ChatInfo.get(channel)
-        return f'{title}({channel})' if title else channel
+        _display: str = display or channel
+        return f'{title}({_display})' if title else _display
 
     def get_tasks(self) -> list:
-        """读取进度条中正在下载的任务。"""
+        """读取进度条中正在进行的任务。"""
         tasks: list = []
         for task in self.progress.tasks:
             item: dict = {
@@ -1188,7 +1193,6 @@ class Web:
                 'type': str(task.description),
                 'channel': str(task.fields.get('channel', '')) or Web.UNGROUPED,
                 'channel_name': Web.format_channel(str(task.fields.get('channel', ''))),
-                # 优先使用完整文件名;filename是按终端宽度截断的终端显示名,仅在缺少完整名时兜底。
                 'filename': str(task.fields.get('fullname') or task.fields.get('filename', '')),
                 'info': str(task.fields.get('info', '')),
                 'completed': int(task.completed),
