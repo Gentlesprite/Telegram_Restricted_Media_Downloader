@@ -121,6 +121,7 @@ from module.util import (
     parse_link,
     parse_chat_id,
     js_referral,
+    safe_length,
     safe_message,
     format_chat_link,
     check_environment,
@@ -140,7 +141,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         super().__init__()
         self.loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
         self.event: asyncio.Event = asyncio.Event()
-        self.pause_event: asyncio.Event = asyncio.Event()  # 全局暂停事件,暂停时 clear,恢复时 set。
+        self.pause_event: asyncio.Event = asyncio.Event()  # 全局暂停事件,暂停时clear,恢复时set。
         self.queue: asyncio.Queue = asyncio.Queue()
         self.scheduler: Union[asyncio.Task, None] = None  # 下载调度器。
         self.pending_retry_tasks: Set[asyncio.Task] = set()  # 待执行的重试任务,避免主循环在重试重新入队前提前退出。
@@ -153,13 +154,9 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.cd: Union[CallbackData, None] = None
         self.forward_limit_call: Union[LimitCall, None] = None  # 转发频率限制器,避免转发过快触发风控。
         self.web_remove_listen: set = set()  # 网页面板发起的移除监听命令,机器人识别后直接移除,不再发送二次确认按钮。
-        self.media_group_ids_cache: dict = {}  # 媒体组成员 id 列表缓存,键为 media_group_id,避免同组多条消息重复调用 get_media_group()。
+        self.media_group_ids_cache: dict = {}  # 媒体组成员 id 列表缓存,键为 media_group_id,避免同组多条消息重复调用get_media_group()。
         self.my_id: int = 0
-        self.web: Web = Web(
-            progress=self.pb.progress,
-            app=self.app,
-            downloader=self
-        )  # 网页面板默认启用,端口由--port参数指定。
+        self.web: Web = Web(progress=self.pb.progress, app=self.app, downloader=self)  # 网页面板默认启用,端口由--port参数指定。
         self.storage_database: Union[StorageDatabase, None] = None  # 网页存储数据库,保存下载与上传存储。
         self.pending_storage_tasks: Set[asyncio.Task] = set()  # 待落库的存储任务,退出前统一等待,避免丢失最后的存储。
         self.chat_progress_trackers: Set[asyncio.Task] = set()  # /download_chat后台进度跟踪协程,事件循环对task仅持弱引用,显式保存防中途回收。
@@ -2253,7 +2250,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 task_keys.append(str(_link))
         task_keys = list(dict.fromkeys(task_keys))
         last_update_time: float = 0
-        update_interval: float = 1.0
+        update_interval: float = 1.0  # 基准更新间隔(秒),实际间隔按并发tracker数动态放大。
         edit_fail_count: int = 0  # 连续编辑失败计数,超过上限视为消息已失效,停止跟踪。
         while True:
             try:
@@ -2268,8 +2265,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                         if member.get('state') not in (DownloadStatus.PENDING, DownloadStatus.DOWNLOADING):
                             done += 1
                 finished: bool = total == 0 or done >= total
+                interval: float = min(
+                    safe_length(self.chat_progress_trackers, default=1) * update_interval,
+                    5.0
+                )
                 current_time = asyncio.get_event_loop().time()
-                if finished or current_time - last_update_time >= update_interval:
+                if finished or current_time - last_update_time >= interval:
                     if total == 0:
                         progress_text: str = '⭐️本轮下载任务已结束(任务已被清理或取消)。'
                     else:
@@ -2311,7 +2312,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         edit_fail_count = 0
                 if finished:
                     return
-                await asyncio.sleep(update_interval)
+                await asyncio.sleep(update_interval)  # 固定基准值而非动态间隔,保证finished终态检测每秒一次。
             except asyncio.CancelledError:
                 raise
             except Exception as e:

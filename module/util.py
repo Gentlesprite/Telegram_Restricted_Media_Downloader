@@ -19,6 +19,7 @@ from collections import deque
 from functools import lru_cache
 
 from typing import (
+    Any,
     Tuple,
     List,
     Union,
@@ -56,10 +57,24 @@ from module.enums import (
 from module.parser import PARSE_ARGS
 
 
-def safe_index(lst: list, index: int, default=None):
+def safe_index(
+        lst: list,
+        index: int,
+        default: Optional[Any] = None
+):
     try:
         return lst[index]
     except IndexError:
+        return default
+
+
+def safe_length(
+        obj: Union[list, dict, set],
+        default: Optional[Any] = None
+):
+    try:
+        return len(obj)
+    except Exception:  # noqa
         return default
 
 
