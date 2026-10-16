@@ -1699,6 +1699,14 @@ function fillStorageFilterValues(pop) {
             panel.values = values.slice();  // 无筛选:打开即全选。
         }
     }
+    // custom 列:勾选项(当前条件匹配)排在前,未勾选的非匹配项排在后,便于一眼看清生效范围。
+    if (panel.matchCustom) {
+        values = values.slice().sort(function (a, b) {
+            var ia = panel.values.indexOf(a) !== -1 ? 0 : 1;
+            var ib = panel.values.indexOf(b) !== -1 ? 0 : 1;
+            return ia - ib;
+        });
+    }
     var html = '';
     for (var i = 0; i < values.length; i++) {
         var value = values[i];
@@ -1801,6 +1809,19 @@ function bindStorageFilterPop(pop) {
     var customBtn = pop.querySelector('.hfilter-custom-btn');
     var col = storageFilterColDef(storageFilterCol);  // 当前列的筛选定义,用于判断大小列(MB)回填时换算。
     var searchSnapshot = null;  // 搜索开始前的勾选快照,清空搜索时还原,避免误伤原筛选。
+    // custom 列:值列表仅作条件匹配展示(见matchCustom回填),禁用勾选交互,避免"能勾却改不了"的困惑。
+    if (panel.matchCustom) {
+        var initItems = valuesBox.querySelectorAll('.hfilter-item');
+        for (var mi = 0; mi < initItems.length; mi++) {
+            var mb = initItems[mi].querySelector('input');
+            if (mb) mb.disabled = true;
+        }
+        if (allBox) allBox.disabled = true;
+        var tip = document.createElement('div');
+        tip.textContent = '以下勾选的为当前条件匹配项（只读）';
+        tip.style.cssText = 'font-size:11px;color:#999;padding:2px 0 4px;';
+        valuesBox.insertBefore(tip, valuesBox.firstChild);
+    }
     search.addEventListener('input', function () {
         var query = this.value.trim().toLowerCase();
         var shown = 0;
@@ -1815,7 +1836,7 @@ function bindStorageFilterPop(pop) {
         none.hidden = shown > 0;
         // 输入即筛选:有关键字时勾选与可见项完全一致(符合条件即选中,不符合的取消),
         // 搜索后直接确定即为该条件。
-        if (query !== '') {
+        if (query !== '' && !panel.matchCustom) {
             // 首次从空进入搜索时记录快照,供清空时还原到搜索前的勾选。
             if (searchSnapshot === null) {
                 searchSnapshot = panel.values.slice();
