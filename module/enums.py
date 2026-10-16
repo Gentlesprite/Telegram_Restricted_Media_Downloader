@@ -1605,6 +1605,8 @@ class BotButton:
     RETRIEVE_MESSAGE: str = '🔎检索消息中'
     RETRIEVE_COMMENT: str = '🔎检索评论区中'
     ASSIGNING_TASK: str = '🚛分配任务中'
+    DOWNLOAD_TASK_DOING: str = '⬇️下载任务进行中'
+    DOWNLOAD_TASK_DONE: str = '✅下载任务已完成'
     TASK_CANCEL: str = '🗑️任务已取消'
     EXECUTE_TASK: str = '▶️执行任务'
     CANCEL_TASK: str = '⏹️取消任务'

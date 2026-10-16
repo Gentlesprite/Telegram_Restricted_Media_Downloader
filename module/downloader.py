@@ -162,6 +162,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         )  # 网页面板默认启用,端口由--port参数指定。
         self.storage_database: Union[StorageDatabase, None] = None  # 网页存储数据库,保存下载与上传存储。
         self.pending_storage_tasks: Set[asyncio.Task] = set()  # 待落库的存储任务,退出前统一等待,避免丢失最后的存储。
+        self.chat_progress_trackers: Set[asyncio.Task] = set()  # /download_chat后台进度跟踪协程,事件循环对task仅持弱引用,显式保存防中途回收。
 
     def env_save_directory(
             self,
@@ -2199,14 +2200,20 @@ class TelegramRestrictedMediaDownloader(Bot):
                     album_chat_id=chat_id
                 )
                 assigned_count += 1
-            await _progress(
-                _text=f'{origin_callback_query_text}\n'
-                      f'🔎匹配消息:{message_count}条(媒体{matched_file_count}个),评论区消息:{comment_count}条,共{total_count}条。\n',
-                _reply_markup=KeyboardButton.single_button(
-                    text=BotButton.TASK_ASSIGN,
-                    callback_data=BotCallbackText.NULL
-                )
-            )
+            # 后台跟踪已入队任务的真实完成度,持续刷新内联键盘进度条直至本轮全部结束:
+            # 任务此时已全部入队,跟踪协程任何异常只记日志、绝不冒泡,不影响下载本身;
+            # 命令协程不在此阻塞,进度消息由后台协程持有bot消息引用继续编辑。
+            tracker: asyncio.Task = asyncio.create_task(self.track_download_chat_progress(
+                links=links,
+                bot_message=callback_query.message,
+                base_text=origin_callback_query_text,
+                message_count=message_count,
+                comment_count=comment_count,
+                matched_file_count=matched_file_count,
+                total_count=total_count
+            ))
+            self.chat_progress_trackers.add(tracker)
+            tracker.add_done_callback(self.chat_progress_trackers.discard)
             return links
         except Exception as e:
             log.error(
@@ -2218,6 +2225,102 @@ class TelegramRestrictedMediaDownloader(Bot):
                 text=f'⚠️由于"{e}"无法执行频道下载任务。\n'
                      f'可在上方菜单重试或取消该任务。'
             ))
+
+    async def track_download_chat_progress(
+            self,
+            links: list,
+            bot_message: pyrogram.types.Message,
+            base_text: str,
+            message_count: int,
+            comment_count: int,
+            matched_file_count: int,
+            total_count: int
+    ) -> None:
+        """后台跟踪/download_chat已入队任务的真实完成度,持续刷新内联键盘进度条。
+
+        进度基于任务成员状态(member_info)统计:完成/失败/跳过均为终态,重试会把成员重新置为
+        pending,天然满足"队列还有任务进度就不走完";不用member_num/complete_num比值判定
+        (重试会使member_num膨胀,进度将永远到不了100%)。
+        本协程独立运行,任何异常仅记日志后退出,绝不冒泡,更不影响已入队下载任务的执行。
+        """
+        # 与create_download_task登记TASKS的键对齐:字符串链接原样;Message对象(其link为空才
+        # 会以对象形式入列)按其link或id登记。去重并保持顺序,避免同键重复计数。
+        task_keys: list = []
+        for _link in links:
+            if isinstance(_link, pyrogram.types.Message):
+                task_keys.append(str(_link.link if getattr(_link, 'link', None) else _link.id))
+            else:
+                task_keys.append(str(_link))
+        task_keys = list(dict.fromkeys(task_keys))
+        last_update_time: float = 0
+        update_interval: float = 1.0
+        edit_fail_count: int = 0  # 连续编辑失败计数,超过上限视为消息已失效,停止跟踪。
+        while True:
+            try:
+                total: int = 0
+                done: int = 0
+                for key in task_keys:
+                    task: Union[DownloadTask, None] = DownloadTask.get(key)
+                    if task is None:  # 任务已被清理(如整链接被移除),视为已结束。
+                        continue
+                    for member in task.member_info.values():
+                        total += 1
+                        if member.get('state') not in (DownloadStatus.PENDING, DownloadStatus.DOWNLOADING):
+                            done += 1
+                finished: bool = total == 0 or done >= total
+                current_time = asyncio.get_event_loop().time()
+                if finished or current_time - last_update_time >= update_interval:
+                    if total == 0:
+                        progress_text: str = '⭐️本轮下载任务已结束(任务已被清理或取消)。'
+                    else:
+                        progress_text: str = (
+                            f'⭐️[{done}/{total}]下载任务{"已完成" if finished else "进行中"}。\n'
+                            f'{random.choice(("⏳", "⌛"))}{self.pb.bot(done, total)}'
+                        )
+                    try:
+                        await bot_message.edit_text(
+                            text=f'{base_text}\n'
+                                 f'🔎匹配消息:{message_count}条(媒体{matched_file_count}个),'
+                                 f'评论区消息:{comment_count}条,共{total_count}条。\n'
+                                 f'{progress_text}',
+                            reply_markup=KeyboardButton.single_button(
+                                text=BotButton.DOWNLOAD_TASK_DONE if finished else BotButton.DOWNLOAD_TASK_DOING,
+                                callback_data=BotCallbackText.NULL
+                            )
+                        )
+                    except MessageNotModified:
+                        last_update_time = current_time  # 文本本就相同,属良性no-op,按成功处理避免忙等。
+                    except (FloodWait, FloodPremiumWait) as _e:
+                        console.log(
+                            f'[{self.app.client.name}]编辑消息请求频繁,要求等待{_e.value}秒后继续运行。',
+                            style='#FF4689'
+                        )
+                        await asyncio.sleep(_e.value)
+                        continue  # 不刷新时间戳,下轮继续尝试编辑。
+                    except Exception as _e:
+                        # 编辑失败(消息被删/无权限等)只记日志:进度展示是纯附加功能,绝不能影响下载。
+                        edit_fail_count += 1
+                        log.info(
+                            f'在/download_chat命令过程中,更新下载进度消息失败,已跳过本次更新,'
+                            f'{_t(KeyWord.REASON)}:"{_e}"')
+                        if edit_fail_count >= 5:
+                            log.warning('连续多次更新/download_chat下载进度消息失败,已停止跟踪(不影响下载)。')
+                            return
+                    else:
+                        last_update_time = current_time
+                        edit_fail_count = 0
+                if finished:
+                    return
+                await asyncio.sleep(update_interval)
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                # 兜底:跟踪逻辑自身出错时静默退出并记日志,绝不冒泡影响下载。
+                log.warning(
+                    f'跟踪/download_chat下载进度时出现意外错误,已停止跟踪(不影响下载),'
+                    f'{_t(KeyWord.REASON)}:"{e}"'
+                )
+                return
 
     @DownloadTask.on_create_task
     async def create_download_task(
