@@ -166,9 +166,9 @@ def safe_replace(origin_file: str, overwrite_file: str) -> dict:
             try:
                 shutil.move(origin_file, overwrite_file)
             except Exception as e2:
-                e_code = f'移动文件失败,原因:"{e2}"'
+                e_code = f'移动文件失败,{_t(KeyWord.REASON)}:"{e2}"'
         else:
-            e_code = f'覆盖文件失败,原因:"{e}"'
+            e_code = f'覆盖文件失败,{_t(KeyWord.REASON)}:"{e}"'
 
     return {'e_code': e_code}
 
@@ -191,12 +191,12 @@ def move_to_save_directory(temp_file_path: str, save_directory: str) -> dict:
             log.info(f'移动文件至保存目录:[{temp_file_path}] -> [{save_directory}]')
             return {'e_code': f'"{save_directory}"不是一个目录,已将文件下载到默认目录。'}
     except FileExistsError as e:
-        return {'e_code': f'"{save_directory}"已存在,不能重复保存,原因:"{e}'}
+        return {'e_code': f'"{save_directory}"已存在,不能重复保存,{_t(KeyWord.REASON)}:"{e}'}
     except PermissionError as e:
         return {
-            'e_code': f'"{save_directory}"进程无权限访问,可能是文件只读、被其他进程占用锁定或当前用户无写入权限,原因:"{e}"'}
+            'e_code': f'"{save_directory}"进程无权限访问,可能是文件只读、被其他进程占用锁定或当前用户无写入权限,{_t(KeyWord.REASON)}:"{e}"'}
     except Exception as e:
-        return {'e_code': f'意外的错误,原因:"{e}"'}
+        return {'e_code': f'意外的错误,{_t(KeyWord.REASON)}:"{e}"'}
 
 
 def get_extension(file_id: str, mime_type: str, dot: bool = True) -> str:
