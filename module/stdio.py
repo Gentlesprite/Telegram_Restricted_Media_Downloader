@@ -464,19 +464,11 @@ class StatisticalTable:
             remote_version=rc.cached_config().get('version', __version__),
             local_version=__version__
         )
-        log.debug(
-            {
-                'platform': app.platform,
-                'python_version': sys.version.split()[0],
-                'TRMD_version': VERSION_WITH_COMMIT,
-                'update_version': update_version,
-                'pyrogram_version': pyrogram_version,
-                'user_config_path': app.config_path,
-                'session_directory': app.work_directory,
-                'temp_directory': app.temp_directory,
-                'enable_proxy': app.enable_proxy
-            }
-        )
+        log.info(
+            f'平台:"{app.platform}",Python版本:"{sys.version.split()[0]}",最新版本:"{update_version}",Pyrogram版本"{pyrogram_version}"。')
+        log.info(
+            f'用户配置文件:"{app.config_path}",保存目录:"{app.save_directory}",会话目录:"{app.work_directory}",缓存目录:"{app.temp_directory}"')
+        log.info(f'使用系统代理:"{app.enable_proxy}"。')
         PanelTable(
             title='运行环境',
             header=('名称', '值'),

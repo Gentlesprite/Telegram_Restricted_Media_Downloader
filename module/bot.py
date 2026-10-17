@@ -1410,7 +1410,7 @@ class Bot:
                 callback_data=BotCallbackText.LOOKUP_AUTH_INFO
             )
         )
-        log.info(f'已热添加授权用户:{uid},当前授权用户:{self.gc.authorized_users}。')
+        log.info(f'已添加授权用户:{uid},当前授权用户:{self.gc.authorized_users}。')
 
     def add_auth_mode_handler(
             self,
