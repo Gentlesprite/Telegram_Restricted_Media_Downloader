@@ -157,19 +157,27 @@ logging.basicConfig(
 
 
 class PyrogramQuietFilter(logging.Filter):
-    """按命名空间屏蔽pyrogram的INFO/DEBUG日志。"""
+    """按记录名与调用者命名空间屏蔽pyrogram的INFO/DEBUG日志。"""
     PYROGRAM_LOGGERS = (
         'pyrogram.client',
         'pyrogram.crypto',
         'pyrogram.session',
         'pyrogram.connection',
-        'pyrogram.dispatcher'
+        'pyrogram.dispatcher',
+        'pyrogram.methods.advanced.invoke',
+        'module.client.invoke'
     )
 
     def filter(self, record: logging.LogRecord) -> bool:
-        # 同时匹配命名空间本身及其子模块(如pyrogram.session.session)。
+        caller_name: str = getattr(record, 'caller_name', '')
+        file_func: str = getattr(record, 'file_func', '')
         for name in PyrogramQuietFilter.PYROGRAM_LOGGERS:
-            if record.name == name or record.name.startswith(name + '.'):
+            if (record.name == name
+                    or record.name.startswith(name + '.')
+                    or caller_name == name + ':'
+                    or caller_name.startswith(name + '.')
+                    or file_func == name
+                    or file_func.startswith(name + '.')):
                 if record.levelno < logging.WARNING:
                     return False
                 break

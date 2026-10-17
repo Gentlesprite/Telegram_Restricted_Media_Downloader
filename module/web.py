@@ -478,7 +478,7 @@ class Web:
             base_directory = getattr(sys, '_MEIPASS', sys.prefix)  # noqa.
         template_directory: str = os.path.join(base_directory, Web.TEMPLATE_DIRECTORY)
         static_directory: str = os.path.join(base_directory, Web.STATIC_DIRECTORY)
-        log.info(f'获取网页模板目录:"{template_directory}",静态资源目录:"{static_directory}"。')
+        log.info(f'网页模板目录:"{template_directory}",静态资源目录:"{static_directory}"。')
         return template_directory, static_directory
 
     @staticmethod

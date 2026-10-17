@@ -30,7 +30,7 @@ from module.enums import (
 
 
 class StorageType:
-    """网页记录的类型。"""
+    """数据库记录的类型。"""
     DOWNLOAD: str = 'download'  # 下载记录。
     UPLOAD: str = 'upload'  # 上传记录。
 
@@ -121,7 +121,7 @@ class StorageDatabase(ABC):
 
 
 class SqliteStorageDatabase(StorageDatabase):
-    """基于sqlite3的网页记录数据库实现,仿照pyrogram的SQLiteStorage组织代码。"""
+    """基于sqlite3的数据库实现,仿照pyrogram的SQLiteStorage组织代码。"""
 
     STORAGE_NAME: str = 'TRMDStorage'  # 存储库文件名(不含扩展名),保存在会话目录。
     FILE_EXTENSION: str = '.db'  # 记录库文件的扩展名,与telegram的.session会话文件区分。
@@ -196,7 +196,7 @@ class SqliteStorageDatabase(StorageDatabase):
         self._conn = value
 
     async def open(self) -> bool:
-        """打开记录库并建表;文件损坏时删除重建,避免网页记录功能整体不可用。"""
+        """打开记录库并建表;文件损坏时删除重建,避免数据库功能整体不可用。"""
         try:
             os.makedirs(self.work_directory, exist_ok=True)
         except Exception as e:
@@ -212,17 +212,17 @@ class SqliteStorageDatabase(StorageDatabase):
             except sqlite3.DatabaseError as e:
                 await self.close()
                 if recreated:
-                    log.error(f'打开网页记录数据库"{self.storage_path}"失败,{_t(KeyWord.REASON)}:"{e}"')
+                    log.error(f'打开数据库"{self.storage_path}"失败,{_t(KeyWord.REASON)}:"{e}"')
                     return False
                 # 记录库文件损坏(如被其它工具改动)时删除重建,重建后仍失败则放弃记录功能。
                 recreated = True
-                log.warning(f'网页记录数据库"{self.storage_path}"损坏,即将删除重建,{_t(KeyWord.REASON)}:"{e}"')
+                log.warning(f'数据库"{self.storage_path}"损坏,即将删除重建,{_t(KeyWord.REASON)}:"{e}"')
                 safe_delete(self.storage_path)
             except Exception as e:
-                log.error(f'打开网页记录数据库失败,{_t(KeyWord.REASON)}:"{e}"')
+                log.error(f'打开数据库失败,{_t(KeyWord.REASON)}:"{e}"')
                 await self.close()
                 return False
-        log.info(f'网页记录数据库已打开:"{self.storage_path}"。')
+        log.info(f'数据库路径:"{self.storage_path}"。')
         return True
 
     async def close(self) -> None:
@@ -234,7 +234,7 @@ class SqliteStorageDatabase(StorageDatabase):
         try:
             conn.close()
         except Exception as e:
-            log.warning(f'关闭网页记录数据库失败,{_t(KeyWord.REASON)}:"{e}"')
+            log.warning(f'关闭数据库失败,{_t(KeyWord.REASON)}:"{e}"')
 
     async def create(self) -> None:
         """建表,表已存在时无副作用,重复打开安全。"""
@@ -248,7 +248,7 @@ class SqliteStorageDatabase(StorageDatabase):
         更新原记录而不是再插一行,避免记录表出现同一文件多条重复条目。
         """
         if not storage.file_path:
-            log.warning(f'网页记录缺少文件路径,已拒绝写入:"{storage.file_name}"。')
+            log.warning(f'数据库缺少文件路径,已拒绝写入:"{storage.file_name}"。')
             return False
         now: int = int(time.time())
         storage.create_time = storage.create_time or now
@@ -306,7 +306,7 @@ class SqliteStorageDatabase(StorageDatabase):
                 storage.storage_id = cursor.lastrowid
             return True
         except Exception as e:
-            log.warning(f'写入网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
+            log.warning(f'写入数据库失败,{_t(KeyWord.REASON)}:"{e}"')
             return False
 
     async def get_storages(
@@ -327,7 +327,7 @@ class SqliteStorageDatabase(StorageDatabase):
             query += ' ORDER BY storage_id DESC'
             rows: list = self.conn.execute(query, params).fetchall()
         except Exception as e:
-            log.warning(f'读取网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
+            log.warning(f'读取数据库失败,{_t(KeyWord.REASON)}:"{e}"')
             return []
         return [self.__build_storage(row) for row in rows]
 
@@ -345,7 +345,7 @@ class SqliteStorageDatabase(StorageDatabase):
                 f'SELECT storage_id, file_path FROM {self.TABLE_NAME}'
             ).fetchall()
         except Exception as e:
-            log.warning(f'读取网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
+            log.warning(f'读取数据库失败,{_t(KeyWord.REASON)}:"{e}"')
             return 0
         dirs: Dict[str, List[tuple]] = {}  # 父目录 -> [(storage_id, file_path), ...]
         missing_ids: List[int] = []  # 直接判定失效的记录ID(没有路径的记录本就不该存在)。
@@ -388,7 +388,7 @@ class SqliteStorageDatabase(StorageDatabase):
                 )
         if missing_ids:
             self.__remove_storages(storage_ids=missing_ids)
-            log.info(f'已丢弃{len(missing_ids)}条文件已不存在的网页记录。')
+            log.info(f'已丢弃{len(missing_ids)}条文件已不存在的数据记录。')
         return len(missing_ids)
 
     def __stat_dir(self, parent: str) -> Union[Tuple[float, bool], None]:
@@ -419,7 +419,7 @@ class SqliteStorageDatabase(StorageDatabase):
                 )
             return True
         except Exception as e:
-            log.warning(f'补全网页记录频道标题失败,{_t(KeyWord.REASON)}:"{e}"')
+            log.warning(f'在数据库中补全频道标题失败,{_t(KeyWord.REASON)}:"{e}"')
             return False
 
     def __remove_storages(self, storage_ids: List[int]) -> bool:
@@ -435,7 +435,7 @@ class SqliteStorageDatabase(StorageDatabase):
                     )
             return True
         except Exception as e:
-            log.warning(f'删除网页记录失败,{_t(KeyWord.REASON)}:"{e}"')
+            log.warning(f'删除数据库记录失败,{_t(KeyWord.REASON)}:"{e}"')
             return False
 
     @staticmethod
@@ -461,7 +461,7 @@ class SqliteStorageDatabase(StorageDatabase):
 
 
 def build_storage_database(work_directory: str) -> StorageDatabase:
-    """构造网页记录数据库。
+    """构造数据库。
 
     Args:
         work_directory: 记录库文件的保存目录,使用telegram的会话目录。

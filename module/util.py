@@ -718,7 +718,7 @@ def check_environment():
     log.info(f'{SOFTWARE_SHORT_NAME}:{VERSION_SEMVER},更新日期:{__update_date__}。')
     log.info(
         f'文件日志等级:"{logging.getLevelName(FILE_LOG_LEVEL)}",终端日志等级:"{logging.getLevelName(CONSOLE_LOG_LEVEL)}"。')
-    log.info(f'获取工作目录:"{get_work_directory()}"。')
+    log.info(f'工作目录:"{get_work_directory()}"。')
     if is_nuitka():
         log.info(f'检测到"__compiled__",当前运行于"Nuitka"编译产物中,版本:{get_nuitka_version()}。')
     elif is_pyinstaller():
