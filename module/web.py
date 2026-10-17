@@ -1016,7 +1016,7 @@ class Web:
             else:
                 adjust()
         except Exception as e:
-            log.warning(f'实时更新并发信号量失败,原因:"{e}"')
+            log.warning(f'实时更新并发信号量失败,{_t(KeyWord.REASON)}:"{e}"')
 
     def __wake_upload_waiters(self) -> None:
         """唤醒排队等待上传名额的任务,让它们按新的并发上限重新检查。
@@ -1034,7 +1034,7 @@ class Web:
         try:
             loop.call_soon_threadsafe(lambda: uploader.notify_waiters())
         except Exception as e:
-            log.warning(f'唤醒排队上传任务失败,原因:"{e}"')
+            log.warning(f'唤醒排队上传任务失败,{_t(KeyWord.REASON)}:"{e}"')
 
     def set_config(self, directory=None, max_tasks=None, max_retries=None, confirm_directory: bool = False) -> dict:
         """按网页面板的请求一次性修改多项配置。
@@ -1087,6 +1087,11 @@ class Web:
         if retries is not None:
             self.app.max_download_retries = retries['download']
             self.app.max_upload_retries = retries['upload']
+        log.info(
+            f'运行时修改配置文件成功,'
+            f'保存目录:"{self.app.save_directory}",'
+            f'下载并发数:"{self.app.max_download_task}",上传并发数:"{self.app.max_upload_task}",'
+            f'下载重试次数:"{self.app.max_download_retries}",上传重试次数:"{self.app.max_upload_retries}"。')
         return {'status': True}
 
     def get_upload_tasks(self, tasks: Union[list, None] = None) -> list:
