@@ -182,11 +182,13 @@ def move_to_save_directory(temp_file_path: str, save_directory: str) -> dict:
             if os.path.exists(os.path.join(save_directory, file_name)):
                 return {'e_code': f'"{file_name}"已存在于保存路径无法移动,请手动解决冲突。'}
             shutil.move(temp_file_path, save_directory)
+            log.info(f'移动文件至保存目录:[{temp_file_path}] -> [{save_directory}]')
             return {'e_code': None}
         else:
             save_directory: str = os.path.join(os.getcwd(), 'downloads')
             os.makedirs(save_directory, exist_ok=True)
             shutil.move(temp_file_path, save_directory)
+            log.info(f'移动文件至保存目录:[{temp_file_path}] -> [{save_directory}]')
             return {'e_code': f'"{save_directory}"不是一个目录,已将文件下载到默认目录。'}
     except FileExistsError as e:
         return {'e_code': f'"{save_directory}"已存在,不能重复保存,原因:"{e}'}

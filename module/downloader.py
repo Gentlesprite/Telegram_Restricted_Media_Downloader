@@ -1314,7 +1314,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if aligned_size != downloaded:
                     f.truncate(aligned_size)  # 截断错位的尾巴,避免续传后文件尺寸偏大。
                     log.warning(
-                        f'缓存文件"{temp_path}"字节未对齐块边界,"{downloaded}"->"{aligned_size}",已截断。')
+                        f'缓存文件"{temp_path}"字节未对齐块边界,"{downloaded}" -> "{aligned_size}",已截断。')
                     downloaded = aligned_size
                 f.seek(aligned_size)
                 log.info(
@@ -1346,7 +1346,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             if aligned_size != downloaded:
                                 f.truncate(aligned_size)
                                 log.warning(
-                                    f'缓存文件"{temp_path}"字节未对齐块边界,"{downloaded}"->"{aligned_size}",已截断。')
+                                    f'缓存文件"{temp_path}"字节未对齐块边界,"{downloaded}" -> "{aligned_size}",已截断。')
                                 downloaded = aligned_size
                             f.seek(aligned_size)
                         except Exception as refresh_error:
