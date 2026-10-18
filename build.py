@@ -115,7 +115,7 @@ if __name__ == '__main__':
         build_command += ''.join(map(lambda d: f'--include-data-dir="{d[0]}"="{d[1]}" ', ready_web()))
         build_command += f'--force-runtime-environment-variable=TRMD_COMMIT_HASH={commit_hash} ' if commit_hash else ''
         build_command += f'--force-runtime-environment-variable=TRMD_BUILD_TIME={datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")} '
-        build_command += f'--clang --windows-icon-from-ico="{ICO_PATH}" ' if PLATFORM == 'win32' else ''
+        build_command += f'--clang --windows-icon-from-ico="{ICO_PATH}" --include-windows-runtime-dlls=yes ' if PLATFORM == 'win32' else ''
         build_command += f'--output-dir={OUTPUT} --output-filename="{SOFTWARE_SHORT_NAME}{EXTENSION}" --file-version={__version__} --product-version={__version__} --copyright="{COPYRIGHT}" '
         build_command += ''.join(f'{arg} ' for arg in sys.argv if arg.startswith('--disable-cache='))
         build_command += f'--script-name={SCRIPT_NAME}'
