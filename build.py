@@ -20,8 +20,11 @@ from module import (
 
 
 def ready_nuitka() -> None:
+    if NUITKA_VERSION < MIN_NUITKA_VERSION:
+        print(f'Nuitka版本不满足要求,请升级到{".".join(map(str, MIN_NUITKA_VERSION))}或更高版本。')
+        sys.exit(1)
     subprocess.run(
-        f'{UV}pip install --upgrade --no-cache-dir "nuitka[app]==4.3"',
+        f'{UV}pip install --upgrade --no-cache-dir "nuitka[app]=={".".join(map(str, NUITKA_VERSION))}"',
         shell=True)
 
 
@@ -79,8 +82,8 @@ PLATFORM: str = sys.platform
 UV: str = 'uv ' if which('uv') and os.path.exists('uv.lock') else ''  # noqa.
 MIN_PYTHON_VERSION: tuple = (3, 10, 0)
 MAX_PYTHON_VERSION: tuple = (3, 15, 0)
+NUITKA_VERSION: tuple = (4, 3, 1)
 MIN_NUITKA_VERSION: tuple = (4, 3, 0)
-
 EXTENSION: str = '.exe' if PLATFORM == 'win32' else ''
 ICO_PATH: str = 'res/icon.ico'
 OUTPUT: str = 'output'
