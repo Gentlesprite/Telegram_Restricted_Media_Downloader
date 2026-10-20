@@ -608,14 +608,17 @@ class UploadTask:
             message_ids: 需要检查的message_id集合。
 
         Returns:
-            int: 已创建的UploadTask数量(排除已发送的任务)。
+            int: 已创建的UploadTask数量(排除已发送与已失败的任务)。
+        失败任务(如超过上传大小限制、重试耗尽)永远不会再被收集,若计入会让媒体组
+        轮询的 created_count == collected_count 永不成立,导致整个相册卡死发不出去,
+        故与SENT一并排除,使相册能照常发出其余成功的成员。
         """
         if not message_ids:
             return 0
 
         count = 0
         for task in UploadTask.TASKS:
-            if task.message_id in message_ids and task.status != UploadStatus.SENT:
+            if task.message_id in message_ids and task.status not in (UploadStatus.SENT, UploadStatus.FAILURE):
                 count += 1
 
         return count
