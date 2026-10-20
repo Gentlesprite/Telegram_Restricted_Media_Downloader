@@ -447,6 +447,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         await self.app.client.send_message(
                             chat_id=target_chat_id,
                             text=message.text,
+                            entities=getattr(message, 'entities', None),
                             disable_notification=True,
                             protect_content=False
                         )
