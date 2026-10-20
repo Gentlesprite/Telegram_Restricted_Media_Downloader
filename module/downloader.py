@@ -1885,6 +1885,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             # 无需在 filter 配置里额外存 owner。
             owner = callback_query.from_user.id
             active_keywords = [k for k, v in keyword_filter.items() if v]
+            diy_download_type: list = [_ for _ in DownloadType()]  # 检索阶段即时创建下载任务共用,提前构造避免第三阶段重复定义。
+            instant_album_groups: set = set()  # 已即时创建过任务的media_group_id,避免遍历结束后的补建循环重复创建。
             links: list = []
             # 第一阶段,收集匹配的消息。
             messages_to_download = []
@@ -1927,6 +1929,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                     if group_id is None:
                         messages_to_download.append(message)
                         downloaded_message_ids.add(msg_key)
+                        # 单条消息命中即创建下载任务,边检索边下发,无需等全部检索完成。
+                        await self.create_download_task(
+                            message_ids=message,
+                            single_link=True,
+                            diy_download_type=diy_download_type,
+                            owner=owner,
+                            album_chat_id=chat_id
+                        )
                     else:
                         # 媒体组:成员仍逐个按类型/日期筛选后归入该组,整组只占一条链接。
                         album_members.setdefault(group_id, []).append(message)
@@ -2000,6 +2010,20 @@ class TelegramRestrictedMediaDownloader(Bot):
                                         media_group_added.add(member_group_id)
                                         messages_to_download.append(member)
                             matched_message_ids.add(member_key)
+                        # 慢路径媒体组:RPC展开并逐个筛选完成后,album_members中的成员即最终下载列表,立即整组创建任务。
+                        # 展开失败(group_members为空)时不创建,交由遍历结束后的补建循环兜底,避免同组重试展开成功后重复创建。
+                        if group_members and message.media_group_id not in instant_album_groups:
+                            instant_group_members = album_members.get(message.media_group_id)
+                            if instant_group_members:
+                                instant_album_groups.add(message.media_group_id)
+                                await self.create_download_task(
+                                    message_ids=instant_group_members[0],
+                                    single_link=True,
+                                    diy_download_type=diy_download_type,
+                                    owner=owner,
+                                    album_members=instant_group_members,
+                                    album_chat_id=chat_id
+                                )
                     else:
                         # 无关键词:整组由各成员遍历命中补全,无需RPC展开,仅标记该组已处理。
                         media_group_matched.add(message.media_group_id)
@@ -2046,6 +2070,22 @@ class TelegramRestrictedMediaDownloader(Bot):
 
                 )
                 return None
+            # 快路径媒体组(无关键词且未开评论区):成员随遍历逐条归组,遍历结束后album_members才完整,此处统一补建;
+            # 慢路径中展开失败的组同样在此兜底;已即时创建过的组跳过,避免重复创建。
+            for group_id in media_group_added:
+                if group_id in instant_album_groups:
+                    continue
+                pending_group_members = album_members.get(group_id)
+                if pending_group_members:
+                    instant_album_groups.add(group_id)
+                    await self.create_download_task(
+                        message_ids=pending_group_members[0],
+                        single_link=True,
+                        diy_download_type=diy_download_type,
+                        owner=owner,
+                        album_members=pending_group_members,
+                        album_chat_id=chat_id
+                    )
             message_count: int = len(messages_to_download)
             last_displayed_comment_count: int = -1  # 记录上次显示的评论数量,初始化为-1确保第一次一定更新。
             last_comment_update_time: float = 0  # 记录上次评论更新的时间戳。
@@ -2169,12 +2209,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                             text=BotButton.RETRIEVE_COMMENT,
                             callback_data=BotCallbackText.NULL)
                     )
-            diy_download_type: list = [_ for _ in DownloadType()]
             comment_count: int = (len(links) - message_count) if include_comment else 0
             total_count: int = message_count + comment_count
-            assigned_count: int = 0
+            # 消息任务已在检索阶段即时创建,此处从消息数起算,只负责分配评论区任务。
+            assigned_count: int = message_count
             last_progress_update_time: float = 0  # 记录上次分配任务更新的时间戳。
             for index, link in enumerate(links):
+                # 消息部分(前message_count条链接)已在第一阶段即时创建任务,跳过,只为评论区创建。
+                if index < message_count:
+                    continue
                 if assigned_count == total_count:
                     reply_markup = KeyboardButton.single_button(
                         text=BotButton.TASK_ASSIGN,
