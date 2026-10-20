@@ -704,7 +704,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     storage_id.append(message_id)
                 except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
-                    # TODO 存在内容保护限制时，文本类型的消息无需下载，而是直接send_message。
                     # TODO 存在内容保护限制时，下载后上传的消息转发时无法过滤类型。
                     self.cd.data = {
                         'origin_link': origin_link,
