@@ -276,6 +276,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         # 优先使用显式传入的 owner(受限「下载后上传」场景),否则回退到消息发送者。
         requester = owner if owner is not None else message.from_user.id
         for link in links:
+            # 预登记:覆盖"上一条已入队、下一条尚未开始解析"的循环间隙,入队后由create_download_task移除。
+            DownloadTask.PENDING_ENQUEUE.add(link)
             task: dict = await self.create_download_task(
                 message_ids=link,
                 retry=None,
@@ -1770,6 +1772,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _max_retry = getattr(download_task, 'max_retry', None) or self.app.max_download_retries
                 if retry_count < _max_retry:
                     retry_count += 1
+                    # 重试从create_task排队到函数体执行之间存在一个事件循环tick的间隙,此时该消息
+                    # 既不在DOWNLOADING_KEYS也不在items中,先登记再创建任务,由create_download_task入队后移除。
+                    DownloadTask.PENDING_ENQUEUE.add(link) if isinstance(link, str) else None
                     task = self.loop.create_task(
                         self.create_download_task(
                             message_ids=link if isinstance(link, str) else message,
@@ -2389,7 +2394,12 @@ class TelegramRestrictedMediaDownloader(Bot):
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
         diy_download_type = [_ for _ in DownloadType()] if with_upload else diy_download_type
+        # 消息对象不可哈希(pyrogram的Object禁用了__hash__),只有链接字符串能作为登记键。
+        enqueue_key: Union[str, None] = message_ids if isinstance(message_ids, str) else None
         try:
+            if enqueue_key:
+                # 解析(含RPC)完成前该链接尚未入队,登记供上传侧媒体组轮询判定"是否还有成员未入队"。
+                DownloadTask.PENDING_ENQUEUE.add(enqueue_key)
             if album_members:
                 # 媒体组(download_chat):成员已在检索阶段逐个按类型/日期筛选通过,直接整组打包。
                 # 不再RPC展开整组(免去展开失败导致整组丢失),也不在下载阶段二次过滤
@@ -2576,6 +2586,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     'error_msg': '未收录到的错误'
                 }
             }
+        finally:
+            if enqueue_key:
+                # 无论解析成功、失败还是重试,入队后立即移除登记,杜绝残留导致媒体组永久等待。
+                DownloadTask.PENDING_ENQUEUE.discard(enqueue_key)
 
     def __process_links(self, link: Union[str, list]) -> Union[set, None]:
         """将链接(文本格式或链接)处理成集合。"""

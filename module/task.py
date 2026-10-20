@@ -43,6 +43,7 @@ class DownloadTask:
     TASKS: dict = {}  # 链接 -> DownloadTask。
     ORDER: list = []  # 链接首次出现的顺序,调度器按此顺序派发。
     DOWNLOADING_KEYS: set = set()  # (chat_id, message_id) -> 正在下载中的消息,防止不同链接(如媒体组与组内单条?single)并发下载同一消息导致数据竞争。
+    PENDING_ENQUEUE: set = set()  # 已发起解析但尚未入队的链接,解析期间该消息在任务体系中不存在任何对象,供上传侧媒体组轮询判定"是否还有成员未入队"。
 
     def __init__(self, link: Union[str, int]):
         self.link: str = str(link)
@@ -284,6 +285,16 @@ class DownloadTask:
                 if item.get('status') in (DownloadStatus.PENDING, DownloadStatus.DOWNLOADING):
                     return True
         return False
+
+    @classmethod
+    def has_pending_enqueue(cls) -> bool:
+        """判断是否还有已发起解析、尚未入队(items)的链接。
+
+        范围下载(如/forward受限回退)会把整段拆成逐条链接串行解析,解析完成前该消息
+        既不在DOWNLOADING_KEYS也不在items中,上传侧媒体组轮询会把它误判为"不存在"
+        而提前发出不完整的相册,迟到的成员再被单独发送,故解析期间在此登记。
+        """
+        return bool(cls.PENDING_ENQUEUE)
 
     def add_file_name(self, file_name: str) -> None:
         """记录已完成的文件名,并同步完成数。"""
@@ -572,10 +583,15 @@ class UploadTask:
     ) -> bool:
         """检查是否还有PENDING/UPLOADING状态且属于媒体组的上传任务,或本媒体组成员仍在下载中。
         仅判断上传队列不足以判定媒体组是否已齐:某成员可能仍处于下载阶段、尚未生成上传任务,此时若判定为"无待处理"会提前发出不完整的相册,因此同时检查下载任务。
+        链接解析阶段的消息在任务体系中不存在任何对象,故还需检查尚未入队的链接。
         Args:
             message_ids: 本媒体组成员的message_id集合。给出时只检查这些消息的下载状态,避免被无关的下载任务拖住;不给出则退化为全局检查。
             origin_chat_id: 原始频道ID,配合message_ids精确匹配下载占用键。
         """
+        # 命令层还有链接未入队:这些成员尚未进入任务体系,与"没有待处理任务"是两回事,必须继续等待,
+        # 否则媒体组会提前发出不完整的相册,迟到的成员再被单独发送。
+        if DownloadTask.PENDING_ENQUEUE:
+            return True
         for task in UploadTask.TASKS:
             if task.status in (UploadStatus.PENDING, UploadStatus.UPLOADING) and task.is_media_group:
                 return True
