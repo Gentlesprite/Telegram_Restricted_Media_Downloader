@@ -1869,7 +1869,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         callback_query_text: str = cq.text if cq is not None else _setup_text
         last_displayed_count: int = -1  # 记录上次显示的数量,初始化为-1确保第一次一定更新。
         last_update_time: float = 0  # 记录上次更新的时间戳。
-        update_interval: float = 20.0  # 更新时间间隔(秒),无论多少条消息,都只在这个时间间隔更新一次。
+        update_interval: float = 5.0  # 基准更新间隔(秒),各阶段按实时计数每满1百条放大一档,上限600秒。
 
         try:
             _filter = Filter()
@@ -2047,7 +2047,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                 # 使用时间节流机制,只在指定时间间隔后才更新,避免频繁API调用。
                 current_time = asyncio.get_event_loop().time()
                 current_count = matched_file_count  # 按实际选中的媒体(文件)数显示,媒体组按成员计。
-                if current_time - last_update_time >= update_interval:
+                # 已匹配数越多检索耗时越长,每满1百条将编辑间隔放大一档,降低长任务编辑消息的FloodWait风险。
+                count_scale: int = max(1, (current_count + 99) // 100)
+                if current_time - last_update_time >= min(update_interval * count_scale, 600.0):
                     await _progress(
                         _text=f'{callback_query_text}\n'
                               f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到{current_count}条消息。',
@@ -2144,7 +2146,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                             current_time = asyncio.get_event_loop().time()
                             # 计算评论数量,总链接数减去已处理的消息数。
                             current_comment_count = len(links) - processed_message_count
-                            if current_time - last_comment_update_time >= update_interval:
+                            # 已匹配评论越多检索耗时越长,每满1百条将编辑间隔放大一档,降低长任务编辑消息的FloodWait风险。
+                            count_scale: int = max(1, (current_comment_count + 99) // 100)
+                            if current_time - last_comment_update_time >= min(update_interval * count_scale, 600.0):
                                 await _progress(
                                     _text=f'{callback_query_text}\n'
                                           f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到{current_comment_count}条消息。',
@@ -2185,7 +2189,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 current_time = asyncio.get_event_loop().time()
                                 # 计算评论数量,总链接数减去已处理的消息数。
                                 current_comment_count = len(links) - processed_message_count
-                                if current_time - last_comment_update_time >= update_interval:
+                                # 已匹配评论越多检索耗时越长,每满1百条将编辑间隔放大一档,降低长任务编辑消息的FloodWait风险。
+                                count_scale: int = max(1, (current_comment_count + 99) // 100)
+                                if current_time - last_comment_update_time >= min(update_interval * count_scale, 600.0):
                                     await _progress(
                                         _text=f'{callback_query_text}\n'
                                               f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到{current_comment_count}条消息。',
@@ -2239,7 +2245,9 @@ class TelegramRestrictedMediaDownloader(Bot):
 
                 # 使用时间节流机制,只在指定时间间隔后才更新任务分配进度。
                 current_time = asyncio.get_event_loop().time()
-                if current_time - last_progress_update_time >= update_interval:
+                # 已分配任务越多耗时越长,每满1百条将编辑间隔放大一档,降低长任务编辑消息的FloodWait风险。
+                count_scale: int = max(1, (assigned_count + 99) // 100)
+                if current_time - last_progress_update_time >= min(update_interval * count_scale, 600.0):
                     if await _progress(
                             _text=f'{origin_callback_query_text}\n'
                                   f'🔎匹配消息:{message_count}条,评论区消息:{comment_count}条,共{total_count}条。\n'
