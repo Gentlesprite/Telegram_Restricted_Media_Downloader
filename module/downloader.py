@@ -187,22 +187,32 @@ class TelegramRestrictedMediaDownloader(Bot):
                                    SaveDirectoryPrefix.MESSAGE_ID_SYNC_COMMENT):
                     if placeholder == SaveDirectoryPrefix.MESSAGE_ID_SYNC_COMMENT:
                         # 评论区消息跟随其所属主频道消息的ID填充,使主频道消息ID与评论区文件夹名相互对应。
+                        comment_anchor_group_id = getattr(message, 'comment_anchor_group_id', None)
+                        if comment_anchor_group_id is not None:
+                            # 主频道消息是媒体组时,评论区用与主频道同一口径的成员区间(如37-38),保证文件夹名一致。
+                            save_directory = save_directory.replace(
+                                placeholder, self.__media_group_range(comment_anchor_group_id))
+                            continue
                         comment_anchor_id = getattr(message, 'comment_anchor_id', None)
                         if comment_anchor_id is not None:
                             save_directory = save_directory.replace(placeholder, str(comment_anchor_id))
                             continue
                     media_group_id = getattr(message, 'media_group_id', None)
                     if media_group_id:
-                        group_ids = self.media_group_ids_cache.get(media_group_id)
-                        group_range = f'{min(group_ids)}-{max(group_ids)}' if group_ids else None
                         save_directory = save_directory.replace(
-                            placeholder, group_range if group_range else str(media_group_id))
+                            placeholder, self.__media_group_range(media_group_id))
                     else:
                         save_directory = save_directory.replace(
                             placeholder,
                             str(getattr(message, 'id', 'UNKNOWN_MESSAGE_ID'))
                         )
         return save_directory
+
+    def __media_group_range(self, media_group_id) -> str:
+        """媒体组ID的填充口径:优先取缓存的成员id最小-最大区间,缓存未命中回退组ID。"""
+        group_ids = self.media_group_ids_cache.get(media_group_id)
+        group_range = f'{min(group_ids)}-{max(group_ids)}' if group_ids else None
+        return group_range if group_range else str(media_group_id)
 
     def add_web_storage(self, storage: TRMDStorage) -> None:
         """登记网页下载/上传存储。
@@ -1911,7 +1921,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             matched_file_count: int = 0  # 实际选中的媒体(文件)数,媒体组按成员计,用于检索进度显示。
             media_group_thread_id: dict = {}  # 媒体组评论区所在的首条成员(最小message id)id,供第二阶段检索评论区时使用。
             extra_comment_ids: set = set()  # 被类型过滤掉但评论区有内容的消息 id(非媒体组),需单独扫描其评论。
-            comment_anchor_by_link: dict = {}  # 评论区链接 -> 其所属主频道消息ID,供%MESSAGE_ID_SYNC_COMMENT%填充对应文件夹名。
+            comment_anchor_by_link: dict = {}  # 评论区链接 -> (主频道消息ID, 主频道媒体组ID或None),供%MESSAGE_ID_SYNC_COMMENT%填充对应文件夹名。
             downloaded_message_ids: set = set()  # 已进入下载列表的消息(chat_id, message_id),用于快速判断消息是否因类型被过滤。
             await _progress(
                 _text=f'{callback_query_text}\n'
@@ -2150,7 +2160,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             comment_link = comment.link if comment.link else comment
                             links.append(comment_link)
                             if isinstance(comment_link, str):  # link为空时回退为Message对象(不可哈希),不能作为映射键。
-                                comment_anchor_by_link[comment_link] = thread_id
+                                comment_anchor_by_link[comment_link] = (thread_id, group_id)
                             # 使用时间节流机制,只在指定时间间隔后才更新,避免频繁API调用。
                             current_time = asyncio.get_event_loop().time()
                             # 计算评论数量,总链接数减去已处理的消息数。
@@ -2195,7 +2205,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 comment_link = comment.link if comment.link else comment
                                 links.append(comment_link)
                                 if isinstance(comment_link, str):  # link为空时回退为Message对象(不可哈希),不能作为映射键。
-                                    comment_anchor_by_link[comment_link] = source_id
+                                    comment_anchor_by_link[comment_link] = (source_id, None)  # 被类型过滤的消息均为非媒体组。
                                 # 使用时间节流机制,只在指定时间间隔后才更新,避免频繁API调用。
                                 current_time = asyncio.get_event_loop().time()
                                 # 计算评论数量,总链接数减去已处理的消息数。
@@ -2267,6 +2277,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                             _reply_markup=reply_markup
                     ) is not None:
                         last_progress_update_time = current_time
+                comment_anchor: Optional[int] = None
+                comment_anchor_group_id: Optional[int] = None
+                if isinstance(link, str):  # link为Message对象(不可哈希)时无从查起,传None。
+                    anchor_pair = comment_anchor_by_link.get(link)
+                    if anchor_pair:
+                        comment_anchor, comment_anchor_group_id = anchor_pair
                 await self.create_download_task(
                     message_ids=link,
                     single_link=True,
@@ -2274,8 +2290,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     owner=owner,
                     album_members=group_members_by_index.get(index),  # 媒体组传已筛选好的成员,整组打包。
                     album_chat_id=chat_id,
-                    # 评论区链接传其所属主频道消息ID;link为Message对象(不可哈希)时无从查起,传None。
-                    comment_anchor=comment_anchor_by_link.get(link) if isinstance(link, str) else None
+                    comment_anchor=comment_anchor,  # 评论区链接传其所属主频道消息ID与媒体组ID。
+                    comment_anchor_group_id=comment_anchor_group_id
                 )
                 assigned_count += 1
             # 后台跟踪已入队任务的真实完成度,持续刷新内联键盘进度条直至本轮全部结束:
@@ -2417,7 +2433,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             owner: Union[int, None] = None,
             album_members: Optional[list] = None,
             album_chat_id: Optional[Union[int, str]] = None,
-            comment_anchor: Optional[int] = None
+            comment_anchor: Optional[int] = None,
+            comment_anchor_group_id: Optional[int] = None
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
         diy_download_type = [_ for _ in DownloadType()] if with_upload else diy_download_type
@@ -2459,12 +2476,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                 link = message_ids
                 # 评论区链接重新解析后会丢失归属信息,用本次传入或任务上登记的主频道消息ID补标,
                 # 供%MESSAGE_ID_SYNC_COMMENT%通配符填充与主频道消息一致的文件夹名。
-                comment_anchor_id: Optional[int] = comment_anchor
-                if comment_anchor_id is None:
+                anchor_id: Optional[int] = comment_anchor
+                anchor_group_id: Optional[int] = comment_anchor_group_id
+                if anchor_id is None:
                     dl_task: Union[DownloadTask, None] = DownloadTask.get(link)
-                    comment_anchor_id = dl_task.comment_anchor if dl_task else None
-                if meta and comment_anchor_id is not None:
-                    tag_comment_anchor(meta.get('message'), comment_anchor_id)
+                    if dl_task is not None:
+                        anchor_id = dl_task.comment_anchor
+                        anchor_group_id = dl_task.comment_anchor_group_id
+                if meta and anchor_id is not None:
+                    tag_comment_anchor(meta.get('message'), anchor_id, anchor_group_id)
 
             link_type, chat_id, message, member_num = meta.values()
             if str(chat_id) in ('me', 'self'):
@@ -2476,6 +2496,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 task.owner = owner
             if comment_anchor is not None:
                 task.comment_anchor = comment_anchor  # 登记评论区链接的主频道消息ID,重试重新解析链接时据此补标。
+                task.comment_anchor_group_id = comment_anchor_group_id  # 登记主频道消息的媒体组ID,评论区按同一区间口径填充。
             task.link_type = link_type
             task.chat_id = chat_id
             # 重试会按链接重新解析(媒体组会整组展开,使member_num膨胀),覆盖将导致member_num永远

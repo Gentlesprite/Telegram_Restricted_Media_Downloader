@@ -152,17 +152,21 @@ async def collect_message_id(
 
 def tag_comment_anchor(
         message: Union[pyrogram.types.Message, list],
-        comment_anchor_id: int
+        comment_anchor_id: int,
+        comment_anchor_group_id: Optional[int] = None
 ) -> None:
     """标记评论区消息所属的主频道消息ID。
 
     供%MESSAGE_ID_SYNC_COMMENT%通配符使用:评论区消息的文件夹名不跟随其自身ID,
-    而是跟随此处标记的主频道消息ID,使主频道消息与评论区的文件夹名相互对应。
+    而是跟随此处标记的主频道消息ID;主频道消息是媒体组时同时标记其media_group_id,
+    使评论区与该媒体组使用同一口径的成员区间(如37-38),保证文件夹名一致。
     """
     messages = message if isinstance(message, list) else [message]
     for _message in messages:
         if _message is not None:
             _message.comment_anchor_id = comment_anchor_id
+            if comment_anchor_group_id is not None:
+                _message.comment_anchor_group_id = comment_anchor_group_id
 
 
 def save_message_entities(
@@ -377,13 +381,19 @@ async def get_message_by_link(
                 if '=' in origin_link and int(origin_link.split('=')[-1]) != comment.id:
                     continue
             comment_message.append(comment)
-        tag_comment_anchor(comment_message, message_id)  # 标记每条评论所属的主频道消息ID。
         log.info(f'链接:"{link}"的评论中检索到媒体:"{len(comment_message)}"条。')
     message = await client.get_messages(chat_id=chat_id, message_ids=message_id)
     is_group, group_message = await __is_group(message)
     if single_link:
         is_group = False
         group_message: Union[list, None] = None
+    if comment_message:
+        # 标记每条评论所属的主频道消息ID;主频道消息是媒体组时同时标记其media_group_id,
+        # 使评论区与该媒体组使用同一口径的成员区间填充,保证文件夹名一致。
+        tag_comment_anchor(
+            comment_message, message_id,
+            getattr(message, 'media_group_id', None) if is_group else None
+        )
     if is_group or comment_message:  # 组或评论区。
         try:  # v1.1.2解决当group返回None时出现comment无法下载的问题。
             group_message.extend(comment_message) if comment_message else None
