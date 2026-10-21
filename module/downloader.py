@@ -727,12 +727,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                             reply_markup=KeyboardButton.restrict_forward_button()
                         )
                         return None
-                    await client.send_message(
-                        chat_id=message.from_user.id,
-                        text=f'`{origin_link}`\n{channel}存在内容保护限制(已自动使用下载后上传)。\n⚠️通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型。',
-                        parse_mode=ParseMode.MARKDOWN,
-                        reply_parameters=ReplyParameters(message_id=message.id)
-                    )
+                    asyncio.create_task(
+                        self.done_notice(
+                            text=f'`{origin_link}`\n{channel}存在内容保护限制(已自动使用下载后上传)。\n⚠️通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型。',
+                            requester=owner
+                        ))
                     original_text = self.last_message.text
                     try:
                         self.last_message.text = f'/download {origin_link} {start_id} {end_id}'
@@ -800,12 +799,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 reply_markup=KeyboardButton.restrict_forward_button()
                             )
                             return None
-                        await client.send_message(
-                            chat_id=message.from_user.id,
-                            text=f'`{origin_link}`\n{channel}存在内容保护限制(已自动使用下载后上传)。\n⚠️通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型。',
-                            parse_mode=ParseMode.MARKDOWN,
-                            reply_parameters=ReplyParameters(message_id=message.id)
-                        )
+                        asyncio.create_task(
+                            self.done_notice(
+                                text=f'`{origin_link}`\n{channel}存在内容保护限制(已自动使用下载后上传)。\n⚠️通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型。',
+                                requester=owner
+                            ))
                         self.last_message.text = f'/download {origin_link} {start_id} {end_id}'
                         await self.get_download_link_from_bot(
                             client=self.last_client,
