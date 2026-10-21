@@ -1546,6 +1546,8 @@ class BotCallbackPrefix:
     SET_TIME: str = 'set_time_'
     SET_SPECIFIC_TIME: str = 'set_specific_time_'
     ADJUST_STEP: str = 'adjust_step_'
+    SELECT_YEAR: str = 'select_year_'
+    SET_YEAR: str = 'set_year_'
     DROP_KEYWORD: str = 'drop_keyword_'
     IGNORE_KEYWORD: str = 'ignore_keyword'
 

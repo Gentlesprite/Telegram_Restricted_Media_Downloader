@@ -2336,7 +2336,8 @@ class KeyboardButton:
             return None
         nav_row = [
             InlineKeyboardButton('◀️', callback_data=f'time_dec_month_{_dtype}_{prev_year}_{prev_month}'),
-            InlineKeyboardButton(f'{year}-{month:02d}', callback_data=BotCallbackText.NULL),
+            # 中间的「年-月」按钮可点击,用于打开年份选择键盘。
+            InlineKeyboardButton(f'{year}-{month:02d}', callback_data=f'select_year_{_dtype}_{year}_{month}'),
             InlineKeyboardButton('▶️', callback_data=f'time_inc_month_{_dtype}_{next_year}_{next_month}')
         ]
         keyboard.append(nav_row)
@@ -2361,6 +2362,59 @@ class KeyboardButton:
                 InlineKeyboardButton(
                     text=BotButton.CONFIRM_AND_RETURN,
                     callback_data=BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER
+                ),
+                InlineKeyboardButton(
+                    text=BotButton.CANCEL_TASK,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
+                )
+            ]
+        )
+        markup = InlineKeyboardMarkup(keyboard)
+        # 传入chat_id时才挂载任务身份,避免影响其他复用此日历的场合。
+        if chat_id is not None:
+            markup = attach_task(markup, chat_id)
+        try:
+            await self.callback_query.message.edit_reply_markup(markup)
+        except MessageNotModified:
+            pass
+
+    async def year_keyboard(
+            self,
+            dtype: Union[CalenderKeyboard, str],
+            year: int,
+            month: int,
+            chat_id=None
+    ):
+        # 年份键盘以当前年为中心,向前6年、向后5年共展示12个年份,◀️▶️按12年整页翻动。
+        keyboard: list = []
+        start_year: int = year - 6
+        end_year: int = start_year + 11
+        if dtype == CalenderKeyboard.START_TIME_BUTTON:
+            _dtype = 'start'
+        elif dtype == CalenderKeyboard.END_TIME_BUTTON:
+            _dtype = 'end'
+        else:
+            return None
+        nav_row = [
+            InlineKeyboardButton('◀️', callback_data=f'select_year_{_dtype}_{year - 12}_{month}'),
+            InlineKeyboardButton(f'{start_year}-{end_year}', callback_data=BotCallbackText.NULL),
+            InlineKeyboardButton('▶️', callback_data=f'select_year_{_dtype}_{year + 12}_{month}')
+        ]
+        keyboard.append(nav_row)
+        for row_start in range(start_year, end_year + 1, 4):
+            row = []
+            for _year in range(row_start, row_start + 4):
+                # 当前年加点标记,与其余年份区分。
+                row.append(InlineKeyboardButton(
+                    f'·{_year}·' if _year == year else str(_year),
+                    callback_data=f'set_year_{_dtype}_{_year}_{month}'
+                ))
+            keyboard.append(row)
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    text=BotButton.RETURN,
+                    callback_data=f'set_year_{_dtype}_{year}_{month}'
                 ),
                 InlineKeyboardButton(
                     text=BotButton.CANCEL_TASK,
@@ -3099,6 +3153,8 @@ class DownloadChatHandler(CallbackHandler):
         BotCallbackPrefix.SET_TIME,
         BotCallbackPrefix.SET_SPECIFIC_TIME,
         BotCallbackPrefix.ADJUST_STEP,
+        BotCallbackPrefix.SELECT_YEAR,
+        BotCallbackPrefix.SET_YEAR,
         BotCallbackPrefix.DROP_KEYWORD,
         BotCallbackPrefix.IGNORE_KEYWORD
     )
@@ -3213,6 +3269,30 @@ class DownloadChatHandler(CallbackHandler):
                 month = int(parts[-1])
                 await kb.calendar_keyboard(year=year, month=month, dtype=dtype, chat_id=chat_id)
                 log.info(f'日期切换为{year}年,{month}月。')
+        elif data.startswith(BotCallbackPrefix.SELECT_YEAR):
+            # 打开年份选择键盘,回调数据形如"select_year_{start|end}_{当前年}_{当前月}"。
+            parts = data.split('_')
+            dtype = None
+            if 'start' in data:
+                dtype = CalenderKeyboard.START_TIME_BUTTON
+            elif 'end' in data:
+                dtype = CalenderKeyboard.END_TIME_BUTTON
+            year = int(parts[-2])
+            month = int(parts[-1])
+            await kb.year_keyboard(dtype=dtype, year=year, month=month, chat_id=chat_id)
+            log.info(f'打开年份选择,当前年份:{year}年,{month}月。')
+        elif data.startswith(BotCallbackPrefix.SET_YEAR):
+            # 选定年份后回到日历视图,回调数据形如"set_year_{start|end}_{所选年}_{当前月}"。
+            parts = data.split('_')
+            dtype = None
+            if 'start' in data:
+                dtype = CalenderKeyboard.START_TIME_BUTTON
+            elif 'end' in data:
+                dtype = CalenderKeyboard.END_TIME_BUTTON
+            year = int(parts[-2])
+            month = int(parts[-1])
+            await kb.calendar_keyboard(year=year, month=month, dtype=dtype, chat_id=chat_id)
+            log.info(f'日期切换为{year}年,{month}月。')
         elif data.startswith(('set_time_', 'set_specific_time_')):
             parts = data.split('_')
             date = parts[-1]
