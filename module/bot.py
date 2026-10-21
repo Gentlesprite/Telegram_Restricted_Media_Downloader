@@ -3209,6 +3209,8 @@ class DownloadChatHandler(CallbackHandler):
                 enable=False
             )
             if data == BotCallbackText.DOWNLOAD_CHAT_ID:
+                # 点击执行任务时统一打印记录download_chat配置的字典,无论是否使用关键词,便于核对本次任务的筛选条件。
+                log.info(f'执行/download_chat任务,当前筛选配置:{downloader.download_chat_filter}。')
                 # 仅派发成功(返回匹配到的链接列表)才清除配置;失败时保留配置与原菜单,便于直接重试。
                 if await downloader.download_chat(chat_id=chat_id, callback_query=query) is not None:
                     self.__remove_chat_id(downloader, chat_id)
