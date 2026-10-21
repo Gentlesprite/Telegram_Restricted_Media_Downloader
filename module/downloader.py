@@ -2311,8 +2311,6 @@ class TelegramRestrictedMediaDownloader(Bot):
         task_keys = list(dict.fromkeys(task_keys))
         last_update_time: float = 0
         update_interval: float = 5.0  # 基准更新间隔(秒),实际间隔按并发tracker数与消息总量动态放大。
-        # 消息总量越大下载耗时越长,每满1百条将编辑间隔放大一档,降低长任务编辑消息的FloodWait风险。
-        count_scale: int = max(1, (total_count + 99) // 100)
         edit_fail_count: int = 0  # 连续编辑失败计数,超过上限视为消息已失效,停止跟踪。
         while True:
             try:
@@ -2327,6 +2325,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         if member.get('state') not in (DownloadStatus.PENDING, DownloadStatus.DOWNLOADING):
                             done += 1
                 finished: bool = total == 0 or done >= total
+                # 消息总量越大下载耗时越长,按实际成员数每满1百条将编辑间隔放大一档,降低长任务编辑消息的FloodWait风险。
+                count_scale: int = max(1, (total + 99) // 100)
                 interval: float = min(
                     safe_length(self.chat_progress_trackers, default=1) * update_interval * count_scale,
                     600.0
