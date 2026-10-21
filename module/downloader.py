@@ -1866,7 +1866,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         callback_query_text: str = cq.text if cq is not None else _setup_text
         last_displayed_count: int = -1  # 记录上次显示的数量,初始化为-1确保第一次一定更新。
         last_update_time: float = 0  # 记录上次更新的时间戳。
-        update_interval: float = 1.0  # 更新时间间隔(秒),无论多少条消息,都只在这个时间间隔更新一次。
+        update_interval: float = 20.0  # 更新时间间隔(秒),无论多少条消息,都只在这个时间间隔更新一次。
 
         try:
             _filter = Filter()
@@ -2307,7 +2307,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 task_keys.append(str(_link))
         task_keys = list(dict.fromkeys(task_keys))
         last_update_time: float = 0
-        update_interval: float = 1.0  # 基准更新间隔(秒),实际间隔按并发tracker数动态放大。
+        update_interval: float = 20.0  # 基准更新间隔(秒),实际间隔按并发tracker数动态放大。
         edit_fail_count: int = 0  # 连续编辑失败计数,超过上限视为消息已失效,停止跟踪。
         while True:
             try:
@@ -2324,7 +2324,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 finished: bool = total == 0 or done >= total
                 interval: float = min(
                     safe_length(self.chat_progress_trackers, default=1) * update_interval,
-                    5.0
+                    120.0
                 )
                 current_time = asyncio.get_event_loop().time()
                 if finished or current_time - last_update_time >= interval:
