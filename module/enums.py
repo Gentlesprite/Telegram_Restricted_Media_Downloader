@@ -87,6 +87,7 @@ class SaveDirectoryPrefix:
     MIME_TYPE: str = '%MIME_TYPE%'
     MESSAGE_ID: str = '%MESSAGE_ID%'
     MESSAGE_ID_WITH_ENTITIES: str = '%MESSAGE_ID_WITH_ENTITIES%'
+    MESSAGE_ID_SYNC_COMMENT: str = '%MESSAGE_ID_SYNC_COMMENT%'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():

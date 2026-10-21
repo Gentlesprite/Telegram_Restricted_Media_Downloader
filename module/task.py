@@ -57,6 +57,7 @@ class DownloadTask:
         self.items: dict = {}  # 消息ID -> 待下载消息(dict,字段见add_item)。
         self.member_info: dict = {}  # 消息ID -> 该链接下消息的展示信息与状态,完成后不移除。
         self.max_retry: int = 0  # 该任务锁定的下载重试上限(首次创建时写入,重试沿用);0表示尚未锁定。
+        self.comment_anchor: Optional[int] = None  # 评论区链接所属的主频道消息ID,供%MESSAGE_ID_SYNC_COMMENT%通配符与重试补标使用。
         self.owner: Union[int, None] = None  # 创建该任务的用户ID,用于「谁创建就通知谁」。
 
     @property

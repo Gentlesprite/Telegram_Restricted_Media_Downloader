@@ -744,6 +744,7 @@ temp_directory: F:\directory\temp\where\you\save
 | `%MIME_TYPE%` |                                 以实际`文件类型`作为指定路径填充。                                  |
 | `%MESSAGE_ID%` |             以实际`消息ID`作为指定路径填充（≥v2.1.1）；`媒体组`使用成员ID最小-最大区间（如`123-129`）。              |
 | `%MESSAGE_ID_WITH_ENTITIES%` | 同`%MESSAGE_ID%`填充规则，并额外将消息文本与格式化实体序列化为`json`文件（`{区间或ID}_entities.json`）落盘（≥v2.1.1）。 |
+| `%MESSAGE_ID_SYNC_COMMENT%` | 同`%MESSAGE_ID%`填充规则，但`评论区`消息固定跟随其所属`频道消息`的ID填充，使`频道消息`与`评论区`的文件夹名相互对应（≥v2.1.3）。 |
 
 - 用法示例1：
 

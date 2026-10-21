@@ -122,14 +122,15 @@ async def collect_message_id(
 ) -> Union[list, None]:
     """预取媒体组成员id列表并写入缓存。
 
-    仅当保存路径模板含%MESSAGE_ID%或%MESSAGE_ID_WITH_ENTITIES%通配符且消息属于媒体组时,才发起异步的
-    message.get_media_group();结果以media_group_id为键存入cache,供下载阶段
+    仅当保存路径模板含%MESSAGE_ID%、%MESSAGE_ID_WITH_ENTITIES%或%MESSAGE_ID_SYNC_COMMENT%通配符且消息属于媒体组时,
+    才发起异步的message.get_media_group();结果以media_group_id为键存入cache,供下载阶段
     的 env_save_directory 同步读取,避免同步方法里await协程这一根本矛盾。
     缓存命中则直接返回,避免同组每条消息各发一次 RPC。
     路径不含通配符或消息非媒体组时返回None,不触碰cache。
     """
     if (SaveDirectoryPrefix.MESSAGE_ID not in save_directory
-            and SaveDirectoryPrefix.MESSAGE_ID_WITH_ENTITIES not in save_directory):
+            and SaveDirectoryPrefix.MESSAGE_ID_WITH_ENTITIES not in save_directory
+            and SaveDirectoryPrefix.MESSAGE_ID_SYNC_COMMENT not in save_directory):
         return None
     media_group_id = getattr(message, 'media_group_id', None)
     if not media_group_id:
@@ -147,6 +148,21 @@ async def collect_message_id(
     if len(cache) > 500:
         cache.clear()
     return group_ids
+
+
+def tag_comment_anchor(
+        message: Union[pyrogram.types.Message, list],
+        comment_anchor_id: int
+) -> None:
+    """标记评论区消息所属的主频道消息ID。
+
+    供%MESSAGE_ID_SYNC_COMMENT%通配符使用:评论区消息的文件夹名不跟随其自身ID,
+    而是跟随此处标记的主频道消息ID,使主频道消息与评论区的文件夹名相互对应。
+    """
+    messages = message if isinstance(message, list) else [message]
+    for _message in messages:
+        if _message is not None:
+            _message.comment_anchor_id = comment_anchor_id
 
 
 def save_message_entities(
@@ -361,6 +377,7 @@ async def get_message_by_link(
                 if '=' in origin_link and int(origin_link.split('=')[-1]) != comment.id:
                     continue
             comment_message.append(comment)
+        tag_comment_anchor(comment_message, message_id)  # 标记每条评论所属的主频道消息ID。
         log.info(f'链接:"{link}"的评论中检索到媒体:"{len(comment_message)}"条。')
     message = await client.get_messages(chat_id=chat_id, message_ids=message_id)
     is_group, group_message = await __is_group(message)
