@@ -143,6 +143,7 @@ class Bot:
         BotCommandText.commands_with_prefix()
     ) + ('/start',)
     LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
+    MAX_NOTIFY_LINKS = 50  # 单次命令链接数超过该值时不再通过机器人通知,避免消息过长编辑频繁触发风控。
 
     def __init__(self):
         self.application = None
@@ -544,15 +545,21 @@ class Bot:
             right_link: set = set([_ for _ in link if _.startswith('https://t.me/')])
             invalid_link: set = set([_ for _ in link if not _.startswith('https://t.me/')])
         if right_link:
+            # 消息条数超过MAX_NOTIFY_LINKS时通知文案过长,直接提示通知已禁用,不再罗列链接。
+            link_count: int = len(right_link) + len(invalid_link)
+            if link_count <= Bot.MAX_NOTIFY_LINKS:
+                notify_text: list = self.update_text(
+                    right_link=right_link,
+                    invalid_link=invalid_link
+                )
+            else:
+                notify_text: list = [BotMessage.TOO_MANY_MESSAGE]
             return {
                 'right_link': right_link,
                 'invalid_link': invalid_link,
                 'last_bot_message': await self.safe_process_message(
                     client=client, message=message, requester=requester,
-                    text=self.update_text(
-                        right_link=right_link,
-                        invalid_link=invalid_link
-                    )
+                    text=notify_text
                 )
             }
         else:

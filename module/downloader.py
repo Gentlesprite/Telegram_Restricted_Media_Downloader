@@ -256,7 +256,9 @@ class TelegramRestrictedMediaDownloader(Bot):
         right_link: set = link_meta.get('right_link')
         invalid_link: set = link_meta.get('invalid_link')
         last_bot_message: Union[pyrogram.types.Message, None] = link_meta.get('last_bot_message')
-        if last_bot_message:
+        # 消息条数超过MAX_NOTIFY_LINKS时通知文案过长,编辑频繁易触发风控,此时不再通知。
+        link_count: int = len(right_link) + len(invalid_link)
+        if last_bot_message and link_count <= Bot.MAX_NOTIFY_LINKS:
             await self.safe_edit_message(
                 client=client,
                 message=message,
@@ -293,15 +295,16 @@ class TelegramRestrictedMediaDownloader(Bot):
                 with_upload['owner'] = requester
             invalid_link.add(link) if task.get('status') == DownloadStatus.FAILURE else self.bot_task_link.add(link)
         right_link -= invalid_link
-        await self.safe_edit_message(
-            client=client,
-            message=message,
-            last_message_id=last_bot_message.id,
-            text=self.update_text(
-                right_link=right_link,
-                invalid_link=invalid_link
+        if last_bot_message and link_count <= Bot.MAX_NOTIFY_LINKS:
+            await self.safe_edit_message(
+                client=client,
+                message=message,
+                last_message_id=last_bot_message.id,
+                text=self.update_text(
+                    right_link=right_link,
+                    invalid_link=invalid_link
+                )
             )
-        )
 
     async def get_upload_link_from_bot(
             self,

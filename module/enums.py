@@ -1586,6 +1586,7 @@ class BotMessage:
     RIGHT: str = '✅以下链接已创建下载任务:\n'
     INVALID: str = '🚫以下链接不合法已被移除:\n'
     NOTICE: str = '📢通知:\n'
+    TOO_MANY_MESSAGE: str = '⚠️消息过长,本次操作不再触发通知。'
 
 
 class BotButton:
