@@ -2310,9 +2310,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                 task_keys.append(str(_link))
         task_keys = list(dict.fromkeys(task_keys))
         last_update_time: float = 0
-        update_interval: float = 20.0  # 基准更新间隔(秒),实际间隔按并发tracker数与消息总量动态放大。
-        # 消息总量越大下载耗时越长,每满1千条将编辑间隔放大一档,降低长任务编辑消息的FloodWait风险。
-        count_scale: int = max(1, (total_count + 999) // 1000)
+        update_interval: float = 5.0  # 基准更新间隔(秒),实际间隔按并发tracker数与消息总量动态放大。
+        # 消息总量越大下载耗时越长,每满1百条将编辑间隔放大一档,降低长任务编辑消息的FloodWait风险。
+        count_scale: int = max(1, (total_count + 99) // 100)
         edit_fail_count: int = 0  # 连续编辑失败计数,超过上限视为消息已失效,停止跟踪。
         while True:
             try:
