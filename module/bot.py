@@ -2321,6 +2321,7 @@ class KeyboardButton:
             dtype: Union[CalenderKeyboard, str],
             year: Optional[int] = datetime.datetime.now().year,
             month: Optional[int] = datetime.datetime.now().month,
+            selected_date: Optional[str] = None,
             chat_id=None
     ):
         keyboard: list = []
@@ -2350,6 +2351,12 @@ class KeyboardButton:
         keyboard.append(week_row)
 
         cal = calendar.monthcalendar(year, month)
+        # 已选日期与当前展示的年月一致时,用绿色按钮标记那一天。
+        selected_day: Optional[int] = None
+        if selected_date:
+            selected_dt = datetime.datetime.strptime(selected_date, '%Y-%m-%d %H:%M:%S')
+            if selected_dt.year == year and selected_dt.month == month:
+                selected_day = selected_dt.day
         for week in cal:
             row = []
             for day in week:
@@ -2357,7 +2364,12 @@ class KeyboardButton:
                     row.append(InlineKeyboardButton(' ', callback_data=BotCallbackText.NULL))
                 else:
                     date_str = f'{year}-{month:02d}-{day:02d} 00:00:00'
-                    row.append(InlineKeyboardButton(str(day), callback_data=f'set_specific_time_{_dtype}_{date_str}'))
+                    day_style = pyrogram.enums.ButtonStyle.SUCCESS if day == selected_day else pyrogram.enums.ButtonStyle.DEFAULT
+                    row.append(InlineKeyboardButton(
+                        text=str(day),
+                        callback_data=f'set_specific_time_{_dtype}_{date_str}',
+                        style=day_style
+                    ))
             keyboard.append(row)
 
         keyboard.append(
@@ -3241,8 +3253,18 @@ class DownloadChatHandler(CallbackHandler):
             elif data == BotCallbackText.FILTER_END_DATE:
                 dtype = CalenderKeyboard.END_TIME_BUTTON
                 p_s_d = '结束'
+            # 已选过日期时,日历直接跳到选中日期所在的年月,并绿色标记那一天。
+            start_time, end_time = self.__get_update_time(downloader, chat_id)
+            selected_time = start_time if data == BotCallbackText.FILTER_START_DATE else end_time
+            selected_date = None
+            year = datetime.datetime.now().year
+            month = datetime.datetime.now().month
+            if isinstance(selected_time, datetime.datetime):
+                selected_date = selected_time.strftime('%Y-%m-%d %H:%M:%S')
+                year = selected_time.year
+                month = selected_time.month
             await query.message.edit_text(text=f'📅选择{p_s_d}日期:\n{self.__filter_prompt(downloader, chat_id)}')
-            await kb.calendar_keyboard(dtype=dtype, chat_id=chat_id)
+            await kb.calendar_keyboard(dtype=dtype, year=year, month=month, selected_date=selected_date, chat_id=chat_id)
         elif data.startswith('adjust_step_'):
             parts = data.split('_')
             dtype = parts[-2]
@@ -3275,7 +3297,10 @@ class DownloadChatHandler(CallbackHandler):
             if 'month' in data:
                 year = int(parts[-2])
                 month = int(parts[-1])
-                await kb.calendar_keyboard(year=year, month=month, dtype=dtype, chat_id=chat_id)
+                start_time, end_time = self.__get_update_time(downloader, chat_id)
+                selected_time = start_time if dtype == CalenderKeyboard.START_TIME_BUTTON else end_time
+                selected_date = selected_time.strftime('%Y-%m-%d %H:%M:%S') if isinstance(selected_time, datetime.datetime) else None
+                await kb.calendar_keyboard(year=year, month=month, dtype=dtype, selected_date=selected_date, chat_id=chat_id)
                 log.info(f'日期切换为{year}年,{month}月。')
         elif data.startswith(BotCallbackPrefix.SELECT_YEAR):
             # 打开年份选择键盘,回调数据形如"select_year_{start|end}_{页面中心年}_{当前月}_{选中年份}"。
@@ -3306,7 +3331,10 @@ class DownloadChatHandler(CallbackHandler):
                 dtype = CalenderKeyboard.END_TIME_BUTTON
             year = int(parts[-2])
             month = int(parts[-1])
-            await kb.calendar_keyboard(year=year, month=month, dtype=dtype, chat_id=chat_id)
+            start_time, end_time = self.__get_update_time(downloader, chat_id)
+            selected_time = start_time if dtype == CalenderKeyboard.START_TIME_BUTTON else end_time
+            selected_date = selected_time.strftime('%Y-%m-%d %H:%M:%S') if isinstance(selected_time, datetime.datetime) else None
+            await kb.calendar_keyboard(year=year, month=month, dtype=dtype, selected_date=selected_date, chat_id=chat_id)
             log.info(f'日期切换为{year}年,{month}月。')
         elif data.startswith(('set_time_', 'set_specific_time_')):
             parts = data.split('_')
