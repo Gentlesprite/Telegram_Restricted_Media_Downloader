@@ -60,8 +60,8 @@ from module.remote import rc
 from module.language import _t
 from module.stdio import MetaData
 
-from module.config import GlobalConfig
 from module.notice import NoticeHub
+from module.config import GlobalConfig
 from module.path_tool import safe_scan_directory_file
 from module.task import (
     DownloadTask,
@@ -753,17 +753,22 @@ class Bot:
             ])
         feature_rows = [
             [
-                InlineKeyboardButton(BotButton.MENU_DOWNLOAD, callback_data=BotCallbackText.MENU_DOWNLOAD),
-                InlineKeyboardButton(BotButton.MENU_UPLOAD, callback_data=BotCallbackText.MENU_UPLOAD)
+                InlineKeyboardButton(BotButton.MENU_DOWNLOAD, callback_data=BotCallbackText.MENU_DOWNLOAD,
+                                     style=pyrogram.enums.ButtonStyle.PRIMARY),
+                InlineKeyboardButton(BotButton.MENU_UPLOAD, callback_data=BotCallbackText.MENU_UPLOAD,
+                                     style=pyrogram.enums.ButtonStyle.PRIMARY)
             ],
             [
-                InlineKeyboardButton(BotButton.CMD_FORWARD, callback_data=BotCallbackText.COMMAND_FORWARD),
-                InlineKeyboardButton(BotButton.MENU_LISTEN, callback_data=BotCallbackText.MENU_LISTEN)
+                InlineKeyboardButton(BotButton.CMD_FORWARD, callback_data=BotCallbackText.COMMAND_FORWARD,
+                                     style=pyrogram.enums.ButtonStyle.PRIMARY),
+                InlineKeyboardButton(BotButton.MENU_LISTEN, callback_data=BotCallbackText.MENU_LISTEN,
+                                     style=pyrogram.enums.ButtonStyle.PRIMARY)
             ]
         ]
         auth_row = [
             [
-                InlineKeyboardButton(BotButton.AUTH_MENU, callback_data=BotCallbackText.MENU_AUTH)
+                InlineKeyboardButton(BotButton.AUTH_MENU, callback_data=BotCallbackText.MENU_AUTH,
+                                     style=pyrogram.enums.ButtonStyle.PRIMARY)
             ]
         ] if is_root else []
         return InlineKeyboardMarkup(
