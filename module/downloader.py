@@ -252,7 +252,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             with_upload: Union[dict, None] = None,
             owner: Union[int, None] = None
     ):
-        link_meta: Union[dict, None] = await super().get_download_link_from_bot(client, message, owner=owner)
+        link_meta: Union[dict, None] = await super().get_download_link_from_bot(client, message, owner=owner, with_upload=with_upload)
         if link_meta is None:
             return None
         right_link: set = link_meta.get('right_link')

@@ -494,7 +494,7 @@ class Bot:
         elif text.startswith('https://t.me/'):
             if text[len('https://t.me/'):].count('/') >= 1:
                 text = f'/download {text}'
-                return await self.parse_download_command(text, client, message, requester)
+                return await self.parse_download_command(text, client, message, requester, with_upload)
             else:
                 await client.send_message(
                     chat_id=requester,
@@ -511,15 +511,16 @@ class Bot:
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
         else:
-            return await self.parse_download_command(text, client, message, requester)
+            return await self.parse_download_command(text, client, message, requester, with_upload)
 
     async def parse_download_command(
             self,
             text: str,
             client: pyrogram.Client,
             message: pyrogram.types.Message,
-            requester: Union[int, None] = None
-    ) -> Union[Dict[str, Union[set, pyrogram.types.Message]], None]:
+            requester: Union[int, None] = None,
+            with_upload: Union[dict, None] = None
+    ) -> Union[Dict[str, Union[set, pyrogram.types.Message, None]], None]:
         """解析/download命令(含裸链规整后的),返回链接信息。"""
         link: list = text.split()
         link.remove('/download') if '/download' in link else None
@@ -547,22 +548,27 @@ class Bot:
             right_link: set = set([_ for _ in link if _.startswith('https://t.me/')])
             invalid_link: set = set([_ for _ in link if not _.startswith('https://t.me/')])
         if right_link:
-            # 消息条数超过MAX_NOTIFY_LINKS时通知文案过长,直接提示通知已禁用,不再罗列链接。
-            link_count: int = len(right_link) + len(invalid_link)
-            if link_count <= Bot.MAX_NOTIFY_LINKS:
-                notify_text: list = self.update_text(
-                    right_link=right_link,
-                    invalid_link=invalid_link
-                )
+            if with_upload:
+                # 下载后上传场景下,下载环节的通知由后续上传结果统一反馈,这里不再单独发送,避免重复刷屏。
+                last_bot_message = None
             else:
-                notify_text: list = [BotMessage.TOO_MANY_MESSAGE]
-            return {
-                'right_link': right_link,
-                'invalid_link': invalid_link,
-                'last_bot_message': await self.safe_process_message(
+                # 消息条数超过MAX_NOTIFY_LINKS时通知文案过长,直接提示通知已禁用,不再罗列链接。
+                link_count: int = len(right_link) + len(invalid_link)
+                if link_count <= Bot.MAX_NOTIFY_LINKS:
+                    notify_text: list = self.update_text(
+                        right_link=right_link,
+                        invalid_link=invalid_link
+                    )
+                else:
+                    notify_text: list = [BotMessage.TOO_MANY_MESSAGE]
+                last_bot_message = await self.safe_process_message(
                     client=client, message=message, requester=requester,
                     text=notify_text
                 )
+            return {
+                'right_link': right_link,
+                'invalid_link': invalid_link,
+                'last_bot_message': last_bot_message
             }
         else:
             return None
