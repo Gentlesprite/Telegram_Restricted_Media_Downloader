@@ -270,7 +270,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     invalid_link=invalid_link
                 )
             )
-        else:
+        elif not with_upload and link_count > Bot.MAX_NOTIFY_LINKS:
+            # 仅当非下载后上传且链接确实过多时才告警;下载后上传静默由上传结果统一反馈,不算异常。
             log.warning('消息过长编辑频繁,暂时无法通过机器人显示通知。')
         links: Union[set, None] = self.__process_links(link=list(right_link))
 
