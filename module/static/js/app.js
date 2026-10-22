@@ -769,7 +769,11 @@ function applyNoticeTab() {
         tabs[i].className = active ? 'tab active' : 'tab';
     }
     lastNoticeKey = null;  // 切换选项卡后强制重绘,避免被指纹判定为"未变化"而跳过。
-    renderNotices(lastSnapshot ? lastSnapshot.notices : null);
+    // 缓存的快照若没有notices字段,说明它是为其他板块拉取的(刚切到通知页、强制刷新尚未返回),
+    // 此时跳过渲染保留旧内容,避免刷新到达前闪一下空态;刷新返回后由render正常绘制。
+    if (lastSnapshot && lastSnapshot.notices) {
+        renderNotices(lastSnapshot.notices);
+    }
 }
 
 function switchNotice(name) {
