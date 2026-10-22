@@ -783,7 +783,8 @@ class Bot:
                 [
                     InlineKeyboardButton(BotButton.VIDEO_TUTORIAL,
                                          url=config.get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL)),
-                    InlineKeyboardButton(BotButton.PAY, callback_data=BotCallbackText.PAY)
+                    InlineKeyboardButton(BotButton.PAY, callback_data=BotCallbackText.PAY,
+                                         style=pyrogram.enums.ButtonStyle.SUCCESS)
                 ],
                 [InlineKeyboardButton(BotButton.SETTING, callback_data=BotCallbackText.SETTING)]
             ]
