@@ -1425,7 +1425,7 @@ class BotCommandText:
         'download', '分配新的下载任务(多种使用方式见使用说明)。\n`/download https://t.me/x/x 起始ID 结束ID`')
     TABLE: tuple = ('table', '在终端输出当前下载情况的统计信息。\n`/table`')
     FORWARD: tuple = ('forward', '从频道A转发至频道B 起始ID 结束ID。\n`/forward https://t.me/A https://t.me/B 1 100`')
-    EXIT: tuple = ('exit', '退出软件。')
+    EXIT: tuple = ('exit', '退出软件。\n`/exit`')
     LISTEN_DOWNLOAD: tuple = ('listen_download',
                               '实时监听该链接的最新消息(任意消息)进行下载。\n`/listen_download https://t.me/A https://t.me/B https://t.me/n`')
     LISTEN_FORWARD: tuple = (
