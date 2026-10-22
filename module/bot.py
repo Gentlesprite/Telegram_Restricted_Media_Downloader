@@ -844,9 +844,15 @@ class Bot:
         ]
         if more_feature:
             command_items.append(BotCommandText.AUTH)
-        command_rows = [[f'/{item[0]}', item[1]] for item in command_items]
-        # 复用PanelTable渲染与/table同款的GitHub风格富文本表格。
-        panel = PanelTable(title='🎮️ 可用命令', header=('命令', '说明'), data=command_rows)
+        command_rows = []
+        for item in command_items:
+            # 按首个\n拆分:前半为说明,后半为语法示例(无\n则语法列为空)。
+            _parts = item[1].split('\n', 1)
+            _desc = _parts[0]
+            _syntax = _parts[1] if len(_parts) > 1 else '&ndash;'
+            command_rows.append([f'/{item[0]}', _desc, _syntax])
+        # 复用PanelTable渲染与/table同款的GitHub风格富文本表格,说明与语法分列。
+        panel = PanelTable(title='🎮️ 可用命令', header=('命令', '说明', '语法'), data=command_rows)
         table_markdown: str = panel.to_markdown_chunks()[0]
         header_md = (
             f'💎 `{SOFTWARE_SHORT_NAME} {version}` 💎  \n'
