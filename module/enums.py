@@ -1603,6 +1603,7 @@ class BotButton:
     GITHUB: str = '📦GitHub'
     SUBSCRIBE_CHANNEL: str = '📌订阅频道'
     VIDEO_TUTORIAL: str = '🎬视频教程'
+    PROXY_SELLER: str = '🛒购买代理'
     PAY: str = '💰支持作者'
     OPEN_NOTICE: str = '💬启动提示|已关闭 ❌'
     CLOSE_NOTICE: str = '💬启动提示|已开启 ✅'

@@ -374,11 +374,10 @@ class TelegramRestrictedMediaDownloader(Bot):
     ):
         self.last_client: pyrogram.Client = client
         self.last_message: pyrogram.types.Message = message
+        if getattr(PARSE_ARGS, 'test', False):
+            return None
         if self.gc.config.get(BotCallbackText.NOTICE):
             chat_id = message.from_user.id
-            if getattr(PARSE_ARGS, 'test', False):
-                await super().start(client, message)
-                return None
             await asyncio.gather(
                 self.send_pay_qr(
                     client=client,
@@ -391,6 +390,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     text='😊欢迎使用,您的支持是我持续更新的动力。',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS)
             )
+        else:
+            await super().start(client, message)
 
     async def callback_data(self, client: pyrogram.Client, callback_query: pyrogram.types.CallbackQuery):
         data = await super().callback_data(client, callback_query)
@@ -2736,7 +2737,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             except PermissionError as e:
                 log.error(
                     '处理下载任务时遇到文件权限错误:'
-                    '可能是临时文件/保存目录为只读、文件被其他进程占用锁定,或当前用户无写入权限。'
+                    '可能是临时文件/保存目录为只读、文件被其他进程占用锁定,或当前用户无写入权限,'
                     f'{_t(KeyWord.REASON)}:"{e}"')
             except Exception as e:
                 log.error(f'处理队列时出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)

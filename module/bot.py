@@ -786,6 +786,11 @@ class Bot:
                     InlineKeyboardButton(BotButton.PAY, callback_data=BotCallbackText.PAY,
                                          style=pyrogram.enums.ButtonStyle.SUCCESS)
                 ],
+                [
+                    InlineKeyboardButton(BotButton.PROXY_SELLER,
+                                         url=config.get('proxy_seller', rc.DEFAULT_PROXY_SELLER),
+                                         style=pyrogram.enums.ButtonStyle.DANGER)
+                ],
                 [InlineKeyboardButton(BotButton.SETTING, callback_data=BotCallbackText.SETTING)]
             ]
         )
