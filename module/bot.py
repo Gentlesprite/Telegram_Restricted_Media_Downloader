@@ -815,7 +815,7 @@ class Bot:
                 ['密码', f'`{web.password}`'],
                 ['链接', f'[{web_link}]({web_link}){docker_host_ip_tip}'],
             ]
-            web_panel = PanelTable(title='🌐 Web配置', header=('项目', '内容'), data=web_rows)
+            web_panel = PanelTable(title='🌐 Web配置', header=('属性', '内容'), data=web_rows)
             web_auth = web_panel.to_markdown_chunks()[0]
         config: dict = rc.cached_config()
         update_version: str = check_update(  # 远程版本更高时返回该版本号,用于提示可更新。

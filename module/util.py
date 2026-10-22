@@ -732,11 +732,11 @@ def check_environment():
 def get_work_directory() -> str:
     """获取工作目录,打包环境取原始可执行文件所在目录,源码环境取入口脚本所在目录。"""
     if is_frozen():  # 单文件打包(Nuitka/Pyinstaller)会把文件解压到临时目录运行,sys.executable/__file__ 均可能指向临时目录。
-        if is_nuitka():  # Nuitka单文件:sys.executable指向临时解压目录,只有 sys.argv[0] 才是原始exe真实路径。
+        if is_nuitka():  # Nuitka单文件:sys.executable指向临时解压目录,只有sys.argv[0]才是原始exe真实路径。
             exe_path: str = sys.argv[0]
         else:
             exe_path: str = sys.executable  # noqa, PyInstaller单文件:sys.executable即原始exe真实路径(sys._MEIPASS才是临时目录)。
-            if not os.path.dirname(exe_path):  # 经PATH启动导致sys.executable仅为命令名(无目录)时,回退到 sys.argv[0]。
+            if not os.path.dirname(exe_path):  # 经PATH启动导致sys.executable仅为命令名(无目录)时,回退到sys.argv[0]。
                 exe_path = sys.argv[0]
         work_directory: str = os.path.dirname(os.path.abspath(exe_path))
     else:
