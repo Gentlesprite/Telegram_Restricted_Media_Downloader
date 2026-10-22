@@ -2615,7 +2615,7 @@ class NoticeHandler(CallbackHandler):
             downloader.gc.config[BotCallbackText.NOTICE] = not downloader.gc.config.get(BotCallbackText.NOTICE)
             downloader.gc.save_config(downloader.gc.config)
             n_s = '启用' if downloader.gc.config.get(BotCallbackText.NOTICE) else '禁用'
-            n_p = f'消息通知已{n_s}。'
+            n_p = f'启动提示已{n_s}。'
             log.info(n_p)
             console.log(n_p, style='#FF4689')
             await kb.toggle_setting_button(global_config=downloader.gc.config, user_config=downloader.app.config)
