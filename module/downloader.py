@@ -753,6 +753,16 @@ class TelegramRestrictedMediaDownloader(Bot):
                         )
                     finally:
                         self.last_message.text = original_text
+                    # 内容保护:回退至下载后上传,把 loading 提示就地改为回退通知,避免静默删除且无反馈。
+                    last_message = await self.safe_edit_message(
+                        client=client, message=message,
+                        last_message_id=last_message.id,
+                        text=(
+                            f'⚠️⚠️⚠️`{origin_link}`\n'
+                            f'{channel}存在内容保护限制,转发任务已回退至下载后上传⚠️⚠️⚠️\n'
+                            f'(通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型)'
+                        ),
+                    )
                     break
                 except Exception as e:
                     log.warning(
@@ -814,6 +824,16 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 'with_delete': self.gc.upload_delete,
                                 'send_as_media_group': True
                             }
+                        )
+                        # 内容保护:回退至下载后上传,把 loading 提示就地改为回退通知,避免静默删除且无反馈。
+                        last_message = await self.safe_edit_message(
+                            client=client, message=message,
+                            last_message_id=last_message.id,
+                            text=(
+                                f'`{origin_link}`\n'
+                                f'⚠️⚠️⚠️{channel}存在内容保护限制,转发任务已回退至下载后上传⚠️⚠️⚠️\n'
+                                f'(通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型)'
+                            ),
                         )
                         return None
                 if not storage_id:
