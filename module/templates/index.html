@@ -47,6 +47,7 @@
         <button class="side-item active" data-section="download" type="button">下载</button>
         <button class="side-item" data-section="upload" type="button">上传</button>
         <button class="side-item" data-section="listener" type="button">监听</button>
+        <button class="side-item" data-section="notice" type="button">通知</button>
         <button class="side-item" data-section="storage" type="button">存储</button>
     </aside>
 
@@ -143,6 +144,23 @@
                         <span class="h-action"><span class="htext">操作</span></span>
                     </div>
                     <div id="listenDownload"></div>
+                </div>
+            </div>
+        </div>
+        <div class="page" id="page-notice" hidden>
+            <div class="tabs" id="noticeTabs">
+                <button class="tab active" data-notice="download" type="button">下载</button>
+                <button class="tab" data-notice="upload" type="button">上传</button>
+                <button class="tab" data-notice="forward" type="button">转发</button>
+            </div>
+            <div class="list notice-list" data-table="notice">
+                <div class="list-scroll">
+                    <div class="list-head">
+                        <span><span class="htext">内容</span></span>
+                        <span><span class="htext">创建者</span></span>
+                        <span><span class="htext">时间</span></span>
+                    </div>
+                    <div id="notice"></div>
                 </div>
             </div>
         </div>

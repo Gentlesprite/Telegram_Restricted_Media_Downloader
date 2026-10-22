@@ -1269,6 +1269,11 @@ body.resizing {
     --cols: minmax(0, 1fr) 56px;
 }
 
+/* 通知表的列:内容为弹性列,创建者与登记时间为固定列。 */
+.notice-list {
+    --cols: minmax(0, 1fr) 160px 150px;
+}
+
 /* 记录表:来源(频道/消息)、文件、链接、大小、消息ID、类型、状态、时间。
    第1列的来源单元格纵向跨行合并(同消息只显示一次),第2列为弹性列。
    记录表已挂data-table,列宽机制按"弹性列在第2位"生成拖拽条,默认列宽由此处声明。 */
@@ -1705,6 +1710,19 @@ body.resizing {
     gap: 8px;
     min-width: 0;
     overflow: hidden;  /* 列宽被压缩到极限时,图标与计数不得溢出覆盖右侧列。 */
+}
+
+/* 通知行:内容可能有多行,与单行的创建者、时间顶端对齐。 */
+.notice-row {
+    align-items: start;
+}
+
+/* 通知内容:保留换行完整展示,不做省略;列宽由拖拽把手调整。 */
+.notice-row .notice-text {
+    display: block;
+    overflow: visible;
+    white-space: normal;
+    line-height: 1.6;
 }
 
 .ficon {

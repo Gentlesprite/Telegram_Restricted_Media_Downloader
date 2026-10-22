@@ -4,15 +4,17 @@ var SECTIONS = {
     download: ['download'],
     upload: ['upload'],
     listener: ['listener'],
+    notice: ['notice'],  // 通知页:展示下载、上传、转发的通知,依赖机器人。
     storage: ['storage']  // 存储页:展示数据库中的下载与上传历史,不依赖机器人。
 };
-var PAGES = SECTIONS.download.concat(SECTIONS.upload, SECTIONS.listener, SECTIONS.storage);  // 下载、上传、记录各一个页面,监听页只在内部切换选项卡。
+var PAGES = SECTIONS.download.concat(SECTIONS.upload, SECTIONS.listener, SECTIONS.notice, SECTIONS.storage);  // 下载、上传、通知、记录各一个页面,监听页只在内部切换选项卡。
 var SUMMARY_IDS = {
     download: {fill: 'overallFill', percent: 'overallPercent', info: 'overallInfo', extra: 'overallExtra'},
     upload: {fill: 'uploadFill', percent: 'uploadPercent', info: 'uploadInfo', extra: 'uploadExtra'}
 };  // 下载与上传各自独立的总进度面板,避免相互覆盖。
 var SECTION_KEY = 'trmd_section';
 var LISTEN_KEY = 'trmd_listen';
+var NOTICE_KEY = 'trmd_notice';  // 通知页选项卡的本地存储键。
 var HAS_BOT = document.body.getAttribute('data-bot') === '1';  // 是否配置了机器人,决定上传/监听侧边栏是否展示(无机器人时只有下载可用)。
 var HAS_STORAGE = document.body.getAttribute('data-storage') === '1';  // 记录数据库是否可用,决定记录侧边栏是否展示(记录功能不依赖机器人)。
 var COLLAPSE_KEY = 'trmd_collapsed';  // 各分组折叠状态的本地存储键。
@@ -21,6 +23,7 @@ var UPLOAD_ALL_KEY = 'trmd_upload_all_collapsed';  // 上传页全部折叠开�
 var LINK_LAST_KEY = 'trmd_link_last';  // 下载页链接层最后一次手动选择的本地存储键。
 var UPLOAD_LAST_KEY = 'trmd_upload_last';  // 上传页频道层最后一次手动选择的本地存储键。
 var LISTEN_TABS = ['forward', 'download'];  // 监听页的选项卡:转发、下载。
+var NOTICE_TABS = ['download', 'upload', 'forward'];  // 通知页的选项卡:下载、上传、转发。
 
 var STATE_TEXT = {
     pending: '队列中',  // 排队中,尚未开始处理(对应后端 DownloadStatus.PENDING)。
@@ -75,8 +78,14 @@ var uploadAllCollapsed = false;
 var lastLinkCollapsed = true;  // 下载页链接层最后的手动选择,缺省折叠以保持原有默认。
 var lastUploadCollapsed = false;  // 上传页频道层最后的手动选择,缺省展开以保持原有默认。
 var UNGROUPED_NAME = '未分组';
+var NOTICE_EMPTY_TEXT = {
+    download: '暂无下载通知。',
+    upload: '暂无上传通知。',
+    forward: '暂无转发通知。'
+};
 var currentSection = 'download';
 var currentListen = 'forward';
+var currentNotice = 'download';  // 通知页当前选项卡,与NOTICE_TABS对应。
 var lastSnapshot = null;  // 缓存最近一次进度快照,供设置弹窗回填当前保存目录。
 var lastDownloadActive = 0;
 var lastUploadActive = 0;
@@ -455,9 +464,9 @@ function switchSection(name) {
 }
 
 function applySectionVisibility() {
-    // 上传与监听依赖机器人,未配置时隐藏这两个入口,避免用户点击后毫无反应。
+    // 上传、监听与通知依赖机器人,未配置时隐藏这三个入口,避免用户点击后毫无反应。
     if (!HAS_BOT) {
-        var botItems = document.querySelectorAll('.side-item[data-section="upload"], .side-item[data-section="listener"]');
+        var botItems = document.querySelectorAll('.side-item[data-section="upload"], .side-item[data-section="listener"], .side-item[data-section="notice"]');
         for (var i = 0; i < botItems.length; i++) {
             botItems[i].hidden = true;
         }
@@ -705,6 +714,75 @@ function renderListeners(listeners) {
     }
     document.getElementById('listenDownload').innerHTML = html ? html : '<div class="empty">暂无监听下载。</div>';
     return forward.length + download.length;
+}
+
+/* 通知页:展示通知中心登记的下载、上传、转发通知。
+   每条通知按类型归入对应选项卡,内容列展示具体信息,创建者列展示任务创建者,时间列为登记时刻。 */
+function noticeRow(notice) {
+    // 通知内容可能含换行(如转发失败的原因说明),转为<br>保留原文排版。
+    return '<div class="task-row notice-row">' +
+        '<span class="cell-name notice-text">' + esc(notice.text).replace(/\n/g, '<br>') + '</span>' +
+        '<span class="cell-name"><span class="fname" title="' + escAttr(notice.owner_name) + '">' +
+        dash(notice.owner_name) + '</span></span>' +
+        '<span class="cell-remain">' + dash(notice.time) + '</span>' +
+        '</div>';
+}
+
+/* 通知结构指纹:序号 + 登记时刻 + 内容。纳入序号:同秒且内容相同的通知也能区分,
+   新通知插入或旧通知被裁掉时序号整体位移,指纹必然变化,不会漏渲染。 */
+function noticeStructKey(notices) {
+    var parts = [];
+    for (var i = 0; i < notices.length; i++) {
+        parts.push(i + '|' + notices[i].time + '|' + notices[i].text);
+    }
+    return parts.join(';');
+}
+
+var lastNoticeKey = null;  // 上次渲染的通知指纹,内容不变则跳过重建。(初始为 null 而非 '',否则无通知时指纹也是空串,会被误判为"未变化"导致空态永远不渲染)
+
+function renderNotices(notices) {
+    var data = notices || {};
+    var items = data[currentNotice] || [];
+    var key = currentNotice + '#' + noticeStructKey(items);
+    if (key === lastNoticeKey) {
+        return;  // 当前选项卡的通知没有变化,保持已有DOM。
+    }
+    lastNoticeKey = key;
+    var html = '';
+    var i;
+    for (i = 0; i < items.length; i++) {
+        html += noticeRow(items[i]);
+    }
+    document.getElementById('notice').innerHTML = html ?
+        html : '<div class="empty">' + (NOTICE_EMPTY_TEXT[currentNotice] || NOTICE_EMPTY_TEXT.download) + '</div>';
+}
+
+function applyNoticeTab() {
+    var tabs = document.querySelectorAll('#noticeTabs .tab');
+    for (var i = 0; i < tabs.length; i++) {
+        var active = tabs[i].getAttribute('data-notice') === currentNotice;
+        tabs[i].className = active ? 'tab active' : 'tab';
+    }
+    lastNoticeKey = null;  // 切换选项卡后强制重绘,避免被指纹判定为"未变化"而跳过。
+    renderNotices(lastSnapshot ? lastSnapshot.notices : null);
+}
+
+function switchNotice(name) {
+    if (NOTICE_TABS.indexOf(name) === -1) {
+        name = NOTICE_TABS[0];
+    }
+    currentNotice = name;
+    applyNoticeTab();
+    saveState(NOTICE_KEY, currentNotice);
+}
+
+function bindNoticeTabs() {
+    var tabs = document.querySelectorAll('#noticeTabs .tab');
+    for (var i = 0; i < tabs.length; i++) {
+        tabs[i].onclick = function () {
+            switchNotice(this.getAttribute('data-notice'));
+        };
+    }
 }
 
 /* 记录页:展示数据库中的下载与上传历史。
@@ -2765,6 +2843,7 @@ function render(data, force) {
     ]);
     lastUploadActive = renderUpload(data.uploads || []);
     lastListenCount = renderListeners(data.listeners);
+    renderNotices(data.notices);  // 通知随进度快照一起下发,新通知到来时指纹变化即重绘。
     lastPaused = !!data.is_paused;
     renderPauseState(lastPaused);
     renderOuterLinks(data.outer_links);
@@ -3446,10 +3525,12 @@ window.addEventListener('resize', function () {
 
 var savedSection = '';
 var savedListen = '';
+var savedNotice = '';
 var savedStorage = '';
 try {
     savedSection = localStorage.getItem(SECTION_KEY) || '';
     savedListen = localStorage.getItem(LISTEN_KEY) || '';
+    savedNotice = localStorage.getItem(NOTICE_KEY) || '';
     savedStorage = localStorage.getItem(STORAGE_KEY) || '';
     collapsed = JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}') || {};  // 读回各分组折叠状态。
     allCollapsed = localStorage.getItem(ALL_KEY) === '1';
@@ -3903,6 +3984,7 @@ function initBackgroundGradient() {
 
 bindSections();
 bindListenTabs();
+bindNoticeTabs();
 bindStorageTabs();
 bindStorageHover();
 bindStoragePager();
@@ -3922,6 +4004,8 @@ applyStorageTab();  // 先按保存的选项刷新高亮,此时尚未拉取数�
 applySectionVisibility();  // 按可用功能调整侧边栏,随后switchSection会锁定到可用的页面。
 switchSection(savedSection);
 switchListen(savedListen);
+currentNotice = NOTICE_TABS.indexOf(savedNotice) > -1 ? savedNotice : 'download';
+applyNoticeTab();  // 按保存的选项刷新高亮,此时尚未拉取数据,列表保持空态。
 document.getElementById('toggleAll').onclick = toggleAll;
 document.getElementById('toggleUpload').onclick = toggleUploadAll;
 initCols();  // 恢复上次的列宽并生成拖拽分隔条。

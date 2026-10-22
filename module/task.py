@@ -33,7 +33,8 @@ from module.path_tool import (
 from module.enums import (
     KeyWord,
     UploadStatus,
-    DownloadStatus
+    DownloadStatus,
+    NoticeType
 )
 
 
@@ -392,7 +393,7 @@ class DownloadTask:
                     f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SUCCESS)}。'
                 )
                 task.error_msg = {}
-                asyncio.create_task(self.done_notice(f'"{link}"下载完成。', requester=task.owner))
+                asyncio.create_task(self.done_notice(f'"{link}"下载完成。', requester=task.owner, notice_type=NoticeType.DOWNLOAD))
                 log.info(f'链接:"{link}"下载完成。')
             return res
 
@@ -522,7 +523,7 @@ class UploadTask:
         if isinstance(self.NOTIFY, Callable):
             asyncio.create_task(
                 self.NOTIFY(
-                    message, requester=self.owner
+                    message, requester=self.owner, notice_type=NoticeType.UPLOAD
                 )
             )
 

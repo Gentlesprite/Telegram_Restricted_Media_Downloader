@@ -38,6 +38,7 @@ from module import (
 )
 from module.remote import rc
 from module.language import _t
+from module.notice import NoticeHub
 from module.parser import PARSE_ARGS
 from module.path_tool import split_path
 from module.storage import TRMDStorage
@@ -669,6 +670,10 @@ class Web:
             log.debug(f'获取监听信息时出错,{_t(KeyWord.REASON)}:"{e}"')
         return result
 
+    def get_notices(self) -> dict:
+        """获取通知中心登记的通知,按类型分组供「通知」板块展示。"""
+        return NoticeHub.snapshot()
+
     def get_storage(self, storage_type: str = '') -> list:
         """读取网页下载/上传存储。
 
@@ -1229,6 +1234,7 @@ class Web:
                 'links': links,
                 'uploads': uploads,
                 'listeners': self.get_listeners(),
+                'notices': self.get_notices(),
                 'is_paused': bool(self.app.is_paused) if self.app else False,  # 全局暂停状态,供前端展示与切换。
                 'outer_links': self.get_outer_links(),  # 顶栏菜单使用的外部链接。
                 'save_directory': self.app.save_directory if self.app else '',
@@ -1251,6 +1257,7 @@ class Web:
                 'links': [],
                 'uploads': [],
                 'listeners': {'download': [], 'forward': []},
+                'notices': self.get_notices(),
                 'is_paused': bool(self.app.is_paused) if self.app else False,  # 全局暂停状态,供前端展示与切换。
                 'outer_links': self.get_outer_links(),
                 'save_directory': self.app.save_directory if self.app else '',

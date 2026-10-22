@@ -76,6 +76,17 @@ class UploadStatus:
     SENT = 'sent'
 
 
+class NoticeType:
+    DOWNLOAD: str = 'download'  # 下载。
+    UPLOAD: str = 'upload'  # 上传。
+    FORWARD: str = 'forward'  # 转发。
+
+    def __iter__(self):
+        for key, value in vars(self.__class__).items():
+            if not key.startswith('_') and not callable(value):  # 排除特殊方法和属性。
+                yield value
+
+
 class CalenderKeyboard:
     START_TIME_BUTTON: str = 'start time button'
     END_TIME_BUTTON: str = 'end time button'

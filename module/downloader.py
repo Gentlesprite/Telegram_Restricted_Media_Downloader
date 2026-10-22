@@ -68,6 +68,7 @@ from module.remote import rc
 from module.language import _t
 from module.filter import Filter
 from module.app import Application
+from module.notice import NoticeHub
 from module.parser import PARSE_ARGS
 from module.uploader import TelegramUploader
 from module.task import (
@@ -100,6 +101,7 @@ from module.enums import (
     BotMessage,
     DownloadType,
     DownloadStatus,
+    NoticeType,
     BotCallbackText,
     SaveDirectoryPrefix
 )
@@ -277,6 +279,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         # 记录任务创建者:下载完成通知与「下载后上传」的后续通知都回到发令者。
         # 优先使用显式传入的 owner(受限「下载后上传」场景),否则回退到消息发送者。
         requester = owner if owner is not None else message.from_user.id
+        # 登记创建者显示名,网页面板的「通知」板块据此展示"谁创建的任务"。
+        NoticeHub.add_owner(owner=requester, user=message.from_user)
         for link in links:
             # 预登记:覆盖"上一条已入队、下一条尚未开始解析"的循环间隙,入队后由create_download_task移除。
             DownloadTask.PENDING_ENQUEUE.add(link)
@@ -420,7 +424,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{message_id}'
                             f' ➡️ '
                             f'"{target_chat_id}",{_t(KeyWord.FORWARD_SKIP)}(该类型已过滤)。',
-                            requester=owner
+                            requester=owner,
+                            notice_type=NoticeType.FORWARD
                         )
                     )
                 return None
@@ -498,7 +503,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{p_message_id}'
                         f' ➡️ '
                         f'"{target_chat_id}",{_t(KeyWord.FORWARD_SUCCESS)}。',
-                        requester=owner
+                        requester=owner,
+                        notice_type=NoticeType.FORWARD
                     )
                 )
         except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
@@ -599,6 +605,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         self.last_message: pyrogram.types.Message = message
         # 谁发起的转发就归属给谁,后续通知与「受限→下载后上传」的反馈都回到此人。
         owner: Union[int, None] = message.from_user.id
+        # 登记创建者显示名,网页面板的「通知」板块据此展示"谁创建的任务"。
+        NoticeHub.add_owner(owner=owner, user=message.from_user)
         origin_link: str = meta.get('origin_link')
         target_link: str = meta.get('target_link')
         start_id: int = meta.get('message_range')[0]
@@ -727,11 +735,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                             reply_markup=KeyboardButton.restrict_forward_button()
                         )
                         return None
-                    asyncio.create_task(
-                        self.done_notice(
-                            text=f'`{origin_link}`\n{channel}存在内容保护限制(已自动使用下载后上传)。\n⚠️通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型。',
-                            requester=owner
-                        ))
                     original_text = self.last_message.text
                     try:
                         self.last_message.text = f'/download {origin_link} {start_id} {end_id}'
@@ -763,7 +766,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                             f' ➡️ '
                             f'"{target_chat_id}",{_t(KeyWord.FORWARD_FAILURE)}。'
                             f'\n(具体原因请前往终端查看报错信息)',
-                            requester=owner
+                            requester=owner,
+                            notice_type=NoticeType.FORWARD
                         )
                     )
             else:
@@ -799,11 +803,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 reply_markup=KeyboardButton.restrict_forward_button()
                             )
                             return None
-                        asyncio.create_task(
-                            self.done_notice(
-                                text=f'`{origin_link}`\n{channel}存在内容保护限制(已自动使用下载后上传)。\n⚠️通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型。',
-                                requester=owner
-                            ))
                         self.last_message.text = f'/download {origin_link} {start_id} {end_id}'
                         await self.get_download_link_from_bot(
                             client=self.last_client,
@@ -1072,6 +1071,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if await add_listen_chat(link, self.listen_download_chat, self.listen_download):
                     # 记录监听创建者,后续该监听触发的下载与通知都回到此人。
                     self.listen_download_owner[link] = message.from_user.id
+                    # 登记创建者显示名,网页面板的「通知」板块据此展示"谁创建的任务"。
+                    NoticeHub.add_owner(owner=message.from_user.id, user=message.from_user)
                     _meta = await parse_link(client=self.app.client, link=link)
                     if isinstance(_meta, dict) and _meta.get('chat_id') is not None:
                         self.listen_download_chat_owner[_meta.get('chat_id')] = message.from_user.id
@@ -1101,6 +1102,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             if await add_listen_chat(f'{listen_link} {target_link}', self.listen_forward_chat, self.listen_forward):
                 # 记录监听转发的创建者,后续该监听触发的转发与通知都回到此人。
                 self.listen_forward_owner[f'{listen_link} {target_link}'] = message.from_user.id
+                # 登记创建者显示名,网页面板的「通知」板块据此展示"谁创建的任务"。
+                NoticeHub.add_owner(owner=message.from_user.id, user=message.from_user)
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
@@ -1240,6 +1243,8 @@ class TelegramRestrictedMediaDownloader(Bot):
     ):
         chat_id = user_message.from_user.id
         message_id = user_message.id
+        # 登记创建者显示名,网页面板的「通知」板块据此展示"谁创建的任务"。
+        NoticeHub.add_owner(owner=chat_id, user=user_message.from_user)
         last_message = await self.bot.send_message(
             chat_id=chat_id,
             text=f'🔄正在处理转发内容`{message_id}`...'

@@ -61,6 +61,7 @@ from module.language import _t
 from module.stdio import MetaData
 
 from module.config import GlobalConfig
+from module.notice import NoticeHub
 from module.path_tool import safe_scan_directory_file
 from module.task import (
     DownloadTask,
@@ -86,6 +87,7 @@ from module.enums import (
     BotStepText,
     UploadStatus,
     DownloadType,
+    NoticeType,
     BotStepKeyword,
     BotCommandText,
     BotCallbackText,
@@ -1060,6 +1062,8 @@ class Bot:
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
             log.info(f'上传文件:"{file_path}",上传频道:"{target_link}"。')
+            # 登记上传任务创建者,上传完成或失败的通知在网页面板显示"谁创建的任务"。
+            NoticeHub.add_owner(owner=message.from_user.id, user=message.from_user)
             if target_link.startswith('https://t.me/') or target_link in ('me', 'self'):  # 验证目标链接格式。
                 return {
                     'target_link': target_link,
@@ -1512,37 +1516,22 @@ class Bot:
     async def done_notice(
             self,
             text,
-            requester: Union[int, None] = None
+            requester: Union[int, None] = None,
+            notice_type: str = NoticeType.DOWNLOAD
     ):
-        # 谁创建的任务就通知谁;未指定requester时回退到最近一条消息(兼容旧行为)。
+        # 通知不再由机器人发送消息,改为登记到通知中心,由网页面板的「通知」板块展示。
+        # 谁创建的任务就归属给谁;未指定requester时回退到最近一条消息(兼容旧行为)。
         # 回退仅作兼容:一旦触发即打warning,避免「静默通知错人」难以察觉。
-        if self.gc.get_config(BotCallbackText.NOTICE):
-            chat_id = requester
-            if chat_id is None:
-                if self.last_message is not None:
-                    chat_id = self.last_message.from_user.id
-                    log.warning(
-                        'done_notice未指定requester,回退到last_message(chat_id={chat_id}),请为该调用处补充owner以消除回退。')
-                else:
-                    log.warning('done_notice未指定requester且last_message为空,跳过通知。')
-            if self.last_client is not None and chat_id is not None:
-                while True:
-                    try:
-                        await self.last_client.send_message(
-                            chat_id=chat_id,
-                            text=f'{BotMessage.NOTICE}{text}',
-                            link_preview_options=Bot.LINK_PREVIEW_OPTIONS
-                        )
-                        break
-                    except (FloodWait, FloodPremiumWait) as e:
-                        amount = e.value
-                        console.log(
-                            f'[{self.bot.name}]发送消息请求频繁,要求等待{amount}秒后继续运行。',
-                            style='#FF4689'
-                        )
-                        await asyncio.sleep(amount)
-                    except Exception as e:
-                        log.error(f'无法发送通知,{_t(KeyWord.REASON)}:"{e}"')
+        owner: Union[int, None] = requester
+        if owner is None:
+            if self.last_message is not None:
+                owner = self.last_message.from_user.id
+                log.warning(
+                    'done_notice未指定requester,回退到last_message(chat_id={chat_id}),请为该调用处补充owner以消除回退。')
+            else:
+                log.warning('done_notice未指定requester且last_message为空,该通知将没有创建者。')
+        NoticeHub.push(notice_type=notice_type, text=text, owner=owner)
+        log.debug(f'已推送通知,{_t(KeyWord.TYPE)}:"{notice_type}",创建者:"{owner}",内容:"{text}"。')
 
     async def start_bot(
             self,
@@ -2617,7 +2606,7 @@ class NoticeHandler(CallbackHandler):
             downloader.gc.config[BotCallbackText.NOTICE] = not downloader.gc.config.get(BotCallbackText.NOTICE)
             downloader.gc.save_config(downloader.gc.config)
             n_s = '启用' if downloader.gc.config.get(BotCallbackText.NOTICE) else '禁用'
-            n_p = f'机器人消息通知已{n_s}。'
+            n_p = f'消息通知已{n_s}。'
             log.info(n_p)
             console.log(n_p, style='#FF4689')
             await kb.toggle_setting_button(global_config=downloader.gc.config, user_config=downloader.app.config)
