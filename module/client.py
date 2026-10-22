@@ -725,11 +725,25 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                         style='#FF4689'
                     )
 
+                    # 连接异常(含超时)多为连接已断或半开,若底层正在重建连接(is_started被清),先等待其重建完成再重试,
+                    # 避免在已断开或重建中的连接上反复发请求,既配合底层重连又避免加剧请求压力。
+                    if not self.is_started.is_set():
+                        try:
+                            await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
+                        except asyncio.TimeoutError:
+                            pass
                     await asyncio.sleep(retry_delay)
 
             wait_time: int = min(reconnect_delay, max_reconnect_delay)
             log.error(f'经{retries}次尝试后仍无法调用"{query_name}",请检查网络环境,等待{wait_time}秒后重新尝试。')
-            await asyncio.sleep(wait_time)
+            # 退避期间若底层连接恢复(is_started)则立即唤醒重试,避免干等满wait_time拖慢后面的任务;连接本就绪时按退避等待。
+            if not self.is_started.is_set():
+                try:
+                    await asyncio.wait_for(self.is_started.wait(), wait_time)
+                except asyncio.TimeoutError:
+                    pass
+            else:
+                await asyncio.sleep(wait_time)
             console.log(f'已等待{wait_time}秒,重新尝试重连。', style='#B1DB74')
             if reconnect_delay < max_reconnect_delay:
                 reconnect_delay += 2
