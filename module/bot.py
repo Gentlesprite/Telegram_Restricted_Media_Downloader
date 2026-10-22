@@ -550,25 +550,28 @@ class Bot:
         if right_link:
             if with_upload:
                 # 下载后上传场景下,下载环节的通知由后续上传结果统一反馈,这里不再单独发送,避免重复刷屏。
-                last_bot_message = None
-            else:
-                # 消息条数超过MAX_NOTIFY_LINKS时通知文案过长,直接提示通知已禁用,不再罗列链接。
-                link_count: int = len(right_link) + len(invalid_link)
-                if link_count <= Bot.MAX_NOTIFY_LINKS:
-                    notify_text: list = self.update_text(
-                        right_link=right_link,
-                        invalid_link=invalid_link
-                    )
-                else:
-                    notify_text: list = [BotMessage.TOO_MANY_MESSAGE]
-                last_bot_message = await self.safe_process_message(
-                    client=client, message=message, requester=requester,
-                    text=notify_text
+                # 直接静默返回,绝不走到下方的 TOO_MANY_MESSAGE 等通知分支。
+                return {
+                    'right_link': right_link,
+                    'invalid_link': invalid_link,
+                    'last_bot_message': None
+                }
+            # 非下载后上传路径:正常发送下载创建通知(链接过多时改为提示通知已禁用)。
+            link_count: int = len(right_link) + len(invalid_link)
+            if link_count <= Bot.MAX_NOTIFY_LINKS:
+                notify_text: list = self.update_text(
+                    right_link=right_link,
+                    invalid_link=invalid_link
                 )
+            else:
+                notify_text: list = [BotMessage.TOO_MANY_MESSAGE]
             return {
                 'right_link': right_link,
                 'invalid_link': invalid_link,
-                'last_bot_message': last_bot_message
+                'last_bot_message': await self.safe_process_message(
+                    client=client, message=message, requester=requester,
+                    text=notify_text
+                )
             }
         else:
             return None
