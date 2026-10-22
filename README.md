@@ -25,10 +25,19 @@
 
 
 > [!NOTE]
-> 由于本项目**提供**的Linux版本可能对较早版本的Linux系统兼容性较差。  
-> 若**无法运行的**Linux用户请**阅读**:[_“3.0.在生产环境中运行（对于Linux用户）”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7-2)或[_“6.0.通过Docker运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#60%E9%80%9A%E8%BF%87docker%E8%BF%90%E8%A1%8C)。  
-> 如果你**遇到任何问题**，请先仔细**阅读**:[_“常见问题及解决方案汇总”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
-> **没有找到解决方案**再进群或私聊提问。
+> 本项目支持[Docker](https://hub.docker.com/r/gentlesprite/telegram_restricted_media_downloader)部署，点击跳转：[“通过Docker运行”](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader#60%E9%80%9A%E8%BF%87docker%E8%BF%90%E8%A1%8C)。
+
+> [!Tip]
+> 本项目教程详细、使用门槛低，运行稳定。  
+> 大部分的使用需求都能通过[配置机器人](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/README.md#22%E7%94%B5%E6%8A%A5%E6%9C%BA%E5%99%A8%E4%BA%BAbot_token%E7%94%B3%E8%AF%B7%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B%E9%80%89%E7%9C%8B)满足，例如需要下载整个频道的内容亦或是监听、转发某个频道，根据实际需求查看对应机器人命令。  
+> 推荐先观看[视频教程](https://www.youtube.com/watch?v=ucwKJu-MrBw)，如果你**遇到任何问题**，请先仔细**阅读**：[_“README.md”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/README.md)与[_“常见问题及解决方案汇总”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
+> **欢迎提交附带详细复现步骤的BUG反馈，同时接受付费定制化需求、付费远程搭建、教学、答疑。**  
+
+> [!Important]
+> **没有找到解决方案**：  
+> 由于本项目的性质，没有帮你解决问题的义务。  
+> 请先加入[TRMD交流群](https://t.me/+6KKA-buFaixmNTE1)搜索历史聊天记录是否提到过相关问题或[私聊作者](https://t.me/Gentlesprite)（付费）解答。  
+> 凡是[TRMD交流群](https://t.me/+6KKA-buFaixmNTE1)、[README.md](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/README.md)、[Wiki](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)记录过的、重复的问题不予回答。
 
 # 免责声明
 
@@ -81,6 +90,9 @@
 # 2.0.快速开始
 
 ## 2.1.申请电报API
+> [!IMPORTANT]
+> **申请电报API对IP纯净度要求极高，针对无法申请的情况：  
+> 可直接使用[YouTube视频教程](https://www.youtube.com/watch?v=ucwKJu-MrBw)或[B站视频](https://www.bilibili.com/video/BV1hyHJ68EcQ)简介下的`api`，随后`申请电报API`可省略。**
 
 1. 前往网站:**https://my.telegram.org/auth**
 
@@ -109,12 +121,9 @@
 5. 申请成功会得到一个`api_hash`和`api_id`保存下载，**切记不要泄露给任何人！**
 
 ## 2.2.电报机器人`bot_token`申请及使用教程（选看）
-> [!NOTE]
-> 如果配置了机器人，只要**保持软件运行**，就能实现**多端发送下载命令**并且**随时进行下载**。  
-> 故可以将软件部署在服务器上，无论是Windows还是Linux平台。  
-> Windows平台可直接使用[releases](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases)里发布的二进制文件放在服务器运行。  
-> Linux平台的部署教程请**阅读**:[_“3.0.在生产环境中运行（对于Linux用户）”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#%E5%AF%B9%E4%BA%8Elinux%E7%94%A8%E6%88%B7)。
-
+> [!TIP]
+> 大部分的使用需求都能通过配置机器人满足，例如需要下载整个频道的内容亦或是监听、转发某个频道，根据实际需求查看对应机器人命令。   
+> 故可以将软件部署在`服务器`、`NAS`，无论是`Windows`、`Linux`还是`Docker`。
 
 <details>
 <summary><strong>点击展开</strong></summary>
@@ -806,7 +815,7 @@ upload:
 | `export_table` | 运行结束时是否导出统计表，含`count`（控制运行结束时是否导出下载计数统计表）、`link`（控制运行结束时是否导出下载链接统计表）、`upload`（控制运行结束时是否导出上传统计表）。             |
 | `file_log_level` | `TRMD_LOG.log`文件中记录的最低日志级别（如`INFO`）。                                                                         |
 | `forward_type` | 控制`/listen_forward`与`/forward`命令可转发的文件类型，详见`forward_type`参数支持转发的媒体类型。                                        |
-| `notice` | 控制机器人启动时是否发送启动通知。                                                                                            |
+| `notice` | 控制机器人启动时是否向用户发送启动提示（欢迎语与命令帮助）。                                                                               |
 | `upload` | 控制转发时，频道中受保护内容的处理方式，含`delete`（控制频道中受保护内容在下载上传完成后是否删除本地文件，默认关闭）与`download_upload`（控制频道中受保护内容是否回退至下载后上传，默认开启）。 |
 
 ##### `forward_type`参数支持转发的媒体类型
