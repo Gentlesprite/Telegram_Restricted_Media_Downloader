@@ -432,6 +432,7 @@ function applySection() {
     }
     var dlWasHidden = document.getElementById('downloadSummary').hidden;
     var storageWasHidden = document.getElementById('page-storage').hidden;
+    var noticeWasHidden = document.getElementById('page-notice').hidden;
     document.getElementById('downloadSummary').hidden = currentSection !== 'download';
     document.getElementById('uploadSummary').hidden = currentSection !== 'upload';  // 两个板块各自独立的总进度。
     for (i = 0; i < PAGES.length; i++) {
@@ -441,6 +442,10 @@ function applySection() {
     // 下载总进度卡片刚变为可见时,用最新数据强制重绘一次进度条,
     // 避免首屏或切回下载页时它在隐藏态下渲染、进度条被跳过/未显示。
     if (currentSection === 'download' && dlWasHidden) {
+        refresh(true);
+    }
+    // 通知页刚变为可见时立即拉取:notices按板块下发,不强制刷新就要空等一个轮询周期。
+    if (currentSection === 'notice' && noticeWasHidden) {
         refresh(true);
     }
     if (currentSection === 'storage' && storageWasHidden) {
@@ -2833,29 +2838,38 @@ function render(data, force) {
     var downloads = (data.tasks || []).length;
     lastDownloadActive = downloads;
     document.getElementById('badgeDownload').textContent = downloads;
-    renderOverall(data.summary, downloads, SUMMARY_IDS.download);
-    renderStat('stat', [
-        statCell('成功', data.count.success, 'ok', 'success', 'download'),
-        statCell('失败', data.count.failure, 'bad', 'failure', 'download'),
-        statCell('跳过', data.count.skip, 'skip', 'skip', 'download'),
-        statCell('下载中', downloads, '', 'active', 'download'),
-        statCell('队列', countQueueMembers(data.links), 'queue', 'queue', 'download')
-    ]);
+    // 总进度卡片与统计卡属于下载页,summary按板块下发;非下载板块跳过渲染,
+    // 既避免把隐藏面板涂成0%,也免去每秒对隐藏元素的无谓写入。
+    if (currentSection === 'download') {
+        renderOverall(data.summary, downloads, SUMMARY_IDS.download);
+        renderStat('stat', [
+            statCell('成功', data.count.success, 'ok', 'success', 'download'),
+            statCell('失败', data.count.failure, 'bad', 'failure', 'download'),
+            statCell('跳过', data.count.skip, 'skip', 'skip', 'download'),
+            statCell('下载中', downloads, '', 'active', 'download'),
+            statCell('队列', countQueueMembers(data.links), 'queue', 'queue', 'download')
+        ]);
+    }
     lastUploadActive = renderUpload(data.uploads || []);
     lastListenCount = renderListeners(data.listeners);
-    renderNotices(data.notices);  // 通知随进度快照一起下发,新通知到来时指纹变化即重绘。
+    if (currentSection === 'notice') {
+        renderNotices(data.notices);  // 通知仅通知板块下发,新通知到来时指纹变化即重绘。
+    }
     lastPaused = !!data.is_paused;
     renderPauseState(lastPaused);
     renderOuterLinks(data.outer_links);
     renderStatus();
     // 只有列表结构变化(成员增减/状态改变)才重建 DOM;
     // 否则仅就地更新正在下载的行,避免每秒整表重建带来的重排与重绘。
-    var structKey = structKeyOf(data);
-    if (structKey !== lastStructKey) {
-        lastStructKey = structKey;
-        renderList(data);
-    } else {
-        updateTaskRows(data);
+    // links仅下载板块下发,其他板块跳过,避免把隐藏的下载列表渲染成空态。
+    if (currentSection === 'download') {
+        var structKey = structKeyOf(data);
+        if (structKey !== lastStructKey) {
+            lastStructKey = structKey;
+            renderList(data);
+        } else {
+            updateTaskRows(data);
+        }
     }
     syncBackgroundProgress(data.count.success + data.count.failure + data.count.skip + lastUploadFinished);
 }
@@ -2876,7 +2890,8 @@ function syncBackgroundProgress(finished) {  // 下载或上传每完成一个�
 
 async function refresh(force) {
     try {
-        var res = await fetch('/api/progress', {cache: 'no-store', headers: authHeaders()});
+        // section告知服务端当前板块:links(成员数组)与notices按板块下发,停在其他板块时不再每秒白传。
+        var res = await fetch('/api/progress?section=' + currentSection, {cache: 'no-store', headers: authHeaders()});
         if (res.status === 401) {
             openLogin();  // 未认证:前端展示登录卡片,不再触发浏览器原生弹窗。
             return;

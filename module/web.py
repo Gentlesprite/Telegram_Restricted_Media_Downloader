@@ -253,7 +253,9 @@ class WebHandler(BaseHTTPRequestHandler):
     def __response_progress(self) -> None:
         """返回进度数据的JSON。"""
         web: Union[Web, None] = getattr(self.server, 'web', None)
-        data: dict = web.snapshot() if web else {}
+        query: dict = parse_qs(urlparse(self.path).query)
+        section: str = (query.get('section') or [''])[0]
+        data: dict = web.snapshot(section=section) if web else {}
         self.__response_body(
             body=json.dumps(data, ensure_ascii=False).encode('UTF-8'),
             content_type='application/json; charset=utf-8'
@@ -1218,23 +1220,23 @@ class Web:
             tasks.append(item)
         return tasks
 
-    def snapshot(self) -> dict:
-        """生成供网页面板展示的进度数据。"""
+    def snapshot(self, section: str = '') -> dict:
+        """生成供网页面板展示的进度数据。
+
+        section为前端当前所在的板块:links(链接成员数组)仅下载板块需要,
+        notices仅通知板块需要,按板块下发,避免停在其他板块时每秒白传大数据;
+        计数、进度条、上传任务、监听、暂停状态等体积小且顶栏常驻,恒发。
+        不带section参数时(旧版页面)按全量返回,保持兼容。
+        """
+        need_links: bool = section in ('', 'download')  # 成员数组是快照里最大的数据,只有下载页用得到。
+        need_notices: bool = section in ('', 'notice')  # 通知同样是大块数据,只有通知页用得到。
         try:
             all_tasks: list = self.get_tasks()
             uploads: list = self.get_upload_tasks(tasks=all_tasks)
             upload_ids: set = {item.get('task_id') for item in uploads if item.get('task_id') is not None}
             tasks: list = [item for item in all_tasks if item.get('id') not in upload_ids]  # 上传进度条任务不纳入下载统计。
-            links: list = self.get_link_progress()
-            return {
+            result: dict = {
                 'count': self.get_count(),
-                'summary': self.get_summary(links=links, tasks=tasks),
-                'queue': sum(link.get('remaining', 0) for link in links),  # 所有链接待下载的消息总数。
-                'tasks': tasks,
-                'links': links,
-                'uploads': uploads,
-                'listeners': self.get_listeners(),
-                'notices': self.get_notices(),
                 'is_paused': bool(self.app.is_paused) if self.app else False,  # 全局暂停状态,供前端展示与切换。
                 'outer_links': self.get_outer_links(),  # 顶栏菜单使用的外部链接。
                 'save_directory': self.app.save_directory if self.app else '',
@@ -1245,19 +1247,23 @@ class Web:
                 'max_retries': {
                     'download': self.app.max_download_retries if self.app else 5,
                     'upload': self.app.max_upload_retries if self.app else 3
-                }
+                },
+                'tasks': tasks,
+                'uploads': uploads,
+                'listeners': self.get_listeners()
             }
+            if need_links:
+                links: list = self.get_link_progress()
+                result['summary'] = self.get_summary(links=links, tasks=tasks)
+                result['queue'] = sum(link.get('remaining', 0) for link in links)  # 所有链接待下载的消息总数。
+                result['links'] = links
+            if need_notices:
+                result['notices'] = self.get_notices()
+            return result
         except Exception as e:
             log.debug(f'生成进度数据时出错,{_t(KeyWord.REASON)}:"{e}"')
-            return {
+            result: dict = {
                 'count': {'success': 0, 'failure': 0, 'skip': 0},
-                'summary': self.get_summary(links=[], tasks=[]),
-                'queue': 0,
-                'tasks': [],
-                'links': [],
-                'uploads': [],
-                'listeners': {'download': [], 'forward': []},
-                'notices': self.get_notices(),
                 'is_paused': bool(self.app.is_paused) if self.app else False,  # 全局暂停状态,供前端展示与切换。
                 'outer_links': self.get_outer_links(),
                 'save_directory': self.app.save_directory if self.app else '',
@@ -1268,5 +1274,15 @@ class Web:
                 'max_retries': {
                     'download': self.app.max_download_retries if self.app else 5,
                     'upload': self.app.max_upload_retries if self.app else 3
-                }
+                },
+                'tasks': [],
+                'uploads': [],
+                'listeners': {'download': [], 'forward': []}
             }
+            if need_links:
+                result['summary'] = self.get_summary(links=[], tasks=[])
+                result['queue'] = 0
+                result['links'] = []
+            if need_notices:
+                result['notices'] = self.get_notices()
+            return result
