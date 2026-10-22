@@ -25,7 +25,7 @@
 
 
 > [!NOTE]
-> 本项目支持[Docker](https://hub.docker.com/r/gentlesprite/telegram_restricted_media_downloader)部署，点击跳转：[“通过Docker运行”](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader#60%E9%80%9A%E8%BF%87docker%E8%BF%90%E8%A1%8C)。
+> 本项目支持[Docker](https://hub.docker.com/r/gentlesprite/telegram_restricted_media_downloader)部署，点击跳转：[_“通过Docker运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader#60%E9%80%9A%E8%BF%87docker%E8%BF%90%E8%A1%8C)。
 
 > [!Tip]
 > 本项目教程详细、使用门槛低，运行稳定。  
