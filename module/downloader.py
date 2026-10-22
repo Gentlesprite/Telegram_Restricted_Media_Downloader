@@ -125,6 +125,7 @@ from module.util import (
     js_referral,
     safe_length,
     safe_message,
+    get_executable_path,
     format_chat_link,
     check_environment,
     get_message_dtype,
@@ -252,7 +253,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             with_upload: Union[dict, None] = None,
             owner: Union[int, None] = None
     ):
-        link_meta: Union[dict, None] = await super().get_download_link_from_bot(client, message, owner=owner, with_upload=with_upload)
+        link_meta: Union[dict, None] = await super().get_download_link_from_bot(client, message, owner=owner,
+                                                                                with_upload=with_upload)
         if link_meta is None:
             return None
         right_link: set = link_meta.get('right_link')
@@ -2791,7 +2793,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             run_error: bool = True
             log.error(
                 f'检测到软件多开使用同一SESSION,{_t(KeyWord.REASON)}:"{e}"')
-            console.print(Issues.MULTI_SESSION_TIP)
+            console.print(Issues.MULTI_SESSION_TIP.format(exe=get_executable_path()))
         except Exception as e:
             run_error: bool = True
             log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
