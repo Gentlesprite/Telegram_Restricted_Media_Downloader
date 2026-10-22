@@ -797,6 +797,7 @@ class Bot:
     ) -> Union[None, dict]:  # client与message都为None时,返回keyboard与text。
         web = getattr(self, 'web', None)  # 网页面板实例,用于展示认证信息。
         web_auth: str = ''
+        docker_host_ip_tip: str = ''
         more_feature: bool = False
         if user_id is not None:
             uid = user_id
@@ -807,13 +808,13 @@ class Bot:
         if uid is None or not self.root or uid == self.root[0]:
             more_feature = True
         if web is not None:
-            docker_host_ip_tip: str = f'\n{Issues.DOCKER_HOST_IP_TIP}' if is_docker() else ''
+            docker_host_ip_tip: str = f'\n{Issues.DOCKER_HOST_IP_TIP}' if is_docker() else docker_host_ip_tip
             web_link: str = f'{web.protocol}://{web.LOCAL_IP}:{web.port}'
             web_rows = [
                 ['端口', str(web.port)],
                 ['账号', f'`{web.username}`'],
                 ['密码', f'`{web.password}`'],
-                ['链接', f'[{web_link}]({web_link}){docker_host_ip_tip}'],
+                ['链接', f'[{web_link}]({web_link})'],
             ]
             web_panel = PanelTable(title='🌐 Web配置', header=('属性', '内容'), data=web_rows)
             web_auth = web_panel.to_markdown_chunks()[0]
@@ -863,6 +864,9 @@ class Bot:
         if web_auth:
             parts.append('')
             parts.append(web_auth.rstrip('\n'))
+        if docker_host_ip_tip:
+            parts.append('')
+            parts.append(Issues.DOCKER_HOST_IP_TIP)
         if more_feature:
             parts.append('')
             parts.append(
@@ -3310,7 +3314,8 @@ class DownloadChatHandler(CallbackHandler):
                 year = selected_time.year
                 month = selected_time.month
             await query.message.edit_text(text=f'📅选择{p_s_d}日期:\n{self.__filter_prompt(downloader, chat_id)}')
-            await kb.calendar_keyboard(dtype=dtype, year=year, month=month, selected_date=selected_date, chat_id=chat_id)
+            await kb.calendar_keyboard(dtype=dtype, year=year, month=month, selected_date=selected_date,
+                                       chat_id=chat_id)
         elif data.startswith('adjust_step_'):
             parts = data.split('_')
             dtype = parts[-2]
@@ -3345,8 +3350,10 @@ class DownloadChatHandler(CallbackHandler):
                 month = int(parts[-1])
                 start_time, end_time = self.__get_update_time(downloader, chat_id)
                 selected_time = start_time if dtype == CalenderKeyboard.START_TIME_BUTTON else end_time
-                selected_date = selected_time.strftime('%Y-%m-%d %H:%M:%S') if isinstance(selected_time, datetime.datetime) else None
-                await kb.calendar_keyboard(year=year, month=month, dtype=dtype, selected_date=selected_date, chat_id=chat_id)
+                selected_date = selected_time.strftime('%Y-%m-%d %H:%M:%S') if isinstance(selected_time,
+                                                                                          datetime.datetime) else None
+                await kb.calendar_keyboard(year=year, month=month, dtype=dtype, selected_date=selected_date,
+                                           chat_id=chat_id)
                 log.info(f'日期切换为{year}年,{month}月。')
         elif data.startswith(BotCallbackPrefix.SELECT_YEAR):
             # 打开年份选择键盘,回调数据形如"select_year_{start|end}_{页面中心年}_{当前月}_{选中年份}"。
@@ -3379,8 +3386,10 @@ class DownloadChatHandler(CallbackHandler):
             month = int(parts[-1])
             start_time, end_time = self.__get_update_time(downloader, chat_id)
             selected_time = start_time if dtype == CalenderKeyboard.START_TIME_BUTTON else end_time
-            selected_date = selected_time.strftime('%Y-%m-%d %H:%M:%S') if isinstance(selected_time, datetime.datetime) else None
-            await kb.calendar_keyboard(year=year, month=month, dtype=dtype, selected_date=selected_date, chat_id=chat_id)
+            selected_date = selected_time.strftime('%Y-%m-%d %H:%M:%S') if isinstance(selected_time,
+                                                                                      datetime.datetime) else None
+            await kb.calendar_keyboard(year=year, month=month, dtype=dtype, selected_date=selected_date,
+                                       chat_id=chat_id)
             log.info(f'日期切换为{year}年,{month}月。')
         elif data.startswith(('set_time_', 'set_specific_time_')):
             parts = data.split('_')
