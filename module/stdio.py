@@ -465,9 +465,15 @@ class StatisticalTable:
             local_version=__version__
         )
         log.info(
-            f'平台:"{app.platform}",Python版本:"{sys.version.split()[0]}",最新版本:"{update_version}",Pyrogram版本"{pyrogram_version}"。')
+            f'平台:"{app.platform}",'
+            f'Python版本:"{sys.version.split()[0]}",'
+            f'最新版本:"{update_version if update_version else __version__}",'
+            f'Pyrogram版本:"{pyrogram_version}"。')
         log.info(
-            f'用户配置文件:"{app.config_path}",保存目录:"{app.save_directory}",会话目录:"{app.work_directory}",缓存目录:"{app.temp_directory}"')
+            f'用户配置文件:"{app.config_path}",'
+            f'保存目录:"{app.save_directory}",'
+            f'会话目录:"{app.work_directory}",'
+            f'缓存目录:"{app.temp_directory}"。')
         log.info(f'使用系统代理:"{app.enable_proxy}"。')
         PanelTable(
             title='运行环境',
