@@ -692,8 +692,8 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             inner_query = query.query
         else:
             inner_query = query
-        reconnect_delay: int = 5
-        max_reconnect_delay: int = 60
+        reconnect_delay: int = 2
+        max_reconnect_delay: int = 10
         query_name = '.'.join(inner_query.QUALNAME.split('.')[1:])
         while True:
             for attempt in range(1, retries + 1):
@@ -732,7 +732,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             await asyncio.sleep(wait_time)
             console.log(f'已等待{wait_time}秒,重新尝试重连。', style='#B1DB74')
             if reconnect_delay < max_reconnect_delay:
-                reconnect_delay += 5
+                reconnect_delay += 2
 
     async def send(
             self,
