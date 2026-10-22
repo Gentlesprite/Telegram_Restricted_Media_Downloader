@@ -1431,10 +1431,10 @@ class BotCommandText:
     LISTEN_FORWARD: tuple = (
         'listen_forward', '实时监听该链接的最新消息(任意消息)进行转发。\n`/listen_forward 监听频道 转发频道`')
     LISTEN_INFO: tuple = ('listen_info', '查看当前已经创建的监听信息。')
-    UPLOAD: tuple = ('upload', '上传本地的文件到指定频道。`/upload 本地文件 目标频道`')
-    UPLOAD_R: tuple = ('upload_r', '递归上传文件夹(包含子文件夹)到指定频道。`/upload_r 本地文件夹 目标频道`')
+    UPLOAD: tuple = ('upload', '上传本地的文件到指定频道。\n`/upload 本地文件 目标频道`')
+    UPLOAD_R: tuple = ('upload_r', '递归上传文件夹(包含子文件夹)到指定频道。\n`/upload_r 本地文件夹 目标频道`')
     DOWNLOAD_CHAT: tuple = ('download_chat',
-                            '获取该频道全部内容，用户通过自定义条件进行内容筛选，最终下载该频道中用户所需内容。`/download_chat 频道链接`')
+                            '获取该频道全部内容,用户通过自定义条件进行内容筛选,最终下载该频道中用户所需内容。\n`/download_chat 频道链接`')
     AUTH: tuple = ('auth',
                    '添加/移除/查看授权使用机器人的用户,支持用户ID或@用户名。\n`/auth 1234567890`或`/auth @username`')
 

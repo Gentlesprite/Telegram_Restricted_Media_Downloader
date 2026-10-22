@@ -58,11 +58,13 @@ from module import (
 )
 from module.remote import rc
 from module.language import _t
-from module.stdio import MetaData
-
 from module.notice import NoticeHub
 from module.config import GlobalConfig
 from module.path_tool import safe_scan_directory_file
+from module.stdio import (
+    MetaData,
+    PanelTable
+)
 from module.task import (
     DownloadTask,
     UploadTask
@@ -806,13 +808,15 @@ class Bot:
             more_feature = True
         if web is not None:
             docker_host_ip_tip: str = f'\n{Issues.DOCKER_HOST_IP_TIP}' if is_docker() else ''
-            web_auth = (
-                f'🌐 Web配置:\n'
-                f'🔌 端口: {web.port}\n'
-                f'👤 账号: ||{web.username}||\n'
-                f'🔑 密码: ||{web.password}||\n'
-                f'🔗 链接: {web.protocol}://{web.LOCAL_IP}:{web.port}{docker_host_ip_tip}\n\n'
-            )
+            web_link: str = f'{web.protocol}://{web.LOCAL_IP}:{web.port}'
+            web_rows = [
+                ['端口', str(web.port)],
+                ['账号', f'`{web.username}`'],
+                ['密码', f'`{web.password}`'],
+                ['链接', f'[{web_link}]({web_link}){docker_host_ip_tip}'],
+            ]
+            web_panel = PanelTable(title='🌐 Web配置', header=('项目', '内容'), data=web_rows)
+            web_auth = web_panel.to_markdown_chunks()[0]
         config: dict = rc.cached_config()
         update_version: str = check_update(  # 远程版本更高时返回该版本号,用于提示可更新。
             remote_version=config.get('version', __version__),
@@ -824,35 +828,54 @@ class Bot:
             is_root=(uid is None) or (not self.root) or (uid == self.root[0])
         )
 
-        text = (
-            f'`\n💎 {SOFTWARE_SHORT_NAME} {version} 💎\n'
-            f'©️ {__copyright__.replace(" <https://github.com/Gentlesprite>", ".")}\n'
-            f'📖 Licensed under the terms of the {__license__}.`\n\n'
-            f'🎮️ 可用命令:\n'
-            f'🛎️ {BotCommandText.with_description(BotCommandText.HELP)}\n'
-            f'📁 {BotCommandText.with_description(BotCommandText.DOWNLOAD)}\n'
-            f'📝 {BotCommandText.with_description(BotCommandText.TABLE)}\n'
-            f'↗️ {BotCommandText.with_description(BotCommandText.FORWARD)}\n'
-            f'❌ {BotCommandText.with_description(BotCommandText.EXIT)}\n'
-            f'🕵️ {BotCommandText.with_description(BotCommandText.LISTEN_DOWNLOAD)}\n'
-            f'📲 {BotCommandText.with_description(BotCommandText.LISTEN_FORWARD)}\n'
-            f'🔍 {BotCommandText.with_description(BotCommandText.LISTEN_INFO)}\n'
-            f'📤 {BotCommandText.with_description(BotCommandText.UPLOAD)}\n'
-            f'🌳 {BotCommandText.with_description(BotCommandText.UPLOAD_R)}\n'
-            f'💬 {BotCommandText.with_description(BotCommandText.DOWNLOAD_CHAT)}\n'
-            f'{"🔐 " + BotCommandText.with_description(BotCommandText.AUTH) + "\n\n" if more_feature else "\n"}'
-            f'{web_auth}'
-            f'{"✨ 其他功能:\n📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`类型的消息给我,即可创建下载任务。\n" if more_feature else "\n"}'
+        # 按原顺序组装命令列表,授权命令仅对管理员(more_feature)展示。
+        command_items = [
+            BotCommandText.HELP,
+            BotCommandText.DOWNLOAD,
+            BotCommandText.TABLE,
+            BotCommandText.FORWARD,
+            BotCommandText.EXIT,
+            BotCommandText.LISTEN_DOWNLOAD,
+            BotCommandText.LISTEN_FORWARD,
+            BotCommandText.LISTEN_INFO,
+            BotCommandText.UPLOAD,
+            BotCommandText.UPLOAD_R,
+            BotCommandText.DOWNLOAD_CHAT
+        ]
+        if more_feature:
+            command_items.append(BotCommandText.AUTH)
+        command_rows = [[f'/{item[0]}', item[1]] for item in command_items]
+        # 复用PanelTable渲染与/table同款的GitHub风格富文本表格。
+        panel = PanelTable(title='🎮️ 可用命令', header=('命令', '说明'), data=command_rows)
+        table_markdown: str = panel.to_markdown_chunks()[0]
+        header_md = (
+            f'💎 `{SOFTWARE_SHORT_NAME} {version}` 💎  \n'
+            f'©️ `{__copyright__.replace(" <https://github.com/Gentlesprite>", ".")}`  \n'
+            f'📖 `Licensed under the terms of the {__license__}.`'
         )
+        parts = [header_md, '', table_markdown]
+        if web_auth:
+            parts.append('')
+            parts.append(web_auth.rstrip('\n'))
+        if more_feature:
+            parts.append('')
+            parts.append(
+                '✨ 其他功能:  \n'
+                '📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`'
+                '类型的消息给我,即可创建下载任务。'
+            )
+        text = '\n'.join(parts)
         if not all([client, message]):
             return {
                 'keyboard': keyboard,
                 'text': text
             }
-        await client.send_message(
+        await client.send_rich_message(
             chat_id=message.from_user.id,
-            text=text,
-            link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
+            rich_message=pyrogram.types.InputRichMessage(
+                markdown=text,
+                skip_entity_detection=True
+            ),
             reply_markup=keyboard
         )
 
@@ -2657,8 +2680,13 @@ class BackHandler(CallbackHandler):
         query = ctx.query
         if ctx.data == BotCallbackText.BACK_HELP:
             meta = await downloader.help()
-            await query.message.edit_text(meta.get('text'))
-            await query.message.edit_reply_markup(meta.get('keyboard'))
+            await query.message.edit_text(
+                rich_message=pyrogram.types.InputRichMessage(
+                    markdown=meta.get('text'),
+                    skip_entity_detection=True
+                ),
+                reply_markup=meta.get('keyboard')
+            )
         elif ctx.data == BotCallbackText.BACK_TABLE:
             meta = await downloader.table()
             await query.message.edit_text(meta.get('text'))
@@ -3659,7 +3687,13 @@ class MenuButtonHandler(CallbackHandler):
         elif data == BotCallbackText.MENU_BACK:
             # 返回主菜单时同时还原文本与键盘,避免停留在子菜单遗留的text状态。
             menu = await downloader.help(user_id=query.from_user.id)
-            await query.edit_message_text(text=menu['text'], reply_markup=menu['keyboard'])
+            await query.edit_message_text(
+                rich_message=pyrogram.types.InputRichMessage(
+                    markdown=menu['text'],
+                    skip_entity_detection=True
+                ),
+                reply_markup=menu['keyboard']
+            )
             return None
         else:
             return None
