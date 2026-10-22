@@ -692,8 +692,8 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             inner_query = query.query
         else:
             inner_query = query
-        reconnect_delay: int = 2
-        max_reconnect_delay: int = 10
+        reconnect_delay: int = 1
+        max_reconnect_delay: int = 2
         query_name = '.'.join(inner_query.QUALNAME.split('.')[1:])
         while True:
             for attempt in range(1, retries + 1):
@@ -729,6 +729,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                     # 避免在已断开或重建中的连接上反复发请求,既配合底层重连又避免加剧请求压力。
                     if not self.is_started.is_set():
                         try:
+                            log.info(f'已恢复连接,重新尝试调用"{query_name}"。')
                             await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
                         except asyncio.TimeoutError:
                             pass
@@ -739,6 +740,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             # 退避期间若底层连接恢复(is_started)则立即唤醒重试,避免干等满wait_time拖慢后面的任务;连接本就绪时按退避等待。
             if not self.is_started.is_set():
                 try:
+                    log.info(f'已恢复连接,重新尝试调用"{query_name}"。')
                     await asyncio.wait_for(self.is_started.wait(), wait_time)
                 except asyncio.TimeoutError:
                     pass
@@ -746,7 +748,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                 await asyncio.sleep(wait_time)
             console.log(f'已等待{wait_time}秒,重新尝试重连。', style='#B1DB74')
             if reconnect_delay < max_reconnect_delay:
-                reconnect_delay += 2
+                reconnect_delay += 1
 
     async def send(
             self,
