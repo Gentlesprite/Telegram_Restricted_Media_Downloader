@@ -547,12 +547,13 @@ class Web:
 
     @staticmethod
     def get_outer_links() -> dict:
-        """读取顶栏菜单使用的外部链接,远程配置缺失时回退到内置默认值。"""
+        """读取顶栏与菜单使用的外部链接,远程配置缺失时回退到内置默认值。"""
         config: dict = rc.cached_config()
         return {
             'github': config.get('github', rc.DEFAULT_GITHUB) + '/releases',
             'subscribe_channel': config.get('subscribe_channel', rc.DEFAULT_SUBSCRIBE_CHANNEL),
-            'video_tutorial': config.get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL)
+            'video_tutorial': config.get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL),
+            'proxy_seller': config.get('proxy_seller', rc.DEFAULT_PROXY_SELLER)
         }
 
     def get_count(self) -> dict:

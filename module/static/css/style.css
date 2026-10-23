@@ -155,8 +155,9 @@ body {
 
 /* 顶栏元素统一用 order 控制排列:宽屏品牌区居左、操作按钮居右;窄屏媒体查询再重排。 */
 #btnPause { order: 2; margin-left: auto; }
-#supportBtn { order: 3; }
-#menuWrap { order: 4; }
+#linkProxySeller { order: 3; text-decoration: none; }  /* <a>标签需清除默认下划线,与相邻按钮视觉一致。 */
+#supportBtn { order: 4; }
+#menuWrap { order: 5; }
 
 .logo {
     position: relative;
@@ -2012,8 +2013,13 @@ tbody tr:hover {
         margin-left: 0;  /* 取消基础自动外边距,留在第二行。 */
     }
 
-    #supportBtn {
+    #linkProxySeller {
         order: 3;
+        margin-left: 0;  /* 取消基础自动外边距,留在第二行。 */
+    }
+
+    #supportBtn {
+        order: 4;
         margin-left: 0;
     }
 }

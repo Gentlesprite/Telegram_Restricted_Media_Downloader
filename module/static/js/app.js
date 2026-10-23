@@ -3239,7 +3239,7 @@ function numVal(id) {
     return isNaN(n) ? null : n;
 }
 
-var OUTER_LINK_IDS = {github: 'linkGithub', subscribe_channel: 'linkChannel', video_tutorial: 'linkVideo'};
+var OUTER_LINK_IDS = {github: 'linkGithub', subscribe_channel: 'linkChannel', video_tutorial: 'linkVideo', proxy_seller: 'linkProxySeller'};
 
 function renderOuterLinks(links) {
     Object.keys(OUTER_LINK_IDS).forEach(function (key) {
