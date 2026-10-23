@@ -40,7 +40,7 @@ class RemoteConfig(object):
     TTL: int = 24 * 3600  # 本地缓存的有效期,同时作为远程获取失败后的重试间隔(秒)。
     PATH: str = os.path.join(APPDATA_PATH, '.REMOTE_CONFIG')
     DEFAULT_VERSION: str = __version__
-    DEFAULT_REFERRAL: str = ''
+    DEFAULT_REFERRAL: str = 'https://t.me/jisou2?start=a_1604151130'
     DEFAULT_VIDEO_TUTORIAL: str = 'https://www.youtube.com/watch?v=ucwKJu-MrBw'
     DEFAULT_SUBSCRIBE_CHANNEL: str = 'https://t.me/RestrictedMediaDownloader'
     DEFAULT_PROXY_SELLER: str = 'https://proxy-seller.com/zh/?partner=CCFF5F78CF9C46A7'
