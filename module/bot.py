@@ -773,6 +773,12 @@ class Bot:
                                      style=pyrogram.enums.ButtonStyle.PRIMARY)
             ]
         ] if is_root else []
+        proxy_seller_url: str = config.get('proxy_seller', rc.DEFAULT_PROXY_SELLER)
+        proxy_seller_row: list = [[
+            InlineKeyboardButton(BotButton.PROXY_SELLER,
+                                 url=proxy_seller_url,
+                                 style=pyrogram.enums.ButtonStyle.DANGER)
+        ]] if proxy_seller_url else []
         return InlineKeyboardMarkup(
             feature_rows + auth_row + [
                 [
@@ -786,11 +792,7 @@ class Bot:
                     InlineKeyboardButton(BotButton.PAY, callback_data=BotCallbackText.PAY,
                                          style=pyrogram.enums.ButtonStyle.SUCCESS)
                 ],
-                [
-                    InlineKeyboardButton(BotButton.PROXY_SELLER,
-                                         url=config.get('proxy_seller', rc.DEFAULT_PROXY_SELLER),
-                                         style=pyrogram.enums.ButtonStyle.DANGER)
-                ],
+                *proxy_seller_row,
                 [InlineKeyboardButton(BotButton.SETTING, callback_data=BotCallbackText.SETTING)]
             ]
         )
