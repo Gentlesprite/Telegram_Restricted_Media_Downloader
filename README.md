@@ -1,44 +1,45 @@
-<p align="center">
-  <img width="15%" align="center" src="https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/logo.png" alt="logo">
-</p>
-  <h1 align="center">
-  Telegram_Restricted_Media_Downloader
-</h1>
-<p align="center">
-</p>
-<p align="center">
-  A telegram downloader on Windows and Linux platform based on Python.
-</p>
-<p align="center">
-  <a style="text-decoration:none">
-<img src="https://img.shields.io/badge/Python-3.13.2-blue.svg?color=00B16A" alt="Python 3.13.2"/>
-  </a>
-  <a style="text-decoration:none">
-<img src="https://img.shields.io/badge/pyrogram@kurigram-2.2.26-blue.svg?color=00B16A" alt="pyrogram@kurigram 2.2.26"/>
-  </a>
-  <a style="text-decoration:none">
-<img src="https://img.shields.io/badge/Platform-Windows & Linux%20-blue?color=00B16A" alt="Platform Windows & Linux"/>
-  </a>
-<a href="https://deepwiki.com/Gentlesprite/Telegram_Restricted_Media_Downloader"><img alt="DeepWiki" src="https://img.shields.io/badge/DeepWiki-Documentation-blue?color=00B16A">
-  </a>
+<h1><img src="https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/logo.png" width="56" valign="middle" alt="logo">&nbsp;TRMD</h1>
+
+> 支持断点续传的Telegram下载器。
+
+<p>
+<img src="https://img.shields.io/badge/Python-3.13.2-E74C3C?style=flat-square" alt="Python 3.13.2">
+<img src="https://img.shields.io/badge/license-GPL--3.0-E67E22?style=flat-square" alt="License">
+<img src="https://img.shields.io/github/v/release/Gentlesprite/Telegram_Restricted_Media_Downloader?color=F1C40F&style=flat-square" alt="Release">
+<img src="https://img.shields.io/github/downloads/Gentlesprite/Telegram_Restricted_Media_Downloader/total?color=2ECC71&style=flat-square" alt="Downloads">
+<img src="https://img.shields.io/docker/pulls/gentlesprite/telegram_restricted_media_downloader?color=3498DB&style=flat-square" alt="Docker pulls">
+<a href="https://deepwiki.com/Gentlesprite/Telegram_Restricted_Media_Downloader"><img src="https://img.shields.io/badge/DeepWiki-Documentation-9B59B6?style=flat-square" alt="DeepWiki"></a>
 </p>
 
 
 > [!Tip]
 > 本项目**推荐代理**：[点击跳转](https://proxy-seller.com/zh/?partner=CCFF5F78CF9C46A7)。  
-> 本项目使用门槛低，教程详细，支持断点续传，运行稳定。  
-> 大部分的使用需求都能通过[配置机器人](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/README.md#22%E7%94%B5%E6%8A%A5%E6%9C%BA%E5%99%A8%E4%BA%BAbot_token%E7%94%B3%E8%AF%B7%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B%E9%80%89%E7%9C%8B)满足，例如需要下载整个频道的内容亦或是监听、转发某个频道，根据实际需求查看对应机器人命令。  
-> 推荐先观看[视频教程](https://www.youtube.com/watch?v=ucwKJu-MrBw)，如果你**遇到任何问题**，请先仔细**阅读**：[“README.md”](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/README.md)与[“常见问题及解决方案汇总”](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
-> **欢迎提交附带详细复现步骤的BUG反馈，同时接受付费定制化需求、付费远程搭建、教学、答疑。**  
-
-> [!NOTE]
-> 本项目支持[Docker](https://hub.docker.com/r/gentlesprite/telegram_restricted_media_downloader)部署，点击跳转：[“通过Docker运行”](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader#60%E9%80%9A%E8%BF%87docker%E8%BF%90%E8%A1%8C)。
+> 欢迎提交附带详细复现步骤的BUG反馈。  
+> **接受付费定制化需求、付费远程搭建、教学、答疑。**
 
 > [!Important]
-> **没有找到解决方案**：  
-> 由于本项目的性质，没有帮你解决问题的义务。  
-> 请先加入[TRMD交流群](https://t.me/+6KKA-buFaixmNTE1)搜索历史聊天记录是否提到过相关问题或[私聊作者](https://t.me/Gentlesprite)（付费）解答。  
-> 凡是[TRMD交流群](https://t.me/+6KKA-buFaixmNTE1)、[README.md](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/README.md)、[Wiki](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)记录过的、重复的问题不予回答。
+> 本项目没有帮你解决问题的义务。  
+> 如果你**遇到问题没有找到解决方案**：  
+> [联系作者](https://t.me/Gentlesprite)**付费**解答。  
+> 推荐先观看[视频教程](https://www.youtube.com/watch?v=ucwKJu-MrBw)并配合[“README.md”](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/README.md)与[“常见问题及解决方案汇总”](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
+> 加入[TRMD交流群](https://t.me/+6KKA-buFaixmNTE1)搜索历史聊天记录是否提到过相关问题，凡是重复的问题不予回答。
+
+# 特点
+
+> [!Tip]
+> 🤖表示需要配置机器人才能实现。
+
+|  特点  |                                                                                                                                                 说明                                                                                                                                                 |
+|:----:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| 受限下载 |                                                                                                                                         下载（受保存限制）聊天中的媒体文件。                                                                                                                                         |
+| 断点续传 |                                                                                                                                           下载与上传均支持断点续传。                                                                                                                                            |
+| 网页面板 |                                                                                                                                          浏览器实时查看下载与上传进度。                                                                                                                                           |
+| 开箱即用 |   提供[`Windows`](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases)、[`Linux`](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/releases)平台二进制文件，并支持通过[`Docker`](https://hub.docker.com/r/gentlesprite/telegram_restricted_media_downloader)部署运行。    |
+| 批量下载 |                                                                                                                              🤖下载整个频道及其评论区（可选），并支持关键词、类型、日期等自定义过滤规则。                                                                                                                               |
+| 使用门槛 |                                                                                                                                     🤖在帮助菜单通过点击按钮逐步引导用户创建所需任务。                                                                                                                                     |
+| 消息转发 |                                                                                                                                     🤖频道开启`限制保存内容`时自动回退为下载后上传。                                                                                                                                     |
+| 文件上传 |                                                                                                                                       🤖批量上传本地文件到`Telegram`。                                                                                                                                       |
+| 实时监听 |                                                                                                                                        🤖监听频道最新消息并自动下载或转发。                                                                                                                                         |
 
 # 免责声明
 
@@ -93,7 +94,7 @@
 ## 2.1.申请电报API
 > [!IMPORTANT]
 > **申请电报API对IP纯净度要求极高，针对无法申请的情况：  
-> 可直接使用[YouTube视频教程](https://www.youtube.com/watch?v=ucwKJu-MrBw)或[B站视频](https://www.bilibili.com/video/BV1hyHJ68EcQ)简介下的`api`，随后`申请电报API`可省略。**
+> 可直接使用[YouTube视频教程](https://www.youtube.com/watch?v=ucwKJu-MrBw)或[B站视频](https://www.bilibili.com/video/BV1hyHJ68EcQ)简介下提供的`api`，随后`申请电报API`可省略。**
 
 1. 前往网站:**https://my.telegram.org/auth**
 
@@ -123,8 +124,9 @@
 
 ## 2.2.电报机器人`bot_token`申请及使用教程（选看）
 > [!TIP]
-> 大部分的使用需求都能通过配置机器人满足，例如需要下载整个频道的内容亦或是监听、转发某个频道，根据实际需求查看对应机器人命令。   
-> 故可以将软件部署在`服务器`、`NAS`，无论是`Windows`、`Linux`还是`Docker`。
+> 大部分的使用需求都能通过配置机器人满足：   
+> 例如需要下载整个频道的内容亦或是监听、转发某个频道，根据实际需求查看对应机器人命令。   
+> 故可以将`TRMD`部署在`服务器`、`NAS`，无论是`Windows`、`Linux`还是`Docker`。
 
 <details>
 <summary><strong>点击展开</strong></summary>
@@ -816,7 +818,7 @@ upload:
 | `export_table` | 运行结束时是否导出统计表，含`count`（控制运行结束时是否导出下载计数统计表）、`link`（控制运行结束时是否导出下载链接统计表）、`upload`（控制运行结束时是否导出上传统计表）。             |
 | `file_log_level` | `TRMD_LOG.log`文件中记录的最低日志级别（如`INFO`）。                                                                         |
 | `forward_type` | 控制`/listen_forward`与`/forward`命令可转发的文件类型，详见`forward_type`参数支持转发的媒体类型。                                        |
-| `notice` | 控制机器人启动时是否向用户发送启动提示（欢迎语与命令帮助）。                                                                               |
+| `notice` | 控制机器人启动时是否向用户发送启动提示（欢迎语）。                                                                               |
 | `upload` | 控制转发时，频道中受保护内容的处理方式，含`delete`（控制频道中受保护内容在下载上传完成后是否删除本地文件，默认关闭）与`download_upload`（控制频道中受保护内容是否回退至下载后上传，默认开启）。 |
 
 ##### `forward_type`参数支持转发的媒体类型
@@ -1615,6 +1617,9 @@ temp_directory: /app/temp
 | 账号 | `cLJqKG3b`              |
 | 密码 | `AiJaKSObcRCZ`          |
 | 链接 | `http://127.0.0.1:2921` |
+
+> [!IMPORTANT]
+> `Docker`环境下链接中的`IP`为`容器IP`并非`宿主机IP`，请使用`宿主机IP`加`端口`访问，此处的`http://127.0.0.1:2921`仅作为演示。
 
 _账号密码由系统随机生成，使用浏览器打开[http://127.0.0.1:2921](http://127.0.0.1:2921)网页输入账号密码即可进入。_
 
