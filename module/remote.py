@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2026/9/7 00:00:00
+# Time:2026-09-07 00:00:00
 # File:remote.py
 import os
 import json

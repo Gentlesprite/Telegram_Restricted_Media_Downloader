@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2023/11/13 20:34:13
+# Time:2023-11-13 20:34:13
 # File:path_tool.py
 import os
 import re

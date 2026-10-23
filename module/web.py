@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2026/9/10 12:00
+# Time:2026-09-10 12:00:00
 # File:web.py
 import os
 import re

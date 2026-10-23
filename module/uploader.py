@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2025/9/6 23:00
+# Time:2025-09-06 23:00:00
 # File:uploader.py
 import os
 import hashlib

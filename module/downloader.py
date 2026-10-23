@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2023/10/3 1:00:03
+# Time:2023-10-03 01:00:03
 # File:downloader.py
 import os
 import sys

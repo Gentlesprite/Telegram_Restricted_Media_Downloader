@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2023/11/18 12:28:18
+# Time:2023-11-18 12:28:18
 # File:__init__.py
 import os
 import sys
@@ -88,7 +88,7 @@ SLEEP_THRESHOLD = 60
 AUTHOR = 'Gentlesprite'
 __version__ = '2.1.3'
 __license__ = 'GPL-3.0-or-later'
-__update_date__ = '2026-10-23 15:14:46'
+__update_date__ = '2026-10-23 15:23:51'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/{AUTHOR}>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'

@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2025/9/25 1:22
+# Time:2025-09-25 01:22:00
 # File:filter.py
 import datetime
 

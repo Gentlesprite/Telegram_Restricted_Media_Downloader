@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2025/2/25 1:26
+# Time:2025-02-25 01:26:00
 # File:client.py
 import math
 import asyncio

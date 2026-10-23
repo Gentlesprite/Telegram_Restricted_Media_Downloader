@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2024/7/2 0:59
+# Time:2024-7-2 00:59:00
 # File:enums.py
 import os
 import re

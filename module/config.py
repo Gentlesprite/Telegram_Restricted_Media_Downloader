@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2025/2/25 1:32
+# Time:2025-2-25 01:32:00
 # File:config.py
 import os
 import logging

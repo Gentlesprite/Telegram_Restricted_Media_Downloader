@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2026/1/23 17:47
+# Time:2026-01-23 17:47:00
 # File:parser.py
 from argparse import (
     SUPPRESS,

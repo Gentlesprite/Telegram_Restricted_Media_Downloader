@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2025/3/1 1:15
+# Time:2025-03-01 01:15:00
 # File:language.py
 translations: dict = {
     'single': ['单文件'],

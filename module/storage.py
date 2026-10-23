@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2026/10/13 12:05
+# Time:2026-10-13 12:05:00
 # File:storage.py
 import os
 import time

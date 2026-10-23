@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2025/1/24 21:27
+# Time:2025-1-24 21:27:00
 # File:bot.py
 import os
 import copy

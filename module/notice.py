@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2026/10/22 12:00
+# Time:2026-10-22 12:00:00
 # File:notice.py
 import datetime
 

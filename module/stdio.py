@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2025/2/25 1:11
+# Time:2025-02-25 01:11:00
 # File:stdio.py
 import os
 import sys
