@@ -24,14 +24,15 @@
 </p>
 
 
-> [!NOTE]
-> 本项目支持[Docker](https://hub.docker.com/r/gentlesprite/telegram_restricted_media_downloader)部署，点击跳转：[_“通过Docker运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader#60%E9%80%9A%E8%BF%87docker%E8%BF%90%E8%A1%8C)。
-
 > [!Tip]
-> 本项目教程详细、使用门槛低，运行稳定。  
+> 本项目**推荐代理**：[点击跳转](https://proxy-seller.com/zh/?partner=CCFF5F78CF9C46A7)。  
+> 本项目使用门槛低，教程详细，支持断点续传，运行稳定。  
 > 大部分的使用需求都能通过[配置机器人](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/README.md#22%E7%94%B5%E6%8A%A5%E6%9C%BA%E5%99%A8%E4%BA%BAbot_token%E7%94%B3%E8%AF%B7%E5%8F%8A%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B%E9%80%89%E7%9C%8B)满足，例如需要下载整个频道的内容亦或是监听、转发某个频道，根据实际需求查看对应机器人命令。  
-> 推荐先观看[视频教程](https://www.youtube.com/watch?v=ucwKJu-MrBw)，如果你**遇到任何问题**，请先仔细**阅读**：[_“README.md”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/README.md)与[_“常见问题及解决方案汇总”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
+> 推荐先观看[视频教程](https://www.youtube.com/watch?v=ucwKJu-MrBw)，如果你**遇到任何问题**，请先仔细**阅读**：[“README.md”](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/blob/main/README.md)与[“常见问题及解决方案汇总”](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki)。  
 > **欢迎提交附带详细复现步骤的BUG反馈，同时接受付费定制化需求、付费远程搭建、教学、答疑。**  
+
+> [!NOTE]
+> 本项目支持[Docker](https://hub.docker.com/r/gentlesprite/telegram_restricted_media_downloader)部署，点击跳转：[“通过Docker运行”](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader#60%E9%80%9A%E8%BF%87docker%E8%BF%90%E8%A1%8C)。
 
 > [!Important]
 > **没有找到解决方案**：  
