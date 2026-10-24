@@ -1,7 +1,7 @@
 # coding=UTF-8
 # Author:Gentlesprite
 # Software:PyCharm
-# Time:2026/9/24 20:33
+# Time:2026/09/24 20:33:00
 # File:build.py
 import os
 import sys
