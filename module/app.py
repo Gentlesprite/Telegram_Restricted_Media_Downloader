@@ -14,7 +14,6 @@ from functools import wraps
 import pyrogram
 
 from module import (
-    SLEEP_THRESHOLD,
     console,
     log,
     SOFTWARE_FULL_NAME,
@@ -65,7 +64,6 @@ class Application(UserConfig, StatisticalTable):
             api_hash=self.api_hash,
             proxy=self.proxy if self.enable_proxy else None,
             workdir=self.work_directory,
-            sleep_threshold=SLEEP_THRESHOLD,
             app_version=Application.APP_VERSION,
             device_model=Application.DEVICE_MODEL
         )

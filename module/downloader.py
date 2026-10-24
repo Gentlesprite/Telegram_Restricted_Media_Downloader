@@ -60,8 +60,7 @@ from pyrogram.types.bots_and_keyboards import (
 from module import (
     log,
     console,
-    FORWARD_LIMIT,
-    SLEEP_THRESHOLD
+    FORWARD_LIMIT
 )
 from module.web import Web
 from module.remote import rc
@@ -2693,7 +2692,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     bot_token=self.app.bot_token,
                     workdir=self.app.work_directory,
                     proxy=self.app.proxy if self.app.enable_proxy else None,
-                    sleep_threshold=SLEEP_THRESHOLD,
                     app_version=Application.APP_VERSION,
                     device_model=Application.DEVICE_MODEL
                 )
