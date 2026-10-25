@@ -292,7 +292,7 @@ class Bot:
         )
         self.add_command_mode_handler(
             chat_id=message.from_user.id,
-            callback_query=None,
+            callback_query=None,  # noqa.
             command=command,
             enable=True
         )
@@ -441,11 +441,11 @@ class Bot:
                             InlineKeyboardMarkup([
                                 [
                                     InlineKeyboardButton(
-                                        BotButton.DROP,
+                                        text=BotButton.DROP,
                                         callback_data=f'{BotCallbackText.DROP_KEYWORD}_{keyword_index}'
                                     ),
                                     InlineKeyboardButton(
-                                        BotButton.IGNORE,
+                                        text=BotButton.IGNORE,
                                         callback_data=f'{BotCallbackText.IGNORE_KEYWORD}_{keyword_index}'
                                     )
                                 ]
@@ -715,7 +715,8 @@ class Bot:
             last_bot_message: pyrogram.types.Message = await client.send_message(
                 chat_id=chat_id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text=t, link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+                text=t,
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             if last_bot_message not in last_bot_messages:
                 last_bot_messages.append(last_bot_message)
@@ -728,90 +729,157 @@ class Bot:
         if level == 'download':
             return InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton(BotButton.CMD_DOWNLOAD, callback_data=BotCallbackText.COMMAND_DOWNLOAD),
-                    InlineKeyboardButton(BotButton.CMD_DOWNLOAD_CHAT,
-                                         callback_data=BotCallbackText.COMMAND_DOWNLOAD_CHAT)
+                    InlineKeyboardButton(
+                        text=BotButton.CMD_DOWNLOAD,
+                        callback_data=BotCallbackText.COMMAND_DOWNLOAD
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.CMD_DOWNLOAD_CHAT,
+                        callback_data=BotCallbackText.COMMAND_DOWNLOAD_CHAT
+                    )
                 ],
                 [
-                    InlineKeyboardButton(BotButton.MENU_BACK, callback_data=BotCallbackText.MENU_BACK)
+                    InlineKeyboardButton(
+                        text=BotButton.MENU_BACK,
+                        callback_data=BotCallbackText.MENU_BACK
+                    )
                 ]
             ])
         if level == 'listen':
             return InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton(BotButton.LISTEN_DOWNLOAD_BTN,
-                                         callback_data=BotCallbackText.LISTEN_DOWNLOAD_BTN),
-                    InlineKeyboardButton(BotButton.LISTEN_FORWARD_BTN, callback_data=BotCallbackText.LISTEN_FORWARD_BTN)
+                    InlineKeyboardButton(
+                        text=BotButton.LISTEN_DOWNLOAD_BTN,
+                        callback_data=BotCallbackText.LISTEN_DOWNLOAD_BTN),
+                    InlineKeyboardButton(
+                        text=BotButton.LISTEN_FORWARD_BTN,
+                        callback_data=BotCallbackText.LISTEN_FORWARD_BTN
+                    )
                 ],
                 [
-                    InlineKeyboardButton(BotButton.LOOKUP_LISTEN_INFO,
-                                         callback_data=BotCallbackText.LOOKUP_LISTEN_INFO)
+                    InlineKeyboardButton(
+                        text=BotButton.LOOKUP_LISTEN_INFO,
+                        callback_data=BotCallbackText.LOOKUP_LISTEN_INFO
+                    )
                 ],
                 [
-                    InlineKeyboardButton(BotButton.MENU_BACK, callback_data=BotCallbackText.MENU_BACK)
+                    InlineKeyboardButton(
+                        text=BotButton.MENU_BACK,
+                        callback_data=BotCallbackText.MENU_BACK
+                    )
                 ]
             ])
         if level == 'upload':
             return InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton(BotButton.CMD_UPLOAD, callback_data=BotCallbackText.COMMAND_UPLOAD),
-                    InlineKeyboardButton(BotButton.CMD_UPLOAD_R, callback_data=BotCallbackText.COMMAND_UPLOAD_R)
+                    InlineKeyboardButton(
+                        text=BotButton.CMD_UPLOAD,
+                        callback_data=BotCallbackText.COMMAND_UPLOAD
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.CMD_UPLOAD_R,
+                        callback_data=BotCallbackText.COMMAND_UPLOAD_R
+                    )
                 ],
                 [
-                    InlineKeyboardButton(BotButton.MENU_BACK, callback_data=BotCallbackText.MENU_BACK)
+                    InlineKeyboardButton(
+                        text=BotButton.MENU_BACK,
+                        callback_data=BotCallbackText.MENU_BACK
+                    )
                 ]
             ])
         if level == 'auth':
             return InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton(BotButton.AUTH, callback_data=BotCallbackText.AUTH),
-                    InlineKeyboardButton(BotButton.LOOKUP_AUTH_INFO, callback_data=BotCallbackText.LOOKUP_AUTH_INFO)
+                    InlineKeyboardButton(
+                        text=BotButton.AUTH,
+                        callback_data=BotCallbackText.AUTH
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.LOOKUP_AUTH_INFO,
+                        callback_data=BotCallbackText.LOOKUP_AUTH_INFO
+                    )
                 ],
                 [
-                    InlineKeyboardButton(BotButton.MENU_BACK, callback_data=BotCallbackText.MENU_BACK)
+                    InlineKeyboardButton(
+                        text=BotButton.MENU_BACK,
+                        callback_data=BotCallbackText.MENU_BACK
+                    )
                 ]
             ])
         feature_rows = [
             [
-                InlineKeyboardButton(BotButton.MENU_DOWNLOAD, callback_data=BotCallbackText.MENU_DOWNLOAD,
-                                     style=pyrogram.enums.ButtonStyle.PRIMARY),
-                InlineKeyboardButton(BotButton.MENU_UPLOAD, callback_data=BotCallbackText.MENU_UPLOAD,
-                                     style=pyrogram.enums.ButtonStyle.PRIMARY)
+                InlineKeyboardButton(
+                    text=BotButton.MENU_DOWNLOAD,
+                    callback_data=BotCallbackText.MENU_DOWNLOAD,
+                    style=pyrogram.enums.ButtonStyle.PRIMARY
+                ),
+                InlineKeyboardButton(
+                    text=BotButton.MENU_UPLOAD,
+                    callback_data=BotCallbackText.MENU_UPLOAD,
+                    style=pyrogram.enums.ButtonStyle.PRIMARY
+                )
             ],
             [
-                InlineKeyboardButton(BotButton.CMD_FORWARD, callback_data=BotCallbackText.COMMAND_FORWARD,
-                                     style=pyrogram.enums.ButtonStyle.PRIMARY),
-                InlineKeyboardButton(BotButton.MENU_LISTEN, callback_data=BotCallbackText.MENU_LISTEN,
-                                     style=pyrogram.enums.ButtonStyle.PRIMARY)
+                InlineKeyboardButton(
+                    text=BotButton.CMD_FORWARD,
+                    callback_data=BotCallbackText.COMMAND_FORWARD,
+                    style=pyrogram.enums.ButtonStyle.PRIMARY
+                ),
+                InlineKeyboardButton(
+                    text=BotButton.MENU_LISTEN,
+                    callback_data=BotCallbackText.MENU_LISTEN,
+                    style=pyrogram.enums.ButtonStyle.PRIMARY
+                )
             ]
         ]
         auth_row = [
             [
-                InlineKeyboardButton(BotButton.AUTH_MENU, callback_data=BotCallbackText.MENU_AUTH,
-                                     style=pyrogram.enums.ButtonStyle.PRIMARY)
+                InlineKeyboardButton(
+                    text=BotButton.AUTH_MENU,
+                    callback_data=BotCallbackText.MENU_AUTH,
+                    style=pyrogram.enums.ButtonStyle.PRIMARY
+                )
             ]
         ] if is_root else []
         proxy_seller_url: str = config.get('proxy_seller', rc.DEFAULT_PROXY_SELLER)
         proxy_seller_row: list = [[
-            InlineKeyboardButton(BotButton.PROXY_SELLER,
-                                 url=proxy_seller_url,
-                                 style=pyrogram.enums.ButtonStyle.DANGER)
+            InlineKeyboardButton(
+                text=BotButton.PROXY_SELLER,
+                url=proxy_seller_url,
+                style=pyrogram.enums.ButtonStyle.DANGER
+            )
         ]] if proxy_seller_url else []
         return InlineKeyboardMarkup(
             feature_rows + auth_row + [
                 [
-                    InlineKeyboardButton(BotButton.GITHUB, url=config.get('github', rc.DEFAULT_GITHUB) + '/releases'),
-                    InlineKeyboardButton(BotButton.SUBSCRIBE_CHANNEL,
-                                         url=config.get('subscribe_channel', rc.DEFAULT_SUBSCRIBE_CHANNEL))
+                    InlineKeyboardButton(
+                        text=BotButton.GITHUB,
+                        url=config.get('github', rc.DEFAULT_GITHUB) + '/releases'
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.SUBSCRIBE_CHANNEL,
+                        url=config.get('subscribe_channel', rc.DEFAULT_SUBSCRIBE_CHANNEL)
+                    )
                 ],
                 [
-                    InlineKeyboardButton(BotButton.VIDEO_TUTORIAL,
-                                         url=config.get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL)),
-                    InlineKeyboardButton(BotButton.PAY, callback_data=BotCallbackText.PAY,
-                                         style=pyrogram.enums.ButtonStyle.SUCCESS)
+                    InlineKeyboardButton(
+                        text=BotButton.VIDEO_TUTORIAL,
+                        url=config.get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL)
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.PAY,
+                        callback_data=BotCallbackText.PAY,
+                        style=pyrogram.enums.ButtonStyle.SUCCESS
+                    )
                 ],
                 *proxy_seller_row,
-                [InlineKeyboardButton(BotButton.SETTING, callback_data=BotCallbackText.SETTING)]
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.SETTING,
+                        callback_data=BotCallbackText.SETTING
+                    )
+                ]
             ]
         )
 
@@ -962,7 +1030,7 @@ class Bot:
                 ]
             ]
         )
-        text: str = '🧐🧐🧐请选择输出「统计表」的类型:'
+        text: str = '📊请选择输出「统计表」的类型:'
         if not all([client, message]):
             return {
                 'keyboard': keyboard,
@@ -999,7 +1067,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text=f'❌❌❌命令错误❌❌❌\n{e}\n请使用`/forward https://t.me/A https://t.me/B 1 100`'
+                text=f'❌命令错误\n{e}\n请使用`/forward https://t.me/A https://t.me/B 1 100`'
             )
             return None
         return {
@@ -1047,7 +1115,7 @@ class Bot:
                         user_client=self.user,
                         bot_client=self.bot,
                         bot_message=message,
-                        error_msg=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
+                        error_msg=f'⬇️目标频道不存在\n{target_link}'
                     )
                 if not valid_link_cache[target_link]:
                     return None
@@ -1075,7 +1143,7 @@ class Bot:
                     await client.send_message(
                         chat_id=message.from_user.id,
                         reply_parameters=ReplyParameters(message_id=message.id),
-                        text=f'📤📤📤上传任务已创建,请耐心等待📤📤📤\n`{file_path}`',
+                        text=f'📤上传任务已创建,请耐心等待\n`{file_path}`',
                         link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                     )
                     await asyncio.gather(*upload_folder)
@@ -1083,7 +1151,7 @@ class Bot:
                     await client.send_message(
                         chat_id=message.from_user.id,
                         reply_parameters=ReplyParameters(message_id=message.id),
-                        text=f'⚠️⚠️⚠️文件夹为空⚠️⚠️⚠️\n`{file_path}`',
+                        text=f'⚠️文件夹为空\n`{file_path}`',
                         link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                     )
                 return None
@@ -1092,7 +1160,7 @@ class Bot:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'⚠️⚠️⚠️上传文件不存在⚠️⚠️⚠️\n`{file_path}`',
+                    text=f'⚠️上传文件不存在\n`{file_path}`',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
                 return None
@@ -1101,7 +1169,7 @@ class Bot:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'⚠️⚠️⚠️上传文件大小为0⚠️⚠️⚠️\n`{file_path}`',
+                    text=f'⚠️上传文件大小为0\n`{file_path}`',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
 
@@ -1110,7 +1178,7 @@ class Bot:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'⚠️⚠️⚠️上传大小超过限制({format_file_size})⚠️⚠️⚠️\n'
+                    text=f'⚠️上传大小超过限制({format_file_size})\n'
                          f'`{file_path}`\n'
                          f'(普通用户2000MiB,会员用户4000MiB)',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
@@ -1119,7 +1187,7 @@ class Bot:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'📤📤📤上传任务已创建,请耐心等待📤📤📤\n`{file_path}`',
+                    text=f'📤上传任务已创建,请耐心等待\n`{file_path}`',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
             log.info(f'上传文件:"{file_path}",上传频道:"{target_link}"。')
@@ -1144,7 +1212,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❌❌❌命令错误❌❌❌\n请查看帮助后重试。',
+                text='❌命令错误\n请查看帮助后重试。',
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
@@ -1353,7 +1421,7 @@ class Bot:
             if edit_message is not None:
                 try:
                     await edit_message.edit_text(
-                        text='😲目前没有正在监听的频道。',
+                        text='🌫️目前没有正在监听的频道。',
                         reply_markup=self.menu_keyboard('listen'))
                 except MessageNotModified:
                     pass
@@ -1362,7 +1430,7 @@ class Bot:
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                    text='😲目前没有正在监听的频道。'
+                    text='🌫️目前没有正在监听的频道。'
                 )
         else:
             if self.listen_download_chat:
@@ -1392,8 +1460,8 @@ class Bot:
         text: str = message.text
         args: list = text.split()
         if len(args) == 1:
-            # 无参数时展示当前已授权的用户列表。
-            await self.show_authorized_users(client=client, message=message)
+            # 无参数时展示授权管理选项面板(先给按钮,点'查看授权列表'才展示列表)。
+            await self.show_auth_menu(client=client, message=message)
             return None
         await self.add_authorized_user(client=client, message=message, target=args[1])
 
@@ -1528,6 +1596,35 @@ class Bot:
         )
         # 处理完毕关闭输入模式。
         self.add_auth_mode_handler(chat_id=chat_id, callback_query=callback_query, enable=False)
+
+    @staticmethod
+    async def show_auth_menu(
+            client: pyrogram.Client,
+            message: pyrogram.types.Message,
+            edit_message: Union[pyrogram.types.Message, None] = None
+    ) -> None:
+        """/auth 入口选项面板:先给一排按钮,点'查看授权列表'才展示用户列表。"""
+        auth_menu_kb = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(BotButton.AUTH, callback_data=BotCallbackText.AUTH),
+                InlineKeyboardButton(BotButton.VIEW_AUTH_LIST, callback_data=BotCallbackText.VIEW_AUTH_LIST)
+            ],
+            [
+                InlineKeyboardButton(BotButton.MENU_BACK, callback_data=BotCallbackText.MENU_BACK)
+            ]
+        ])
+        text = '🔐 「授权用户」管理,请选择操作:'
+        if edit_message is not None:
+            try:
+                await edit_message.edit_text(text=text, reply_markup=auth_menu_kb)
+            except MessageNotModified:
+                pass
+        else:
+            await client.send_message(
+                chat_id=message.from_user.id,
+                text=text,
+                reply_markup=auth_menu_kb
+            )
 
     async def show_authorized_users(
             self,
@@ -2784,6 +2881,25 @@ class LookupAuthInfoHandler(CallbackHandler):
             log.error(f'发送查看授权用户命令失败,{_t(KeyWord.REASON)}:"{e}"')
 
 
+class ViewAuthListHandler(CallbackHandler):
+    exact = (BotCallbackText.VIEW_AUTH_LIST,)
+
+    async def handle(self, ctx: CallbackContext) -> None:
+        downloader = ctx.downloader
+        query = ctx.query
+        # 直接编辑当前消息展示授权用户列表,不再另发一条。
+        try:
+            await downloader.show_authorized_users(
+                client=downloader.bot,
+                message=query.message,
+                target=query.from_user.id,
+                edit_message=query.message
+            )
+        except Exception as e:
+            await query.message.reply_text('查看授权用户失败\n(具体原因请前往终端查看报错信息)')
+            log.error(f'发送查看授权用户命令失败,{_t(KeyWord.REASON)}:"{e}"')
+
+
 class AddAuthHandler(CallbackHandler):
     exact = (BotCallbackText.AUTH,)
 
@@ -3690,13 +3806,13 @@ class MenuButtonHandler(CallbackHandler):
                 reply_markup=downloader.menu_keyboard('upload'))
             return None
         elif data == BotCallbackText.MENU_AUTH:
-            # 进入授权用户子菜单时同步刷新文本,避免仍停留在主菜单/help文本。
-            await query.edit_message_text(
-                text='🔐授权用户管理',
-                reply_markup=downloader.menu_keyboard('auth'))
+            await downloader.show_auth_menu(
+                client=downloader.bot,
+                message=query.message,
+                edit_message=query.message
+            )
             return None
         elif data == BotCallbackText.MENU_BACK:
-            # 返回主菜单时同时还原文本与键盘,避免停留在子菜单遗留的text状态。
             menu = await downloader.help(user_id=query.from_user.id)
             await query.edit_message_text(
                 rich_message=pyrogram.types.InputRichMessage(
@@ -3718,6 +3834,7 @@ CALLBACK_HANDLERS: tuple = (
     TaskAssignHandler(),
     ListenInfoHandler(),
     LookupAuthInfoHandler(),
+    ViewAuthListHandler(),
     AddAuthHandler(),
     CancelAuthInputHandler(),
     ShutdownHandler(),
