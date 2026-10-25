@@ -1538,10 +1538,7 @@ class Bot:
         self.gc.save_config(self.gc.config)
         await _respond(
             text=f'✅已添加授权用户`ID`:\n`{uid}`',
-            reply_markup=auth_kb if edit_message is not None else KeyboardButton.single_button(
-                text=BotButton.LOOKUP_AUTH_INFO,
-                callback_data=BotCallbackText.LOOKUP_AUTH_INFO
-            )
+            reply_markup=auth_kb
         )
         log.info(f'已添加授权用户:{uid},当前授权用户:{self.gc.authorized_users}。')
 
