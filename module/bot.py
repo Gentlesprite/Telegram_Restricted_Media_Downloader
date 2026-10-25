@@ -101,18 +101,18 @@ from module.enums import (
 class Bot:
     BOT_NAME: str = 'TRMD_BOT'
     COMMANDS: List[BotCommand] = [
-        BotCommand(BotCommandText.HELP[0], BotCommandText.HELP[1].replace('`', '')),
-        BotCommand(BotCommandText.DOWNLOAD[0], BotCommandText.DOWNLOAD[1].replace('`', '')),
-        BotCommand(BotCommandText.TABLE[0], BotCommandText.TABLE[1].replace('`', '')),
-        BotCommand(BotCommandText.FORWARD[0], BotCommandText.FORWARD[1].replace('`', '')),
-        BotCommand(BotCommandText.EXIT[0], BotCommandText.EXIT[1].replace('`', '')),
-        BotCommand(BotCommandText.LISTEN_DOWNLOAD[0], BotCommandText.LISTEN_DOWNLOAD[1].replace('`', '')),
-        BotCommand(BotCommandText.LISTEN_FORWARD[0], BotCommandText.LISTEN_FORWARD[1].replace('`', '')),
-        BotCommand(BotCommandText.LISTEN_INFO[0], BotCommandText.LISTEN_INFO[1].replace('`', '')),
-        BotCommand(BotCommandText.UPLOAD[0], BotCommandText.UPLOAD[1].replace('`', '')),
-        BotCommand(BotCommandText.UPLOAD_R[0], BotCommandText.UPLOAD_R[1].replace('`', '')),
-        BotCommand(BotCommandText.DOWNLOAD_CHAT[0], BotCommandText.DOWNLOAD_CHAT[1].replace('`', '')),
-        BotCommand(BotCommandText.AUTH[0], BotCommandText.AUTH[1].replace('`', ''))
+        BotCommand(BotCommandText.HELP[0], BotCommandText.HELP[1].split('\n')[0]),
+        BotCommand(BotCommandText.DOWNLOAD[0], BotCommandText.DOWNLOAD[1].split('\n')[0]),
+        BotCommand(BotCommandText.TABLE[0], BotCommandText.TABLE[1].split('\n')[0]),
+        BotCommand(BotCommandText.FORWARD[0], BotCommandText.FORWARD[1].split('\n')[0]),
+        BotCommand(BotCommandText.EXIT[0], BotCommandText.EXIT[1].split('\n')[0]),
+        BotCommand(BotCommandText.LISTEN_DOWNLOAD[0], BotCommandText.LISTEN_DOWNLOAD[1].split('\n')[0]),
+        BotCommand(BotCommandText.LISTEN_FORWARD[0], BotCommandText.LISTEN_FORWARD[1].split('\n')[0]),
+        BotCommand(BotCommandText.LISTEN_INFO[0], BotCommandText.LISTEN_INFO[1].split('\n')[0]),
+        BotCommand(BotCommandText.UPLOAD[0], BotCommandText.UPLOAD[1].split('\n')[0]),
+        BotCommand(BotCommandText.UPLOAD_R[0], BotCommandText.UPLOAD_R[1].split('\n')[0]),
+        BotCommand(BotCommandText.DOWNLOAD_CHAT[0], BotCommandText.DOWNLOAD_CHAT[1].split('\n')[0]),
+        BotCommand(BotCommandText.AUTH[0], BotCommandText.AUTH[1].split('\n')[0])
     ]
     COMMAND_STEPS: dict = {
         BotCommandText.DOWNLOAD[0]: (
