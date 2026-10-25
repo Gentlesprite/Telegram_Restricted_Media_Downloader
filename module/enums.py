@@ -1646,7 +1646,6 @@ class BotButton:
     LISTEN_MENU_TITLE: str = '🕵️创建监听任务'
     UPLOAD_MENU_TITLE: str = '📤创建上传任务'
     AUTH_MENU: str = '🔐授权用户'
-    MENU_BACK: str = '↩️返回'
     LISTEN_DOWNLOAD_BTN: str = '🕵️监听下载'
     LISTEN_FORWARD_BTN: str = '📲监听转发'
     OPEN_LINK_TABLE: str = '📊导出链接表格|已禁用 ❌'

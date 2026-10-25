@@ -764,7 +764,7 @@ class Bot:
                 ],
                 [
                     InlineKeyboardButton(
-                        text=BotButton.MENU_BACK,
+                        text=BotButton.HELP_PAGE,
                         callback_data=BotCallbackText.MENU_BACK
                     )
                 ]
@@ -783,7 +783,7 @@ class Bot:
                 ],
                 [
                     InlineKeyboardButton(
-                        text=BotButton.MENU_BACK,
+                        text=BotButton.HELP_PAGE,
                         callback_data=BotCallbackText.MENU_BACK
                     )
                 ]
@@ -802,7 +802,7 @@ class Bot:
                 ],
                 [
                     InlineKeyboardButton(
-                        text=BotButton.MENU_BACK,
+                        text=BotButton.HELP_PAGE,
                         callback_data=BotCallbackText.MENU_BACK
                     )
                 ]
