@@ -526,7 +526,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await self.bot.send_message(
                     # 谁创建的转发任务就通知谁;未记录创建者时回退到登录账号自己。
                     chat_id=owner if owner is not None else client.me.id,
-                    text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n'
+                    text=f'⚠️无法转发\n'
                          f'`{link}`\n'
                          f'存在内容保护限制(可在[设置]->[上传设置]中设置转发时遇到受限转发进行下载后上传)。',
                     reply_parameters=ReplyParameters(message_id=message_id),
@@ -634,14 +634,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                 bot_client=client,
                 bot_message=message,
                 chat_id=origin_chat_id,
-                error_msg=f'⬇️⬇️⬇️原始频道不存在⬇️⬇️⬇️\n{origin_link}'
+                error_msg=f'⬇️源频道不存在\n{origin_link}'
             )
             target_chat: Union[pyrogram.types.Chat, None] = await get_chat_with_notify(
                 user_client=self.app.client,
                 bot_client=client,
                 bot_message=message,
                 chat_id=target_chat_id,
-                error_msg=f'⬇️⬇️⬇️目标频道不存在⬇️⬇️⬇️\n{target_link}'
+                error_msg=f'⬇️目标频道不存在\n{target_link}'
             )
             if not all([origin_chat, target_chat]):
                 return None
@@ -649,7 +649,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             if target_chat.id == my_id:
                 await client.send_message(
                     chat_id=message.from_user.id,
-                    text='⚠️⚠️⚠️无法转发到此机器人⚠️⚠️⚠️',
+                    text='⚠️无法转发到此机器人',
                     reply_parameters=ReplyParameters(message_id=message.id),
                 )
                 return None
@@ -732,7 +732,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     if not self.gc.download_upload:
                         await client.send_message(
                             chat_id=message.from_user.id,
-                            text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{origin_link}`\n{channel}存在内容保护限制。',
+                            text=f'⚠️无法转发\n`{origin_link}`\n{channel}存在内容保护限制。',
                             parse_mode=ParseMode.MARKDOWN,
                             reply_parameters=ReplyParameters(message_id=message.id),
                             reply_markup=KeyboardButton.restrict_forward_button()
@@ -760,8 +760,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                         client=client, message=message,
                         last_message_id=last_message.id,
                         text=(
-                            f'⚠️⚠️⚠️`{origin_link}`\n'
-                            f'{channel}存在内容保护限制,转发任务已回退至下载后上传⚠️⚠️⚠️\n'
+                            f'⚠️`{origin_link}`\n'
+                            f'{channel}存在内容保护限制,转发任务已回退至下载后上传\n'
                             f'(通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型)'
                         ),
                     )
@@ -810,7 +810,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         if not self.gc.download_upload:
                             await client.send_message(
                                 chat_id=message.from_user.id,
-                                text=f'⚠️⚠️⚠️无法转发⚠️⚠️⚠️\n`{origin_link}`\n{channel}存在内容保护限制。',
+                                text=f'⚠️无法转发\n`{origin_link}`\n{channel}存在内容保护限制。',
                                 parse_mode=ParseMode.MARKDOWN,
                                 reply_parameters=ReplyParameters(message_id=message.id),
                                 reply_markup=KeyboardButton.restrict_forward_button()
@@ -833,7 +833,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             last_message_id=last_message.id,
                             text=(
                                 f'`{origin_link}`\n'
-                                f'⚠️⚠️⚠️{channel}存在内容保护限制,转发任务已回退至下载后上传⚠️⚠️⚠️\n'
+                                f'⚠️{channel}存在内容保护限制,转发任务已回退至下载后上传\n'
                                 f'(通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型)'
                             ),
                         )
@@ -843,7 +843,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         client=client,
                         message=message,
                         last_message_id=last_message.id,
-                        text=safe_message(f'😅😅😅没有找到任何有效的消息😅😅😅')
+                        text=safe_message(f'🌫️没有找到任何有效的消息')
                     )
                     return None
                 invalid_id: list = []
@@ -881,7 +881,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     message=message,
                     last_message_id=last_message.id,
                     text=safe_message(
-                        f'{last_message.text.strip(loading)}\n🌟🌟🌟转发任务已完成🌟🌟🌟\n(若设置了转发过滤规则,请前往终端查看转发记录,此处不做展示)'),
+                        f'{last_message.text.strip(loading)}\n🌟转发任务已完成\n(若设置了转发过滤规则,请前往终端查看转发记录,此处不做展示)'),
                     reply_markup=InlineKeyboardMarkup(
                         [
                             [
@@ -898,7 +898,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
+                text='⬇️出错了\n(具体原因请前往终端查看报错信息)'
             )
         except (ValueError, KeyError, UsernameInvalid, ChatWriteForbidden):
             msg: str = ''
@@ -907,14 +907,14 @@ class TelegramRestrictedMediaDownloader(Bot):
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❌❌❌没有找到有效链接❌❌❌\n' + msg
+                text='❌没有找到有效链接\n' + msg
             )
         except Exception as e:
             log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='⬇️⬇️⬇️出错了⬇️⬇️⬇️\n(具体原因请前往终端查看报错信息)'
+                text='⬇️出错了\n(具体原因请前往终端查看报错信息)'
             )
         finally:
             if last_message and getattr(last_message, 'text', '') == loading:
@@ -1065,7 +1065,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             chat_id=message.from_user.id,
                             reply_parameters=ReplyParameters(message_id=message.id),
                             link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                            text=f'⚠️⚠️⚠️无法读取⚠️⚠️⚠️\n`{_link}`\n(具体原因请前往终端查看报错信息)'
+                            text=f'⚠️无法读取\n`{_link}`\n(具体原因请前往终端查看报错信息)'
                         )
                         log.error(f'频道"{_link}"解析失败,{_t(KeyWord.REASON)}:"{e}"')
                         return False
@@ -1074,7 +1074,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         chat_id=message.from_user.id,
                         reply_parameters=ReplyParameters(message_id=message.id),
                         link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                        text=f'⚠️⚠️⚠️无法读取⚠️⚠️⚠️\n`{_link}`\n(具体原因请前往终端查看报错信息)'
+                        text=f'⚠️无法读取\n`{_link}`\n(具体原因请前往终端查看报错信息)'
                     )
                     log.error(f'读取频道"{_link}"时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
                     return False
@@ -1283,10 +1283,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await last_message.edit_text(text=f'✅已创建下载任务`{message_id}`。')
             else:
                 error_msg = task.get('e_code', {}).get('error_msg', '未知错误。')
-                await last_message.edit_text(text=f'❌❌❌无法创建下载任务`{message_id}`❌❌❌\n{error_msg}')
+                await last_message.edit_text(text=f'❌无法创建下载任务`{message_id}`\n{error_msg}')
         except Exception as e:
             log.error(f'获取原始消息失败,{_t(KeyWord.REASON)}:"{e}"')
-            await last_message.edit_text(text=f'❌❌❌无法创建下载任务`{message_id}`❌❌❌\n{e}')
+            await last_message.edit_text(text=f'❌无法创建下载任务`{message_id}`\n{e}')
 
     async def resume_download(
             self,

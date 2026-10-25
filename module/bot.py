@@ -406,7 +406,7 @@ class Bot:
         await client.send_message(
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
-            text='⚠️⚠️⚠️未知命令⚠️⚠️⚠️\n请查看帮助后重试。',
+            text='⚠️未知命令\n请查看帮助后重试。',
             link_preview_options=Bot.LINK_PREVIEW_OPTIONS
         )
 
@@ -483,7 +483,7 @@ class Bot:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text='❌❌❌起始ID>结束ID❌❌❌'
+                    text='❌起始ID>结束ID'
                 )
                 return False
         if start_id == -1 or end_id == -1:
@@ -497,7 +497,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text=f'❌❌❌{text}❌❌❌'
+                text=f'❌{text}'
             )
             return False
         return True
@@ -524,7 +524,7 @@ class Bot:
                 await client.send_message(
                     chat_id=requester,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'⬇️⬇️⬇️请使用以下命令分配下载任务⬇️⬇️⬇️\n`/download https://t.me/x/x`',
+                    text=f'⬇️请使用以下命令分配下载任务\n`/download https://t.me/x/x`',
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
         elif len(text) <= 25 or text == '/download https://t.me/x/x' or text.endswith('.txt'):
@@ -532,7 +532,7 @@ class Bot:
             await client.send_message(
                 chat_id=requester,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❌❌❌链接错误❌❌❌\n请查看帮助后重试。',
+                text='❌链接错误\n请查看帮助后重试。',
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
         else:
@@ -616,7 +616,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❌❌❌命令语法错误❌❌❌\n请查看帮助后重试。',
+                text='❌命令语法错误\n请查看帮助后重试。',
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
@@ -629,7 +629,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❌❌❌找不到频道❌❌❌',
+                text='❌找不到频道',
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
@@ -638,7 +638,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❌❌❌无法获取频道名❌❌❌',
+                text='❌无法获取频道名',
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
@@ -646,7 +646,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='⚠️⚠️⚠️该频道已在下载中⚠️⚠️⚠️\n'
+                text='⚠️该频道已在下载中\n'
                      f'{chat_link}',
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
@@ -1293,7 +1293,7 @@ class Bot:
                         client=client,
                         message=message,
                         last_message_id=last_message.id,
-                        text='❌❌❌没有找到有效的链接❌❌❌'
+                        text='❌没有找到有效的链接'
                     )
                     return None
             links: list = list(set(links))
@@ -1310,10 +1310,10 @@ class Bot:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'❌❌❌{e}❌❌❌\n'
-                         '⬇️⬇️⬇️语法如下⬇️⬇️⬇️\n'
+                    text=f'❌{e}\n'
+                         '⬇️语法如下\n'
                          f'`/listen_forward 监听频道 转发频道`\n'
-                         '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
+                         '⬇️请使用\n'
                          f'`/listen_forward https://t.me/A https://t.me/B`\n'
                 )
                 return None
@@ -1335,10 +1335,10 @@ class Bot:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'❌❌❌{e}❌❌❌\n'
-                         '⬇️⬇️⬇️语法如下⬇️⬇️⬇️\n'
+                    text=f'❌{e}\n'
+                         '⬇️语法如下\n'
                          f'`/listen_forward 监听频道 转发频道`\n'
-                         '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
+                         '⬇️请使用\n'
                          f'`/listen_forward https://t.me/A https://t.me/B`\n'
                 )
                 return None
@@ -1606,14 +1606,23 @@ class Bot:
         """/auth 入口选项面板:先给一排按钮,点'查看授权列表'才展示用户列表。"""
         auth_menu_kb = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton(BotButton.AUTH, callback_data=BotCallbackText.AUTH),
-                InlineKeyboardButton(BotButton.VIEW_AUTH_LIST, callback_data=BotCallbackText.VIEW_AUTH_LIST)
+                InlineKeyboardButton(
+                    text=BotButton.AUTH,
+                    callback_data=BotCallbackText.AUTH
+                ),
+                InlineKeyboardButton(
+                    text=BotButton.VIEW_AUTH_LIST,
+                    callback_data=BotCallbackText.VIEW_AUTH_LIST
+                )
             ],
             [
-                InlineKeyboardButton(BotButton.MENU_BACK, callback_data=BotCallbackText.MENU_BACK)
+                InlineKeyboardButton(
+                    text=BotButton.HELP_PAGE,
+                    callback_data=BotCallbackText.MENU_BACK
+                )
             ]
         ])
-        text = '🔐 「授权用户」管理,请选择操作:'
+        text = '🔐「授权用户」管理,请选择操作:'
         if edit_message is not None:
             try:
                 await edit_message.edit_text(text=text, reply_markup=auth_menu_kb)
@@ -1652,7 +1661,7 @@ class Bot:
                 )
 
         if not users:
-            await _respond('😲目前没有额外的授权用户,仅`root`可使用机器人。')
+            await _respond('🌫️目前没有额外的授权用户,仅`root`可使用机器人。')
             return None
         lines = '\n'.join(str(u) for u in users)
         await _respond(f'👥以下为已授权的用户`ID`:\n`{lines}`')
@@ -2780,9 +2789,9 @@ class PayHandler(CallbackHandler):
         )
         MetaData.pay()
         if res:
-            msg = '🥰🥰🥰\n收款「二维码」已发送至您的「终端」十分感谢您的支持!'
+            msg = '✅\n收款「二维码」已发送至您的「终端」十分感谢您的支持!'
         else:
-            msg = '🥰🥰🥰\n收款「二维码」已发送至您的「终端」与「对话框」十分感谢您的支持!'
+            msg = '✅\n收款「二维码」已发送至您的「终端」与「对话框」十分感谢您的支持!'
         await query.message.reply_text(msg)
 
 
@@ -3015,17 +3024,17 @@ class TableHandler(CallbackHandler):
             res = None
             if data == BotCallbackText.LINK_TABLE:
                 prompt_string = '链接统计表'
-                false_text = '😵😵😵没有链接需要统计。'
+                false_text = '🌫️没有链接需要统计。'
                 choice = BotCallbackText.EXPORT_LINK_TABLE
                 res = downloader.app.print_link_table(DownloadTask.TASKS)
             elif data == BotCallbackText.COUNT_TABLE:
                 prompt_string = '计数统计表'
-                false_text = '😵😵😵当前没有任何下载。'
+                false_text = '🌫️当前没有任何下载。'
                 choice = BotCallbackText.EXPORT_COUNT_TABLE
                 res = downloader.app.print_count_table()
             elif data == BotCallbackText.UPLOAD_TABLE:
                 prompt_string = '上传统计表'
-                false_text = '😵😵😵当前没有任何上传。'
+                false_text = '🌫️当前没有任何上传。'
                 choice = BotCallbackText.EXPORT_UPLOAD_TABLE
                 res = downloader.app.print_upload_table(UploadTask.TASKS)
             if res:
@@ -3036,7 +3045,7 @@ class TableHandler(CallbackHandler):
                 await query.message.edit_text(false_text)
             else:
                 await query.message.edit_text(
-                    f'😵‍💫😵‍💫😵‍💫`{prompt_string}`打印失败。\n(具体原因请前往终端查看报错信息)')
+                    f'❌`{prompt_string}`打印失败。\n(具体原因请前往终端查看报错信息)')
             await kb.back_table_button()
         elif data in (
                 BotCallbackText.TOGGLE_LINK_TABLE,
@@ -3072,12 +3081,12 @@ class TableHandler(CallbackHandler):
             if res:
                 folder = 'form' if is_docker() else folder
                 await query.message.edit_text(
-                    f'✅✅✅`{prompt_string}`已发送至您的「终端」并已「导出」为表格请注意查收。\n(请查看软件目录下`{folder}`文件夹)')
+                    f'✅`{prompt_string}`已发送至您的「终端」并已「导出」为表格请注意查收。\n(请查看软件目录下`{folder}`文件夹)')
             elif res is False:
-                await query.message.edit_text('😵😵😵没有链接需要统计。')
+                await query.message.edit_text('🌫️没有链接需要统计。')
             else:
                 await query.message.edit_text(
-                    f'😵‍💫😵‍💫😵‍💫`{prompt_string}`导出失败。\n(具体原因请前往终端查看报错信息)')
+                    f'❌`{prompt_string}`导出失败。\n(具体原因请前往终端查看报错信息)')
             await kb.back_table_button()
 
     @staticmethod
@@ -3172,7 +3181,7 @@ class DownloadTypeHandler(CallbackHandler):
             downloader.app.save_config(downloader.app.config)
             await kb.toggle_download_setting_button(downloader.app.config)
         except ValueError:
-            await query.message.reply_text('⚠️⚠️⚠️至少需要选择一个下载类型⚠️⚠️⚠️')
+            await query.message.reply_text('⚠️至少需要选择一个下载类型')
         except Exception as e:
             await query.message.reply_text('下载类型设置失败\n(具体原因请前往终端查看报错信息)')
             log.error(f'下载类型设置失败,{_t(KeyWord.REASON)}:"{e}"')
@@ -3231,7 +3240,7 @@ class ForwardTypeHandler(CallbackHandler):
             downloader.gc.save_config(downloader.gc.config)
             await kb.toggle_forward_setting_button(downloader.gc.config)
         except ValueError:
-            await query.message.reply_text('⚠️⚠️⚠️至少需要选择一个转发类型⚠️⚠️⚠️')
+            await query.message.reply_text('⚠️至少需要选择一个转发类型')
         except Exception as e:
             await query.message.reply_text('转发设置失败\n(具体原因请前往终端查看报错信息)')
             log.error(f'转发设置失败,{_t(KeyWord.REASON)}:"{e}"')
@@ -3269,7 +3278,7 @@ class AuthUserHandler(CallbackHandler):
             bot.root.remove(uid)
         bot.gc.config['authorized_users'] = bot.gc.authorized_users
         bot.gc.save_config(bot.gc.config)
-        p = f'已热移除授权用户:`{uid}`(立即失效并持久化)。'
+        p = f'已移除授权用户:{uid}。'
         # 移除结果直接显示在text中,并复位为授权用户菜单(添加/移除、查看、返回)。
         await query.message.edit_text(
             text=f'✅用户`{uid}`已移除授权。',
@@ -3596,7 +3605,7 @@ class DownloadChatHandler(CallbackHandler):
                     )
                 )
             except ValueError:
-                await query.message.reply_text('⚠️⚠️⚠️至少需要选择一个下载类型⚠️⚠️⚠️')
+                await query.message.reply_text('⚠️至少需要选择一个下载类型')
             except Exception as e:
                 await query.message.reply_text('下载类型设置失败\n(具体原因请前往终端查看报错信息)')
                 log.error(f'下载类型设置失败,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
@@ -3722,13 +3731,13 @@ class DownloadChatHandler(CallbackHandler):
         if isinstance(start_time, datetime.datetime) and isinstance(end_time, datetime.datetime):
             if start_time > end_time:
                 await query.message.reply_text(
-                    text=f'❌❌❌日期设置失败❌❌❌\n'
+                    text=f'❌日期设置失败\n'
                          f'`起始日期({start_time})`>`结束日期({end_time})`\n'
                 )
                 return False
             elif start_time == end_time:
                 await query.message.reply_text(
-                    text=f'❌❌❌日期设置失败❌❌❌\n'
+                    text=f'❌日期设置失败\n'
                          f'`起始日期({start_time})`=`结束日期({end_time})`\n'
                 )
                 return False
