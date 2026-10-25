@@ -1718,11 +1718,13 @@ body.resizing {
     align-items: start;
 }
 
-/* 通知内容:保留换行完整展示,不做省略;列宽由拖拽把手调整。 */
+/* 通知内容:保留换行完整展示,不做省略;列宽由拖拽把手调整。
+   overflow-wrap允许路径、文件名等无空格长英文串在列内断行,否则会溢出格子覆盖右侧列。 */
 .notice-row .notice-text {
     display: block;
     overflow: visible;
     white-space: normal;
+    overflow-wrap: anywhere;
     line-height: 1.6;
 }
 
