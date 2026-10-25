@@ -270,6 +270,33 @@ class Bot:
                 log.info('命令输入模式已关闭,Handler已清空。')
             self.pending_tasks.pop(chat_id, None)
 
+    async def start_command_guide(
+            self,
+            message: pyrogram.types.Message,
+            command: str
+    ) -> None:
+        """启动命令多步引导,与点击蓝色菜单按钮等价。
+
+        用于用户直接发送无参命令(如`/download`)时,替代原有的语法提示文本,
+        改为发送首步提示并以ForceReply逐步收集参数,最终组装命令交给既有流程。
+        """
+        steps = Bot.COMMAND_STEPS.get(command)
+        if not steps:
+            return None
+        await self.bot.send_message(
+            chat_id=message.from_user.id,
+            reply_parameters=ReplyParameters(message_id=message.id),
+            text=steps[0][1],
+            reply_markup=pyrogram.types.ForceReply(),
+            link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+        )
+        self.add_command_mode_handler(
+            chat_id=message.from_user.id,
+            callback_query=None,
+            command=command,
+            enable=True
+        )
+
     async def handle_command_input(
             self,
             chat_id,
@@ -487,12 +514,8 @@ class Bot:
         requester: int = owner if owner is not None else message.from_user.id
         text: str = message.text
         if text == '/download':
-            await client.send_message(
-                chat_id=requester,
-                reply_parameters=ReplyParameters(message_id=message.id),
-                text='⚠️⚠️⚠️请提供下载链接⚠️⚠️⚠️语法:\n`/download https://t.me/x/x`',
-                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
-            )
+            await self.start_command_guide(message=message, command=BotCommandText.DOWNLOAD[0])
+            return None
         elif text.startswith('https://t.me/'):
             if text[len('https://t.me/'):].count('/') >= 1:
                 text = f'/download {text}'
@@ -585,12 +608,7 @@ class Bot:
     ):
         text: str = message.text
         if text == '/download_chat':
-            await client.send_message(
-                chat_id=message.from_user.id,
-                reply_parameters=ReplyParameters(message_id=message.id),
-                text='⚠️⚠️⚠️请提供下载链接⚠️⚠️⚠️语法:\n`/download_chat https://t.me/x/x`',
-                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
-            )
+            await self.start_command_guide(message=message, command=BotCommandText.DOWNLOAD_CHAT[0])
             return None
         command = text.split()
         if len(command) != 2:
@@ -966,15 +984,7 @@ class Bot:
         text: str = message.text
         args: list = text.split(maxsplit=5)
         if text == '/forward':
-            await client.send_message(
-                chat_id=message.from_user.id,
-                reply_parameters=ReplyParameters(message_id=message.id),
-                text='❌❌❌命令语法无效❌❌❌\n'
-                     '⬇️⬇️⬇️语法如下⬇️⬇️⬇️\n'
-                     '`/forward 原始频道 目标频道 起始ID 结束ID`\n'
-                     '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
-                     '`/forward https://t.me/A https://t.me/B 1 100`\n'
-            )
+            await self.start_command_guide(message=message, command=BotCommandText.FORWARD[0])
             return None
         try:
             start_id: int = int(safe_index(args, 3, -1))
@@ -1012,12 +1022,8 @@ class Bot:
 
         text: str = message.text
         if text == '/upload' or text == '/upload_r':
-            await client.send_message(
-                chat_id=message.from_user.id,
-                reply_parameters=ReplyParameters(message_id=message.id),
-                text='⚠️⚠️⚠️请提供参数⚠️⚠️⚠️语法:\n`/upload 本地文件 目标频道`或`/upload_r 本地文件夹 目标频道`',
-                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
-            )
+            command = BotCommandText.UPLOAD[0] if text == '/upload' else BotCommandText.UPLOAD_R[0]
+            await self.start_command_guide(message=message, command=command)
             return None
 
         if text.startswith('/upload '):
@@ -1174,15 +1180,7 @@ class Bot:
         links: list = args[1:]
         if text.startswith('/listen_download'):
             if len(args) == 1:
-                await client.send_message(
-                    chat_id=message.from_user.id,
-                    reply_parameters=ReplyParameters(message_id=message.id),
-                    text='❌❌❌命令语法错误❌❌❌\n'
-                         '⬇️⬇️⬇️语法如下⬇️⬇️⬇️\n'
-                         f'`/listen_download 监听频道1 监听频道2 监听频道n`\n'
-                         '⬇️⬇️⬇️请使用⬇️⬇️⬇️\n'
-                         f'`/listen_download https://t.me/A https://t.me/B https://t.me/n`\n'
-                )
+                await self.start_command_guide(message=message, command=BotCommandText.LISTEN_DOWNLOAD[0])
                 return None
             last_message: Union[pyrogram.types.Message, str, None] = None
             invalid_links: list = []
@@ -1237,7 +1235,8 @@ class Bot:
             len_args: int = len(args)
             if len_args != 3:
                 if len_args == 1:
-                    e: str = '命令缺少监听频道与转发频道'
+                    await self.start_command_guide(message=message, command=BotCommandText.LISTEN_FORWARD[0])
+                    return None
                 elif len_args == 2:
                     e: str = '命令缺少转发频道'
                 await client.send_message(
@@ -3658,19 +3657,8 @@ class CommandButtonHandler(CallbackHandler):
         command = command_map.get(data)
         if not command:
             return None
-        # 发送第一步提示并开启多步引导,后续步骤由handle_command_input按COMMAND_STEPS推进。
-        first_hint = Bot.COMMAND_STEPS[command][0][1]
-        await query.message.reply(
-            text=first_hint,
-            reply_markup=pyrogram.types.ForceReply(),
-            link_preview_options=Bot.LINK_PREVIEW_OPTIONS
-        )
-        downloader.add_command_mode_handler(
-            chat_id=query.from_user.id,
-            callback_query=query,
-            command=command,
-            enable=True
-        )
+        # 复用start_command_guide,与直接发送无参命令进入引导的行为保持一致。
+        await downloader.start_command_guide(message=query.message, command=command)
 
 
 class MenuButtonHandler(CallbackHandler):
