@@ -273,26 +273,31 @@ class Bot:
     async def start_command_guide(
             self,
             message: pyrogram.types.Message,
-            command: str
+            command: str,
+            callback_query: CallbackQuery = None
     ) -> None:
         """启动命令多步引导,与点击蓝色菜单按钮等价。
 
         用于用户直接发送无参命令(如`/download`)时,替代原有的语法提示文本,
         改为发送首步提示并以ForceReply逐步收集参数,最终组装命令交给既有流程。
+
+        注意:回调场景下message是bot发出的菜单消息,其from_user为bot自身,
+        必须用点击者(callback_query.from_user)的id作为chat_id,否则会向bot自身发消息报错。
         """
+        chat_id = callback_query.from_user.id if callback_query is not None else message.from_user.id
         steps = Bot.COMMAND_STEPS.get(command)
         if not steps:
             return None
         await self.bot.send_message(
-            chat_id=message.from_user.id,
+            chat_id=chat_id,
             reply_parameters=ReplyParameters(message_id=message.id),
             text=steps[0][1],
             reply_markup=pyrogram.types.ForceReply(),
             link_preview_options=Bot.LINK_PREVIEW_OPTIONS
         )
         self.add_command_mode_handler(
-            chat_id=message.from_user.id,
-            callback_query=None,  # noqa.
+            chat_id=chat_id,
+            callback_query=callback_query,
             command=command,
             enable=True
         )
@@ -3780,7 +3785,7 @@ class CommandButtonHandler(CallbackHandler):
         if not command:
             return None
         # 复用start_command_guide,与直接发送无参命令进入引导的行为保持一致。
-        await downloader.start_command_guide(message=query.message, command=command)
+        await downloader.start_command_guide(message=query.message, command=command, callback_query=query)
 
 
 class MenuButtonHandler(CallbackHandler):
