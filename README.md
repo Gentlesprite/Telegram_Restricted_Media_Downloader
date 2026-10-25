@@ -204,7 +204,7 @@
    | `/help`            | 向机器人发送发送`/help`即可。                                              | 展示**可用**命令。                                                            |
    | `/download`        | `/download 链接1 链接2 链接3 链接n`或`/download 频道链接 1 100`              | 分配**新的**下载任务，两种方式可选（**指定链接下载**和**范围下载**，具体使用方法请见下方说明）。                 |
    | `/table`           | 向机器人发送`/table`即可。                                               | 在**终端**输出**当前**下载情况的**统计信息**。                                          |
-   | `/forward`         | `/forward https://t.me/A https://t.me/B 1 100 `                 | 将**频道A**的消息转发至**频道B**，其中`1`代表`起始ID`，`100`代表截止`ID`。                     |
+   | `/forward`         | `/forward https://t.me/A https://t.me/B 1 100`                  | 将**频道A**的消息转发至**频道B**，其中`1`代表`起始ID`，`100`代表截止`ID`。                     |
    | `/exit`            | 向机器人发送`/exit`即可。                                                | **退出**软件。                                                              |
    | `/listen_download` | `/listen_download https://t.me/A https://t.me/B https://t.me/n` | **实时**监听**频道A**、**频道B**和**频道n**的**最新消息**（任意消息）进行下载。                    |
    | `/listen_forward`  | `/listen_forward https://t.me/A https://t.me/B`                 | **实时**监听**频道A**的**最新消息**（任意消息）转发至**频道B**。当**频道A**存在`内容保护限制`时，回退至下载后上传。 |
