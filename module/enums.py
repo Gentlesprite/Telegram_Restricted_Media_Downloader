@@ -1436,7 +1436,7 @@ class BotCommandText:
     DOWNLOAD_CHAT: tuple = ('download_chat',
                             '获取该频道全部内容,用户通过自定义条件进行内容筛选,最终下载该频道中用户所需内容。\n`/download_chat 频道链接`')
     AUTH: tuple = ('auth',
-                   '添加/移除/查看授权使用机器人的用户,支持用户ID或@用户名。\n`/auth 1234567890`或`/auth @username`')
+                   '添加/移除/查看授权使用机器人的用户,支持用户ID或@用户名。\n`/auth`或`/auth 1234567890`或`/auth @username`')
 
     @staticmethod
     def with_description(text: tuple) -> str:
