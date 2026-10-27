@@ -2,13 +2,13 @@
 
 > 支持断点续传的Telegram下载器。
 
-<p>
-<img src="https://img.shields.io/badge/Python-3.13.2-E74C3C?style=flat-square" alt="Python 3.13.2">
-<img src="https://img.shields.io/badge/license-GPL--3.0-E67E22?style=flat-square" alt="License">
-<img src="https://img.shields.io/github/v/release/Gentlesprite/Telegram_Restricted_Media_Downloader?color=F1C40F&style=flat-square" alt="Release">
-<img src="https://img.shields.io/github/downloads/Gentlesprite/Telegram_Restricted_Media_Downloader/total?color=2ECC71&style=flat-square" alt="Downloads">
-<img src="https://img.shields.io/docker/pulls/gentlesprite/telegram_restricted_media_downloader?color=3498DB&style=flat-square" alt="Docker pulls">
-<a href="https://deepwiki.com/Gentlesprite/Telegram_Restricted_Media_Downloader"><img src="https://img.shields.io/badge/DeepWiki-Documentation-9B59B6?style=flat-square" alt="DeepWiki"></a>
+<p style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:flex-start">
+<img src="https://img.shields.io/badge/Python-3.13.2-E74C3C?style=flat-square" alt="Python 3.13.2" style="margin:0">
+<img src="https://img.shields.io/badge/license-GPL--3.0-E67E22?style=flat-square" alt="License" style="margin:0">
+<img src="https://img.shields.io/github/v/release/Gentlesprite/Telegram_Restricted_Media_Downloader?color=F1C40F&style=flat-square" alt="Release" style="margin:0">
+<img src="https://img.shields.io/github/downloads/Gentlesprite/Telegram_Restricted_Media_Downloader/total?color=2ECC71&style=flat-square" alt="Downloads" style="margin:0">
+<img src="https://img.shields.io/docker/pulls/gentlesprite/telegram_restricted_media_downloader?color=3498DB&style=flat-square" alt="Docker pulls" style="margin:0">
+<a href="https://deepwiki.com/Gentlesprite/Telegram_Restricted_Media_Downloader"><img src="https://img.shields.io/badge/DeepWiki-Documentation-9B59B6?style=flat-square" alt="DeepWiki" style="margin:0"></a>
 </p>
 
 
