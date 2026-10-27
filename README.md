@@ -1,4 +1,4 @@
-<h1><img src="https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/logo.png" width="56" valign="middle" alt="logo">&nbsp;TRMD</h1>
+<h1><img src="https://raw.githubusercontent.com/Gentlesprite/Telegram_Restricted_Media_Downloader/main/res/logo.png" width="56" valign="middle" alt="logo" style="display:inline-block;vertical-align:middle;margin:0 4px 0 0">&nbsp;TRMD</h1>
 
 > 支持断点续传的Telegram下载器。
 
