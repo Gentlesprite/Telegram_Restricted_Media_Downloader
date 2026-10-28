@@ -954,11 +954,18 @@ class Bot:
         # 复用PanelTable渲染与/table同款的GitHub风格富文本表格,说明与语法分列。
         panel = PanelTable(title='🎮️ 可用命令', header=('命令', '说明', '语法'), data=command_rows)
         table_markdown: str = panel.to_markdown_chunks()[0]
-        header_md = (
-            f'💎 `{SOFTWARE_SHORT_NAME} {version}` 💎  \n'
-            f'©️ `{__copyright__.replace(" <https://github.com/Gentlesprite>", ".")}`  \n'
-            f'📖 `Licensed under the terms of the {__license__}.`'
+        # 复用PanelTable渲染与/table同款的GitHub风格富文本表格,版本/版权/许可分列。
+        info_rows = [
+            ['版本', f'`{version}`'],
+            ['版权', f'`{__copyright__.replace(" <https://github.com/Gentlesprite>", ".")}`'],
+            ['许可', f'`Licensed under the terms of the {__license__}.`']
+        ]
+        info_panel = PanelTable(
+            title=f'💎 {SOFTWARE_SHORT_NAME}',
+            header=('属性', '内容'),
+            data=info_rows
         )
+        header_md: str = info_panel.to_markdown_chunks()[0]
         parts = [header_md, '', table_markdown]
         if web_auth:
             parts.append('')
