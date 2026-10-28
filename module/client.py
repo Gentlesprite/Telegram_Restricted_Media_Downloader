@@ -51,12 +51,16 @@ from pyrogram.file_id import (
 )
 
 from module import (
-    console,
-    SOFTWARE_SHORT_NAME,
     log,
-    __version__
+    console,
+    __version__,
+    DOWNLOAD_TIMEOUT,
+    SOFTWARE_SHORT_NAME,
 )
-from module.enums import DownloadType, KeyWord
+from module.enums import (
+    KeyWord,
+    DownloadType
+)
 from module.util import ainput
 from module.language import _t
 
@@ -441,6 +445,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                         offset=offset_bytes,
                         limit=chunk_size
                     ),
+                    timeout=DOWNLOAD_TIMEOUT,
                     sleep_threshold=30
                 )
 
@@ -477,6 +482,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                                 offset=offset_bytes,
                                 limit=chunk_size
                             ),
+                            timeout=DOWNLOAD_TIMEOUT,
                             sleep_threshold=30
                         )
 
@@ -491,7 +497,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                                     file_token=r.file_token,
                                     offset=offset_bytes,
                                     limit=chunk_size
-                                )
+                                ),
+                                timeout=DOWNLOAD_TIMEOUT
                             )
 
                             if isinstance(r2, raw.types.upload.CdnFileReuploadNeeded):

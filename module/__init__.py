@@ -83,11 +83,12 @@ class CallerFilter(logging.Filter):
 
 LOG_TIME_FORMAT = '[%Y-%m-%d %H:%M:%S]'
 console = Console(log_path=False, log_time_format=LOG_TIME_FORMAT)
+DOWNLOAD_TIMEOUT = 120
 FORWARD_LIMIT = 33  # 每分钟允许的最大转发次数。
 AUTHOR = 'Gentlesprite'
 __version__ = '2.1.5'
 __license__ = 'GPL-3.0-or-later'
-__update_date__ = '2026-10-29 02:14:49'
+__update_date__ = '2026-10-29 03:12:13'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/{AUTHOR}>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
