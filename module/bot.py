@@ -968,11 +968,18 @@ class Bot:
             parts.append(Issues.DOCKER_HOST_IP_TIP)
         if more_feature:
             parts.append('')
-            parts.append(
-                '✨ 其他功能:  \n'
-                '📨 转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`'
-                '类型的消息给我,即可创建下载任务。'
+            feature_panel = PanelTable(
+                title='✨ 其他功能',
+                header=('功能', '说明'),
+                data=[
+                    [
+                        '📨 转发消息',
+                        '转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`'
+                        '类型的消息给我,即可创建下载任务。'
+                    ]
+                ]
             )
+            parts.append(feature_panel.to_markdown_chunks()[0])
         text = '\n'.join(parts)
         if not all([client, message]):
             return {
