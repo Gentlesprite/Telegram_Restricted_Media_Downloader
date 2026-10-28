@@ -5,7 +5,6 @@
 # File:downloader.py
 import os
 import sys
-import random
 import asyncio
 
 from functools import partial
@@ -93,6 +92,7 @@ from module.storage import (
     TRMDStorage
 )
 from module.enums import (
+    Emoji,
     Issues,
     LinkType,
     KeyWord,
@@ -124,6 +124,7 @@ from module.util import (
     js_referral,
     safe_length,
     safe_message,
+    flip_emoji,
     get_executable_path,
     format_chat_link,
     check_environment,
@@ -1894,6 +1895,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         # _progress通用异常时返回None,此处回退到意图发出的setup文案(而非消息对象),避免callback_query_text退化成编辑前的原始文案,保证后续进度消息拼接一致。
         callback_query_text: str = cq.text if cq is not None else _setup_text
         last_displayed_count: int = -1  # 记录上次显示的数量,初始化为-1确保第一次一定更新。
+        search_icon: str = '🔎'  # 检索阶段的放大镜图标,仅在匹配数实际增长时于🔎/🔍间翻转。
         last_update_time: float = 0  # 记录上次更新的时间戳。
         update_interval: float = 5.0  # 基准更新间隔(秒),各阶段按实时计数每满1百条放大一档,上限600秒。
 
@@ -1932,9 +1934,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             media_group_thread_id: dict = {}  # 媒体组评论区所在的首条成员(最小message id)id,供第二阶段检索评论区时使用。
             extra_comment_ids: set = set()  # 被类型过滤掉但评论区有内容的消息 id(非媒体组),需单独扫描其评论。
             downloaded_message_ids: set = set()  # 已进入下载列表的消息(chat_id, message_id),用于快速判断消息是否因类型被过滤。
+            search_icon = flip_emoji(search_icon, advanced=True, emoji=Emoji.SEARCH)  # 首次展示检索进度,翻转一次放大镜图标。
             await _progress(
                 _text=f'{callback_query_text}\n'
-                      f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到0条消息。',
+                      f'{search_icon}检索消息中,已匹配到0条消息。',
                 _reply_markup=KeyboardButton.single_button(
                     text=BotButton.RETRIEVE_MESSAGE,
                     callback_data=BotCallbackText.NULL)
@@ -2076,9 +2079,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                 # 已匹配数越多检索耗时越长,每满1百条将编辑间隔放大一档,降低长任务编辑消息的FloodWait风险。
                 count_scale: int = max(1, (current_count + 99) // 100)
                 if current_time - last_update_time >= min(update_interval * count_scale, 600.0):
+                    search_icon = flip_emoji(
+                        search_icon,
+                        advanced=current_count > last_displayed_count,
+                        emoji=Emoji.SEARCH
+                    )
                     await _progress(
                         _text=f'{callback_query_text}\n'
-                              f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到{current_count}条消息。',
+                              f'{search_icon}检索消息中,已匹配到{current_count}条消息。',
                         _reply_markup=KeyboardButton.single_button(
                             text=BotButton.RETRIEVE_MESSAGE,
                             callback_data=BotCallbackText.NULL)
@@ -2088,9 +2096,14 @@ class TelegramRestrictedMediaDownloader(Bot):
             # 确保最后一次更新显示正确的消息数量。
             final_count = matched_file_count
             if final_count != last_displayed_count:
+                search_icon = flip_emoji(
+                    search_icon,
+                    advanced=final_count > last_displayed_count,
+                    emoji=Emoji.SEARCH
+                )
                 await _progress(
                     _text=f'{callback_query_text}\n'
-                          f'{random.choice(("🔎", "🔍"))}检索消息中,已匹配到{final_count}条消息。',
+                          f'{search_icon}检索消息中,已匹配到{final_count}条消息。',
                     _reply_markup=KeyboardButton.single_button(
                         text=BotButton.RETRIEVE_MESSAGE,
                         callback_data=BotCallbackText.NULL)
@@ -2129,9 +2142,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             comment_fetched_groups: set = set()  # 已检索过评论区的媒体组,避免对同一组的每条成员重复调用 get_discussion_replies。
             # 第二阶段,对匹配的消息进行处理，获取评论区。
             if include_comment:
+                search_icon = flip_emoji(search_icon, advanced=True, emoji=Emoji.SEARCH)  # 首次展示评论区检索进度,翻转一次放大镜图标。
                 await _progress(
                     _text=f'{callback_query_text}\n'
-                          f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到0条消息。',
+                          f'{search_icon}检索评论区中,已匹配到0条消息。',
                     _reply_markup=KeyboardButton.single_button(
                         text=BotButton.RETRIEVE_COMMENT,
                         callback_data=BotCallbackText.NULL)
@@ -2175,9 +2189,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                             # 已匹配评论越多检索耗时越长,每满1百条将编辑间隔放大一档,降低长任务编辑消息的FloodWait风险。
                             count_scale: int = max(1, (current_comment_count + 99) // 100)
                             if current_time - last_comment_update_time >= min(update_interval * count_scale, 600.0):
+                                search_icon = flip_emoji(
+                                    search_icon,
+                                    advanced=current_comment_count > last_displayed_comment_count,
+                                    emoji=Emoji.SEARCH
+                                )
                                 await _progress(
                                     _text=f'{callback_query_text}\n'
-                                          f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到{current_comment_count}条消息。',
+                                          f'{search_icon}检索评论区中,已匹配到{current_comment_count}条消息。',
                                     _reply_markup=KeyboardButton.single_button(
                                         text=BotButton.RETRIEVE_COMMENT,
                                         callback_data=BotCallbackText.NULL)
@@ -2218,9 +2237,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 # 已匹配评论越多检索耗时越长,每满1百条将编辑间隔放大一档,降低长任务编辑消息的FloodWait风险。
                                 count_scale: int = max(1, (current_comment_count + 99) // 100)
                                 if current_time - last_comment_update_time >= min(update_interval * count_scale, 600.0):
+                                    search_icon = flip_emoji(
+                                        search_icon,
+                                        advanced=current_comment_count > last_displayed_comment_count,
+                                        emoji=Emoji.SEARCH
+                                    )
                                     await _progress(
                                         _text=f'{callback_query_text}\n'
-                                              f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到{current_comment_count}条消息。',
+                                              f'{search_icon}检索评论区中,已匹配到{current_comment_count}条消息。',
                                         _reply_markup=KeyboardButton.single_button(
                                             text=BotButton.RETRIEVE_COMMENT,
                                             callback_data=BotCallbackText.NULL)
@@ -2242,9 +2266,14 @@ class TelegramRestrictedMediaDownloader(Bot):
             if include_comment:
                 final_comment_count = len(links) - message_count
                 if final_comment_count != last_displayed_comment_count:
+                    search_icon = flip_emoji(
+                        search_icon,
+                        advanced=final_comment_count > last_displayed_comment_count,
+                        emoji=Emoji.SEARCH
+                    )
                     await _progress(
                         _text=f'{callback_query_text}\n'
-                              f'{random.choice(("🔎", "🔍"))}检索评论区中,已匹配到{final_comment_count}条消息。',
+                              f'{search_icon}检索评论区中,已匹配到{final_comment_count}条消息。',
                         _reply_markup=KeyboardButton.single_button(
                             text=BotButton.RETRIEVE_COMMENT,
                             callback_data=BotCallbackText.NULL)
@@ -2254,6 +2283,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             # 消息任务已在检索阶段即时创建,此处从消息数起算,只负责分配评论区任务。
             assigned_count: int = message_count
             last_progress_update_time: float = 0  # 记录上次分配任务更新的时间戳。
+            sandglass: str = '⏳'  # 当前沙漏图标,仅在分配进度实际增长时切换,避免无意义的频繁翻转。
+            last_assigned_count: int = -1  # 记录上次编辑时的已分配数,用于判断分配进度是否实际增长。
             for index, link in enumerate(links):
                 # 消息部分(前message_count条链接)已在第一阶段即时创建任务,跳过,只为评论区创建。
                 if index < message_count:
@@ -2274,11 +2305,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                 # 已分配任务越多耗时越长,每满1百条将编辑间隔放大一档,降低长任务编辑消息的FloodWait风险。
                 count_scale: int = max(1, (assigned_count + 99) // 100)
                 if current_time - last_progress_update_time >= min(update_interval * count_scale, 600.0):
+                    # 仅当已分配数较上次编辑时实际增长,才翻转沙漏图标,否则保持原图标。
+                    sandglass = flip_emoji(
+                        sandglass,
+                        advanced=assigned_count > last_assigned_count,
+                        emoji=Emoji.HOURGLASS
+                    )
+                    last_assigned_count = assigned_count
                     if await _progress(
                             _text=f'{origin_callback_query_text}\n'
                                   f'🔎匹配消息:{message_count}条,评论区消息:{comment_count}条,共{total_count}条。\n'
                                   f'⭐️[{assigned_count}/{total_count}]分配下载任务中。\n'
-                                  f'{random.choice(("⏳", "⌛"))}{self.pb.bot(assigned_count, total_count)}',
+                                  f'{sandglass}{self.pb.bot(assigned_count, total_count)}',
                             _reply_markup=reply_markup
                     ) is not None:
                         last_progress_update_time = current_time
@@ -2346,6 +2384,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         last_update_time: float = 0
         update_interval: float = 5.0  # 基准更新间隔(秒),实际间隔按并发tracker数与消息总量动态放大。
         edit_fail_count: int = 0  # 连续编辑失败计数,超过上限视为消息已失效,停止跟踪。
+        sandglass: str = '⏳'  # 当前沙漏图标,仅在完成进度实际增长时切换,避免无意义的频繁翻转。
+        last_done: int = 0  # 记录上次编辑时的已完成数,初值0避免首帧done=0时0>-1误翻转成⌛。
         while True:
             try:
                 total: int = 0
@@ -2370,9 +2410,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                     if total == 0:
                         progress_text: str = '⭐️本轮下载任务已结束(任务已被清理或取消)。'
                     else:
+                        # 仅当已完成数较上次编辑时实际增长,才翻转沙漏图标,否则保持原图标。
+                        sandglass = flip_emoji(sandglass, advanced=done > last_done, emoji=Emoji.HOURGLASS)
+                        last_done = done
                         progress_text: str = (
                             f'⭐️[{done}/{total}]下载任务{"已完成" if finished else "进行中"}。\n'
-                            f'{random.choice(("⏳", "⌛"))}{self.pb.bot(done, total)}'
+                            f'{sandglass}{self.pb.bot(done, total)}'
                         )
                     try:
                         await bot_message.edit_text(

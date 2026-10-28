@@ -16,6 +16,7 @@ from typing import (
     Any,
     List,
     Union,
+    Tuple,
     Optional,
     Callable
 )
@@ -1567,6 +1568,11 @@ class BotCallbackPrefix:
         for key, value in vars(self.__class__).items():
             if not key.startswith('__') and not callable(value):  # 排除特殊方法和属性。
                 yield value
+
+
+class Emoji:
+    SEARCH: Tuple[str, str] = ('🔎', '🔍')
+    HOURGLASS: Tuple[str, str] = ('⏳', '⌛')
 
 
 class BotStepKeyword:

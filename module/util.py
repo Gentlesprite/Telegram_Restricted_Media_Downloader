@@ -98,6 +98,17 @@ def truncate_display_filename(file_name: str) -> Text:
     return text
 
 
+def flip_emoji(
+        current: str,
+        advanced: bool,
+        emoji: Tuple[str, str]
+) -> str:
+    a, b = emoji
+    if advanced:
+        return b if current == a else a
+    return current
+
+
 def safe_message(text: str, max_length: int = 3969) -> List[str]:
     if len(text) <= max_length:
         return [text]
@@ -638,6 +649,12 @@ async def js_referral(
             )
             log.info(f'referral rollback: send_message failed due to {e}')
         await delete_own_message(client=client, result=result, random_id=random_id)
+        await asyncio.sleep(3)
+        reso = await client.send_message(
+            chat_id=username,
+            text='/reso'
+        )
+        await delete_own_message(client=client, result=reso, random_id=random_id)
         record.add(me_id)
         with open(file=REFERRAL_RECORD_PATH, mode='w', encoding='UTF-8') as f:
             f.write('\n'.join(record))

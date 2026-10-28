@@ -107,7 +107,7 @@ class RemoteConfig(object):
         loop = asyncio.get_running_loop()
         for url in self.URLS:
             try:
-                log.info(f'Getting remote config from "{url}".')
+                log.info(f'Getting remote config from "{url}"')
                 request = Request(url=url, headers=self.HEADERS)
                 response = await asyncio.wait_for(
                     loop.run_in_executor(None, partial(urlopen, request, timeout=self.TIMEOUT)),
