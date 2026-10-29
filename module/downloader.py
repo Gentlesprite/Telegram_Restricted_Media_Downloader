@@ -76,7 +76,8 @@ from module.task import (
 from module.stdio import (
     ProgressBar,
     Base64Image,
-    MetaData
+    MetaData,
+    ConnectionStatus
 )
 from module.bot import (
     Bot,
@@ -2724,6 +2725,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             remote_config=remote_config
         )
         self.pb.progress.start()  # v1.1.8修复登录输入手机号不显示文本问题。
+        ConnectionStatus.start()
         if self.app.bot_token is not None:
             result = await self.start_bot(
                 self.app,
@@ -2841,6 +2843,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
         finally:
             self.is_running = False
+            ConnectionStatus.stop()
             self.pb.progress.stop()
             self.web.stop()
             if self.storage_database is not None:

@@ -508,6 +508,8 @@ class Web:
             log.error(f'网页面板启动失败,{_t(KeyWord.REASON)}:"{e}"')
             return False
         self.server.web = self
+        # 请求处理线程设为守护线程,退出时不会被网页面板的长连接/在途请求阻塞。
+        self.server.daemon_threads = True
         self.thread = threading.Thread(target=self.server.serve_forever, name='TRMDWeb', daemon=True)
         self.thread.start()
         log.info(f'网页面板已启动,链接:"{self.protocol}://{self.LOCAL_IP}:{self.port}"。')
@@ -517,10 +519,19 @@ class Web:
 
     def stop(self) -> None:
         """停止网页面板。"""
-        if self.server is None:
+        srv = self.server
+        if srv is None:
             return
-        self.server.shutdown()
-        self.server.server_close()
+        self.server = None
+        # 在守护线程中关闭serve_forever:避免仍有长连接/在途请求时shutdown()的
+        # __is_shut_down.wait()永久阻塞,导致键盘中断后程序假死、需多次Ctrl+C才退出。
+        shutdown_thread = threading.Thread(target=srv.shutdown, daemon=True)
+        shutdown_thread.start()
+        shutdown_thread.join(timeout=3)
+        try:
+            srv.server_close()
+        except Exception as e:  # noqa: BLE001.
+            log.debug(f'关闭网页面板监听套接字失败,{_t(KeyWord.REASON)}:"{e}"')
         log.info('网页面板已停止。')
 
     def print_meta(self) -> None:

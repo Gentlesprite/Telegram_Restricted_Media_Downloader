@@ -8,6 +8,8 @@ import sys
 import csv
 import base64
 import datetime
+import threading
+import logging
 
 from io import BytesIO
 from typing import (
@@ -19,6 +21,9 @@ from typing import (
 import qrcode
 
 from rich.style import Style
+from rich.live import Live
+from rich.text import Text
+from rich.spinner import Spinner
 from rich.table import Table
 from rich.markdown import Markdown
 from rich.progress import (
@@ -792,3 +797,230 @@ class ProgressBar:
         completed_bars = int(ratio * display_width)
         remaining_bars = display_width - completed_bars
         return '█' * completed_bars + '░' * remaining_bars
+
+
+class ConnectionStatus:
+    """网络连接状态常驻提示器,以单一Live在进度条下方显示当前连接状态,与Progress的Live嵌套共存。"""
+
+    _lock = threading.Lock()
+    _live: Union[Live, None] = None
+    _spinner: Union[Spinner, None] = None
+    _connecting: int = 0
+    _log_failure: bool = False
+    _current_message: str = ''
+    _active: int = 0
+    _busy_message: str = ''
+    _busy_token: int = 0
+    _state: str = 'connected'
+    _displayed_message: str = ''
+    _render_token: int = 0
+    _logger_installed: bool = False
+    SPINNER = 'earth'
+    CONNECTED_EMOJI = '🌐'
+    BUSY_DELAY: float = 1
+    CONNECTED_GRACE: float = 1
+
+    @classmethod
+    def install_logger(cls) -> None:
+        """安装日志处理器以捕获pyrogram连接层失败/恢复事件,仅安装一次。"""
+        with cls._lock:
+            if cls._logger_installed:
+                return
+            cls._logger_installed = True
+        handler = ConnectionStatusLogHandler()
+        handler.setLevel(logging.INFO)
+        logging.getLogger().addHandler(handler)
+
+    @classmethod
+    def start(cls) -> None:
+        """启动常驻连接状态提示,初始为已连接(静态图标,不旋转)。"""
+        cls.install_logger()
+        with cls._lock:
+            if cls._live is None:
+                cls._live = Live(console=console, auto_refresh=True, refresh_per_second=12.5)
+                cls._live.start()
+            cls._state = 'connected'
+            cls._displayed_message = ''
+            cls._set_connected()
+
+    @classmethod
+    def _set_connected(cls) -> None:
+        """切换为已连接状态,显示静态图标与提示(不旋转)。"""
+        if cls._live is None:
+            return
+        cls._live.update(
+            Text.from_markup(f'{cls.CONNECTED_EMOJI} 网络连接正常。'),
+            refresh=True
+        )
+
+    @classmethod
+    def _show_connecting(cls, message: str) -> None:
+        """切换为正在重连状态,显示旋转图标与提示。"""
+        if cls._live is None:
+            return
+        if cls._spinner is None:
+            cls._spinner = Spinner(cls.SPINNER, text=message)
+        else:
+            cls._spinner.update(text=message)
+        cls._live.update(cls._spinner, refresh=True)
+
+    @classmethod
+    def _do_refresh(cls) -> None:
+        """在已持锁时根据各状态标记决定目标显示(不直接绘制,交由_render去抖/宽限处理)。"""
+        if cls._live is None:
+            return
+        if cls._connecting > 0 or cls._log_failure:
+            cls._render('connecting', cls._current_message or '正在尝试重连。')
+        elif cls._active > 0:
+            cls._render('connecting', cls._busy_message or '正在发送数据。')
+        else:
+            # 期望回到已连接:若当前正显示连接中,延迟一小段宽限,避免分块请求间隙反复闪烁。
+            if cls._state != 'connected':
+                cls._render_token += 1
+                token = cls._render_token
+                timer = threading.Timer(cls.CONNECTED_GRACE, cls._maybe_show_connected, args=(token,))
+                timer.daemon = True
+                timer.start()
+            # 已是已连接则无需任何操作(去抖)。
+
+    @classmethod
+    def _render(cls, category: str, message: str) -> None:
+        """实际绘制,带去抖:状态与文本均未变化时跳过重绘,避免刷新过快。"""
+        if category == 'connecting':
+            if cls._state == 'connecting' and cls._displayed_message == message:
+                return
+        else:
+            if cls._state == 'connected':
+                return
+        # 切换显示,并使任何待执行的已连接宽限定时器失效。
+        cls._render_token += 1
+        cls._state = category
+        cls._displayed_message = message
+        if category == 'connecting':
+            cls._show_connecting(message)
+        else:
+            cls._set_connected()
+
+    @classmethod
+    def _maybe_show_connected(cls, token: int) -> None:
+        """已连接宽限到期回调:仍确为已连接才绘制,否则放弃(说明期间又有请求)。"""
+        with cls._lock:
+            if token != cls._render_token or cls._live is None:
+                return
+            if cls._connecting > 0 or cls._log_failure or cls._active > 0:
+                return
+            cls._render('connected', '')
+
+    @classmethod
+    def _refresh_state(cls) -> None:
+        """加锁后刷新显示(供外部/定时器调用)。"""
+        with cls._lock:
+            cls._do_refresh()
+
+    @classmethod
+    def enter_busy(cls, message: str, delay: float = BUSY_DELAY) -> None:
+        """标记一次请求在途(去抖:仅当超过delay秒仍未完成时显示旋转图标,避免快速小请求闪烁)。"""
+        with cls._lock:
+            was_active = cls._active > 0
+            cls._active += 1
+            cls._busy_message = message
+            if was_active:
+                # 已有在途请求,去抖定时器已由首次进入启动,无需为每个请求重复创建线程。
+                return
+            token = cls._busy_token + 1
+            cls._busy_token = token
+        timer = threading.Timer(delay, cls._maybe_show_busy, args=(token,))
+        timer.daemon = True
+        timer.start()
+
+    @classmethod
+    def _maybe_show_busy(cls, token: int) -> None:
+        """定时器回调:仅当token仍有效且仍有在途请求时才切换到旋转图标。"""
+        with cls._lock:
+            if token != cls._busy_token or cls._active <= 0 or cls._live is None:
+                return
+            cls._do_refresh()
+
+    @classmethod
+    def leave_busy(cls) -> None:
+        """标记一次请求结束,需与enter_busy配对。"""
+        with cls._lock:
+            cls._active -= 1
+            if cls._active < 0:
+                cls._active = 0
+            cls._busy_token += 1
+            cls._do_refresh()
+
+    @classmethod
+    def enter(cls, message: str) -> None:
+        """标记一次重连开始(按调用方计数),并显示重连提示。"""
+        with cls._lock:
+            cls._connecting += 1
+            cls._current_message = message
+            cls._do_refresh()
+
+    @classmethod
+    def update(cls, message: str) -> None:
+        """刷新重连提示文本(不改动引用计数)。"""
+        with cls._lock:
+            cls._current_message = message
+            cls._do_refresh()
+
+    @classmethod
+    def leave(cls) -> None:
+        """标记一次重连结束,仅当所有调用方与日志失败都清除后才显示已连接。"""
+        with cls._lock:
+            cls._connecting -= 1
+            if cls._connecting < 0:
+                cls._connecting = 0
+            cls._do_refresh()
+
+    @classmethod
+    def mark_failure(cls, message: str) -> None:
+        """由日志处理器调用,标记连接层(网络/代理)发生失败。"""
+        with cls._lock:
+            cls._log_failure = True
+            cls._current_message = message
+            cls._do_refresh()
+
+    @classmethod
+    def clear_failure(cls) -> None:
+        """由日志处理器调用,标记连接层已恢复。"""
+        with cls._lock:
+            cls._log_failure = False
+            cls._do_refresh()
+
+    @classmethod
+    def stop(cls) -> None:
+        """关闭常驻连接状态提示。"""
+        with cls._lock:
+            if cls._live is not None:
+                cls._live.stop()
+                cls._live = None
+                cls._spinner = None
+                cls._connecting = 0
+                cls._log_failure = False
+                cls._active = 0
+                cls._busy_token += 1
+                cls._render_token += 1
+                cls._state = 'connected'
+                cls._displayed_message = ''
+
+
+class ConnectionStatusLogHandler(logging.Handler):
+    """捕获pyrogram连接层(网络/代理)日志,驱动ConnectionStatus在重连时显示转圈。"""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        name = record.name
+        if name not in ('pyrogram.connection.connection', 'pyrogram.connection.transport.tcp.tcp'):
+            return
+        try:
+            message = record.getMessage()
+        except Exception:  # noqa.
+            return
+        if 'Proxy connection failed' in message or 'Unable to connect due to network issues' in message:
+            ConnectionStatus.mark_failure('由于网络/代理连接失败,正在尝试重连。')
+        elif ('Connection established' in message
+              or 'Proxy connection established' in message
+              or 'Connected!' in message):
+            ConnectionStatus.clear_failure()

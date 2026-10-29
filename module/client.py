@@ -61,6 +61,7 @@ from module.enums import (
     KeyWord,
     DownloadType
 )
+from module.stdio import ConnectionStatus
 from module.util import ainput
 from module.language import _t
 
@@ -689,9 +690,12 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             retry_delay: float = RETRY_DELAY
     ):
         try:
+            ConnectionStatus.enter_busy('正在等待客户端连接建立。')
             await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
         except asyncio.TimeoutError:
             pass
+        finally:
+            ConnectionStatus.leave_busy()
 
         if isinstance(
                 query, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)
@@ -701,48 +705,63 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             inner_query = query
 
         query_name = '.'.join(inner_query.QUALNAME.split('.')[1:])
-        while True:
-            try:
-                return await self.send(query, timeout=timeout)
-            except (FloodWait, FloodPremiumWait) as e:
-                amount = e.value
-
-                if amount > sleep_threshold >= 0:
-                    raise
-                log.info(
-                    '[%s] Waiting for %s seconds before continuing (required by "%s")',
-                    self.client.name,
-                    amount,
-                    query_name,
-                )
-                console.log(
-                    f'[{self.client.name}]请求频繁,"{query_name}"要求等待{amount}秒后继续运行。',
-                    style='#FF4689'
-                )
-
-                await asyncio.sleep(amount)
-            except (OSError, InternalServerError, ServiceUnavailable) as e:
-                log.info(
-                    'Retrying "%s" due to: %s', query_name, str(e) or repr(e)
-                )
-                console.log(
-                    f'由于"{str(e) or repr(e)}"导致无法调用"{query_name}",正在尝试重连。',
-                    style='#FF4689'
-                )
-
-                # 连接异常(含超时)多为连接已断或半开,若底层正在重建连接(is_started被清),先等待其重建完成再重试,
-                # 避免在已断开或重建中的连接上反复发请求,既配合底层重连又避免加剧请求压力。
-                if not self.is_started.is_set():
+        waiting: bool = False
+        try:
+            while True:
+                try:
+                    ConnectionStatus.enter_busy(f'正在发送"{query_name}"请求。')
                     try:
-                        await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
-                        p = f'已恢复连接,重新尝试调用"{query_name}"。'
-                        log.info(p)
-                        console.log(p, style='#B1DB74')
-                    except asyncio.TimeoutError:
-                        p = f'无法调用"{query_name}",等待{retry_delay}秒后重新发送数据。'
-                        log.info(p)
-                        console.log(p, style='#FF4689')
-                await asyncio.sleep(retry_delay)
+                        result = await self.send(query, timeout=timeout)
+                    except BaseException:
+                        ConnectionStatus.leave_busy()
+                        raise
+                    ConnectionStatus.leave_busy()
+                    if waiting:
+                        waiting = False
+                        ConnectionStatus.leave()
+                    return result
+                except (FloodWait, FloodPremiumWait) as e:
+                    amount = e.value
+
+                    if amount > sleep_threshold >= 0:
+                        raise
+                    log.info(
+                        '[%s] Waiting for %s seconds before continuing (required by "%s")',
+                        self.client.name,
+                        amount,
+                        query_name,
+                    )
+                    message = f'[{self.client.name}]请求频繁,"{query_name}"要求等待{amount}秒后继续运行。'
+                    if not waiting:
+                        waiting = True
+                        ConnectionStatus.enter(message)
+                    else:
+                        ConnectionStatus.update(message)
+
+                    await asyncio.sleep(amount)
+                except (OSError, InternalServerError, ServiceUnavailable) as e:
+                    log.info(
+                        'Retrying "%s" due to: %s', query_name, str(e) or repr(e)
+                    )
+                    message = f'由于"{str(e) or repr(e)}"导致无法调用"{query_name}",正在尝试重连。'
+                    if not waiting:
+                        waiting = True
+                        ConnectionStatus.enter(message)
+                    else:
+                        ConnectionStatus.update(message)
+
+                    # 连接异常(含超时)多为连接已断或半开,若底层正在重建连接(is_started被清),先等待其重建完成再重试,
+                    # 避免在已断开或重建中的连接上反复发请求,既配合底层重连又避免加剧请求压力。
+                    if not self.is_started.is_set():
+                        try:
+                            await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
+                            log.info('已恢复连接,重新尝试调用"%s"。', query_name)
+                        except asyncio.TimeoutError:
+                            log.info('无法调用"%s",等待%s秒后重新发送数据。', query_name, retry_delay)
+                    await asyncio.sleep(retry_delay)
+        finally:
+            if waiting:
+                ConnectionStatus.leave()
 
     async def send(
             self,
