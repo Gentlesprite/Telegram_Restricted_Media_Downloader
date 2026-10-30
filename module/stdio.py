@@ -943,12 +943,13 @@ class ConnectionStatus:
 
     @classmethod
     def leave_busy(cls) -> None:
-        """标记一次请求结束,需与enter_busy配对。"""
         with cls._lock:
             cls._active -= 1
             if cls._active < 0:
                 cls._active = 0
-            cls._busy_token += 1
+            # 仅当已无在途请求时才作废去抖定时器;否则会把仍在进行中的其它请求的定时器一并取消。
+            if cls._active == 0:
+                cls._busy_token += 1
             cls._do_refresh()
 
     @classmethod
@@ -985,8 +986,9 @@ class ConnectionStatus:
 
     @classmethod
     def clear_failure(cls) -> None:
-        """由日志处理器调用,标记连接层已恢复。"""
         with cls._lock:
+            if not cls._log_failure:
+                return
             cls._log_failure = False
             cls._do_refresh()
 
