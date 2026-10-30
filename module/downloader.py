@@ -451,11 +451,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         break
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
-                        console.log(
-                            f'[{self.app.client.name}]转发消息请求频繁,要求等待{amount}秒后继续运行。',
-                            style='#FF4689'
+                        ConnectionStatus.enter_flood(
+                            f'[{self.app.client.name}]转发消息请求频繁,要求等待{amount}秒后继续运行。'
                         )
                         await asyncio.sleep(amount)
+                        ConnectionStatus.leave_flood()
             elif getattr(message, 'text', False):
                 while True:
                     try:
@@ -469,11 +469,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         break
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
-                        console.log(
-                            f'[{self.app.client.name}]发送消息请求频繁,要求等待{amount}秒后继续运行。',
-                            style='#FF4689'
+                        ConnectionStatus.enter_flood(
+                            f'[{self.app.client.name}]发送消息请求频繁,要求等待{amount}秒后继续运行。'
                         )
                         await asyncio.sleep(amount)
+                        ConnectionStatus.leave_flood()
                     except Exception as e:
                         log.error(f'无法转发"{message.text}"消息,{_t(KeyWord.REASON)}:"{e}"')
                         break
@@ -490,11 +490,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         break
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
-                        console.log(
-                            f'[{self.app.client.name}]转发消息请求频繁,要求等待{amount}秒后继续运行。',
-                            style='#FF4689'
+                        ConnectionStatus.enter_flood(
+                            f'[{self.app.client.name}]转发消息请求频繁,要求等待{amount}秒后继续运行。'
                         )
                         await asyncio.sleep(amount)
+                        ConnectionStatus.leave_flood()
             p_message_id = ','.join(map(str, media_group)) if media_group else message_id
             console.log(
                 f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{p_message_id}"'
@@ -1386,11 +1386,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                             break
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
-                        console.log(
-                            f'[{self.app.client.name}]下载请求频繁,要求等待{amount}秒后继续运行。',
-                            style='#FF4689'
+                        ConnectionStatus.enter_flood(
+                            f'[{self.app.client.name}]下载请求频繁,要求等待{amount}秒后继续运行。'
                         )
                         await asyncio.sleep(amount)
+                        ConnectionStatus.leave_flood()
         except PermissionError as e:
             log.error(
                 f'无法以"{mode}"模式打开临时文件"{temp_path}",{_t(KeyWord.REASON)}:"{e}"')
@@ -1874,11 +1874,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                     return callback_query.message  # 文本本就相同,属良性no-op,按成功处理使外层照常更新时间戳,避免忙等重试。
                 except (FloodWait, FloodPremiumWait) as _e:
                     _amount = _e.value
-                    console.log(
-                        f'[{self.app.client.name}]编辑消息请求频繁,要求等待{_amount}秒后继续运行。',
-                        style='#FF4689'
+                    ConnectionStatus.enter_flood(
+                        f'[{self.app.client.name}]编辑消息请求频繁,要求等待{_amount}秒后继续运行。'
                     )
                     await asyncio.sleep(_amount)
+                    ConnectionStatus.leave_flood()
                 except Exception as _e:
                     log.info(
                         f'在/download_chat命令过程中,更新进度消息时失败,已跳过本次更新,{_t(KeyWord.REASON)}:"{_e}"')
@@ -2003,11 +2003,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 break
                             except (FloodWait, FloodPremiumWait) as e:
                                 amount = e.value
-                                console.log(
-                                    f'[{self.app.client.name}]获取媒体组消息请求频繁,要求等待{amount}秒后继续运行。',
-                                    style='#FF4689'
+                                ConnectionStatus.enter_flood(
+                                    f'[{self.app.client.name}]获取媒体组消息请求频繁,要求等待{amount}秒后继续运行。'
                                 )
                                 await asyncio.sleep(amount)
+                                ConnectionStatus.leave_flood()
                         if group_members:
                             # 获取成功才标记该组已处理,失败则不标记,使同组其它命中成员可重试。
                             media_group_matched.add(message.media_group_id)
@@ -2209,11 +2209,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         break  # 消息没有评论区或消息ID无效，跳过。
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
-                        console.log(
-                            f'[{self.app.client.name}]获取评论区消息请求频繁,要求等待{amount}秒后继续运行。',
-                            style='#FF4689'
+                        ConnectionStatus.enter_flood(
+                            f'[{self.app.client.name}]获取评论区消息请求频繁,要求等待{amount}秒后继续运行。'
                         )
                         await asyncio.sleep(amount)
+                        ConnectionStatus.leave_flood()
                         del links[links_mark:]  # 回滚本次已收集的评论,重试时重新收集。
             # 扫描被类型过滤掉但评论区有内容的消息(例如视频被关闭,但其评论区含图片)。
             if include_comment:
@@ -2257,11 +2257,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                             break  # 消息没有评论区或消息ID无效，跳过。
                         except (FloodWait, FloodPremiumWait) as e:
                             amount = e.value
-                            console.log(
-                                f'[{self.app.client.name}]获取评论区消息请求频繁,要求等待{amount}秒后继续运行。',
-                                style='#FF4689'
+                            ConnectionStatus.enter_flood(
+                                f'[{self.app.client.name}]获取评论区消息请求频繁,要求等待{amount}秒后继续运行。'
                             )
                             await asyncio.sleep(amount)
+                            ConnectionStatus.leave_flood()
                             del links[links_mark:]  # 回滚本次已收集的评论,重试时重新收集。
             # 确保最后一次更新显示正确的评论数量。
             if include_comment:
@@ -2432,11 +2432,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                     except MessageNotModified:
                         last_update_time = current_time  # 文本本就相同,属良性no-op,按成功处理避免忙等。
                     except (FloodWait, FloodPremiumWait) as _e:
-                        console.log(
-                            f'[{self.app.client.name}]编辑消息请求频繁,要求等待{_e.value}秒后继续运行。',
-                            style='#FF4689'
+                        ConnectionStatus.enter_flood(
+                            f'[{self.app.client.name}]编辑消息请求频繁,要求等待{_e.value}秒后继续运行。'
                         )
                         await asyncio.sleep(_e.value)
+                        ConnectionStatus.leave_flood()
                         continue  # 不刷新时间戳,下轮继续尝试编辑。
                     except Exception as _e:
                         # 编辑失败(消息被删/无权限等)只记日志:进度展示是纯附加功能,绝不能影响下载。
