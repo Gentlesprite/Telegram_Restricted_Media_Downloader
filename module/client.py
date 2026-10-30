@@ -689,13 +689,16 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             sleep_threshold: float = SLEEP_THRESHOLD,
             retry_delay: float = RETRY_DELAY
     ):
-        try:
+        show_waiting = not self.is_started.is_set()
+        if show_waiting:
             ConnectionStatus.enter_busy('正在等待客户端连接建立。')
+        try:
             await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
         except asyncio.TimeoutError:
             pass
         finally:
-            ConnectionStatus.leave_busy()
+            if show_waiting:
+                ConnectionStatus.leave_busy()
 
         if isinstance(
                 query, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)
@@ -716,6 +719,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                         ConnectionStatus.leave_busy()
                         raise
                     ConnectionStatus.leave_busy()
+                    ConnectionStatus.clear_failure()
                     if waiting:
                         waiting = False
                         ConnectionStatus.leave()
