@@ -23,7 +23,6 @@ import qrcode
 from rich.style import Style
 from rich.live import Live
 from rich.text import Text
-from rich.spinner import Spinner
 from rich.table import Table
 from rich.markdown import Markdown
 from rich.progress import (
@@ -804,8 +803,8 @@ class ConnectionStatus:
 
     _lock = threading.Lock()
     _live: Union[Live, None] = None
-    _spinner: Union[Spinner, None] = None
     _connecting: int = 0
+    _flood_waiting: int = 0
     _log_failure: bool = False
     _current_message: str = ''
     _active: int = 0
@@ -815,8 +814,10 @@ class ConnectionStatus:
     _displayed_message: str = ''
     _render_token: int = 0
     _logger_installed: bool = False
-    SPINNER = 'earth'
-    CONNECTED_EMOJI = '🌐'
+    HEALTH_OK: tuple = ('✓', '#B1DB74', '连接正常')
+    HEALTH_RECONNECT: tuple = ('↻', '#FFB579', '正在重连')
+    HEALTH_FLOOD: tuple = ('◉', '#FF4689', '正在等待')
+    HEALTH_FAILURE: tuple = ('✕', '#FF7979', '连接异常')
     BUSY_DELAY: float = 1
     CONNECTED_GRACE: float = 1
 
@@ -844,25 +845,31 @@ class ConnectionStatus:
             cls._set_connected()
 
     @classmethod
+    def _health_prefix(cls) -> Text:
+        """根据当前连接健康状态生成常驻前缀(纯符号+颜色),配色对齐程序 console.log。"""
+        if cls._log_failure:
+            glyph, style, text = cls.HEALTH_FAILURE
+        elif cls._connecting > 0:
+            glyph, style, text = cls.HEALTH_RECONNECT
+        elif cls._flood_waiting > 0:
+            glyph, style, text = cls.HEALTH_FLOOD
+        else:
+            glyph, style, text = cls.HEALTH_OK
+        return Text.assemble((glyph, style), (f' {text} ', style))
+
+    @classmethod
     def _set_connected(cls) -> None:
-        """切换为已连接状态,显示静态图标与提示(不旋转)。"""
+        """切换为已连接状态,显示常驻健康前缀(静态,不旋转)。"""
         if cls._live is None:
             return
-        cls._live.update(
-            Text.from_markup(f'{cls.CONNECTED_EMOJI} 网络连接正常。'),
-            refresh=True
-        )
+        cls._live.update(cls._health_prefix(), refresh=True)
 
     @classmethod
     def _show_connecting(cls, message: str) -> None:
-        """切换为正在重连状态,显示旋转图标与提示。"""
+        """切换为连接中/在途状态,显示健康前缀+活动文案(静态,旋转由进度条spinner承担)。"""
         if cls._live is None:
             return
-        if cls._spinner is None:
-            cls._spinner = Spinner(cls.SPINNER, text=message)
-        else:
-            cls._spinner.update(text=message)
-        cls._live.update(cls._spinner, refresh=True)
+        cls._live.update(Text.assemble(cls._health_prefix(), Text(message)), refresh=True)
 
     @classmethod
     def _do_refresh(cls) -> None:
@@ -871,6 +878,8 @@ class ConnectionStatus:
             return
         if cls._connecting > 0 or cls._log_failure:
             cls._render('connecting', cls._current_message or '正在尝试重连。')
+        elif cls._flood_waiting > 0:
+            cls._render('connecting', cls._current_message or '请求频繁,等待中。')
         elif cls._active > 0:
             cls._render('connecting', cls._busy_message or '正在发送数据。')
         else:
@@ -907,7 +916,7 @@ class ConnectionStatus:
         with cls._lock:
             if token != cls._render_token or cls._live is None:
                 return
-            if cls._connecting > 0 or cls._log_failure or cls._active > 0:
+            if cls._connecting > 0 or cls._log_failure or cls._active > 0 or cls._flood_waiting > 0:
                 return
             cls._render('connected', '')
 
@@ -977,6 +986,30 @@ class ConnectionStatus:
             cls._do_refresh()
 
     @classmethod
+    def enter_flood(cls, message: str) -> None:
+        """标记一次限流(FloodWait)等待开始,显示限流提示(配色对齐程序 flood 配色 #FF4689)。"""
+        with cls._lock:
+            cls._flood_waiting += 1
+            cls._current_message = message
+            cls._do_refresh()
+
+    @classmethod
+    def update_flood(cls, message: str) -> None:
+        """刷新限流提示文本(不改动引用计数)。"""
+        with cls._lock:
+            cls._current_message = message
+            cls._do_refresh()
+
+    @classmethod
+    def leave_flood(cls) -> None:
+        """标记一次限流等待结束,仅当所有等待都结束后才可能回到已连接。"""
+        with cls._lock:
+            cls._flood_waiting -= 1
+            if cls._flood_waiting < 0:
+                cls._flood_waiting = 0
+            cls._do_refresh()
+
+    @classmethod
     def mark_failure(cls, message: str) -> None:
         """由日志处理器调用,标记连接层(网络/代理)发生失败。"""
         with cls._lock:
@@ -999,8 +1032,8 @@ class ConnectionStatus:
             if cls._live is not None:
                 cls._live.stop()
                 cls._live = None
-                cls._spinner = None
                 cls._connecting = 0
+                cls._flood_waiting = 0
                 cls._log_failure = False
                 cls._active = 0
                 cls._busy_token += 1

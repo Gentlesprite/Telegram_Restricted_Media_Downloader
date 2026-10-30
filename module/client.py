@@ -708,7 +708,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             inner_query = query
 
         query_name = '.'.join(inner_query.QUALNAME.split('.')[1:])
-        waiting: bool = False
+        waiting_kind = None
         try:
             while True:
                 try:
@@ -720,9 +720,12 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                         raise
                     ConnectionStatus.leave_busy()
                     ConnectionStatus.clear_failure()
-                    if waiting:
-                        waiting = False
-                        ConnectionStatus.leave()
+                    if waiting_kind is not None:
+                        if waiting_kind == 'flood':
+                            ConnectionStatus.leave_flood()
+                        else:
+                            ConnectionStatus.leave()
+                        waiting_kind = None
                     return result
                 except (FloodWait, FloodPremiumWait) as e:
                     amount = e.value
@@ -736,11 +739,13 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                         query_name,
                     )
                     message = f'[{self.client.name}]请求频繁,"{query_name}"要求等待{amount}秒后继续运行。'
-                    if not waiting:
-                        waiting = True
-                        ConnectionStatus.enter(message)
+                    if waiting_kind != 'flood':
+                        if waiting_kind == 'reconnect':
+                            ConnectionStatus.leave()
+                        waiting_kind = 'flood'
+                        ConnectionStatus.enter_flood(message)
                     else:
-                        ConnectionStatus.update(message)
+                        ConnectionStatus.update_flood(message)
 
                     await asyncio.sleep(amount)
                 except (OSError, InternalServerError, ServiceUnavailable) as e:
@@ -748,8 +753,10 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                         'Retrying "%s" due to: %s', query_name, str(e) or repr(e)
                     )
                     message = f'由于"{str(e) or repr(e)}"导致无法调用"{query_name}",正在尝试重连。'
-                    if not waiting:
-                        waiting = True
+                    if waiting_kind != 'reconnect':
+                        if waiting_kind == 'flood':
+                            ConnectionStatus.leave_flood()
+                        waiting_kind = 'reconnect'
                         ConnectionStatus.enter(message)
                     else:
                         ConnectionStatus.update(message)
@@ -764,7 +771,9 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                             log.info('无法调用"%s",等待%s秒后重新发送数据。', query_name, retry_delay)
                     await asyncio.sleep(retry_delay)
         finally:
-            if waiting:
+            if waiting_kind == 'flood':
+                ConnectionStatus.leave_flood()
+            elif waiting_kind == 'reconnect':
                 ConnectionStatus.leave()
 
     async def send(
