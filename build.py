@@ -82,7 +82,7 @@ PLATFORM: str = sys.platform
 UV: str = 'uv ' if which('uv') and os.path.exists('uv.lock') else ''  # noqa.
 MIN_PYTHON_VERSION: tuple = (3, 10, 0)
 MAX_PYTHON_VERSION: tuple = (3, 15, 0)
-NUITKA_VERSION: tuple = (4, 3, 1)
+NUITKA_VERSION: tuple = (4, 3, 3)
 MIN_NUITKA_VERSION: tuple = (4, 3, 0)
 EXTENSION: str = '.exe' if PLATFORM == 'win32' else ''
 ICO_PATH: str = 'res/icon.ico'
