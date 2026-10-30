@@ -847,26 +847,35 @@ class TelegramRestrictedMediaDownloader(Bot):
                     if i not in storage_id:
                         invalid_id.append(i)
                 if invalid_id:
-                    last_message = await self.safe_edit_message(
-                        client=client,
-                        message=message,
-                        last_message_id=last_message.id,
-                        text=safe_message(BotMessage.INVALID)
-                    )
-                    invalid_chat = await format_chat_link(
-                        link=origin_link,
-                        client=self.app.client,
-                        topic=origin_chat.is_forum
-                    )
-                    invalid_chat = invalid_chat if invalid_chat else 'Your Saved Messages'
-                    invalid_text = '\n'.join(f'{invalid_chat}/{i}' for i in invalid_id)
-                    await safe_delete_message(last_message) if len(invalid_text) >= 3969 else None
-                    last_message = await self.safe_edit_message(
-                        client=client,
-                        message=message,
-                        last_message_id=last_message.id,
-                        text=safe_message(f'{last_message.text}\n{invalid_text}')
-                    )
+                    if len(invalid_id) > Bot.MAX_INVALID_IDS:
+                        # 缺失过多时逐条列出会反复编辑甚至重发消息,极易触发风控,改为只提示跳过条数。
+                        last_message = await self.safe_edit_message(
+                            client=client,
+                            message=message,
+                            last_message_id=last_message.id,
+                            text=safe_message(BotMessage.TOO_MANY_INVALID_MESSAGE.format(count=len(invalid_id)))
+                        )
+                    else:
+                        last_message = await self.safe_edit_message(
+                            client=client,
+                            message=message,
+                            last_message_id=last_message.id,
+                            text=safe_message(BotMessage.INVALID)
+                        )
+                        invalid_chat = await format_chat_link(
+                            link=origin_link,
+                            client=self.app.client,
+                            topic=origin_chat.is_forum
+                        )
+                        invalid_chat = invalid_chat if invalid_chat else 'Your Saved Messages'
+                        invalid_text = '\n'.join(f'{invalid_chat}/{i}' for i in invalid_id)
+                        await safe_delete_message(last_message) if len(invalid_text) >= 3969 else None
+                        last_message = await self.safe_edit_message(
+                            client=client,
+                            message=message,
+                            last_message_id=last_message.id,
+                            text=safe_message(f'{last_message.text}\n{invalid_text}')
+                        )
                 direct_url: str = await format_chat_link(
                     link=target_link,
                     client=self.app.client,

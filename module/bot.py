@@ -149,6 +149,7 @@ class Bot:
     ) + ('/start',)
     LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
     MAX_NOTIFY_LINKS = 50  # 单次命令链接数超过该值时不再通过机器人通知,避免消息过长编辑频繁触发风控。
+    MAX_INVALID_IDS = 20  # 转发的缺失消息超过该值时只提示条数,不再逐条列出,避免反复编辑甚至重发消息触发风控。
 
     def __init__(self):
         self.application = None
