@@ -1,4 +1,5 @@
 const EMPTY_SUMMARY = {percent: 0, info: '0.00B / 0.00B', speed: '', remaining: ''};
+var connectionStatus = '';  // 后端下发的连接状态文本,拼接在总进度 extra 之后。
 
 var SECTIONS = {
     download: ['download'],
@@ -9,8 +10,8 @@ var SECTIONS = {
 };
 var PAGES = SECTIONS.download.concat(SECTIONS.upload, SECTIONS.listener, SECTIONS.notice, SECTIONS.storage);  // 下载、上传、通知、记录各一个页面,监听页只在内部切换选项卡。
 var SUMMARY_IDS = {
-    download: {fill: 'overallFill', percent: 'overallPercent', info: 'overallInfo', extra: 'overallExtra'},
-    upload: {fill: 'uploadFill', percent: 'uploadPercent', info: 'uploadInfo', extra: 'uploadExtra'}
+    download: {fill: 'overallFill', percent: 'overallPercent', info: 'overallInfo', extra: 'overallExtra', status: 'overallStatus'},
+    upload: {fill: 'uploadFill', percent: 'uploadPercent', info: 'uploadInfo', extra: 'uploadExtra', status: 'uploadStatus'}
 };  // 下载与上传各自独立的总进度面板,避免相互覆盖。
 var SECTION_KEY = 'trmd_section';
 var LISTEN_KEY = 'trmd_listen';
@@ -520,7 +521,7 @@ function extraText(item) {
         extra += item.speed;
     }
     if (item.remaining) {
-        extra += (extra ? ' · 剩余' : '剩余') + item.remaining;
+        extra += (extra ? ' • 剩余' : '剩余') + item.remaining;
     }
     return extra;
 }
@@ -532,6 +533,7 @@ function renderOverall(summary, taskCount, ids) {
     document.getElementById(ids.info).textContent = data.info;
     document.getElementById(ids.extra).textContent =
         extraText(data) ? extraText(data) : (taskCount ? '正在测速' : '暂无速度');
+    document.getElementById(ids.status).textContent = connectionStatus;
 }
 
 /* 统计卡筛选:点击后只显示对应状态的条目,再次点击取消。 */
@@ -2839,6 +2841,7 @@ function render(data, force) {
         return;
     }
     lastRenderKey = key;
+    connectionStatus = data.connection_status || '';
     var downloads = (data.tasks || []).length;
     lastDownloadActive = downloads;
     document.getElementById('badgeDownload').textContent = downloads;

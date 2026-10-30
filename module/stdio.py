@@ -860,6 +860,29 @@ class ConnectionStatus:
         return Text.assemble((glyph, style), (f' {text}', style))
 
     @classmethod
+    def get_status(cls) -> str:
+        """返回当前连接状态的纯文本(供网页等非终端展示复用),不改变终端 Live 显示。"""
+        with cls._lock:
+            if cls._log_failure:
+                glyph, style, text = cls.HEALTH_FAILURE
+                msg = cls._current_message or '连接异常'
+            elif cls._connecting > 0:
+                glyph, style, text = cls.HEALTH_RECONNECT
+                msg = cls._current_message or '正在尝试重连。'
+            elif cls._flood_waiting > 0:
+                glyph, style, text = cls.HEALTH_FLOOD
+                msg = cls._flood_message or '请求频繁,等待中。'
+            elif cls._active > 0:
+                glyph, style, text = cls.HEALTH_OK
+                msg = cls._busy_message or '正在发送数据。'
+            else:
+                glyph, style, text = cls.HEALTH_OK
+                msg = ''
+        if msg:
+            return f'{glyph} {text} • {msg}'
+        return f'{glyph} {text}'
+
+    @classmethod
     def _set_connected(cls) -> None:
         """切换为已连接状态,显示常驻健康前缀(静态,不旋转)。"""
         if cls._live is None:

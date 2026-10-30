@@ -44,7 +44,8 @@ from module.path_tool import split_path
 from module.storage import TRMDStorage
 from module.stdio import (
     MetaData,
-    PanelTable
+    PanelTable,
+    ConnectionStatus
 )
 from module.task import (
     UploadTask,
@@ -1262,7 +1263,8 @@ class Web:
                 },
                 'tasks': tasks,
                 'uploads': uploads,
-                'listeners': self.get_listeners()
+                'listeners': self.get_listeners(),
+                'connection_status': ConnectionStatus.get_status()
             }
             if need_links:
                 links: list = self.get_link_progress()
@@ -1289,7 +1291,8 @@ class Web:
                 },
                 'tasks': [],
                 'uploads': [],
-                'listeners': {'download': [], 'forward': []}
+                'listeners': {'download': [], 'forward': []},
+                'connection_status': ConnectionStatus.get_status()
             }
             if need_links:
                 result['summary'] = self.get_summary(links=[], tasks=[])

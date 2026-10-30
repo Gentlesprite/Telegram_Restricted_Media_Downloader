@@ -756,6 +756,11 @@ th {
     margin-bottom: 8px;
 }
 
+/* 连接状态行:夹在“总进度/速度”行与进度条之间,上下间距与上方保持一致。 */
+#overallStatus, #uploadStatus {
+    margin-bottom: 8px;
+}
+
 .label {
     font-size: 13px;
     color: var(--muted);
