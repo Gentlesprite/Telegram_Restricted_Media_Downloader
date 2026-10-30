@@ -807,6 +807,7 @@ class ConnectionStatus:
     _flood_waiting: int = 0
     _log_failure: bool = False
     _current_message: str = ''
+    _flood_message: str = ''
     _active: int = 0
     _busy_message: str = ''
     _busy_token: int = 0
@@ -882,7 +883,7 @@ class ConnectionStatus:
         if cls._connecting > 0 or cls._log_failure:
             cls._render('connecting', cls._current_message or '正在尝试重连。')
         elif cls._flood_waiting > 0:
-            cls._render('connecting', cls._current_message or '请求频繁,等待中。')
+            cls._render('connecting', cls._flood_message or '请求频繁,等待中。')
         elif cls._active > 0:
             cls._render('connecting', cls._busy_message or '正在发送数据。')
         else:
@@ -993,14 +994,14 @@ class ConnectionStatus:
         """标记一次限流(FloodWait)等待开始,显示限流提示(配色对齐程序 flood 配色 #FF4689)。"""
         with cls._lock:
             cls._flood_waiting += 1
-            cls._current_message = message
+            cls._flood_message = message
             cls._do_refresh()
 
     @classmethod
     def update_flood(cls, message: str) -> None:
         """刷新限流提示文本(不改动引用计数)。"""
         with cls._lock:
-            cls._current_message = message
+            cls._flood_message = message
             cls._do_refresh()
 
     @classmethod
@@ -1010,6 +1011,8 @@ class ConnectionStatus:
             cls._flood_waiting -= 1
             if cls._flood_waiting < 0:
                 cls._flood_waiting = 0
+            if cls._flood_waiting == 0:
+                cls._flood_message = ''
             cls._do_refresh()
 
     @classmethod
@@ -1037,6 +1040,7 @@ class ConnectionStatus:
                 cls._live = None
                 cls._connecting = 0
                 cls._flood_waiting = 0
+                cls._flood_message = ''
                 cls._log_failure = False
                 cls._active = 0
                 cls._busy_token += 1
