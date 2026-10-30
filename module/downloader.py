@@ -412,7 +412,6 @@ class TelegramRestrictedMediaDownloader(Bot):
             target_link: str,
             download_upload: Optional[bool] = False,
             media_group: Optional[list] = None,
-            done_notice: Optional[bool] = True,
             owner: Union[int, None] = None
     ):
         try:
@@ -423,16 +422,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                     f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
                     f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SKIP)}。'
                 )
-                if done_notice:
-                    await asyncio.create_task(
-                        self.done_notice(
-                            f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{message_id}'
-                            f' ➡️ '
-                            f'"{target_chat_id}",{_t(KeyWord.FORWARD_SKIP)}(该类型已过滤)。',
-                            requester=owner,
-                            notice_type=NoticeType.FORWARD
-                        )
+                await asyncio.create_task(
+                    self.done_notice(
+                        f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{message_id}'
+                        f' ➡️ '
+                        f'"{target_chat_id}",{_t(KeyWord.FORWARD_SKIP)}(该类型已过滤)。',
+                        requester=owner,
+                        notice_type=NoticeType.FORWARD
                     )
+                )
                 return None
             # 全局暂停时不进行转发,等待恢复后再继续。
             while self.app.is_paused:
@@ -502,16 +500,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                 f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
                 f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
             )
-            if done_notice:
-                await asyncio.create_task(
-                    self.done_notice(
-                        f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{p_message_id}'
-                        f' ➡️ '
-                        f'"{target_chat_id}",{_t(KeyWord.FORWARD_SUCCESS)}。',
-                        requester=owner,
-                        notice_type=NoticeType.FORWARD
-                    )
+            await asyncio.create_task(
+                self.done_notice(
+                    f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{p_message_id}'
+                    f' ➡️ '
+                    f'"{target_chat_id}",{_t(KeyWord.FORWARD_SUCCESS)}。',
+                    requester=owner,
+                    notice_type=NoticeType.FORWARD
                 )
+            )
         except (ChatForwardsRestricted_400, ChatForwardsRestricted_406):
             if not download_upload:
                 if (
@@ -581,7 +578,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     origin_chat_id=origin_chat_id,
                     target_chat_id=target_chat_id,
                     target_link=target_link,
-                    done_notice=False,
                     owner=owner
                 )
                 storage_id.append(m.id)
@@ -594,7 +590,6 @@ class TelegramRestrictedMediaDownloader(Bot):
             target_chat_id=target_chat_id,
             target_link=target_link,
             media_group=group_ids,
-            done_notice=False,
             owner=owner
         )
         storage_id.extend(group_ids)
@@ -717,7 +712,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                         origin_chat_id=origin_chat_id,
                         target_chat_id=target_chat_id,
                         target_link=target_link,
-                        done_notice=False,
                         owner=owner
                     )
                     storage_id.append(message_id)
