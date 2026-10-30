@@ -74,9 +74,9 @@ from module.task import (
     UploadTask
 )
 from module.stdio import (
+    MetaData,
     ProgressBar,
     Base64Image,
-    MetaData,
     ConnectionStatus
 )
 from module.bot import (

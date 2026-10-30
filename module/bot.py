@@ -63,7 +63,8 @@ from module.config import GlobalConfig
 from module.path_tool import safe_scan_directory_file
 from module.stdio import (
     MetaData,
-    PanelTable
+    PanelTable,
+    ConnectionStatus
 )
 from module.task import (
     DownloadTask,
@@ -1923,11 +1924,11 @@ class Bot:
                 return None
             except (FloodWait, FloodPremiumWait) as e:
                 amount = e.value
-                console.log(
-                    f'[{self.bot.name}]编辑消息请求频繁,要求等待{amount}秒后继续运行。',
-                    style='#FF4689'
+                ConnectionStatus.enter_flood(
+                    f'[{self.bot.name}]编辑消息请求频繁,要求等待{amount}秒后继续运行。'
                 )
                 await asyncio.sleep(amount)
+                ConnectionStatus.leave_flood()
             except Exception:
                 raise
 
