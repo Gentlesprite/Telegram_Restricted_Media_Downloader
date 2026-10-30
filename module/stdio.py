@@ -58,7 +58,8 @@ from module.enums import (
     DownloadType,
     UploadStatus,
     ProcessConfig,
-    GradientColor
+    GradientColor,
+    ConnectionState
 )
 
 
@@ -811,7 +812,7 @@ class ConnectionStatus:
     _active: int = 0
     _busy_message: str = ''
     _busy_token: int = 0
-    _state: str = 'connected'
+    _state: str = ConnectionState.CONNECTED
     _displayed_message: str = ''
     _render_token: int = 0
     _logger_installed: bool = False
@@ -841,7 +842,7 @@ class ConnectionStatus:
             if cls._live is None:
                 cls._live = Live(console=console, auto_refresh=True, refresh_per_second=12.5)
                 cls._live.start()
-            cls._state = 'connected'
+            cls._state = ConnectionState.CONNECTED
             cls._displayed_message = ''
             cls._set_connected()
 
@@ -881,14 +882,14 @@ class ConnectionStatus:
         if cls._live is None:
             return
         if cls._connecting > 0 or cls._log_failure:
-            cls._render('connecting', cls._current_message or '正在尝试重连。')
+            cls._render(ConnectionState.CONNECTING, cls._current_message or '正在尝试重连。')
         elif cls._flood_waiting > 0:
-            cls._render('connecting', cls._flood_message or '请求频繁,等待中。')
+            cls._render(ConnectionState.CONNECTING, cls._flood_message or '请求频繁,等待中。')
         elif cls._active > 0:
-            cls._render('connecting', cls._busy_message or '正在发送数据。')
+            cls._render(ConnectionState.CONNECTING, cls._busy_message or '正在发送数据。')
         else:
             # 期望回到已连接:若当前正显示连接中,延迟一小段宽限,避免分块请求间隙反复闪烁。
-            if cls._state != 'connected':
+            if cls._state != ConnectionState.CONNECTED:
                 cls._render_token += 1
                 token = cls._render_token
                 timer = threading.Timer(cls.CONNECTED_GRACE, cls._maybe_show_connected, args=(token,))
@@ -899,17 +900,17 @@ class ConnectionStatus:
     @classmethod
     def _render(cls, category: str, message: str) -> None:
         """实际绘制,带去抖:状态与文本均未变化时跳过重绘,避免刷新过快。"""
-        if category == 'connecting':
-            if cls._state == 'connecting' and cls._displayed_message == message:
+        if category == ConnectionState.CONNECTING:
+            if cls._state == ConnectionState.CONNECTING and cls._displayed_message == message:
                 return
         else:
-            if cls._state == 'connected':
+            if cls._state == ConnectionState.CONNECTED:
                 return
         # 切换显示,并使任何待执行的已连接宽限定时器失效。
         cls._render_token += 1
         cls._state = category
         cls._displayed_message = message
-        if category == 'connecting':
+        if category == ConnectionState.CONNECTING:
             cls._show_connecting(message)
         else:
             cls._set_connected()
@@ -922,7 +923,7 @@ class ConnectionStatus:
                 return
             if cls._connecting > 0 or cls._log_failure or cls._active > 0 or cls._flood_waiting > 0:
                 return
-            cls._render('connected', '')
+            cls._render(ConnectionState.CONNECTED, '')
 
     @classmethod
     def _refresh_state(cls) -> None:
@@ -1045,7 +1046,7 @@ class ConnectionStatus:
                 cls._active = 0
                 cls._busy_token += 1
                 cls._render_token += 1
-                cls._state = 'connected'
+                cls._state = ConnectionState.CONNECTED
                 cls._displayed_message = ''
 
 
