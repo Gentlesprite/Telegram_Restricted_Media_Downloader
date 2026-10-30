@@ -855,7 +855,7 @@ class ConnectionStatus:
             glyph, style, text = cls.HEALTH_FLOOD
         else:
             glyph, style, text = cls.HEALTH_OK
-        return Text.assemble((glyph, style), (f' {text} ', style))
+        return Text.assemble((glyph, style), (f' {text}', style))
 
     @classmethod
     def _set_connected(cls) -> None:
@@ -866,10 +866,13 @@ class ConnectionStatus:
 
     @classmethod
     def _show_connecting(cls, message: str) -> None:
-        """切换为连接中/在途状态,显示健康前缀+活动文案(静态,旋转由进度条spinner承担)。"""
+        """切换为连接中/在途状态,显示健康前缀+分隔符+活动文案(静态,旋转由进度条spinner承担)。"""
         if cls._live is None:
             return
-        cls._live.update(Text.assemble(cls._health_prefix(), Text(message)), refresh=True)
+        cls._live.update(
+            Text.assemble(cls._health_prefix(), Text(' • ', 'dim'), Text(message)),
+            refresh=True,
+        )
 
     @classmethod
     def _do_refresh(cls) -> None:
