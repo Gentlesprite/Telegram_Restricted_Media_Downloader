@@ -148,8 +148,7 @@ class Bot:
         BotCommandText.commands_with_prefix()
     ) + ('/start',)
     LINK_PREVIEW_OPTIONS = LinkPreviewOptions(is_disabled=True)
-    MAX_NOTIFY_LINKS = 20  # 单次命令链接数超过该值时不再通过机器人通知,避免消息过长编辑频繁触发风控。
-    MAX_INVALID_IDS = 20  # 转发的缺失消息超过该值时只提示条数,不再逐条列出,避免反复编辑甚至重发消息触发风控。
+    MAX_BOT_NOTICE_ITEMS = 20  # 机器人通知条目上限,单次命令链接数超过该值时不再通过机器人通知,避免消息过长编辑频繁触发风控。
 
     def __init__(self):
         self.application = None
@@ -590,7 +589,7 @@ class Bot:
                 }
             # 非下载后上传路径:正常发送下载创建通知(链接过多时改为提示通知已禁用)。
             link_count: int = len(right_link) + len(invalid_link)
-            if link_count <= Bot.MAX_NOTIFY_LINKS:
+            if link_count <= Bot.MAX_BOT_NOTICE_ITEMS:
                 notify_text: list = self.update_text(
                     right_link=right_link,
                     invalid_link=invalid_link

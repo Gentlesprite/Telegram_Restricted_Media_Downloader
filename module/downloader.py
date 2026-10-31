@@ -262,7 +262,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         invalid_link: set = link_meta.get('invalid_link')
         last_bot_message: Union[pyrogram.types.Message, None] = link_meta.get('last_bot_message')
         link_count: int = len(right_link) + len(invalid_link)
-        if last_bot_message and link_count <= Bot.MAX_NOTIFY_LINKS:  # 消息条数超过MAX_NOTIFY_LINKS时通知文案过长,编辑频繁易触发风控,此时不再通知。
+        if last_bot_message and link_count <= Bot.MAX_BOT_NOTICE_ITEMS:  # 消息条数超过设定值时通知文案过长,编辑频繁易触发风控,此时不再通知。
             await self.safe_edit_message(
                 client=client,
                 message=message,
@@ -272,7 +272,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     invalid_link=invalid_link
                 )
             )
-        elif not with_upload and link_count > Bot.MAX_NOTIFY_LINKS:  # 仅当非下载后上传且链接确实过多时才告警;下载后上传静默由上传结果统一反馈,不算异常。
+        elif not with_upload and link_count > Bot.MAX_BOT_NOTICE_ITEMS:  # 仅当非下载后上传且链接确实过多时才告警;下载后上传静默由上传结果统一反馈,不算异常。
             log.info('消息过长,本次任务无法通过机器人显示通知。')
         links: Union[set, None] = self.__process_links(link=list(right_link))
 
@@ -301,7 +301,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 with_upload['owner'] = requester
             invalid_link.add(link) if task.get('status') == DownloadStatus.FAILURE else self.bot_task_link.add(link)
         right_link -= invalid_link
-        if last_bot_message and link_count <= Bot.MAX_NOTIFY_LINKS:
+        if last_bot_message and link_count <= Bot.MAX_BOT_NOTICE_ITEMS:
             await self.safe_edit_message(
                 client=client,
                 message=message,
@@ -845,7 +845,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     if i not in storage_id:
                         invalid_id.append(i)
                 if invalid_id:
-                    if len(invalid_id) > Bot.MAX_INVALID_IDS:
+                    if len(invalid_id) > Bot.MAX_BOT_NOTICE_ITEMS:
                         # 缺失过多时逐条列出会反复编辑甚至重发消息,极易触发风控,改为只提示跳过条数。
                         last_message = await self.safe_edit_message(
                             client=client,
