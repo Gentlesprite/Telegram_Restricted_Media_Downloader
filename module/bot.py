@@ -595,6 +595,8 @@ class Bot:
                     right_link=right_link,
                     invalid_link=invalid_link
                 )
+            elif invalid_link:
+                notify_text: list = [BotMessage.TOO_MANY_INVALID_DOWNLOAD_MESSAGE.format(count=len(invalid_link))]
             else:
                 notify_text: list = [BotMessage.TOO_MANY_MESSAGE]
             return {

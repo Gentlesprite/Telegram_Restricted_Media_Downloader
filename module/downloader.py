@@ -853,7 +853,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             client=client,
                             message=message,
                             last_message_id=last_message.id,
-                            text=safe_message(BotMessage.TOO_MANY_INVALID_MESSAGE.format(count=len(invalid_id)))
+                            text=safe_message(BotMessage.TOO_MANY_INVALID_FORWARD_MESSAGE.format(count=len(invalid_id)))
                         )
                     else:
                         last_message = await self.safe_edit_message(
