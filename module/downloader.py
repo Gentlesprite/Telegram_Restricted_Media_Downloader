@@ -261,9 +261,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         right_link: set = link_meta.get('right_link')
         invalid_link: set = link_meta.get('invalid_link')
         last_bot_message: Union[pyrogram.types.Message, None] = link_meta.get('last_bot_message')
-        # 消息条数超过MAX_NOTIFY_LINKS时通知文案过长,编辑频繁易触发风控,此时不再通知。
         link_count: int = len(right_link) + len(invalid_link)
-        if last_bot_message and link_count <= Bot.MAX_NOTIFY_LINKS:
+        if last_bot_message and link_count <= Bot.MAX_NOTIFY_LINKS:  # 消息条数超过MAX_NOTIFY_LINKS时通知文案过长,编辑频繁易触发风控,此时不再通知。
             await self.safe_edit_message(
                 client=client,
                 message=message,
@@ -273,15 +272,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                     invalid_link=invalid_link
                 )
             )
-        elif not with_upload and link_count > Bot.MAX_NOTIFY_LINKS:
-            # 仅当非下载后上传且链接确实过多时才告警;下载后上传静默由上传结果统一反馈,不算异常。
-            log.warning('消息过长编辑频繁,暂时无法通过机器人显示通知。')
+        elif not with_upload and link_count > Bot.MAX_NOTIFY_LINKS:  # 仅当非下载后上传且链接确实过多时才告警;下载后上传静默由上传结果统一反馈,不算异常。
+            log.info('消息过长,本次任务无法通过机器人显示通知。')
         links: Union[set, None] = self.__process_links(link=list(right_link))
 
         if links is None:
             return None
         # 记录任务创建者:下载完成通知与「下载后上传」的后续通知都回到发令者。
-        # 优先使用显式传入的 owner(受限「下载后上传」场景),否则回退到消息发送者。
+        # 优先使用显式传入的owner(受限「下载后上传」场景),否则回退到消息发送者。
         requester = owner if owner is not None else message.from_user.id
         # 登记创建者显示名,网页面板的「通知」板块据此展示"谁创建的任务"。
         NoticeHub.add_owner(owner=requester, user=message.from_user)
@@ -295,7 +293,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 owner=requester
             )
             dl_task = DownloadTask.get(link)
-            # 同一链接可能被不同用户先后下载,任务对象在 TASKS 中长期缓存,
+            # 同一链接可能被不同用户先后下载,任务对象在TASKS中长期缓存,
             # 必须每次请求都刷新归属者,否则会沿用首个用户导致完成通知发错人。
             if dl_task is not None:
                 dl_task.owner = requester

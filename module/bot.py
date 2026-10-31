@@ -598,7 +598,7 @@ class Bot:
             elif invalid_link:
                 notify_text: list = [BotMessage.TOO_MANY_INVALID_DOWNLOAD_MESSAGE.format(count=len(invalid_link))]
             else:
-                notify_text: list = [BotMessage.TOO_MANY_MESSAGE]
+                notify_text: list = ['\n'.join([BotMessage.TASK_ASSIGN, BotMessage.TOO_MANY_MESSAGE])]
             return {
                 'right_link': right_link,
                 'invalid_link': invalid_link,
