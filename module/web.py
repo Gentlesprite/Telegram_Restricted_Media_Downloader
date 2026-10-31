@@ -248,8 +248,11 @@ class WebHandler(BaseHTTPRequestHandler):
         self.send_header('Content-Length', str(len(body)))
         self.send_header('Cache-Control', 'no-store')  # 禁用缓存,避免浏览器沿用旧页面。
         self.__response_session_cookie()
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.end_headers()
+            self.wfile.write(body)
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError) as e:
+            log.info(f'响应写入被客户端中止,{_t(KeyWord.REASON)}:"{e}"')
 
     def __response_progress(self) -> None:
         """返回进度数据的JSON。"""
