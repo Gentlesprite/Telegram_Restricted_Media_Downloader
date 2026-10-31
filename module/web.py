@@ -688,7 +688,8 @@ class Web:
             log.debug(f'获取监听信息时出错,{_t(KeyWord.REASON)}:"{e}"')
         return result
 
-    def get_notices(self) -> dict:
+    @staticmethod
+    def get_notices() -> dict:
         """获取通知中心登记的通知,按类型分组供「通知」板块展示。"""
         return NoticeHub.snapshot()
 
