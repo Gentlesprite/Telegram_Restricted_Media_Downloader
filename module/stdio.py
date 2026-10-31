@@ -887,17 +887,23 @@ class ConnectionStatus:
         """切换为已连接状态,显示常驻健康前缀(静态,不旋转)。"""
         if cls._live is None:
             return
-        cls._live.update(cls._health_prefix(), refresh=True)
+        try:
+            cls._live.update(cls._health_prefix(), refresh=True)
+        except Exception:  # noqa.
+            pass  # 状态提示为辅助显示,刷新失败不应波及业务调用流。
 
     @classmethod
     def _show_connecting(cls, message: str) -> None:
         """切换为连接中/在途状态,显示健康前缀+分隔符+活动文案(静态,旋转由进度条spinner承担)。"""
         if cls._live is None:
             return
-        cls._live.update(
-            Text.assemble(cls._health_prefix(), Text(' • ', 'dim'), Text(message)),
-            refresh=True,
-        )
+        try:
+            cls._live.update(
+                Text.assemble(cls._health_prefix(), Text(' • ', 'dim'), Text(message)),
+                refresh=True,
+            )
+        except Exception:  # noqa.
+            pass  # 状态提示为辅助显示,刷新失败不应波及业务调用流。
 
     @classmethod
     def _do_refresh(cls) -> None:
