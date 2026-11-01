@@ -1066,7 +1066,7 @@ class GetStdioParams:
         style: str = '#FF4689'
         while True:
             session_directory = console.input(
-                '请输入「会话文件目录」(可为「空目录」,也可为「已登录的会话文件目录」):').strip()
+                '请输入「会话文件目录」(可为「空目录」,也可为「已登录的会话文件目录」):').strip().strip('"')
             console.print(f'「会话文件夹的路径」设置为:{session_directory}。', style=style)
             return {'session_directory': session_directory}
 
@@ -1138,7 +1138,7 @@ class GetStdioParams:
                 bot_notice = '(检测到已配置机器人,此步骤可忽略)' if enable_bot else ''
                 links_file_path = console.input(
                     f'请输入需要下载的媒体链接的「完整路径」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」'
-                    f'格式 - 「{valid_format}」{bot_notice}:').strip()
+                    f'格式 - 「{valid_format}」{bot_notice}:').strip().strip('"')
                 if links_file_path == '':
                     if last_record is not None:
                         links_file_path = last_record
@@ -1171,7 +1171,7 @@ class GetStdioParams:
         # 输入媒体保存路径,确保是一个有效的目录路径。
         while True:
             save_directory = console.input(
-                f'请输入媒体「保存路径」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」:').strip()
+                f'请输入媒体「保存路径」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」:').strip().strip('"')
             if save_directory == '':
                 if last_record is not None:
                     save_directory = last_record

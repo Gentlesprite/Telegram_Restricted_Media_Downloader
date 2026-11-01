@@ -86,9 +86,9 @@ console = Console(log_path=False, log_time_format=LOG_TIME_FORMAT)
 DOWNLOAD_TIMEOUT = 120
 FORWARD_LIMIT = 33  # 每分钟允许的最大转发次数。
 AUTHOR = 'Gentlesprite'
-__version__ = '2.1.5'
+__version__ = '2.1.6'
 __license__ = 'GPL-3.0-or-later'
-__update_date__ = '2026-10-31 14:48:18'
+__update_date__ = '2026-11-01 23:11:37'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/{AUTHOR}>'
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
 SOFTWARE_SHORT_NAME = 'TRMD'
