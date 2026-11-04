@@ -37,6 +37,7 @@ from pyrogram.errors import (
     FloodPremiumWait
 )
 from pyrogram.errors.exceptions.bad_request_400 import (
+    QueryIdInvalid,
     MessageNotModified,
     AccessTokenInvalid
 )
@@ -1014,7 +1015,10 @@ class Bot:
 
     @staticmethod
     async def callback_data(client: pyrogram.Client, callback_query: CallbackQuery) -> Union[str, None]:
-        await callback_query.answer()
+        try:
+            await callback_query.answer()
+        except QueryIdInvalid as e:  # 弱网下answer回调可能超过Telegram的query_id有效期(约数秒)而失效。
+            log.info(f'回调应答超时,query_id已失效,跳过本次应答,{_t(KeyWord.REASON)}:"{e}"')
         data = callback_query.data
         if not data:
             return None
@@ -2936,7 +2940,10 @@ class AddAuthHandler(CallbackHandler):
         query = ctx.query
         # 仅root可发起授权,非root直接拒绝。
         if not downloader.root or query.from_user.id != downloader.root[0]:
-            await query.answer('⛔该操作仅`root`可用。', show_alert=True)
+            try:
+                await query.answer('⛔该操作仅`root`可用。', show_alert=True)
+            except QueryIdInvalid as e:  # 弱网下失效,或已被首次answer消费导致query_id无效。
+                log.info(f'应答超时,query_id已失效,跳过本次应答,{_t(KeyWord.REASON)}:"{e}"')
             return None
         # 打开输入模式,提示root发送待授权用户ID或@用户名,并支持取消。
         await query.message.edit_text(
