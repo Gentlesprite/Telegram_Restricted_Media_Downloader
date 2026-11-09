@@ -103,6 +103,11 @@ from module.enums import (
 
 class Bot:
     BOT_NAME: str = 'TRMD_BOT'
+    # 旧版kurigram(2.2.26及更早)的dispatcher没有_groups_lock,用它兜底保护自建的
+    # groups写入。放在类属性而非实例属性:threading.RLock不可pickle,若进__dict__
+    # 会让Bot实例无法pickle/deepcopy;类属性不随实例序列化,反序列化后仍可用,
+    # 且多个Bot实例共享同一把锁,对同一dispatcher的并发写才是互斥的。
+    _fallback_groups_lock = threading.RLock()
     COMMANDS: List[BotCommand] = [
         BotCommand(BotCommandText.HELP[0], BotCommandText.HELP[1].split('\n')[0]),
         BotCommand(BotCommandText.DOWNLOAD[0], BotCommandText.DOWNLOAD[1].split('\n')[0]),
@@ -179,7 +184,6 @@ class Bot:
         self.pending_tasks: dict = {}  # 多步引导的待收集任务状态。
         self.keyword_handlers: dict = {}  # 关键词输入模式的handler,按chat_id隔离。
         self.auth_handlers: dict = {}  # 添加授权用户输入模式的handler,按chat_id隔离。
-        self._fallback_groups_lock = threading.RLock()  # kurigram2.2.26及更早版本的dispatcher没有_groups_lock,用它兜底保护自建的groups写入。
 
     @staticmethod
     async def authorized_filter(flt, _client, update) -> bool:
@@ -193,8 +197,9 @@ class Bot:
 
         2.2.27起复用dispatcher自带的_groups_lock,与库内add/remove_handler共用
         同一把锁,避免并发写groups时互相覆盖;2.2.26及更早版本没有该属性,
-        回退到__init__里自建的可重入锁。锁内不调用库的add/remove_handler,
-        否则2.2.27的不可重入threading.Lock会二次加锁导致死锁。
+        回退到类属性_fallback_groups_lock(放类属性是为了不破坏pickle/deepcopy)。
+        锁内不调用库的add/remove_handler,否则2.2.27的不可重入threading.Lock
+        会二次加锁导致死锁。
         """
         lock = getattr(self.bot.dispatcher, '_groups_lock', None)
         return lock if lock is not None else self._fallback_groups_lock

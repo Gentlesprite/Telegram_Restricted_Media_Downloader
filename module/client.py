@@ -57,13 +57,16 @@ from module import (
     DOWNLOAD_TIMEOUT,
     SOFTWARE_SHORT_NAME,
 )
+from module.util import (
+    ainput,
+    AdjustableSemaphore
+)
 from module.enums import (
     KeyWord,
     WaitingKind,
     DownloadType
 )
 from module.stdio import ConnectionStatus
-from module.util import ainput, AdjustableSemaphore
 from module.language import _t
 
 
@@ -552,11 +555,11 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
 
                             # https://core.telegram.org/cdn#verifying-files
                             def _check_all_hashes(
-                                hashes: list[raw.base.FileHash],
-                                decrypted_chunk: bytes,
+                                    hashes: list[raw.base.FileHash],
+                                    decrypted_chunk: bytes,
                             ) -> None:
                                 for i, h in enumerate(hashes):
-                                    cdn_chunk = decrypted_chunk[h.limit * i : h.limit * (i + 1)]
+                                    cdn_chunk = decrypted_chunk[h.limit * i: h.limit * (i + 1)]
                                     CDNFileHashMismatch.check(
                                         h.hash == sha256(cdn_chunk).digest(),
                                         "h.hash == sha256(cdn_chunk).digest()",
