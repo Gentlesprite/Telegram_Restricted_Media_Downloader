@@ -333,6 +333,10 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
         is_current_dc = await self.storage.dc_id() == dc_id
 
         if not temporary and is_current_dc and not is_media:
+            # Only reachable on a connected client, where `session` is set.
+            if self.session is None:
+                raise ConnectionError("Client is not connected")
+
             return self.session
 
         sessions = self.media_sessions if is_media else self.sessions
