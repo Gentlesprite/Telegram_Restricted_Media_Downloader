@@ -8,6 +8,7 @@ import copy
 import asyncio
 import datetime
 import calendar
+import threading
 
 from functools import partial
 from dataclasses import dataclass
@@ -178,6 +179,7 @@ class Bot:
         self.pending_tasks: dict = {}  # 多步引导的待收集任务状态。
         self.keyword_handlers: dict = {}  # 关键词输入模式的handler,按chat_id隔离。
         self.auth_handlers: dict = {}  # 添加授权用户输入模式的handler,按chat_id隔离。
+        self._fallback_groups_lock = threading.RLock()  # kurigram2.2.26及更早版本的dispatcher没有_groups_lock,用它兜底保护自建的groups写入。
 
     @staticmethod
     async def authorized_filter(flt, _client, update) -> bool:
@@ -186,38 +188,56 @@ class Bot:
         uid = getattr(user, 'id', None)
         return uid is not None and uid in flt.authorized_ids
 
+    def _groups_lock(self):
+        """返回注册handler用的锁。
+
+        2.2.27起复用dispatcher自带的_groups_lock,与库内add/remove_handler共用
+        同一把锁,避免并发写groups时互相覆盖;2.2.26及更早版本没有该属性,
+        回退到__init__里自建的可重入锁。锁内不调用库的add/remove_handler,
+        否则2.2.27的不可重入threading.Lock会二次加锁导致死锁。
+        """
+        lock = getattr(self.bot.dispatcher, '_groups_lock', None)
+        return lock if lock is not None else self._fallback_groups_lock
+
     def add_handler(self, handler, group: int = 0):
         """添加handler到指定的group。
 
-        自行维护groups,不走库的add_handler:2.2.26及更早版本的官方实现存在问题[#473](https://github.com/kurigram-org/kurigram/pull/473)
-        #473问题体现在create_task异步排队(v1.9.0的"关键词仅第一次生效"即由此引起),2.2.27才改为同步。
-        这里同步立即生效,并整体替换groups(copy-on-write),使handler_worker正在遍历的
-        旧字典不受影响,避免在2.2.27触发"dictionary changed size during iteration"。
-        不依赖库版本、无需运行时判断版本,add/remove结果与原自定义实现一致。
+        自行维护groups,不走库的add_handler:2.2.26及更早版本的官方实现用
+        create_task异步排队,调用返回时groups尚未变更,且remove不存在的group会抛ValueError。
+        [#473](https://github.com/kurigram-org/kurigram/pull/473)在2.2.27
+        改为同步+加锁+copy-on-write,但remove仍不静默。这里同步立即生效、不存在时
+        静默跳过,也不依赖旧版官方实现所用的client.loop(2.2.27已删除该属性)。
+        整体替换groups使handler_worker遍历中的旧字典不受影响,避免触发
+        "dictionary changed size during iteration"。
 
-        并发边界(当前不触发):未加锁以免依赖2.2.27私有的_groups_lock,
-        "读-拷贝-替换"在多线程同时注册时会丢handler。当前调用均在bot回调内
-        单线程同步执行,启动期官方add_handler(带锁、排序)与此串行不重叠,
-        user client使用另一dispatcher,全仓也无缓存groups旧引用处。
-        若将来从网页等其他线程注册handler,需补锁。
+        v1.9.0"设置关键词仅第一次生效"并非异步排队所致:8组对照实测中,add/remove
+        用官方异步还是本实现都不影响结果;该问题的主修复是downloader.py在任务
+        执行/取消时补的add_keyword_mode_handler(enable=False),用于关闭残留的
+        输入模式handler。本写法不依赖库版本、无需运行时判断版本,
+        add/remove结果与原自定义实现一致。
+
+        写操作在_groups_lock保护的临界区内完成,防止多线程同时"读-拷贝-替换"
+        丢handler。临界区只有字典拷贝与赋值,无await/IO,不会长时间阻塞事件循环。
         """
         dispatcher = self.bot.dispatcher
-        groups = {g: list(handlers) for g, handlers in dispatcher.groups.items()}
-        groups.setdefault(group, []).append(handler)
-        dispatcher.groups = groups
+        with self._groups_lock():
+            groups = {g: list(handlers) for g, handlers in dispatcher.groups.items()}
+            groups.setdefault(group, []).append(handler)
+            dispatcher.groups = groups
         log.info(f'添加handler到group={group},当前handler数量:{len(groups[group])}')
 
     def remove_handler(self, handler, group: int = 0):
         """从指定的group中移除handler。group或handler不存在时静默跳过(与旧实现一致)。
 
-        同样以copy-on-write整体替换groups,并发边界见add_handler。
+        同样在_groups_lock保护的临界区内以copy-on-write整体替换groups。
         """
         dispatcher = self.bot.dispatcher
-        groups = {g: list(handlers) for g, handlers in dispatcher.groups.items()}
-        if handler not in groups.get(group, []):
-            return
-        groups[group].remove(handler)
-        dispatcher.groups = groups
+        with self._groups_lock():
+            groups = {g: list(handlers) for g, handlers in dispatcher.groups.items()}
+            if handler not in groups.get(group, []):
+                return
+            groups[group].remove(handler)
+            dispatcher.groups = groups
         log.info(f'从group={group}移除handler,剩余handler数量:{len(groups[group])}')
 
     def add_keyword_mode_handler(
