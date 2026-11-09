@@ -63,11 +63,26 @@ from module.enums import (
     DownloadType
 )
 from module.stdio import ConnectionStatus
-from module.util import ainput
+from module.util import ainput, AdjustableSemaphore
 from module.language import _t
 
 
 class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
+
+    def _rebuild_loop_bound_state(self) -> None:
+        """2.2.27的start()会把两个传输信号量重建为普通asyncio.Semaphore,
+        覆盖build_client()设置的AdjustableSemaphore,导致网页面板无法实时调整并发数。
+        这里在重建后换回可调信号量,并保留本次重建前的额度(含运行时修改后的值)。
+        """
+        limits = (
+            getattr(self.get_file_semaphore, 'limit', None),
+            getattr(self.save_file_semaphore, 'limit', None),
+        )
+        super()._rebuild_loop_bound_state()
+        for name, limit in zip(('get_file_semaphore', 'save_file_semaphore'), limits):
+            rebuilt = getattr(self, name)
+            value = limit if limit is not None else getattr(rebuilt, '_value', 1)
+            setattr(self, name, AdjustableSemaphore(value))
 
     async def authorize(self) -> pyrogram.types.User:
         console.print(
