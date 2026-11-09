@@ -1,8 +1,7 @@
-tgcrypto
-PyYAML
+kurigram[fast]==2.2.27
 rich==15.0.0
+PyYAML
 qrcode
 pyreadline3
-kurigram==2.2.26
 pygments
 pymediainfo==7.0.1

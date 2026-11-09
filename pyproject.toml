@@ -7,12 +7,11 @@ readme = "README.md"
 requires-python = ">=3.13.2"
 license = "GPL-3.0-or-later"
 dependencies = [
-    "kurigram==2.2.26",
+    "kurigram[fast]==2.2.27",
     "pygments>=2.19.2",
     "pymediainfo==7.0.1",
     "pyreadline3>=3.5.4",
     "pyyaml>=6.0.3",
     "qrcode>=8.2",
     "rich==15.0.0",
-    "tgcrypto>=1.2.5",
 ]
