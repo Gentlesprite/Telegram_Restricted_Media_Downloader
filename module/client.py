@@ -632,8 +632,13 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 file_size: int = message.photo.file_size
             if offset < 0:  # 负偏移表示从文件末尾倒数。
                 if file_size == 0:
-                    raise ValueError('Negative offset for live photo requires file_size')
-                offset += math.ceil(file_size / 1024 / 1024)
+                    raise ValueError(
+                        "Negative offset for live photo requires file_size"
+                    )
+
+                chunks = math.ceil(file_size / 1024 / 1024)
+                offset += chunks
+
             async for chunk in self.get_file(file_id_obj, file_size, limit, offset):
                 yield chunk
             return
@@ -663,8 +668,12 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
 
         if offset < 0:
             if file_size == 0:
-                raise ValueError("Negative offsets are not supported for file ids")
-            offset += math.ceil(file_size / 1024 / 1024)
+                raise ValueError(
+                    "Negative offsets are not supported for file ids, pass a Message object instead"
+                )
+
+            chunks = math.ceil(file_size / 1024 / 1024)
+            offset += chunks
 
         async for chunk in self.get_file(file_id_obj, file_size, limit, offset):
             yield chunk
