@@ -187,17 +187,38 @@ class Bot:
         return uid is not None and uid in flt.authorized_ids
 
     def add_handler(self, handler, group: int = 0):
-        """添加handler到指定的group。直接操作dispatcher.groups以确保正确添加。"""
-        if group not in self.bot.dispatcher.groups:
-            self.bot.dispatcher.groups[group] = []
-        self.bot.dispatcher.groups[group].append(handler)
-        log.info(f'添加handler到group={group},当前handler数量:{len(self.bot.dispatcher.groups[group])}')
+        """添加handler到指定的group。
+
+        自行维护groups,不走库的add_handler:2.2.26及更早版本的官方实现存在问题[#473](https://github.com/kurigram-org/kurigram/pull/473)
+        #473问题体现在create_task异步排队(v1.9.0的"关键词仅第一次生效"即由此引起),2.2.27才改为同步。
+        这里同步立即生效,并整体替换groups(copy-on-write),使handler_worker正在遍历的
+        旧字典不受影响,避免在2.2.27触发"dictionary changed size during iteration"。
+        不依赖库版本、无需运行时判断版本,add/remove结果与原自定义实现一致。
+
+        并发边界(当前不触发):未加锁以免依赖2.2.27私有的_groups_lock,
+        "读-拷贝-替换"在多线程同时注册时会丢handler。当前调用均在bot回调内
+        单线程同步执行,启动期官方add_handler(带锁、排序)与此串行不重叠,
+        user client使用另一dispatcher,全仓也无缓存groups旧引用处。
+        若将来从网页等其他线程注册handler,需补锁。
+        """
+        dispatcher = self.bot.dispatcher
+        groups = {g: list(handlers) for g, handlers in dispatcher.groups.items()}
+        groups.setdefault(group, []).append(handler)
+        dispatcher.groups = groups
+        log.info(f'添加handler到group={group},当前handler数量:{len(groups[group])}')
 
     def remove_handler(self, handler, group: int = 0):
-        """从指定的group中移除handler。直接操作dispatcher.groups以确保正确移除。"""
-        if group in self.bot.dispatcher.groups and handler in self.bot.dispatcher.groups[group]:
-            self.bot.dispatcher.groups[group].remove(handler)
-            log.info(f'从group={group}移除handler,剩余handler数量:{len(self.bot.dispatcher.groups[group])}')
+        """从指定的group中移除handler。group或handler不存在时静默跳过(与旧实现一致)。
+
+        同样以copy-on-write整体替换groups,并发边界见add_handler。
+        """
+        dispatcher = self.bot.dispatcher
+        groups = {g: list(handlers) for g, handlers in dispatcher.groups.items()}
+        if handler not in groups.get(group, []):
+            return
+        groups[group].remove(handler)
+        dispatcher.groups = groups
+        log.info(f'从group={group}移除handler,剩余handler数量:{len(groups[group])}')
 
     def add_keyword_mode_handler(
             self,

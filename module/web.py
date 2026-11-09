@@ -1029,7 +1029,9 @@ class Web:
         if client is None:
             return
         try:
-            loop = getattr(client, 'loop', None)
+            # 2.2.27移除了Client.loop属性,改用下载器持有的事件循环(同__remove_listen处),
+            # 保持跨线程call_soon_threadsafe语义,不退化为在web线程直接改信号量额度。
+            loop = getattr(getattr(self, 'downloader', None), 'loop', None)
 
             def adjust() -> None:
                 client.get_file_semaphore.set_limit(download)

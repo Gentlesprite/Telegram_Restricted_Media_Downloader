@@ -388,8 +388,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             file_size: int = 0,
             limit: int = 0,
             offset: int = 0,
-            progress: Callable = None,
-            progress_args: tuple = ()
+            progress: Callable | None = None,
+            progress_args: tuple = (),
     ) -> AsyncGenerator[bytes, None]:
         async with self.get_file_semaphore:
             file_type = file_id.file_type
@@ -473,7 +473,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                             if inspect.iscoroutinefunction(progress):
                                 await func()
                             else:
-                                await self.loop.run_in_executor(self.executor, func)
+                                loop = asyncio.get_running_loop()
+                                await loop.run_in_executor(self.executor, func)
 
                         if len(chunk) < chunk_size or current >= total:
                             break
@@ -519,7 +520,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                             chunk = r2.bytes
 
                             # https://core.telegram.org/cdn#decrypting-files
-                            decrypted_chunk = await self.loop.run_in_executor(
+                            decrypted_chunk = await asyncio.get_running_loop().run_in_executor(
                                 self.executor,
                                 aes.ctr256_decrypt,
                                 chunk,
@@ -535,15 +536,23 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                             )
 
                             # https://core.telegram.org/cdn#verifying-files
-                            def _check_all_hashes():
+                            def _check_all_hashes(
+                                hashes: list[raw.base.FileHash],
+                                decrypted_chunk: bytes,
+                            ) -> None:
                                 for i, h in enumerate(hashes):
-                                    cdn_chunk = decrypted_chunk[h.limit * i: h.limit * (i + 1)]
+                                    cdn_chunk = decrypted_chunk[h.limit * i : h.limit * (i + 1)]
                                     CDNFileHashMismatch.check(
                                         h.hash == sha256(cdn_chunk).digest(),
-                                        "h.hash == sha256(cdn_chunk).digest()"
+                                        "h.hash == sha256(cdn_chunk).digest()",
                                     )
 
-                            await self.loop.run_in_executor(self.executor, _check_all_hashes)
+                            await asyncio.get_running_loop().run_in_executor(
+                                self.executor,
+                                _check_all_hashes,
+                                hashes,
+                                decrypted_chunk,
+                            )
 
                             yield decrypted_chunk
 
@@ -561,7 +570,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                                 if inspect.iscoroutinefunction(progress):
                                     await func()
                                 else:
-                                    await self.loop.run_in_executor(self.executor, func)
+                                    loop = asyncio.get_running_loop()
+                                    await loop.run_in_executor(self.executor, func)
 
                             if len(chunk) < chunk_size or current >= total:
                                 break
@@ -786,16 +796,21 @@ class TelegramRestrictedMediaDownloaderSession(Session):
         message = await self.msg_factory.create(data)
         msg_id = message.msg_id
 
+        # 2.2.27起_stop()会在清空results前给每个等待者置exception并set事件,
+        # 故必须持有Result的局部引用:等待结束时字典项可能已被移除。
+        pending_result: Result | None = None
+
         if wait_response:
-            self.results[msg_id] = Result()
+            pending_result = Result()
+            self.results[msg_id] = pending_result
 
         log.debug('Sent: %s', message)
 
-        payload = await self.client.loop.run_in_executor(
+        payload = await asyncio.get_running_loop().run_in_executor(
             self.connection.protocol.crypto_executor,
             mtproto.pack,
             message,
-            self.salt,
+            self._current_salt(self.client.server_time),
             self.session_id,
             self.auth_key,
             self.auth_key_id
@@ -807,13 +822,18 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             self.results.pop(msg_id, None)
             raise e
 
-        if wait_response:
+        if pending_result is not None:
             try:
-                await asyncio.wait_for(self.results[msg_id].event.wait(), timeout)
+                await asyncio.wait_for(pending_result.event.wait(), timeout)
             except asyncio.TimeoutError:
                 pass
 
-            result = self.results.pop(msg_id).value
+            self.results.pop(msg_id, None)
+
+            if pending_result.exception is not None:
+                raise pending_result.exception
+
+            result = pending_result.value
 
             if result is None:
                 raise TimeoutError('请求超时')
@@ -838,8 +858,8 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                 log.warning(
                     '%s: %s', BadMsgNotification.__name__, BadMsgNotification(e_code)
                 )
+            # handle_packet已接收新salt,此处只需按新salt重发(不再自行赋值self.salt)。
             if isinstance(result, raw.types.BadServerSalt):
-                self.salt = result.new_server_salt
                 return await self.send(data, wait_response, timeout)
 
             return result
