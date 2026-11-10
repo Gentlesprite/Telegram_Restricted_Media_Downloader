@@ -1985,9 +1985,9 @@ class Bot:
                 raise
 
     async def send_rich_table(self, message: pyrogram.types.Message, chunks: list) -> None:
-        """通过机器人将统计表的 Markdown 分片以富文本消息发送给用户。
+        """通过机器人将统计表的Markdown分片以富文本消息发送给用户。
 
-        ``chunks`` 为 Markdown 字符串列表:首片编辑原消息(以便键盘挂接),
+        chunks为Markdown字符串列表:首片编辑原消息(以便键盘挂接),
         其余分片作为新消息发送,规避单条富文本消息的长度上限。
         """
         if self.bot is None or not chunks:
@@ -2000,6 +2000,8 @@ class Bot:
                 message_id=message.id,
                 rich_message=pyrogram.types.InputRichMessage(markdown=first)
             )
+        except MessageNotModified:
+            pass
         except Exception as e:
             log.error(f'通过机器人发送统计表(首片)失败,{_t(KeyWord.REASON)}:"{e}"')
         for index, chunk in enumerate(rest, start=2):
@@ -2872,17 +2874,23 @@ class BackHandler(CallbackHandler):
         query = ctx.query
         if ctx.data == BotCallbackText.BACK_HELP:
             meta = await downloader.help()
-            await query.message.edit_text(
-                rich_message=pyrogram.types.InputRichMessage(
-                    markdown=meta.get('text'),
-                    skip_entity_detection=True
-                ),
-                reply_markup=meta.get('keyboard')
-            )
+            try:
+                await query.message.edit_text(
+                    rich_message=pyrogram.types.InputRichMessage(
+                        markdown=meta.get('text'),
+                        skip_entity_detection=True
+                    ),
+                    reply_markup=meta.get('keyboard')
+                )
+            except MessageNotModified:
+                pass
         elif ctx.data == BotCallbackText.BACK_TABLE:
             meta = await downloader.table()
-            await query.message.edit_text(meta.get('text'))
-            await query.message.edit_reply_markup(meta.get('keyboard'))
+            try:
+                await query.message.edit_text(meta.get('text'))
+                await query.message.edit_reply_markup(meta.get('keyboard'))
+            except MessageNotModified:
+                pass
 
 
 class TaskAssignHandler(CallbackHandler):
@@ -2992,13 +3000,16 @@ class AddAuthHandler(CallbackHandler):
                 log.info(f'应答超时,query_id已失效,跳过本次应答,{_t(KeyWord.REASON)}:"{e}"')
             return None
         # 打开输入模式,提示root发送待授权用户ID或@用户名,并支持取消。
-        await query.message.edit_text(
-            text='➕请输入要授权的用户`ID`或`@用户名`:',
-            reply_markup=KeyboardButton.single_button(
-                text='🔙取消',
-                callback_data=BotCallbackText.CANCEL_AUTH_INPUT
+        try:
+            await query.message.edit_text(
+                text='➕请输入要授权的用户`ID`或`@用户名`:',
+                reply_markup=KeyboardButton.single_button(
+                    text='🔙取消',
+                    callback_data=BotCallbackText.CANCEL_AUTH_INPUT
+                )
             )
-        )
+        except MessageNotModified:
+            pass
         downloader.add_auth_mode_handler(
             chat_id=query.from_user.id,
             callback_query=query,
@@ -3114,10 +3125,16 @@ class TableHandler(CallbackHandler):
                 await kb.choice_export_table_button(choice=choice)
                 return None
             elif res is False:
-                await query.message.edit_text(false_text)
+                try:
+                    await query.message.edit_text(false_text)
+                except MessageNotModified:
+                    pass
             else:
-                await query.message.edit_text(
-                    f'❌`{prompt_string}`打印失败。\n(具体原因请前往终端查看报错信息)')
+                try:
+                    await query.message.edit_text(
+                        f'❌`{prompt_string}`打印失败。\n(具体原因请前往终端查看报错信息)')
+                except MessageNotModified:
+                    pass
             await kb.back_table_button()
         elif data in (
                 BotCallbackText.TOGGLE_LINK_TABLE,
@@ -3152,13 +3169,22 @@ class TableHandler(CallbackHandler):
                 res = downloader.app.print_upload_table(upload_tasks=UploadTask.TASKS, export=True, only_export=True)
             if res:
                 folder = 'form' if is_docker() else folder
-                await query.message.edit_text(
-                    f'✅`{prompt_string}`已发送至您的「终端」并已「导出」为表格请注意查收。\n(请查看软件目录下`{folder}`文件夹)')
+                try:
+                    await query.message.edit_text(
+                        f'✅`{prompt_string}`已发送至您的「终端」并已「导出」为表格请注意查收。\n(请查看软件目录下`{folder}`文件夹)')
+                except MessageNotModified:
+                    pass
             elif res is False:
-                await query.message.edit_text('🌫️没有链接需要统计。')
+                try:
+                    await query.message.edit_text('🌫️没有链接需要统计。')
+                except MessageNotModified:
+                    pass
             else:
-                await query.message.edit_text(
-                    f'❌`{prompt_string}`导出失败。\n(具体原因请前往终端查看报错信息)')
+                try:
+                    await query.message.edit_text(
+                        f'❌`{prompt_string}`导出失败。\n(具体原因请前往终端查看报错信息)')
+                except MessageNotModified:
+                    pass
             await kb.back_table_button()
 
     @staticmethod
@@ -3339,9 +3365,12 @@ class AuthUserHandler(CallbackHandler):
         query = ctx.query
         uid = int(ctx.data.split('_')[-1])
         if uid not in bot.gc.authorized_users:
-            await query.message.edit_text(
-                text=f'用户`{uid}`已不在授权列表中。',
-                reply_markup=bot.menu_keyboard('auth'))
+            try:
+                await query.message.edit_text(
+                    text=f'用户`{uid}`已不在授权列表中。',
+                    reply_markup=bot.menu_keyboard('auth'))
+            except MessageNotModified:
+                pass
             return None
         # 热移除:实时从过滤器与配置中剔除,并持久化。
         bot.gc.authorized_users.remove(uid)
@@ -3352,9 +3381,12 @@ class AuthUserHandler(CallbackHandler):
         bot.gc.save_config(bot.gc.config)
         p = f'已移除授权用户:{uid}。'
         # 移除结果直接显示在text中,并复位为授权用户菜单(添加/移除、查看、返回)。
-        await query.message.edit_text(
-            text=f'✅用户`{uid}`已移除授权。',
-            reply_markup=bot.menu_keyboard('auth'))
+        try:
+            await query.message.edit_text(
+                text=f'✅用户`{uid}`已移除授权。',
+                reply_markup=bot.menu_keyboard('auth'))
+        except MessageNotModified:
+            pass
         log.info(f'{p}当前授权用户:{bot.gc.authorized_users}')
 
 
@@ -3372,9 +3404,15 @@ class ListenRemoveHandler(CallbackHandler):
             downloader.app.client.remove_handler(downloader.listen_download_chat.get(link))
             downloader.listen_download_chat.pop(link)
             downloader.listen_download_owner.pop(link, None)
-            await query.message.edit_text(link)
-            await query.message.edit_reply_markup(
-                KeyboardButton.single_button(text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL))
+            try:
+                await query.message.edit_text(link)
+            except MessageNotModified:
+                pass
+            try:
+                await query.message.edit_reply_markup(
+                    KeyboardButton.single_button(text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL))
+            except MessageNotModified:
+                pass
             p = f'已删除监听下载,频道链接:"{link}"。'
             console.log(p, style='#FF4689')
             log.info(f'{p}当前的监听下载信息:{downloader.listen_download_chat}')
@@ -3390,9 +3428,15 @@ class ListenRemoveHandler(CallbackHandler):
         m = link.split()
         joined = ' -> '.join(m)
         p = f'已删除监听转发,转发规则:"{joined}"。'
-        await query.message.edit_text(' ➡️ '.join(m))
-        await query.message.edit_reply_markup(
-            KeyboardButton.single_button(text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL))
+        try:
+            await query.message.edit_text(' ➡️ '.join(m))
+        except MessageNotModified:
+            pass
+        try:
+            await query.message.edit_reply_markup(
+                KeyboardButton.single_button(text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL))
+        except MessageNotModified:
+            pass
         console.log(p, style='#FF4689')
         log.info(f'{p}当前的监听转发信息:{downloader.listen_forward_chat}')
 
@@ -3517,7 +3561,10 @@ class DownloadChatHandler(CallbackHandler):
                 selected_date = selected_time.strftime('%Y-%m-%d %H:%M:%S')
                 year = selected_time.year
                 month = selected_time.month
-            await query.message.edit_text(text=f'📅选择{p_s_d}日期:\n{self.__filter_prompt(downloader, chat_id)}')
+            try:
+                await query.message.edit_text(text=f'📅选择{p_s_d}日期:\n{self.__filter_prompt(downloader, chat_id)}')
+            except MessageNotModified:
+                pass
             await kb.calendar_keyboard(dtype=dtype, year=year, month=month, selected_date=selected_date,
                                        chat_id=chat_id)
         elif data.startswith('adjust_step_'):
@@ -3609,17 +3656,20 @@ class DownloadChatHandler(CallbackHandler):
                 date_type = 'end_date'
                 p_s_d = '结束'
             downloader.download_chat_filter[chat_id]['date_range'][date_type] = timestamp
-            await query.message.edit_text(
-                text=f'📅选择{p_s_d}日期:\n{self.__filter_prompt(downloader, chat_id)}',
-                reply_markup=attach_task(
-                    kb.time_keyboard(
-                        dtype=dtype,
-                        date=date,
-                        adjust_step=downloader.download_chat_filter[chat_id]['date_range']['adjust_step']
-                    ),
-                    chat_id
+            try:
+                await query.message.edit_text(
+                    text=f'📅选择{p_s_d}日期:\n{self.__filter_prompt(downloader, chat_id)}',
+                    reply_markup=attach_task(
+                        kb.time_keyboard(
+                            dtype=dtype,
+                            date=date,
+                            adjust_step=downloader.download_chat_filter[chat_id]['date_range']['adjust_step']
+                        ),
+                        chat_id
+                    )
                 )
-            )
+            except MessageNotModified:
+                pass
             log.info(
                 f'日期设置,起始日期:{self.__get_update_time(downloader, chat_id)[0]},结束日期:{self.__get_update_time(downloader, chat_id)[1]}。')
         elif data.startswith(('drop_keyword_', 'ignore_keyword')):
@@ -3634,13 +3684,16 @@ class DownloadChatHandler(CallbackHandler):
                     keyword = keyword_list[keyword_index]
                     downloader.download_chat_filter.get(chat_id, {}).get('keyword', {}).pop(keyword, None)
                     keyword_list.remove(keyword)
-            await query.message.edit_text(
-                text=self.__filter_prompt(downloader, chat_id),
-                reply_markup=attach_task(
-                    KeyboardButton.keyword_filter_button(downloader.adding_keywords.get(chat_id, [])),
-                    chat_id
+            try:
+                await query.message.edit_text(
+                    text=self.__filter_prompt(downloader, chat_id),
+                    reply_markup=attach_task(
+                        KeyboardButton.keyword_filter_button(downloader.adding_keywords.get(chat_id, [])),
+                        chat_id
+                    )
                 )
-            )
+            except MessageNotModified:
+                pass
         elif data in (
                 BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER,
                 BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO,
@@ -3676,6 +3729,8 @@ class DownloadChatHandler(CallbackHandler):
                         chat_id
                     )
                 )
+            except MessageNotModified:
+                pass
             except ValueError:
                 await query.message.reply_text('⚠️至少需要选择一个下载类型')
             except Exception as e:
@@ -3881,19 +3936,28 @@ class MenuButtonHandler(CallbackHandler):
         query = ctx.query
         data = ctx.data
         if data == BotCallbackText.MENU_DOWNLOAD:
-            await query.edit_message_text(
-                text=BotButton.DOWNLOAD_MENU_TITLE,
-                reply_markup=downloader.menu_keyboard('download'))
+            try:
+                await query.edit_message_text(
+                    text=BotButton.DOWNLOAD_MENU_TITLE,
+                    reply_markup=downloader.menu_keyboard('download'))
+            except MessageNotModified:
+                pass
             return None
         elif data == BotCallbackText.MENU_LISTEN:
-            await query.edit_message_text(
-                text=BotButton.LISTEN_MENU_TITLE,
-                reply_markup=downloader.menu_keyboard('listen'))
+            try:
+                await query.edit_message_text(
+                    text=BotButton.LISTEN_MENU_TITLE,
+                    reply_markup=downloader.menu_keyboard('listen'))
+            except MessageNotModified:
+                pass
             return None
         elif data == BotCallbackText.MENU_UPLOAD:
-            await query.edit_message_text(
-                text=BotButton.UPLOAD_MENU_TITLE,
-                reply_markup=downloader.menu_keyboard('upload'))
+            try:
+                await query.edit_message_text(
+                    text=BotButton.UPLOAD_MENU_TITLE,
+                    reply_markup=downloader.menu_keyboard('upload'))
+            except MessageNotModified:
+                pass
             return None
         elif data == BotCallbackText.MENU_AUTH:
             await downloader.show_auth_menu(
@@ -3904,13 +3968,16 @@ class MenuButtonHandler(CallbackHandler):
             return None
         elif data == BotCallbackText.MENU_BACK:
             menu = await downloader.help(user_id=query.from_user.id)
-            await query.edit_message_text(
-                rich_message=pyrogram.types.InputRichMessage(
-                    markdown=menu['text'],
-                    skip_entity_detection=True
-                ),
-                reply_markup=menu['keyboard']
-            )
+            try:
+                await query.edit_message_text(
+                    rich_message=pyrogram.types.InputRichMessage(
+                        markdown=menu['text'],
+                        skip_entity_detection=True
+                    ),
+                    reply_markup=menu['keyboard']
+                )
+            except MessageNotModified:
+                pass
             return None
         else:
             return None
