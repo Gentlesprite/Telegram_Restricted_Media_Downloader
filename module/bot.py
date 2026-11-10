@@ -2888,6 +2888,9 @@ class BackHandler(CallbackHandler):
             meta = await downloader.table()
             try:
                 await query.message.edit_text(meta.get('text'))
+            except MessageNotModified:
+                pass
+            try:
                 await query.message.edit_reply_markup(meta.get('keyboard'))
             except MessageNotModified:
                 pass
