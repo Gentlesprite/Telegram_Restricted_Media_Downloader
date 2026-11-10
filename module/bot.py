@@ -711,8 +711,7 @@ class Bot:
         try:
             async for forum_topic in self.user.get_forum_topics(chat_id):
                 topic[str(forum_topic.id)] = True
-        except RPCError as e:
-            # 非话题频道会抛CHANNEL_FORUM_MISSING或CHANNEL_INVALID,按无话题处理,不显示话题按钮。
+        except RPCError as e:  # 非话题频道会抛CHANNEL_FORUM_MISSING或CHANNEL_INVALID,按无话题处理,不显示话题按钮。
             log.info(f'"{chat_id}"不是话题频道,不显示话题按钮,{_t(KeyWord.REASON)}:"{e}"')
         self.download_chat_filter[chat_id] = {
             'date_range':
@@ -742,6 +741,9 @@ class Bot:
         format_dtype = ','.join([_t(_) for _ in DownloadType()])
         include_comment = self.download_chat_filter[chat_id]['comment']
         comment: str = '开' if include_comment else '关'
+        topic_prompt: str = ','.join(
+            sorted((topic_id for topic_id, status in topic.items() if status), key=int)) if topic else ''
+        topic_line: str = f'\n🗂️包含话题:{topic_prompt}' if topic_prompt else ''
         await client.send_message(
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
@@ -750,7 +752,8 @@ class Bot:
                  f'⏭️当前选择的结束日期为:未定义\n'
                  f'📝当前选择的下载类型为:{format_dtype}\n'
                  f'🔑当前匹配的关键词为:未定义\n'
-                 f'👥包含评论区:{comment}',
+                 f'👥包含评论区:{comment}'
+                 f'{topic_line}',
             reply_markup=attach_task(
                 KeyboardButton.download_chat_filter_button(include_comment, bool(topic)), chat_id
             ),
@@ -3828,7 +3831,8 @@ class DownloadChatHandler(CallbackHandler):
                     await query.message.edit_text(
                         text=self.__filter_prompt(downloader, chat_id),
                         reply_markup=attach_task(
-                            kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'], has_topic),
+                            kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'],
+                                                           has_topic),
                             chat_id
                         )
                     )
@@ -3848,7 +3852,8 @@ class DownloadChatHandler(CallbackHandler):
                     await query.message.edit_text(
                         text=self.__filter_prompt(downloader, chat_id),
                         reply_markup=attach_task(
-                            kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'], has_topic),
+                            kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'],
+                                                           has_topic),
                             chat_id
                         )
                     )
@@ -3874,6 +3879,10 @@ class DownloadChatHandler(CallbackHandler):
             if data.startswith(BotCallbackPrefix.TOGGLE_TOPIC):
                 topic_id = data[len(BotCallbackPrefix.TOGGLE_TOPIC):]
                 if topic_id in topic:
+                    # 至少保留一个开启的话题,否则没有消息可下载。
+                    if topic[topic_id] and list(topic.values()).count(True) == 1:
+                        await query.message.reply_text('⚠️至少需要选择一个话题')
+                        return None
                     topic[topic_id] = not topic[topic_id]
             try:
                 await query.message.edit_text(
@@ -3919,6 +3928,10 @@ class DownloadChatHandler(CallbackHandler):
 
     def __filter_prompt(self, downloader, chat_id):
         start_time, end_time = self.__get_update_time(downloader, chat_id)
+        topic: dict = downloader.download_chat_filter[chat_id].get('topic', {})
+        topic_prompt: str = ','.join(
+            sorted((topic_id for topic_id, status in topic.items() if status), key=int)) if topic else ''
+        topic_line: str = f'\n🗂️包含话题:{topic_prompt}' if topic_prompt else ''
         return (
             f'💬下载频道:`{chat_id}`\n'
             f'⏮️当前选择的起始日期为:{start_time}\n'
@@ -3926,6 +3939,7 @@ class DownloadChatHandler(CallbackHandler):
             f'📝当前选择的下载类型为:{self.__get_format_dtype(downloader, chat_id)}\n'
             f'🔑当前匹配的关键词为:{self.__get_format_keywords(downloader, chat_id)}\n'
             f'👥包含评论区:{self.__get_format_comment_status(downloader, chat_id)}'
+            f'{topic_line}'
         )
 
     @staticmethod
