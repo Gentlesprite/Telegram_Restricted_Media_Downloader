@@ -2833,6 +2833,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 log.error(f'网络连接失败,请检查VPN是否可用,{_t(KeyWord.REASON)}:"{e}"')
         except AttributeError as e:
             run_error: bool = True
+            log.error(f'登录超时,请重新打开软件尝试登录,{_t(KeyWord.REASON)}:"{e}"')
             None if check_kurigram_version(warning=False) else console.print(
                 Issues.UPDATE_KURIGRAM_TIP.format(
                     current_version=pyrogram.__version__,
@@ -2840,7 +2841,6 @@ class TelegramRestrictedMediaDownloader(Bot):
                     exe=get_executable_path()
                     )
             )
-            log.error(f'登录超时,请重新打开软件尝试登录,{_t(KeyWord.REASON)}:"{e}"')
         except KeyboardInterrupt:
             console.log('⌨️ 用户键盘中断。')
         except OperationalError as e:
