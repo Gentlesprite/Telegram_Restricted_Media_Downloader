@@ -3718,13 +3718,16 @@ class DownloadChatHandler(CallbackHandler):
                     callback_query=query,
                     callback_prompt=partial(self.__filter_prompt, downloader, chat_id)
                 )
-                await query.message.edit_text(
-                    text=self.__filter_prompt(downloader, chat_id),
-                    reply_markup=attach_task(
-                        kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment']),
-                        chat_id
+                try:
+                    await query.message.edit_text(
+                        text=self.__filter_prompt(downloader, chat_id),
+                        reply_markup=attach_task(
+                            kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment']),
+                            chat_id
+                        )
                     )
-                )
+                except MessageNotModified:
+                    pass
             elif data == BotCallbackText.CANCEL_KEYWORD_INPUT:
                 downloader.adding_keywords.pop(chat_id, None)
                 downloader.add_keyword_mode_handler(
@@ -3735,6 +3738,20 @@ class DownloadChatHandler(CallbackHandler):
                     callback_prompt=partial(self.__filter_prompt, downloader, chat_id)
                 )
                 downloader.download_chat_filter[chat_id]['keyword'] = {}
+                try:
+                    await query.message.edit_text(
+                        text=self.__filter_prompt(downloader, chat_id),
+                        reply_markup=attach_task(
+                            kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment']),
+                            chat_id
+                        )
+                    )
+                except MessageNotModified:
+                    pass
+        elif data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_COMMENT:
+            status = downloader.download_chat_filter[chat_id]['comment']
+            downloader.download_chat_filter[chat_id]['comment'] = not status
+            try:
                 await query.message.edit_text(
                     text=self.__filter_prompt(downloader, chat_id),
                     reply_markup=attach_task(
@@ -3742,16 +3759,8 @@ class DownloadChatHandler(CallbackHandler):
                         chat_id
                     )
                 )
-        elif data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_COMMENT:
-            status = downloader.download_chat_filter[chat_id]['comment']
-            downloader.download_chat_filter[chat_id]['comment'] = not status
-            await query.message.edit_text(
-                text=self.__filter_prompt(downloader, chat_id),
-                reply_markup=attach_task(
-                    kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment']),
-                    chat_id
-                )
-            )
+            except MessageNotModified:
+                pass
 
     @staticmethod
     def __get_update_time(downloader, chat_id):
