@@ -44,7 +44,8 @@ from module import (
     VERSION_SEMVER,
     TRMD_WEB_SESSION,
     SOFTWARE_SHORT_NAME,
-    REFERRAL_RECORD_PATH
+    REFERRAL_RECORD_PATH,
+    REQUIRE_PYROGRAM_VERSION
 )
 from module.enums import (
     Link,
@@ -744,6 +745,30 @@ def check_environment():
         log.info('检测到"Docker"容器标识,当前运行于"Docker"容器中。')
     else:
         log.info('当前运行于"源码"环境中。')
+        check_kurigram_version()
+
+
+def check_kurigram_version() -> bool:
+    show_current_pyrogram_version: str = pyrogram.__version__
+    current_pyrogram_version: tuple = tuple(map(int, show_current_pyrogram_version.split('.')))
+    require_pyrogram_version: tuple = REQUIRE_PYROGRAM_VERSION
+    show_require_pyrogram_version = '.'.join(map(str, require_pyrogram_version))
+    if current_pyrogram_version < require_pyrogram_version:
+        log.warning(
+            f'当前客户端版本{show_current_pyrogram_version}低于需求版本{show_require_pyrogram_version},'
+            f'若出现兼容问题导致运行异常,'
+            f'需使用{sys.executable} -m pip install {show_require_pyrogram_version}升级至{show_require_pyrogram_version}。')
+        return False
+    elif current_pyrogram_version != require_pyrogram_version:
+        log.warning(
+            f'当前客户端版本{show_current_pyrogram_version}高于需求版本{show_require_pyrogram_version},'
+            f'若出现兼容问题导致运行异常,'
+            f'需使用{sys.executable} -m pip install {show_require_pyrogram_version}降级至{show_require_pyrogram_version}。')
+        return True
+    else:
+        log.info(f'当前客户端版本{show_current_pyrogram_version}与需求版本{show_require_pyrogram_version}一致。')
+
+    return True
 
 
 def get_executable_path() -> str:
