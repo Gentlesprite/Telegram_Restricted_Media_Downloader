@@ -19,6 +19,7 @@ from typing import (
 
 import pyrogram
 
+from rich.markup import escape
 from pyrogram.handlers import MessageHandler
 from pyrogram.enums.parse_mode import ParseMode
 from pyrogram.types.messages_and_media import ReplyParameters
@@ -2834,12 +2835,15 @@ class TelegramRestrictedMediaDownloader(Bot):
         except AttributeError as e:
             run_error: bool = True
             log.error(f'登录超时,请重新打开软件尝试登录,{_t(KeyWord.REASON)}:"{e}"')
+            require_version = '.'.join(map(str, REQUIRE_PYROGRAM_VERSION))
             None if check_kurigram_version(warning=False) else console.print(
                 Issues.UPDATE_KURIGRAM_TIP.format(
                     current_version=pyrogram.__version__,
-                    require_version='.'.join(map(str, REQUIRE_PYROGRAM_VERSION)),
-                    exe=get_executable_path()
+                    require_version=require_version,
+                    command=escape(
+                        f'{get_executable_path()} -m pip install "kurigram[fast]=={require_version}"'
                     )
+                )
             )
         except KeyboardInterrupt:
             console.log('⌨️ 用户键盘中断。')
