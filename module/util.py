@@ -760,14 +760,14 @@ def check_kurigram_version(warning: Optional[bool] = False) -> bool:
             log.warning(
                 f'当前kurigram版本{show_current_pyrogram_version}低于需求版本{show_require_pyrogram_version},'
                 f'若出现兼容问题导致运行异常,'
-                f'需使用{sys.executable} -m pip install "kurigram[fast]=={show_require_pyrogram_version}"升级至{show_require_pyrogram_version}。')
+                f'需使用{sys.executable} -m pip install kurigram=={show_require_pyrogram_version}升级至{show_require_pyrogram_version}。')
         return False
     elif current_pyrogram_version != require_pyrogram_version:
         if warning:
             log.warning(
                 f'当前kurigram版本{show_current_pyrogram_version}高于需求版本{show_require_pyrogram_version},'
                 f'若出现兼容问题导致运行异常,'
-                f'需使用{sys.executable} -m pip install "kurigram[fast]=={show_require_pyrogram_version}"降级至{show_require_pyrogram_version}。')
+                f'需使用{sys.executable} -m pip install kurigram=={show_require_pyrogram_version}降级至{show_require_pyrogram_version}。')
         return False
     else:
         log.info(

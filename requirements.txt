@@ -1,4 +1,5 @@
-kurigram[fast]==2.2.27
+kurigram==2.2.27
+kuricrypt>=0.1.0
 rich==15.0.0
 PyYAML
 qrcode
