@@ -2835,13 +2835,15 @@ class TelegramRestrictedMediaDownloader(Bot):
         except AttributeError as e:
             run_error: bool = True
             log.error(f'登录超时,请重新打开软件尝试登录,{_t(KeyWord.REASON)}:"{e}"')
+            package_name = 'kurigram'
             require_version = '.'.join(map(str, REQUIRE_PYROGRAM_VERSION))
             None if check_kurigram_version(warning=False) else console.print(
-                Issues.UPDATE_KURIGRAM_TIP.format(
+                Issues.UPDATE_PACKAGE_TIP.format(
+                    package_name=package_name,
                     current_version=pyrogram.__version__,
                     require_version=require_version,
                     command=escape(
-                        f'{get_executable_path()} -m pip install "kurigram[fast]=={require_version}"'
+                        f'{get_executable_path()} -m pip install "{package_name}[fast]=={require_version}"'
                     )
                 )
             )
