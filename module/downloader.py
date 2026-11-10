@@ -59,7 +59,8 @@ from pyrogram.types.bots_and_keyboards import (
 from module import (
     log,
     console,
-    FORWARD_LIMIT
+    FORWARD_LIMIT,
+    REQUIRE_PYROGRAM_VERSION
 )
 from module.web import Web
 from module.remote import rc
@@ -135,6 +136,7 @@ from module.util import (
     get_message_by_link,
     get_chat_with_notify,
     save_message_entities,
+    check_kurigram_version,
     truncate_display_filename
 )
 
@@ -2831,6 +2833,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                 log.error(f'网络连接失败,请检查VPN是否可用,{_t(KeyWord.REASON)}:"{e}"')
         except AttributeError as e:
             run_error: bool = True
+            None if check_kurigram_version(warning=False) else console.print(
+                Issues.UPDATE_KURIGRAM_TIP.format(
+                    current_version=pyrogram.__version__,
+                    require_version='.'.join(map(str, REQUIRE_PYROGRAM_VERSION)),
+                    exe=get_executable_path()
+                    )
+            )
             log.error(f'登录超时,请重新打开软件尝试登录,{_t(KeyWord.REASON)}:"{e}"')
         except KeyboardInterrupt:
             console.log('⌨️ 用户键盘中断。')

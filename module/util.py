@@ -745,28 +745,33 @@ def check_environment():
         log.info('检测到"Docker"容器标识,当前运行于"Docker"容器中。')
     else:
         log.info('当前运行于"源码"环境中。')
-        check_kurigram_version()
+        check_kurigram_version(warning=True)
 
 
-def check_kurigram_version() -> bool:
+def check_kurigram_version(warning: Optional[bool] = False) -> bool:
+    if is_nuitka():
+        return True
     show_current_pyrogram_version: str = pyrogram.__version__
     current_pyrogram_version: tuple = tuple(map(int, show_current_pyrogram_version.split('.')))
     require_pyrogram_version: tuple = REQUIRE_PYROGRAM_VERSION
     show_require_pyrogram_version = '.'.join(map(str, require_pyrogram_version))
     if current_pyrogram_version < require_pyrogram_version:
-        log.warning(
-            f'当前客户端版本{show_current_pyrogram_version}低于需求版本{show_require_pyrogram_version},'
-            f'若出现兼容问题导致运行异常,'
-            f'需使用{sys.executable} -m pip install {show_require_pyrogram_version}升级至{show_require_pyrogram_version}。')
+        if warning:
+            log.warning(
+                f'当前客户端(kurigram)版本{show_current_pyrogram_version}低于需求版本{show_require_pyrogram_version},'
+                f'若出现兼容问题导致运行异常,'
+                f'需使用{sys.executable} -m pip install {show_require_pyrogram_version}升级至{show_require_pyrogram_version}。')
         return False
     elif current_pyrogram_version != require_pyrogram_version:
-        log.warning(
-            f'当前客户端版本{show_current_pyrogram_version}高于需求版本{show_require_pyrogram_version},'
-            f'若出现兼容问题导致运行异常,'
-            f'需使用{sys.executable} -m pip install {show_require_pyrogram_version}降级至{show_require_pyrogram_version}。')
-        return True
+        if warning:
+            log.warning(
+                f'当前客户端(kurigram)版本{show_current_pyrogram_version}高于需求版本{show_require_pyrogram_version},'
+                f'若出现兼容问题导致运行异常,'
+                f'需使用{sys.executable} -m pip install {show_require_pyrogram_version}降级至{show_require_pyrogram_version}。')
+        return False
     else:
-        log.info(f'当前客户端版本{show_current_pyrogram_version}与需求版本{show_require_pyrogram_version}一致。')
+        log.info(
+            f'当前客户端(kurigram)版本{show_current_pyrogram_version}与需求版本{show_require_pyrogram_version}一致。')
 
     return True
 
