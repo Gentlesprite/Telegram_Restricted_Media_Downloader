@@ -1921,6 +1921,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             download_type: dict = download_chat_filter.get('download_type')
             keyword_filter: dict = download_chat_filter.get('keyword', {})
             include_comment: bool = download_chat_filter.get('comment', False)
+            topic: dict = download_chat_filter.get('topic', {})
+            excluded_topics: set = {topic_id for topic_id, status in topic.items() if not status}
             # 归属者取点击"开始下载"按钮的人(callback_query 发起者即命令发起者,私聊场景下一致),
             # 无需在 filter 配置里额外存 owner。
             owner = callback_query.from_user.id
@@ -1950,6 +1952,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                     chat_id=chat_id,
                     reverse=True
             ):
+                # 论坛消息按话题id收窄,未关闭任何话题时不做干预,后续过滤与媒体组逻辑原样生效。
+                if excluded_topics and str(getattr(message, 'message_thread_id', None) or 1) in excluded_topics:
+                    continue
                 # 极少数消息(匿名发送/from_id缺失等)解析不出来源chat,与create_download_task中"部分消息的message.chat可能为None"是同一现象;直接跳过,避免整个检索崩溃。
                 if message.chat is None:
                     log.info(

@@ -1525,6 +1525,7 @@ class BotCallbackText:
     DOWNLOAD_CHAT_DATE_FILTER: str = 'download_chat_date_filter'
     DOWNLOAD_CHAT_DTYPE_FILTER: str = 'download_chat_dtype_filter'
     DOWNLOAD_CHAT_KEYWORD_FILTER: str = 'download_chat_keyword_filter'
+    DOWNLOAD_CHAT_TOPIC_FILTER: str = 'download_chat_topic_filter'
     TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO: str = 'toggle_download_chat_video'
     TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO: str = 'toggle_download_chat_photo'
     TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO: str = 'toggle_download_chat_audio'
@@ -1576,6 +1577,7 @@ class BotCallbackPrefix:
     SET_YEAR: str = 'set_year_'
     DROP_KEYWORD: str = 'drop_keyword_'
     IGNORE_KEYWORD: str = 'ignore_keyword'
+    TOGGLE_TOPIC: str = 'toggle_topic_'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
@@ -1710,6 +1712,7 @@ class BotButton:
     INPUT_KEYWORD: str = '⌨️请向我发送关键词'
     DOWNLOAD_DTYPE_SETTING: str = '📝设置下载类型'
     KEYWORD_FILTER_SETTING: str = '🔑设置匹配关键词'
+    TOPIC_SETTING: str = '🗂️设置下载话题'
     CONFIRM_KEYWORD: str = '✅确认关键词'
     INCLUDE_COMMENT: str = '✅包含评论区'
     IGNORE_COMMENT: str = '❌包含评论区'

@@ -35,7 +35,8 @@ from pyrogram.handlers import (
 )
 from pyrogram.errors import (
     FloodWait,
-    FloodPremiumWait
+    FloodPremiumWait,
+    RPCError
 )
 from pyrogram.errors.exceptions.bad_request_400 import (
     QueryIdInvalid,
@@ -706,6 +707,13 @@ class Bot:
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
+        topic: dict = {}
+        try:
+            async for forum_topic in self.user.get_forum_topics(chat_id):
+                topic[str(forum_topic.id)] = True
+        except RPCError as e:
+            # 非话题频道会抛CHANNEL_FORUM_MISSING或CHANNEL_INVALID,按无话题处理,不显示话题按钮。
+            log.info(f'"{chat_id}"不是话题频道,不显示话题按钮,{_t(KeyWord.REASON)}:"{e}"')
         self.download_chat_filter[chat_id] = {
             'date_range':
                 {
@@ -726,7 +734,8 @@ class Bot:
                 },
             'keyword': {},
             'title': {},
-            'comment': False
+            'comment': False,
+            'topic': topic
         }
         self.download_chat_active[message.from_user.id] = chat_id
         log.info(f'"{chat_id}"已添加至:{self.download_chat_filter}。')
@@ -742,7 +751,9 @@ class Bot:
                  f'📝当前选择的下载类型为:{format_dtype}\n'
                  f'🔑当前匹配的关键词为:未定义\n'
                  f'👥包含评论区:{comment}',
-            reply_markup=attach_task(KeyboardButton.download_chat_filter_button(include_comment), chat_id),
+            reply_markup=attach_task(
+                KeyboardButton.download_chat_filter_button(include_comment, bool(topic)), chat_id
+            ),
             link_preview_options=Bot.LINK_PREVIEW_OPTIONS
         )
 
@@ -2483,8 +2494,17 @@ class KeyboardButton:
 
     @staticmethod
     def download_chat_filter_button(
-            include_comment: bool
+            include_comment: bool,
+            has_topic: bool = False
     ):
+        topic_row = [
+            [
+                InlineKeyboardButton(
+                    text=BotButton.TOPIC_SETTING,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_TOPIC_FILTER
+                )
+            ]
+        ] if has_topic else []
         return InlineKeyboardMarkup(
             [
                 [
@@ -2507,6 +2527,7 @@ class KeyboardButton:
                         callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_COMMENT
                     ),
                 ],
+                *topic_row,
                 [
                     InlineKeyboardButton(
                         text=BotButton.EXECUTE_TASK,
@@ -2519,6 +2540,30 @@ class KeyboardButton:
                 ]
             ]
         )
+
+    @staticmethod
+    def topic_filter_button(topic: dict):
+        """按话题id生成开关按钮,默认全部开启。"""
+        keyboard = []
+        for topic_id, status in topic.items():
+            mark = '✅' if status else '❌'
+            keyboard.append(
+                [
+                    InlineKeyboardButton(
+                        text=f'{mark}{topic_id}',
+                        callback_data=f'{BotCallbackPrefix.TOGGLE_TOPIC}{topic_id}'
+                    )
+                ]
+            )
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    text=BotButton.RETURN,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
+                )
+            ]
+        )
+        return InlineKeyboardMarkup(keyboard)
 
     @staticmethod
     def filter_date_range_button():
@@ -3450,6 +3495,7 @@ class DownloadChatHandler(CallbackHandler):
         BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER,
         BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER,
         BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER,
+        BotCallbackText.DOWNLOAD_CHAT_TOPIC_FILTER,
         BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO,
         BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO,
         BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO,
@@ -3475,7 +3521,8 @@ class DownloadChatHandler(CallbackHandler):
         BotCallbackPrefix.SELECT_YEAR,
         BotCallbackPrefix.SET_YEAR,
         BotCallbackPrefix.DROP_KEYWORD,
-        BotCallbackPrefix.IGNORE_KEYWORD
+        BotCallbackPrefix.IGNORE_KEYWORD,
+        BotCallbackPrefix.TOGGLE_TOPIC
     )
 
     def match(self, data: str) -> bool:
@@ -3498,6 +3545,7 @@ class DownloadChatHandler(CallbackHandler):
         chat_id = resolve_chat_id(downloader.download_chat_filter, task)
         if chat_id is None or chat_id not in downloader.download_chat_filter:
             return None
+        has_topic: bool = bool(downloader.download_chat_filter[chat_id].get('topic'))
         if data in (BotCallbackText.DOWNLOAD_CHAT_ID, BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL):
             downloader.adding_keywords.pop(chat_id, None)
             downloader.add_keyword_mode_handler(
@@ -3538,7 +3586,7 @@ class DownloadChatHandler(CallbackHandler):
                     text=self.__filter_prompt(downloader, chat_id),
                     reply_markup=attach_task(
                         kb.download_chat_filter_button(
-                            downloader.download_chat_filter[chat_id]['comment']
+                            downloader.download_chat_filter[chat_id]['comment'], has_topic
                         ) if data == BotCallbackText.DOWNLOAD_CHAT_FILTER else kb.filter_date_range_button(),
                         chat_id
                     )
@@ -3780,7 +3828,7 @@ class DownloadChatHandler(CallbackHandler):
                     await query.message.edit_text(
                         text=self.__filter_prompt(downloader, chat_id),
                         reply_markup=attach_task(
-                            kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment']),
+                            kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'], has_topic),
                             chat_id
                         )
                     )
@@ -3800,7 +3848,7 @@ class DownloadChatHandler(CallbackHandler):
                     await query.message.edit_text(
                         text=self.__filter_prompt(downloader, chat_id),
                         reply_markup=attach_task(
-                            kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment']),
+                            kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'], has_topic),
                             chat_id
                         )
                     )
@@ -3813,9 +3861,24 @@ class DownloadChatHandler(CallbackHandler):
                 await query.message.edit_text(
                     text=self.__filter_prompt(downloader, chat_id),
                     reply_markup=attach_task(
-                        kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment']),
+                        kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'], has_topic),
                         chat_id
                     )
+                )
+            except MessageNotModified:
+                pass
+        elif data == BotCallbackText.DOWNLOAD_CHAT_TOPIC_FILTER or data.startswith(BotCallbackPrefix.TOGGLE_TOPIC):
+            topic: dict = downloader.download_chat_filter[chat_id]['topic']
+            if not topic:
+                return None
+            if data.startswith(BotCallbackPrefix.TOGGLE_TOPIC):
+                topic_id = data[len(BotCallbackPrefix.TOGGLE_TOPIC):]
+                if topic_id in topic:
+                    topic[topic_id] = not topic[topic_id]
+            try:
+                await query.message.edit_text(
+                    text=self.__filter_prompt(downloader, chat_id),
+                    reply_markup=attach_task(kb.topic_filter_button(topic), chat_id)
                 )
             except MessageNotModified:
                 pass
