@@ -823,7 +823,10 @@ def is_docker() -> bool:
 
 
 def ctrl_c():
-    subprocess.run('pause', shell=True) if PLATFORM == 'Windows' else None
+    if PLATFORM == 'Windows':
+        if getattr(PARSE_ARGS, 'test', False):
+            return None
+        subprocess.run('pause', shell=True)
 
 
 def get_message_dtype(message, download_type: Optional[list] = None) -> Union[str, None]:
