@@ -268,7 +268,7 @@ class Bot:
                 self.remove_handler(old[1], group=-1)
             keyword_handler = MessageHandler(
                 partial(self.handle_keyword_input, task_chat_id, callback_query, callback_prompt),
-                filters=self.auth_filter & pyrogram.filters.chat(chat_id) & pyrogram.filters.text & (
+                filters=self.auth_filter & pyrogram.filters.chat(chat_id) & pyrogram.filters.text & (  # noqa.
                     lambda client, m: isinstance(
                         m,
                         pyrogram.types.Message
@@ -301,7 +301,7 @@ class Bot:
             self.pending_tasks[chat_id] = {'command': command, 'step': 0, 'data': {}}
             command_handler = MessageHandler(
                 partial(self.handle_command_input, chat_id, callback_query, command),
-                filters=self.auth_filter & pyrogram.filters.chat(chat_id) & pyrogram.filters.text & (
+                filters=self.auth_filter & pyrogram.filters.chat(chat_id) & pyrogram.filters.text & (  # noqa.
                     lambda client, m: isinstance(
                         m,
                         pyrogram.types.Message
@@ -1628,7 +1628,7 @@ class Bot:
                 self.remove_handler(old, group=-1)
             auth_handler = MessageHandler(
                 partial(self.handle_auth_input, chat_id, callback_query),
-                filters=self.auth_filter & pyrogram.filters.chat(chat_id) & pyrogram.filters.text & (
+                filters=self.auth_filter & pyrogram.filters.chat(chat_id) & pyrogram.filters.text & (  # noqa.
                     lambda client, m: isinstance(
                         m,
                         pyrogram.types.Message
@@ -1868,7 +1868,7 @@ class Bot:
                 MessageHandler(
                     self.get_download_link_from_bot,
                     # 命令输入模式期间,该chat的链接只交给command_handler引导,避免与下载handler重复触发。
-                    filters=pyrogram.filters.regex(r'^https://t.me.*') & self.auth_filter & (
+                    filters=pyrogram.filters.regex(r'^https://t.me.*') & self.auth_filter & (  # noqa.
                         lambda client, m: m.chat.id not in self.pending_tasks
                     )
                 )
@@ -1905,7 +1905,7 @@ class Bot:
                             | pyrogram.filters.animation
                             | pyrogram.filters.document
                             | pyrogram.filters.video_note
-                    ) & (
+                    ) & (  # noqa.
                                 lambda client, m: m.chat.id not in self.pending_tasks
                             )
                 )
