@@ -1317,8 +1317,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 result: str = safe_replace(origin_file=file_name, overwrite_file=temp_path).get('e_code')
                 log.warning(result) if result is not None else None
                 log.warning(
-                    f'不完整的文件"{file_name}",'
-                    f'更改文件名作为缓存:[{file_name}]({get_file_size(file_name)}) -> [{temp_path}]({compare_size})。')
+                    f'不完整的文件,大小:{get_file_size(file_name)}/{compare_size},更改文件名作为缓存:"{file_name}" -> "{temp_path}"。')
         if os.path.exists(temp_path) and compare_size:
             local_file_size: int = get_file_size(file_path=temp_path)
             if compare_file_size(a_size=local_file_size, b_size=compare_size):
@@ -1403,8 +1402,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             __cache_temp_size: int = os.path.getsize(temp_path) if os.path.exists(temp_path) else 0
             result: str = safe_replace(origin_file=temp_path, overwrite_file=file_name).get('e_code')
             log.warning(result) if result is not None else None
-            log.info(
-                f'"{temp_path}"下载完成,更改文件名:[{temp_path}]({__cache_temp_size}) -> [{file_name}]({compare_size})')
+            log.debug(f'下载完成,大小:{__cache_temp_size}/{compare_size},更改文件名:"{temp_path}" -> "{file_name}"。')
         return file_name
 
     def get_media_meta(self, message: pyrogram.types.Message, dtype) -> Dict[str, Union[int, str]]:
