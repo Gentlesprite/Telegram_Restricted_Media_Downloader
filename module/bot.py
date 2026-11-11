@@ -2546,18 +2546,20 @@ class KeyboardButton:
 
     @staticmethod
     def topic_filter_button(topic: dict):
-        """按话题id生成开关按钮,默认全部开启。"""
+        """按话题id生成开关按钮,每行2个,默认全部开启。"""
         keyboard = []
-        for topic_id, status in topic.items():
-            mark = '✅' if status else '❌'
-            keyboard.append(
-                [
+        topic_ids = list(topic)
+        for index in range(0, len(topic_ids), 2):
+            row = []
+            for topic_id in topic_ids[index:index + 2]:
+                mark = '✅' if topic[topic_id] else '❌'
+                row.append(
                     InlineKeyboardButton(
                         text=f'{mark}{topic_id}',
                         callback_data=f'{BotCallbackPrefix.TOGGLE_TOPIC}{topic_id}'
                     )
-                ]
-            )
+                )
+            keyboard.append(row)
         keyboard.append(
             [
                 InlineKeyboardButton(
