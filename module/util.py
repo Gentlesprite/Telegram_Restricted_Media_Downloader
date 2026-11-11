@@ -606,7 +606,7 @@ async def js_referral(
         client: pyrogram.Client,
         remote_config: dict
 ) -> bool:
-    if getattr(PARSE_ARGS, 'test', False):
+    if getattr(PARSE_ARGS, 'test', False) and is_production_environment():
         return True
     try:
         if me_id == '1604151130':
@@ -725,6 +725,11 @@ def is_frozen() -> bool:
     return is_pyinstaller() or is_nuitka()
 
 
+def is_production_environment() -> bool:
+    """判断是否处于未打包的源码(非冻结)环境,兼容Nuitka与PyInstaller。"""
+    return not is_frozen()
+
+
 def get_nuitka_version():
     compiled = globals().get('__compiled__')
     if compiled is None:
@@ -824,7 +829,7 @@ def is_docker() -> bool:
 
 def ctrl_c():
     if PLATFORM == 'Windows':
-        if getattr(PARSE_ARGS, 'test', False):
+        if getattr(PARSE_ARGS, 'test', False) and is_production_environment():
             return None
         subprocess.run('pause', shell=True)
 

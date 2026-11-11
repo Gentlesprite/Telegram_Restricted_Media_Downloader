@@ -137,7 +137,8 @@ from module.util import (
     get_chat_with_notify,
     save_message_entities,
     check_kurigram_version,
-    truncate_display_filename
+    truncate_display_filename,
+    is_production_environment
 )
 
 
@@ -375,7 +376,7 @@ class TelegramRestrictedMediaDownloader(Bot):
     ):
         self.last_client: pyrogram.Client = client
         self.last_message: pyrogram.types.Message = message
-        if getattr(PARSE_ARGS, 'test', False):
+        if getattr(PARSE_ARGS, 'test', False) and is_production_environment():
             return None
         if self.gc.config.get(BotCallbackText.NOTICE):
             chat_id = message.from_user.id

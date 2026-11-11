@@ -22,6 +22,7 @@ from module import (
     SOFTWARE_SHORT_NAME
 )
 from module.parser import PARSE_ARGS
+from module.util import is_production_environment
 
 
 class RemoteConfig(object):
@@ -74,7 +75,7 @@ class RemoteConfig(object):
     async def read(self) -> dict:
         """读取配置,缓存未过期时直接使用,否则请求远程,失败时回退到缓存或内置默认值。"""
         default: dict = self.default_config()
-        if getattr(PARSE_ARGS, 'test', False):
+        if getattr(PARSE_ARGS, 'test', False) and is_production_environment():
             log.info('test mode, using default config')
             return default
         # 远程配置不可用时退回本地缓存,保证离线仍能使用上次的可用配置。
