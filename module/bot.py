@@ -3831,8 +3831,10 @@ class DownloadChatHandler(CallbackHandler):
                     await query.message.edit_text(
                         text=self.__filter_prompt(downloader, chat_id),
                         reply_markup=attach_task(
-                            kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'],
-                                                           has_topic),
+                            kb.download_chat_filter_button(
+                                include_comment=downloader.download_chat_filter[chat_id]['comment'],
+                                has_topic=has_topic
+                            ),
                             chat_id
                         )
                     )
@@ -3852,8 +3854,10 @@ class DownloadChatHandler(CallbackHandler):
                     await query.message.edit_text(
                         text=self.__filter_prompt(downloader, chat_id),
                         reply_markup=attach_task(
-                            kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'],
-                                                           has_topic),
+                            kb.download_chat_filter_button(
+                                include_comment=downloader.download_chat_filter[chat_id]['comment'],
+                                has_topic=has_topic
+                            ),
                             chat_id
                         )
                     )
