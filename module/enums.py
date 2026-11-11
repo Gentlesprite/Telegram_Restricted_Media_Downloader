@@ -1712,7 +1712,7 @@ class BotButton:
     INPUT_KEYWORD: str = '⌨️请向我发送关键词'
     DOWNLOAD_DTYPE_SETTING: str = '📝设置下载类型'
     KEYWORD_FILTER_SETTING: str = '🔑设置匹配关键词'
-    TOPIC_SETTING: str = '🗂️设置下载话题'
+    TOPIC_SETTING: str = '🗂️包含话题'
     CONFIRM_KEYWORD: str = '✅确认关键词'
     INCLUDE_COMMENT: str = '✅包含评论区'
     IGNORE_COMMENT: str = '❌包含评论区'
