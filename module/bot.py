@@ -34,9 +34,9 @@ from pyrogram.handlers import (
     CallbackQueryHandler
 )
 from pyrogram.errors import (
+    RPCError,
     FloodWait,
     FloodPremiumWait,
-    RPCError
 )
 from pyrogram.errors.exceptions.bad_request_400 import (
     QueryIdInvalid,
@@ -712,8 +712,9 @@ class Bot:
             async for forum_topic in self.user.get_forum_topics(chat_id):
                 topic_name = forum_topic.name or ''
                 topic[f'{forum_topic.id}({topic_name})'] = True
+            log.info(f'"{chat_id}"是话题频道,显示话题按钮。')
         except RPCError as e:  # 非话题频道会抛CHANNEL_FORUM_MISSING或CHANNEL_INVALID,按无话题处理,不显示话题按钮。
-            log.info(f'"{chat_id}"不是话题频道,不显示话题按钮,{_t(KeyWord.REASON)}:"{e}"')
+            log.debug(f'"{chat_id}"不是话题频道,不显示话题按钮,{_t(KeyWord.REASON)}:"{e}"')
         self.download_chat_filter[chat_id] = {
             'date_range':
                 {
