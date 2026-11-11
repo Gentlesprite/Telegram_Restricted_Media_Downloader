@@ -710,7 +710,8 @@ class Bot:
         topic: dict = {}
         try:
             async for forum_topic in self.user.get_forum_topics(chat_id):
-                topic[str(forum_topic.id)] = True
+                topic_name = forum_topic.name or ''
+                topic[f'{forum_topic.id}({topic_name})'] = True
         except RPCError as e:  # 非话题频道会抛CHANNEL_FORUM_MISSING或CHANNEL_INVALID,按无话题处理,不显示话题按钮。
             log.info(f'"{chat_id}"不是话题频道,不显示话题按钮,{_t(KeyWord.REASON)}:"{e}"')
         self.download_chat_filter[chat_id] = {
@@ -742,7 +743,8 @@ class Bot:
         include_comment = self.download_chat_filter[chat_id]['comment']
         comment: str = '开' if include_comment else '关'
         topic_prompt: str = ','.join(
-            sorted((topic_id for topic_id, status in topic.items() if status), key=int)) if topic else ''
+            sorted((topic_key.split('(')[0] for topic_key, status in topic.items() if status), key=int)
+        ) if topic else ''
         topic_line: str = f'\n🗂️包含话题:{topic_prompt}' if topic_prompt else ''
         await client.send_message(
             chat_id=message.from_user.id,
@@ -2548,14 +2550,15 @@ class KeyboardButton:
     def topic_filter_button(topic: dict):
         """按话题id生成开关按钮,每行2个,默认全部开启。"""
         keyboard = []
-        topic_ids = list(topic)
-        for index in range(0, len(topic_ids), 2):
+        topic_keys = list(topic)
+        for index in range(0, len(topic_keys), 2):
             row = []
-            for topic_id in topic_ids[index:index + 2]:
-                mark = '✅' if topic[topic_id] else '❌'
+            for topic_key in topic_keys[index:index + 2]:
+                mark = '✅' if topic[topic_key] else '❌'
+                topic_id = topic_key.split('(')[0]
                 row.append(
                     InlineKeyboardButton(
-                        text=f'{mark}{topic_id}',
+                        text=f'{mark}{topic_key}',
                         callback_data=f'{BotCallbackPrefix.TOGGLE_TOPIC}{topic_id}'
                     )
                 )
@@ -3884,12 +3887,13 @@ class DownloadChatHandler(CallbackHandler):
                 return None
             if data.startswith(BotCallbackPrefix.TOGGLE_TOPIC):
                 topic_id = data[len(BotCallbackPrefix.TOGGLE_TOPIC):]
-                if topic_id in topic:
+                topic_key = next((key for key in topic if key.split('(')[0] == topic_id), None)
+                if topic_key:
                     # 至少保留一个开启的话题,否则没有消息可下载。
-                    if topic[topic_id] and list(topic.values()).count(True) == 1:
+                    if topic[topic_key] and list(topic.values()).count(True) == 1:
                         await query.message.reply_text('⚠️至少需要选择一个话题')
                         return None
-                    topic[topic_id] = not topic[topic_id]
+                    topic[topic_key] = not topic[topic_key]
             try:
                 await query.message.edit_text(
                     text=self.__filter_prompt(downloader, chat_id),
@@ -3936,7 +3940,8 @@ class DownloadChatHandler(CallbackHandler):
         start_time, end_time = self.__get_update_time(downloader, chat_id)
         topic: dict = downloader.download_chat_filter[chat_id].get('topic', {})
         topic_prompt: str = ','.join(
-            sorted((topic_id for topic_id, status in topic.items() if status), key=int)) if topic else ''
+            sorted((topic_key.split('(')[0] for topic_key, status in topic.items() if status), key=int)
+        ) if topic else ''
         topic_line: str = f'\n🗂️包含话题:{topic_prompt}' if topic_prompt else ''
         return (
             f'💬下载频道:`{chat_id}`\n'

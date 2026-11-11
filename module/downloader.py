@@ -1922,7 +1922,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             keyword_filter: dict = download_chat_filter.get('keyword', {})
             include_comment: bool = download_chat_filter.get('comment', False)
             topic: dict = download_chat_filter.get('topic', {})
-            excluded_topics: set = {topic_id for topic_id, status in topic.items() if not status}
+            excluded_topics: set = {topic_key.split('(')[0] for topic_key, status in topic.items() if not status}
             # 归属者取点击"开始下载"按钮的人(callback_query 发起者即命令发起者,私聊场景下一致),
             # 无需在 filter 配置里额外存 owner。
             owner = callback_query.from_user.id
