@@ -88,6 +88,9 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             setattr(self, name, AdjustableSemaphore(value))
 
     async def authorize(self) -> pyrogram.types.User:
+        if self.bot_token:
+            return await self.sign_in_bot(self.bot_token)
+
         console.print(
             f'Kurigram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n'
             f'under the terms of the {pyrogram.__license__}.')
@@ -166,8 +169,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                     if isinstance(email_sent_code, raw.types.account.EmailVerifiedLogin):
                         if isinstance(email_sent_code.sent_code, raw.types.auth.SentCodePaymentRequired):
                             raise pyrogram.errors.Unauthorized(
-                                'You need to pay for or purchase premium to continue authorization '
-                                'process, which is currently not supported by Kurigram.'
+                                f'You need to pay {email_sent_code.sent_code.amount}{email_sent_code.sent_code.currency} or purchase premium to continue authorization '
+                                f'process, which is currently not supported by Kurigram.'
                             )
                 except pyrogram.errors.BadRequest as e:
                     console.print(e.MESSAGE)

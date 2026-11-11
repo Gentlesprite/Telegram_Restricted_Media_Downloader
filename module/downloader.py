@@ -70,6 +70,7 @@ from module.app import Application
 from module.notice import NoticeHub
 from module.parser import PARSE_ARGS
 from module.uploader import TelegramUploader
+from module.client import TelegramRestrictedMediaDownloaderClient
 from module.task import (
     DownloadTask,
     UploadTask
@@ -2737,7 +2738,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             result = await self.start_bot(
                 self.app,
                 self.app.client,
-                pyrogram.Client(
+                TelegramRestrictedMediaDownloaderClient(
                     name=self.BOT_NAME,
                     api_hash=self.app.api_hash,
                     api_id=self.app.api_id,
