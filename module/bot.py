@@ -1950,9 +1950,11 @@ class Bot:
             return f'🤖「机器人」启动成功 ({BotButton.CLOSE_NOTICE if self.gc.config.get(BotCallbackText.NOTICE) else BotButton.OPEN_NOTICE})。'
         except AccessTokenInvalid as e:
             self.is_bot_running: bool = False
+            log.error(f'机器人启动失败,bot_token错误,{_t(KeyWord.REASON)}:"{e}"')
             return f'🤖「机器人」启动失败,「bot_token」错误,{_t(KeyWord.REASON)}:"{e}"'
         except Exception as e:
             self.is_bot_running: bool = False
+            log.error(f'机器人启动失败,{_t(KeyWord.REASON)}:"{e}"')
             return f'🤖「机器人」启动失败,{_t(KeyWord.REASON)}:"{e}"'
 
     async def send_message_to_bot(self, text: str, catch: bool = False):
