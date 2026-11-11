@@ -715,16 +715,15 @@ class Bot:
                     topic_name = forum_topic.name or ''
                     topic[f'{forum_topic.id}({topic_name})'] = True
                 break
-            except (FloodWait, FloodPremiumWait) as e:
-                # 限流单独处理:走项目既有的限流等待,无限重试而非吞掉。
+            except (FloodWait, FloodPremiumWait) as e:  # 限流单独处理:走项目既有的限流等待,无限重试而非吞掉。
+                amount = e.value
                 ConnectionStatus.enter_flood(
-                    f'获取话题列表受限,等待 {e.value} 秒后重试。'
+                    f'[{self.user.name}]获取话题列表请求频繁,要求等待{amount}秒后继续运行。'
                 )
-                await asyncio.sleep(e.value)
+                await asyncio.sleep(amount)
                 ConnectionStatus.leave_flood()
                 continue
-            except (RPCError, AttributeError, ValueError) as e:
-                # 非话题频道(ChannelForumMissing/ChannelInvalid)或解析异常,按无话题处理,不显示话题按钮。
+            except (RPCError, AttributeError, ValueError) as e:  # 非话题频道或解析异常按无话题处理,不显示话题按钮。
                 topic.clear()
                 log.debug(f'"{chat_id}"未获取到话题,不显示话题按钮,{_t(KeyWord.REASON)}:"{e}"')
                 break
