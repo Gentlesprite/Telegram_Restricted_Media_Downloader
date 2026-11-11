@@ -1353,8 +1353,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'缓存文件"{temp_path}"字节未对齐块边界,"{downloaded}" -> "{aligned_size}",已截断。')
                     downloaded = aligned_size
                 f.seek(aligned_size)
-                log.info(
-                    f'处理"{temp_path}"需要跳过的块:"{downloaded}//{chunk_size}={skip_chunks}",文件指针已移动到"{downloaded}"。')
+                if skip_chunks == 0:  # 只有发生跳块续传时才记info,全新下载降为debug避免日志文件堆积无效记录。
+                    log.debug(f'处理"{temp_path}"无需跳过块,文件指针已移动到"{downloaded}"。')
+                else:
+                    log.info(
+                        f'处理"{temp_path}"需要跳过的块:"{downloaded}//{chunk_size}={skip_chunks}",文件指针已移动到"{downloaded}"。')
                 while True:
                     try:
                         async for chunk in self.app.client.stream_media(
