@@ -1967,7 +1967,7 @@ class Bot:
                 )
         except Exception as e:
             if catch:
-                raise Exception(str(e))
+                raise
             else:
                 return e
 

@@ -55,7 +55,7 @@ from module import (
     console,
     __version__,
     DOWNLOAD_TIMEOUT,
-    SOFTWARE_SHORT_NAME,
+    SOFTWARE_SHORT_NAME
 )
 from module.util import (
     ainput,

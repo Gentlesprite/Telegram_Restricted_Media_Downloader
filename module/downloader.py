@@ -625,7 +625,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 link=target_link
             )
             if not all([origin_meta, target_meta]):
-                raise Exception('Invalid origin_link or target_link.')
+                raise Exception('Invalid origin_link or target_link')
             origin_chat_id = origin_meta.get('chat_id')
             target_chat_id = target_meta.get('chat_id')
             origin_chat: Union[pyrogram.types.Chat, None] = await get_chat_with_notify(
@@ -1632,7 +1632,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             note=_reason
                         )
                     else:
-                        raise Exception('不支持或被忽略的类型。')
+                        raise Exception('不支持或被忽略的类型')
                 except Exception as e:
                     task.set_error(value=_reason)
                     task.update_member(message_id=message.id, status=DownloadStatus.SKIP, note=_reason)
@@ -1643,7 +1643,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         f'{_t(KeyWord.LINK_TYPE)}:{_error}'  # 链接类型。
                     )
                     log.info(
-                        f'已跳过下载"{link}",不支持或被忽略的类型,{_t(KeyWord.REASON)}:"{str(e).replace("。", "")}"')
+                        f'已跳过下载"{link}",不支持或被忽略的类型,{_t(KeyWord.REASON)}:"{e}"')
             self.queue.put_nowait(_task) if _task else None
 
     def __check_download_finish(

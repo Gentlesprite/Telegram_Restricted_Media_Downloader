@@ -417,9 +417,9 @@ async def get_message_by_link(
         raise MsgIdInvalid(
             'The message does not exist, the channel has been disbanded or is not in the channel.')
     elif is_group is None and group_message == 0:
-        raise Exception('Link parsing error.')
+        raise Exception('Link parsing error')
     else:
-        raise Exception('Unknown error.')
+        raise Exception('Unknown error')
 
 
 async def __is_group(message) -> Tuple[Union[bool, None], Union[list, None]]:

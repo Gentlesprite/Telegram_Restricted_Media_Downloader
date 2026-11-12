@@ -28,7 +28,7 @@ from module.parser import PARSE_ARGS
 from module.util import get_work_directory
 from module.path_tool import (
     safe_delete,
-    calc_sha256,
+    calc_sha256
 )
 from module.enums import (
     KeyWord,
