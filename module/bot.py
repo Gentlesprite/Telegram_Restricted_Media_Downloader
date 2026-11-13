@@ -84,7 +84,7 @@ from module.util import (
     is_allow_upload,
     get_valid_chat_id,
     parse_task_callback,
-    format_topic_prompt
+    format_limited_text
 )
 from module.enums import (
     Issues,
@@ -761,7 +761,10 @@ class Bot:
         format_dtype = ','.join([_t(_) for _ in DownloadType()])
         include_comment = self.download_chat_filter[chat_id]['comment']
         comment: str = '开' if include_comment else '关'
-        topic_prompt: str = format_topic_prompt(topic)
+        topic_prompt: str = format_limited_text(
+            sorted((topic_key.split('(')[0] for topic_key, status in topic.items() if status), key=int)
+            if topic else [], unit='个话题'
+        )
         topic_line: str = f'\n🗂️包含话题:{topic_prompt}' if topic_prompt else ''
         await client.send_message(
             chat_id=message.from_user.id,
@@ -3989,7 +3992,7 @@ class DownloadChatHandler(CallbackHandler):
         keywords = downloader.download_chat_filter[chat_id]['keyword']
         if not keywords:
             return '未定义'
-        return ','.join(keywords.keys())
+        return format_limited_text(keywords.keys(), unit='个关键词')
 
     @staticmethod
     def __get_format_comment_status(downloader, chat_id):
@@ -4005,7 +4008,10 @@ class DownloadChatHandler(CallbackHandler):
     def __filter_prompt(self, downloader, chat_id):
         start_time, end_time = self.__get_update_time(downloader, chat_id)
         topic: dict = downloader.download_chat_filter[chat_id].get('topic', {})
-        topic_prompt: str = format_topic_prompt(topic)
+        topic_prompt: str = format_limited_text(
+            sorted((topic_key.split('(')[0] for topic_key, status in topic.items() if status), key=int)
+            if topic else [], unit='个话题'
+        )
         topic_line: str = f'\n🗂️包含话题:{topic_prompt}' if topic_prompt else ''
         return (
             f'💬下载频道:`{chat_id}`\n'

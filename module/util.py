@@ -960,29 +960,33 @@ def resolve_chat_id(chat_filter: dict, task: Union[str, None]):
     return task_id if task_id in chat_filter else None
 
 
-def format_topic_prompt(topic: dict, limit: int = 200) -> str:
-    """拼接已开启的话题id用于提示文本,超长时截断并标注总数。
+def format_limited_text(
+        items: Any,
+        limit: int = 200,
+        unit: str = '项',
+        separator: str = ','
+) -> str:
+    """把任意字符串序列拼接成提示文本,超长时截断并标注总数。
 
-    话题数可达数百上千,全量拼接会让消息文本超过Telegram的4096字符上限,
-    导致edit_text抛MessageTooLong;截断只影响显示,不影响topic配置与下载过滤。
+    用于消息文本里的可变长字段(话题id、匹配关键词等),避免整条消息超过
+    Telegram的4096字符上限导致edit_text抛MessageTooLong;截断只影响显示,
+    不影响配置本身与下载过滤。
     """
-    enabled: List[str] = sorted(
-        (topic_key.split('(')[0] for topic_key, status in topic.items() if status), key=int
-    ) if topic else []
-    if not enabled:
+    values: List[str] = [str(item) for item in items]
+    if not values:
         return ''
-    full: str = ','.join(enabled)
+    full: str = separator.join(values)
     if len(full) <= limit:
         return full
     parts: List[str] = []
     length: int = 0
-    for topic_id in enabled:
-        cost: int = len(topic_id) + (1 if parts else 0)
+    for value in values:
+        cost: int = len(value) + (len(separator) if parts else 0)
         if length + cost > limit:
             break
-        parts.append(topic_id)
+        parts.append(value)
         length += cost
-    return f'{",".join(parts)}...等共{len(enabled)}个话题'
+    return f'{separator.join(parts)}...等共{len(values)}{unit}'
 
 
 class ChatInfo:
