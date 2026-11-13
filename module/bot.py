@@ -2577,8 +2577,8 @@ class KeyboardButton:
     ):
         """按话题id生成开关按钮,每行per_row个、每页最多rows_per_page排,多页时追加翻页排,默认全部开启。
 
-        返回(键盘, 收敛后的页码):页码越界时由本方法统一收敛,调用方直接用返回值存储,
-        保证配置里的页码与界面实际渲染的页码一致。
+        返回(键盘, 收敛后的页码, 总页数):页码越界时由本方法统一收敛,调用方直接用返回值存储,
+        保证配置里的页码与界面实际渲染的页码一致;总页数供页码选择面板复用,避免另算一套分页常量。
         """
         per_page = per_row * rows_per_page
         topic_keys = list(topic)
@@ -2609,7 +2609,7 @@ class KeyboardButton:
                     ),
                     InlineKeyboardButton(
                         text=BotButton.TOPIC_PAGE_INFO.format(page=page, total=total_pages),
-                        callback_data=BotCallbackText.NULL
+                        callback_data=f'{BotCallbackPrefix.TOPIC_RANGE}1_{total_pages}'
                     ),
                     InlineKeyboardButton(
                         text=BotButton.TOPIC_NEXT_PAGE,
@@ -2625,7 +2625,68 @@ class KeyboardButton:
                 )
             ]
         )
-        return InlineKeyboardMarkup(keyboard), page
+        return InlineKeyboardMarkup(keyboard), page, total_pages
+
+    @staticmethod
+    def topic_page_menu_button(
+            total_pages: int,
+            page: int = 1,
+            start: int = 1,
+            end: int = 0,
+            per_row: int = 4,
+            max_buttons: int = 20
+    ):
+        """生成页码选择面板:区间过宽时递归细分为子区间,区间内页数不多时列成可直达的页码按钮。
+
+        end<=0表示展开到最后一页;区间范围由回调数据携带,不写入任务配置,避免残留状态。
+        """
+        total_pages = max(1, total_pages)
+        end = total_pages if end <= 0 else min(end, total_pages)
+        start = max(1, min(start, total_pages))
+        end = max(start, end)
+        span = end - start + 1
+        keyboard = []
+        if span <= max_buttons:
+            for row_start in range(start, end + 1, per_row):
+                keyboard.append([
+                    InlineKeyboardButton(
+                        text=str(n),
+                        callback_data=f'{BotCallbackPrefix.TOPIC_PAGE}{n}',
+                        # 当前所在页用绿色按钮标记,与日期/年份面板的选中态风格一致。
+                        style=(pyrogram.enums.ButtonStyle.SUCCESS if n == page
+                               else pyrogram.enums.ButtonStyle.DEFAULT)
+                    )
+                    for n in range(row_start, min(row_start + per_row, end + 1))
+                ])
+        else:
+            width = max(1, (span + max_buttons - 1) // max_buttons)
+            ranges = []
+            cursor = start
+            while cursor <= end:
+                range_end = min(cursor + width - 1, end)
+                ranges.append((cursor, range_end))
+                cursor = range_end + 1
+            for index in range(0, len(ranges), per_row):
+                keyboard.append([
+                    InlineKeyboardButton(
+                        text=f'{range_start}-{range_end}',
+                        callback_data=f'{BotCallbackPrefix.TOPIC_RANGE}{range_start}_{range_end}'
+                    )
+                    for range_start, range_end in ranges[index:index + per_row]
+                ])
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    text=BotButton.TOPIC_ALL_PAGE,
+                    callback_data=f'{BotCallbackPrefix.TOPIC_RANGE}1_{total_pages}'
+                ),
+                InlineKeyboardButton(
+                    text=BotButton.RETURN,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_TOPIC_FILTER
+                )
+            ]
+        )
+        return InlineKeyboardMarkup(keyboard)
 
     @staticmethod
     def filter_date_range_button():
@@ -3585,7 +3646,8 @@ class DownloadChatHandler(CallbackHandler):
         BotCallbackPrefix.DROP_KEYWORD,
         BotCallbackPrefix.IGNORE_KEYWORD,
         BotCallbackPrefix.TOGGLE_TOPIC,
-        BotCallbackPrefix.TOPIC_PAGE
+        BotCallbackPrefix.TOPIC_PAGE,
+        BotCallbackPrefix.TOPIC_RANGE
     )
 
     def match(self, data: str) -> bool:
@@ -3938,7 +4000,8 @@ class DownloadChatHandler(CallbackHandler):
                 pass
         elif (data == BotCallbackText.DOWNLOAD_CHAT_TOPIC_FILTER
               or data.startswith(BotCallbackPrefix.TOGGLE_TOPIC)
-              or data.startswith(BotCallbackPrefix.TOPIC_PAGE)):
+              or data.startswith(BotCallbackPrefix.TOPIC_PAGE)
+              or data.startswith(BotCallbackPrefix.TOPIC_RANGE)):
             topic: dict = downloader.download_chat_filter[chat_id]['topic']
             if not topic:
                 return None
@@ -3960,13 +4023,25 @@ class DownloadChatHandler(CallbackHandler):
                         await query.message.reply_text('⚠️至少需要选择一个话题')
                         return None
                     topic[topic_key] = not topic[topic_key]
-            # 页码收敛统一由topic_filter_button完成,存储它回传的页码,保证配置与界面一致。
-            topic_markup, page = kb.topic_filter_button(topic, page)
+            # 页码收敛与总页数统一由topic_filter_button给出,面板不再另算一套分页常量。
+            topic_markup, page, total_pages = kb.topic_filter_button(topic, page)
             filter_config['topic_page'] = page
+            if data.startswith(BotCallbackPrefix.TOPIC_RANGE):
+                # 区间范围只由回调数据携带,不写入配置;非法/被截断的数据回退到全部页码。
+                try:
+                    parts = data[len(BotCallbackPrefix.TOPIC_RANGE):].split('_')
+                    start, end = int(parts[0]), int(parts[1])
+                except (ValueError, IndexError):
+                    start, end = 1, total_pages
+                markup = kb.topic_page_menu_button(total_pages, page, start, end)
+                text = f'📄选择页码(共{total_pages}页,当前第{page}页)'
+            else:
+                markup = topic_markup
+                text = self.__filter_prompt(downloader, chat_id)
             try:
                 await query.message.edit_text(
-                    text=self.__filter_prompt(downloader, chat_id),
-                    reply_markup=attach_task(topic_markup, chat_id)
+                    text=text,
+                    reply_markup=attach_task(markup, chat_id)
                 )
             except MessageNotModified:
                 pass
