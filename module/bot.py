@@ -2674,18 +2674,22 @@ class KeyboardButton:
                     )
                     for range_start, range_end in ranges[index:index + per_row]
                 ])
-        keyboard.append(
-            [
+        # 已在顶层时不再显示「返回顶层」:否则点击等于重绘自己,只会抛MessageNotModified,用户看到毫无反应。
+        footer = []
+        if start > 1 or end < total_pages:
+            footer.append(
                 InlineKeyboardButton(
-                    text=BotButton.TOPIC_ALL_PAGE,
+                    text=BotButton.TOPIC_BACK_TO_TOP,
                     callback_data=f'{BotCallbackPrefix.TOPIC_RANGE}1_{total_pages}'
-                ),
-                InlineKeyboardButton(
-                    text=BotButton.RETURN,
-                    callback_data=BotCallbackText.DOWNLOAD_CHAT_TOPIC_FILTER
                 )
-            ]
+            )
+        footer.append(
+            InlineKeyboardButton(
+                text=BotButton.RETURN,
+                callback_data=BotCallbackText.DOWNLOAD_CHAT_TOPIC_FILTER
+            )
         )
+        keyboard.append(footer)
         return InlineKeyboardMarkup(keyboard)
 
     @staticmethod

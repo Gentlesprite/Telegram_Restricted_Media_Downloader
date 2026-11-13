@@ -1718,7 +1718,7 @@ class BotButton:
     TOPIC_PREV_PAGE: str = '⬅️上一页'
     TOPIC_NEXT_PAGE: str = '下一页➡️'
     TOPIC_PAGE_INFO: str = '📄{page}/{total}'
-    TOPIC_ALL_PAGE: str = '📄全部页码'
+    TOPIC_BACK_TO_TOP: str = '🔝返回顶层'
     CONFIRM_KEYWORD: str = '✅确认关键词'
     INCLUDE_COMMENT: str = '✅包含评论区'
     IGNORE_COMMENT: str = '❌包含评论区'
