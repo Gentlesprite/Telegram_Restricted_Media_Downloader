@@ -2643,6 +2643,8 @@ class KeyboardButton:
         end<=0表示展开到最后一页;区间范围由回调数据携带,不写入任务配置,避免残留状态。
         """
         total_pages = max(1, total_pages)
+        # page收敛:None/0/负数回退到1,越界回退到total_pages,与start/end一致防御非法回调。
+        page = max(1, min(page or 1, total_pages))
         end = total_pages if end <= 0 else min(end, total_pages)
         start = max(1, min(start, total_pages))
         end = max(start, end)
