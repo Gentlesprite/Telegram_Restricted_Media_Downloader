@@ -2672,7 +2672,10 @@ class KeyboardButton:
                 keyboard.append([
                     InlineKeyboardButton(
                         text=f'{range_start}~{range_end}',
-                        callback_data=f'{BotCallbackPrefix.TOPIC_RANGE}{range_start}_{range_end}'
+                        callback_data=f'{BotCallbackPrefix.TOPIC_RANGE}{range_start}_{range_end}',
+                        # 当前页落在某区间时,该区间也标记绿色,与页码层选中态呼应,指明下钻路径。
+                        style=(pyrogram.enums.ButtonStyle.SUCCESS if range_start <= page <= range_end
+                               else pyrogram.enums.ButtonStyle.DEFAULT)
                     )
                     for range_start, range_end in ranges[index:index + per_row]
                 ])
