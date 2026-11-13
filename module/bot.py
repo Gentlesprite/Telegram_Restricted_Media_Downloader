@@ -2669,7 +2669,7 @@ class KeyboardButton:
             for index in range(0, len(ranges), per_row):
                 keyboard.append([
                     InlineKeyboardButton(
-                        text=f'{range_start}-{range_end}',
+                        text=f'{range_start}~{range_end}',
                         callback_data=f'{BotCallbackPrefix.TOPIC_RANGE}{range_start}_{range_end}'
                     )
                     for range_start, range_end in ranges[index:index + per_row]
@@ -2813,7 +2813,7 @@ class KeyboardButton:
             return None
         nav_row = [
             InlineKeyboardButton('◀️', callback_data=f'select_year_{_dtype}_{year - 12}_{month}_{selected_year}'),
-            InlineKeyboardButton(f'{start_year}-{end_year}', callback_data=BotCallbackText.NULL),
+            InlineKeyboardButton(f'{start_year}~{end_year}', callback_data=BotCallbackText.NULL),
             InlineKeyboardButton('▶️', callback_data=f'select_year_{_dtype}_{year + 12}_{month}_{selected_year}')
         ]
         keyboard.append(nav_row)
