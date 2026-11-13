@@ -2605,7 +2605,8 @@ class KeyboardButton:
                 [
                     InlineKeyboardButton(
                         text=BotButton.TOPIC_PREV_PAGE,
-                        callback_data=f'{BotCallbackPrefix.TOPIC_PAGE}{max(1, page - 1)}'
+                        # 第一页点上一页循环到最后一页,避免停在原地无反馈。
+                        callback_data=f'{BotCallbackPrefix.TOPIC_PAGE}{page - 1 if page > 1 else total_pages}'
                     ),
                     InlineKeyboardButton(
                         text=BotButton.TOPIC_PAGE_INFO.format(page=page, total=total_pages),
@@ -2613,7 +2614,8 @@ class KeyboardButton:
                     ),
                     InlineKeyboardButton(
                         text=BotButton.TOPIC_NEXT_PAGE,
-                        callback_data=f'{BotCallbackPrefix.TOPIC_PAGE}{min(total_pages, page + 1)}'
+                        # 最后一页点下一页循环到第一页,避免停在原地无反馈。
+                        callback_data=f'{BotCallbackPrefix.TOPIC_PAGE}{page + 1 if page < total_pages else 1}'
                     )
                 ]
             )
