@@ -83,7 +83,8 @@ from module.util import (
     resolve_chat_id,
     is_allow_upload,
     get_valid_chat_id,
-    parse_task_callback
+    parse_task_callback,
+    format_topic_prompt
 )
 from module.enums import (
     Issues,
@@ -760,9 +761,7 @@ class Bot:
         format_dtype = ','.join([_t(_) for _ in DownloadType()])
         include_comment = self.download_chat_filter[chat_id]['comment']
         comment: str = '开' if include_comment else '关'
-        topic_prompt: str = ','.join(
-            sorted((topic_key.split('(')[0] for topic_key, status in topic.items() if status), key=int)
-        ) if topic else ''
+        topic_prompt: str = format_topic_prompt(topic)
         topic_line: str = f'\n🗂️包含话题:{topic_prompt}' if topic_prompt else ''
         await client.send_message(
             chat_id=message.from_user.id,
@@ -2573,7 +2572,11 @@ class KeyboardButton:
             per_row: int = 2,
             rows_per_page: int = 3
     ):
-        """按话题id生成开关按钮,每行per_row个、每页最多rows_per_page排,多页时追加翻页排,默认全部开启。"""
+        """按话题id生成开关按钮,每行per_row个、每页最多rows_per_page排,多页时追加翻页排,默认全部开启。
+
+        返回(键盘, 收敛后的页码):页码越界时由本方法统一收敛,调用方直接用返回值存储,
+        保证配置里的页码与界面实际渲染的页码一致。
+        """
         per_page = per_row * rows_per_page
         topic_keys = list(topic)
         total_pages = max(1, (len(topic_keys) + per_page - 1) // per_page)
@@ -2619,7 +2622,7 @@ class KeyboardButton:
                 )
             ]
         )
-        return InlineKeyboardMarkup(keyboard)
+        return InlineKeyboardMarkup(keyboard), page
 
     @staticmethod
     def filter_date_range_button():
@@ -3954,13 +3957,13 @@ class DownloadChatHandler(CallbackHandler):
                         await query.message.reply_text('⚠️至少需要选择一个话题')
                         return None
                     topic[topic_key] = not topic[topic_key]
-            # 上界收敛由topic_filter_button内部按每页容量完成,此处只排除负数/0等非法下界。
-            page = max(1, page)
+            # 页码收敛统一由topic_filter_button完成,存储它回传的页码,保证配置与界面一致。
+            topic_markup, page = kb.topic_filter_button(topic, page)
             filter_config['topic_page'] = page
             try:
                 await query.message.edit_text(
                     text=self.__filter_prompt(downloader, chat_id),
-                    reply_markup=attach_task(kb.topic_filter_button(topic, page), chat_id)
+                    reply_markup=attach_task(topic_markup, chat_id)
                 )
             except MessageNotModified:
                 pass
@@ -4002,9 +4005,7 @@ class DownloadChatHandler(CallbackHandler):
     def __filter_prompt(self, downloader, chat_id):
         start_time, end_time = self.__get_update_time(downloader, chat_id)
         topic: dict = downloader.download_chat_filter[chat_id].get('topic', {})
-        topic_prompt: str = ','.join(
-            sorted((topic_key.split('(')[0] for topic_key, status in topic.items() if status), key=int)
-        ) if topic else ''
+        topic_prompt: str = format_topic_prompt(topic)
         topic_line: str = f'\n🗂️包含话题:{topic_prompt}' if topic_prompt else ''
         return (
             f'💬下载频道:`{chat_id}`\n'

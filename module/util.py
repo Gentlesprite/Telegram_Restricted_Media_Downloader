@@ -960,6 +960,31 @@ def resolve_chat_id(chat_filter: dict, task: Union[str, None]):
     return task_id if task_id in chat_filter else None
 
 
+def format_topic_prompt(topic: dict, limit: int = 200) -> str:
+    """拼接已开启的话题id用于提示文本,超长时截断并标注总数。
+
+    话题数可达数百上千,全量拼接会让消息文本超过Telegram的4096字符上限,
+    导致edit_text抛MessageTooLong;截断只影响显示,不影响topic配置与下载过滤。
+    """
+    enabled: List[str] = sorted(
+        (topic_key.split('(')[0] for topic_key, status in topic.items() if status), key=int
+    ) if topic else []
+    if not enabled:
+        return ''
+    full: str = ','.join(enabled)
+    if len(full) <= limit:
+        return full
+    parts: List[str] = []
+    length: int = 0
+    for topic_id in enabled:
+        cost: int = len(topic_id) + (1 if parts else 0)
+        if length + cost > limit:
+            break
+        parts.append(topic_id)
+        length += cost
+    return f'{",".join(parts)}...等共{len(enabled)}个话题'
+
+
 class ChatInfo:
     TITLE: dict = {}
 
