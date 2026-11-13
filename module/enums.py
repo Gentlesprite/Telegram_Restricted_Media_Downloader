@@ -1578,6 +1578,7 @@ class BotCallbackPrefix:
     DROP_KEYWORD: str = 'drop_keyword_'
     IGNORE_KEYWORD: str = 'ignore_keyword'
     TOGGLE_TOPIC: str = 'toggle_topic_'
+    TOPIC_PAGE: str = 'topic_page_'
 
     def __iter__(self):
         for key, value in vars(self.__class__).items():
@@ -1713,6 +1714,9 @@ class BotButton:
     DOWNLOAD_DTYPE_SETTING: str = '📝设置下载类型'
     KEYWORD_FILTER_SETTING: str = '🔑设置匹配关键词'
     TOPIC_SETTING: str = '🗂️包含话题'
+    TOPIC_PREV_PAGE: str = '⬅️上一页'
+    TOPIC_NEXT_PAGE: str = '下一页➡️'
+    TOPIC_PAGE_INFO: str = '📄{page}/{total}'
     CONFIRM_KEYWORD: str = '✅确认关键词'
     INCLUDE_COMMENT: str = '✅包含评论区'
     IGNORE_COMMENT: str = '❌包含评论区'

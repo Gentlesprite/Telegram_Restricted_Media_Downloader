@@ -2567,13 +2567,24 @@ class KeyboardButton:
         )
 
     @staticmethod
-    def topic_filter_button(topic: dict):
-        """按话题id生成开关按钮,每行2个,默认全部开启。"""
-        keyboard = []
+    def topic_filter_button(
+            topic: dict,
+            page: int = 1,
+            per_row: int = 2,
+            rows_per_page: int = 3
+    ):
+        """按话题id生成开关按钮,每行per_row个、每页最多rows_per_page排,多页时追加翻页排,默认全部开启。"""
+        per_page = per_row * rows_per_page
         topic_keys = list(topic)
-        for index in range(0, len(topic_keys), 2):
+        total_pages = max(1, (len(topic_keys) + per_page - 1) // per_page)
+        # 话题数量在会话内可能被重新探测,页码越界时收敛到合法范围,避免渲染空页。
+        page = max(1, min(page, total_pages))
+        start = (page - 1) * per_page
+        keyboard = []
+        page_keys = topic_keys[start:start + per_page]
+        for index in range(0, len(page_keys), per_row):
             row = []
-            for topic_key in topic_keys[index:index + 2]:
+            for topic_key in page_keys[index:index + per_row]:
                 mark = '✅' if topic[topic_key] else '❌'
                 topic_id = topic_key.split('(')[0]
                 row.append(
@@ -2583,6 +2594,23 @@ class KeyboardButton:
                     )
                 )
             keyboard.append(row)
+        if total_pages > 1:
+            keyboard.append(
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.TOPIC_PREV_PAGE,
+                        callback_data=f'{BotCallbackPrefix.TOPIC_PAGE}{max(1, page - 1)}'
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.TOPIC_PAGE_INFO.format(page=page, total=total_pages),
+                        callback_data=BotCallbackText.NULL
+                    ),
+                    InlineKeyboardButton(
+                        text=BotButton.TOPIC_NEXT_PAGE,
+                        callback_data=f'{BotCallbackPrefix.TOPIC_PAGE}{min(total_pages, page + 1)}'
+                    )
+                ]
+            )
         keyboard.append(
             [
                 InlineKeyboardButton(
@@ -3550,7 +3578,8 @@ class DownloadChatHandler(CallbackHandler):
         BotCallbackPrefix.SET_YEAR,
         BotCallbackPrefix.DROP_KEYWORD,
         BotCallbackPrefix.IGNORE_KEYWORD,
-        BotCallbackPrefix.TOGGLE_TOPIC
+        BotCallbackPrefix.TOGGLE_TOPIC,
+        BotCallbackPrefix.TOPIC_PAGE
     )
 
     def match(self, data: str) -> bool:
@@ -3901,10 +3930,21 @@ class DownloadChatHandler(CallbackHandler):
                 )
             except MessageNotModified:
                 pass
-        elif data == BotCallbackText.DOWNLOAD_CHAT_TOPIC_FILTER or data.startswith(BotCallbackPrefix.TOGGLE_TOPIC):
+        elif (data == BotCallbackText.DOWNLOAD_CHAT_TOPIC_FILTER
+              or data.startswith(BotCallbackPrefix.TOGGLE_TOPIC)
+              or data.startswith(BotCallbackPrefix.TOPIC_PAGE)):
             topic: dict = downloader.download_chat_filter[chat_id]['topic']
             if not topic:
                 return None
+            # 页码随任务配置存放:任务结束/取消时__remove_chat_id整体释放,按chat_id天然隔离多任务并发。
+            filter_config: dict = downloader.download_chat_filter[chat_id]
+            page: int = filter_config.get('topic_page', 1)
+            if data.startswith(BotCallbackPrefix.TOPIC_PAGE):
+                # 历史按钮或被截断的回调数据可能带非法页码,解析失败回退首页,避免整条命令报错。
+                try:
+                    page = int(data[len(BotCallbackPrefix.TOPIC_PAGE):])
+                except ValueError:
+                    page = 1
             if data.startswith(BotCallbackPrefix.TOGGLE_TOPIC):
                 topic_id = data[len(BotCallbackPrefix.TOGGLE_TOPIC):]
                 topic_key = next((key for key in topic if key.split('(')[0] == topic_id), None)
@@ -3914,10 +3954,13 @@ class DownloadChatHandler(CallbackHandler):
                         await query.message.reply_text('⚠️至少需要选择一个话题')
                         return None
                     topic[topic_key] = not topic[topic_key]
+            # 上界收敛由topic_filter_button内部按每页容量完成,此处只排除负数/0等非法下界。
+            page = max(1, page)
+            filter_config['topic_page'] = page
             try:
                 await query.message.edit_text(
                     text=self.__filter_prompt(downloader, chat_id),
-                    reply_markup=attach_task(kb.topic_filter_button(topic), chat_id)
+                    reply_markup=attach_task(kb.topic_filter_button(topic, page), chat_id)
                 )
             except MessageNotModified:
                 pass
