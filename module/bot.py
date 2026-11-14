@@ -2602,6 +2602,20 @@ class KeyboardButton:
                     )
                 )
             keyboard.append(row)
+        # 单个批量开关放在话题按钮与翻页排之间,跨页作用于全部话题,减少逐个点击的步骤。
+        # 只剩一个开启(即"全部关闭保留1"的结果态)时显示为"全部打开",其余状态为"全部关闭",
+        # 点击后在两态间互相切换;话题数<=1时不渲染,避免出现点了无反应的死按钮。
+        if len(topic) > 1:
+            only_one_enabled: bool = list(topic.values()).count(True) == 1
+            keyboard.append(
+                [
+                    InlineKeyboardButton(
+                        text=BotButton.ENABLE_ALL if only_one_enabled else f'{BotButton.DISABLE_ALL}(但保留id为1的话题)',
+                        callback_data=(BotCallbackText.TOPIC_ENABLE_ALL if only_one_enabled
+                                       else BotCallbackText.TOPIC_DISABLE_ALL)
+                    )
+                ]
+            )
         if total_pages > 1:
             keyboard.append(
                 [
@@ -3632,6 +3646,8 @@ class DownloadChatHandler(CallbackHandler):
         BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER,
         BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER,
         BotCallbackText.DOWNLOAD_CHAT_TOPIC_FILTER,
+        BotCallbackText.TOPIC_ENABLE_ALL,
+        BotCallbackText.TOPIC_DISABLE_ALL,
         BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO,
         BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO,
         BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO,
@@ -4012,6 +4028,7 @@ class DownloadChatHandler(CallbackHandler):
             except MessageNotModified:
                 pass
         elif (data == BotCallbackText.DOWNLOAD_CHAT_TOPIC_FILTER
+              or data in (BotCallbackText.TOPIC_ENABLE_ALL, BotCallbackText.TOPIC_DISABLE_ALL)
               or data.startswith(BotCallbackPrefix.TOGGLE_TOPIC)
               or data.startswith(BotCallbackPrefix.TOPIC_PAGE)
               or data.startswith(BotCallbackPrefix.TOPIC_RANGE)):
@@ -4027,7 +4044,23 @@ class DownloadChatHandler(CallbackHandler):
                     page = int(data[len(BotCallbackPrefix.TOPIC_PAGE):])
                 except ValueError:
                     page = 1
-            if data.startswith(BotCallbackPrefix.TOGGLE_TOPIC):
+            if data in (BotCallbackText.TOPIC_ENABLE_ALL, BotCallbackText.TOPIC_DISABLE_ALL):
+                # 批量开关作用于全部话题(跨页),全部打开即全部置True;
+                # 全部关闭保留一个开启:优先id=1,
+                # 无id=1时取按id升序第一个(这种情况理论不可达,因此后续的"全部关闭(但保留id为1的话题)"按钮中的括弧提示直接硬编码即可),
+                # 保证excluded_topics不会覆盖全部话题,避免检索不到任何消息。
+                if data == BotCallbackText.TOPIC_ENABLE_ALL:
+                    for topic_key in topic:
+                        topic[topic_key] = True
+                else:
+                    topic_keys_sorted = sorted(topic, key=lambda _key: int(_key.split('(')[0]))
+                    keep_key = next(
+                        (_key for _key in topic_keys_sorted if _key.split('(')[0] == '1'),
+                        topic_keys_sorted[0]
+                    )
+                    for topic_key in topic:
+                        topic[topic_key] = (topic_key == keep_key)
+            elif data.startswith(BotCallbackPrefix.TOGGLE_TOPIC):
                 topic_id = data[len(BotCallbackPrefix.TOGGLE_TOPIC):]
                 topic_key = next((key for key in topic if key.split('(')[0] == topic_id), None)
                 if topic_key:
