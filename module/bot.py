@@ -2581,7 +2581,9 @@ class KeyboardButton:
         保证配置里的页码与界面实际渲染的页码一致;总页数供页码选择面板复用,避免另算一套分页常量。
         """
         per_page = per_row * rows_per_page
-        topic_keys = list(topic)
+        # 按话题id数值升序排列,与__filter_prompt提示文案的展示顺序一致;
+        # topic来自get_forum_topics的返回顺序,并非按id排序,直接list(topic)会让按钮看起来是乱的。
+        topic_keys = sorted(topic, key=lambda _key: int(_key.split('(')[0]))
         total_pages = max(1, (len(topic_keys) + per_page - 1) // per_page)
         # 话题数量在会话内可能被重新探测,页码越界时收敛到合法范围,避免渲染空页。
         page = max(1, min(page, total_pages))
