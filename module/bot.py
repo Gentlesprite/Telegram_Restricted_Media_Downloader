@@ -280,7 +280,7 @@ class Bot:
             )
             self.keyword_handlers[chat_id] = (task_chat_id, keyword_handler)
             self.add_handler(keyword_handler, group=-1)
-            log.info(f'用户输入模式已打开,Handler:"{keyword_handler}"。')
+            log.info(f'用户输入模式已打开,chat_id:"{chat_id}",task_chat_id:"{task_chat_id}"。')
         else:
             old = self.keyword_handlers.pop(chat_id, None)
             if old:
@@ -312,7 +312,7 @@ class Bot:
             )
             self.command_handlers[chat_id] = command_handler
             self.add_handler(command_handler, group=-1)
-            log.info(f'命令输入模式已打开,Handler:"{command_handler}"。')
+            log.info(f'命令输入模式已打开,chat_id:"{chat_id}",command:"{command}"。')
         else:
             old = self.command_handlers.pop(chat_id, None)
             if old:
@@ -1673,7 +1673,7 @@ class Bot:
             )
             self.auth_handlers[chat_id] = auth_handler
             self.add_handler(auth_handler, group=-1)
-            log.info(f'添加授权用户输入模式已打开,Handler:"{auth_handler}"。')
+            log.info(f'添加授权用户输入模式已打开,chat_id:"{chat_id}"。')
         else:
             old = self.auth_handlers.pop(chat_id, None)
             if old:
@@ -3613,7 +3613,7 @@ class ListenRemoveHandler(CallbackHandler):
                 pass
             p = f'已删除监听下载,频道链接:"{link}"。'
             console.log(p, style='#FF4689')
-            log.info(f'{p}当前的监听下载信息:{downloader.listen_download_chat}')
+            log.info(f'{p}当前的监听下载信息:{list(downloader.listen_download_chat)}')
             return None
         if not isinstance(downloader.cd.data, dict):
             return None
@@ -3636,7 +3636,7 @@ class ListenRemoveHandler(CallbackHandler):
         except MessageNotModified:
             pass
         console.log(p, style='#FF4689')
-        log.info(f'{p}当前的监听转发信息:{downloader.listen_forward_chat}')
+        log.info(f'{p}当前的监听转发信息:{list(downloader.listen_forward_chat)}')
 
 
 class DownloadChatHandler(CallbackHandler):

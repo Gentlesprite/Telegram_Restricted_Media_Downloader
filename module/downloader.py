@@ -943,13 +943,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                 self.app.client.remove_handler(self.listen_download_chat.get(link))
                 self.listen_download_chat.pop(link, None)
                 p: str = f'已删除监听下载,频道链接:"{link}"。'
-                log.info(f'{p}当前的监听下载信息:{self.listen_download_chat}')
+                log.info(f'{p}当前的监听下载信息:{list(self.listen_download_chat)}')
             else:
                 self.app.client.remove_handler(self.listen_forward_chat.get(link))
                 self.listen_forward_chat.pop(link, None)
                 rule: str = ' -> '.join(args)
                 p: str = f'已删除监听转发,转发规则:"{rule}"。'
-                log.info(f'{p}当前的监听转发信息:{self.listen_forward_chat}')
+                log.info(f'{p}当前的监听转发信息:{list(self.listen_forward_chat)}')
             console.log(p, style='#FF4689')
             await client.send_message(
                 chat_id=message.from_user.id,
@@ -1126,7 +1126,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     p = f'已新增监听下载,频道链接:"{link}"。'
                     console.log(p, style='#FF4689')
-                    log.info(f'{p}当前的监听下载信息:{self.listen_download_chat}')
+                    log.info(f'{p}当前的监听下载信息:{list(self.listen_download_chat)}')
         elif command == '/listen_forward':
             listen_link, target_link = links
             if await add_listen_chat(f'{listen_link} {target_link}', self.listen_forward_chat, self.listen_forward):
@@ -1152,7 +1152,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
                 p = f'已新增监听转发,转发规则:"{listen_link} -> {target_link}"。'
                 console.log(p, style='#FF4689')
-                log.info(f'{p}当前的监听转发信息:{self.listen_forward_chat}')
+                log.info(f'{p}当前的监听转发信息:{list(self.listen_forward_chat)}')
 
     async def listen_download(
             self,
