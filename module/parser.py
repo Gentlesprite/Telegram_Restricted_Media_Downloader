@@ -74,7 +74,8 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
         )
         self.add_argument(
             '--test',
-            action='store_true',
+            nargs='?',
+            const='info',
             default=False,
             help=SUPPRESS
         )

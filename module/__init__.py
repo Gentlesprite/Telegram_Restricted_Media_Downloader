@@ -88,7 +88,7 @@ FORWARD_LIMIT = 33  # 每分钟允许的最大转发次数。
 AUTHOR = 'Gentlesprite'
 __version__ = '2.1.8'
 __license__ = 'GPL-3.0-or-later'
-__update_date__ = '2026-11-15 15:16:37'
+__update_date__ = '2026-11-15 16:12:27'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/{AUTHOR}>'
 REQUIRE_PYROGRAM_VERSION = (2, 2, 27)
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
@@ -133,9 +133,34 @@ if os.path.exists(GLOBAL_CONFIG_PATH):
     except Exception:  # noqa.
         pass
 
-if '--test' in sys.argv:
-    FILE_LOG_LEVEL = min(FILE_LOG_LEVEL, logging.INFO)
-    CONSOLE_LOG_LEVEL = min(CONSOLE_LOG_LEVEL, logging.INFO)
+
+def get_test_level() -> str:
+    """从命令行参数解析--test的等级,支持--test、--test=info、--test=debug。"""
+    for arg in sys.argv[1:]:
+        if arg == '--test':
+            return 'info'
+        if arg.startswith('--test='):
+            value = arg.split('=', 1)[1].strip().lower()
+            if value in ('debug', 'info', 'console_info', 'console_debug', 'file_info', 'file_debug'):
+                return value
+            return 'info'
+    return ''
+
+
+TEST_LEVEL: str = get_test_level()
+TEST_CONSOLE_INFO: bool = TEST_LEVEL in ('info', 'console_info')
+TEST_CONSOLE_DEBUG: bool = TEST_LEVEL in ('debug', 'console_debug')
+TEST_FILE_INFO: bool = TEST_LEVEL in ('info', 'file_info')
+TEST_FILE_DEBUG: bool = TEST_LEVEL in ('debug', 'file_debug')
+if TEST_LEVEL:
+    if TEST_CONSOLE_DEBUG:
+        CONSOLE_LOG_LEVEL = min(CONSOLE_LOG_LEVEL, logging.DEBUG)
+    elif TEST_CONSOLE_INFO:
+        CONSOLE_LOG_LEVEL = min(CONSOLE_LOG_LEVEL, logging.INFO)
+    if TEST_FILE_DEBUG:
+        FILE_LOG_LEVEL = min(FILE_LOG_LEVEL, logging.DEBUG)
+    elif TEST_FILE_INFO:
+        FILE_LOG_LEVEL = min(FILE_LOG_LEVEL, logging.INFO)
 
 file_handler.setLevel(logging.getLevelName(FILE_LOG_LEVEL))
 file_handler.addFilter(CallerFilter())
@@ -189,9 +214,13 @@ class PyrogramQuietFilter(logging.Filter):
         return True
 
 
-if CONSOLE_LOG_LEVEL > logging.DEBUG:
+# 定向到该输出端显示全部的等级(含debug/console_debug/console_info、debug/file_debug/file_info)
+# 不附加静默过滤器,使pyrogram日志也能完整显示,其余默认等级(如info双端)仍按原逻辑过滤。
+console_show_all: bool = TEST_LEVEL in ('debug', 'console_debug', 'console_info')
+file_show_all: bool = TEST_LEVEL in ('debug', 'file_debug', 'file_info')
+if CONSOLE_LOG_LEVEL > logging.DEBUG and not console_show_all:
     console_handler.addFilter(PyrogramQuietFilter())
-if FILE_LOG_LEVEL > logging.DEBUG:
+if FILE_LOG_LEVEL > logging.DEBUG and not file_show_all:
     file_handler.addFilter(PyrogramQuietFilter())
 log = logging.getLogger('rich')
 
