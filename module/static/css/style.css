@@ -278,43 +278,44 @@ h1 {
 
 /* (按钮已提升为 .topbar 直接子元素,原 .top-actions 包裹已移除。) */
 
+/* 顶栏操作按钮按次要按钮处理:中性文字与常规描边,仅在交互时上色,避免彩色填充和发光显得花哨。 */
 .support-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 7px 16px;
-    border: none;
-    border-radius: 99px;
-    background: linear-gradient(135deg, var(--accent2), var(--accent));
-    color: #06231d;
+    padding: 6px 14px;  /* 由 7px 收 1px,抵消新增的 1px 边框,保持按钮总高与顶栏不变。 */
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--text);
     font-family: inherit;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: .5px;
     cursor: pointer;
     white-space: nowrap;  /* 禁止中文标签折行,避免窄屏下被压成竖排(显示不全)。 */
-    box-shadow: 0 4px 14px rgba(56, 249, 215, .25);
-    transition: filter .18s ease, box-shadow .28s ease;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
 }
 
 .support-btn:hover {
-    filter: brightness(1.08);
-    box-shadow: 0 6px 18px rgba(56, 249, 215, .4);
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 .support-btn:active {
-    filter: brightness(.96);
+    background: rgba(56, 249, 215, .1);
 }
 
-/* 全局暂停激活态:转为橙色高亮,明确提示"已暂停"(纯静态,不带动画)。 */
+/* 全局暂停激活态:用系统警示色标出"已暂停"(纯静态,不带动画)。 */
 .support-btn.paused {
-    background: linear-gradient(135deg, #ffb347, #ff7b54);
-    color: #2a1402;
-    box-shadow: 0 4px 14px rgba(255, 123, 84, .35);
+    border-color: rgba(255, 200, 87, .5);
+    background: rgba(255, 200, 87, .08);
+    color: var(--warn);
 }
 
 .support-btn.paused:hover {
-    box-shadow: 0 8px 24px rgba(255, 123, 84, .5);
+    border-color: var(--warn);
+    background: rgba(255, 200, 87, .14);
 }
 
 /* 暂停/恢复两态标签等长(图标+两字),固定宽度并居中可杜绝切换时
@@ -330,14 +331,15 @@ h1 {
 }
 
 .support-icon {
-    color: #ff3355;
+    color: var(--danger);
     font-size: 14px;
     line-height: 1;
 }
 
-/* 支持作者按钮:与爱心同色的粉色光晕,与暂停橙光、常规青光协调呼应(纯静态,不带动画)。 */
+/* 支持作者按钮:悬停改用系统警示色高亮,与其余按钮共用一套克制配色(纯静态,不带动画)。 */
 #supportBtn:hover {
-    box-shadow: 0 8px 22px rgba(255, 51, 85, .38);
+    border-color: var(--danger);
+    color: var(--danger);
 }
 
 /* 顶栏更多菜单:按钮保持低调,展开的下拉面板浮在内容之上。 */
