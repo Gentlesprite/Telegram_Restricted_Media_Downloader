@@ -41,6 +41,19 @@ def via_log_level(log_level: str, param_name: str, default_level: int = logging.
     return True
 
 
+def get_test_level() -> str:
+    """从命令行参数解析--test的等级。"""
+    for arg in sys.argv[1:]:
+        if arg == '--test':
+            return TestLevel.INFO
+        if arg.startswith('--test='):
+            value = arg.split('=', 1)[1].strip().lower()
+            if value in TestLevel():
+                return value
+            return TestLevel.INFO
+    return ''
+
+
 class CustomDumper(yaml.Dumper):
 
     def represent_none(self, data):
@@ -81,6 +94,44 @@ class CallerFilter(logging.Filter):
         return True
 
 
+class TestLevel:
+    INFO: str = 'info'
+    DEBUG: str = 'debug'
+    CONSOLE_INFO: str = 'console_info'
+    CONSOLE_DEBUG: str = 'console_debug'
+    FILE_INFO: str = 'file_info'
+    FILE_DEBUG: str = 'file_debug'
+
+    @classmethod
+    def console_info_levels(cls):
+        return cls.INFO, cls.CONSOLE_INFO
+
+    @classmethod
+    def console_debug_levels(cls):
+        return cls.DEBUG, cls.CONSOLE_DEBUG
+
+    @classmethod
+    def file_info_levels(cls):
+        return cls.INFO, cls.FILE_INFO
+
+    @classmethod
+    def file_debug_levels(cls):
+        return cls.DEBUG, cls.FILE_DEBUG
+
+    @classmethod
+    def console_show_all_levels(cls):
+        return cls.DEBUG, cls.CONSOLE_DEBUG, cls.CONSOLE_INFO
+
+    @classmethod
+    def file_show_all_levels(cls):
+        return cls.DEBUG, cls.FILE_DEBUG, cls.FILE_INFO
+
+    def __iter__(self):
+        for key, value in vars(self.__class__).items():
+            if not key.startswith('_') and not callable(value):  # 排除特殊方法和属性。
+                yield value
+
+
 LOG_TIME_FORMAT = '[%Y-%m-%d %H:%M:%S]'
 console = Console(log_path=False, log_time_format=LOG_TIME_FORMAT)
 DOWNLOAD_TIMEOUT = 120
@@ -88,7 +139,7 @@ FORWARD_LIMIT = 33  # 每分钟允许的最大转发次数。
 AUTHOR = 'Gentlesprite'
 __version__ = '2.1.8'
 __license__ = 'GPL-3.0-or-later'
-__update_date__ = '2026-11-15 16:12:27'
+__update_date__ = '2026-11-15 16:32:34'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/{AUTHOR}>'
 REQUIRE_PYROGRAM_VERSION = (2, 2, 27)
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
@@ -111,6 +162,7 @@ FILE_LOG_LEVEL: int = logging.INFO
 CONSOLE_LOG_LEVEL: int = logging.WARNING
 REFERRAL_RECORD_PATH: str = os.path.join(APPDATA_PATH, f'.{SOFTWARE_SHORT_NAME}_REFERRAL')
 TRMD_WEB_SESSION: str = os.path.join(APPDATA_PATH, f'.{SOFTWARE_SHORT_NAME}_WEB_SESSION')
+TEST_LEVEL: str = get_test_level()
 # 配置日志文件处理器(文件记录)
 file_handler = RotatingFileHandler(
     filename=LOG_PATH,
@@ -133,33 +185,14 @@ if os.path.exists(GLOBAL_CONFIG_PATH):
     except Exception:  # noqa.
         pass
 
-
-def get_test_level() -> str:
-    """从命令行参数解析--test的等级,支持--test、--test=info、--test=debug。"""
-    for arg in sys.argv[1:]:
-        if arg == '--test':
-            return 'info'
-        if arg.startswith('--test='):
-            value = arg.split('=', 1)[1].strip().lower()
-            if value in ('debug', 'info', 'console_info', 'console_debug', 'file_info', 'file_debug'):
-                return value
-            return 'info'
-    return ''
-
-
-TEST_LEVEL: str = get_test_level()
-TEST_CONSOLE_INFO: bool = TEST_LEVEL in ('info', 'console_info')
-TEST_CONSOLE_DEBUG: bool = TEST_LEVEL in ('debug', 'console_debug')
-TEST_FILE_INFO: bool = TEST_LEVEL in ('info', 'file_info')
-TEST_FILE_DEBUG: bool = TEST_LEVEL in ('debug', 'file_debug')
 if TEST_LEVEL:
-    if TEST_CONSOLE_DEBUG:
+    if TEST_LEVEL in TestLevel.console_debug_levels():
         CONSOLE_LOG_LEVEL = min(CONSOLE_LOG_LEVEL, logging.DEBUG)
-    elif TEST_CONSOLE_INFO:
+    elif TEST_LEVEL in TestLevel.console_info_levels():
         CONSOLE_LOG_LEVEL = min(CONSOLE_LOG_LEVEL, logging.INFO)
-    if TEST_FILE_DEBUG:
+    if TEST_LEVEL in TestLevel.file_debug_levels():
         FILE_LOG_LEVEL = min(FILE_LOG_LEVEL, logging.DEBUG)
-    elif TEST_FILE_INFO:
+    elif TEST_LEVEL in TestLevel.file_info_levels():
         FILE_LOG_LEVEL = min(FILE_LOG_LEVEL, logging.INFO)
 
 file_handler.setLevel(logging.getLevelName(FILE_LOG_LEVEL))
@@ -214,13 +247,10 @@ class PyrogramQuietFilter(logging.Filter):
         return True
 
 
-# 定向到该输出端显示全部的等级(含debug/console_debug/console_info、debug/file_debug/file_info)
-# 不附加静默过滤器,使pyrogram日志也能完整显示,其余默认等级(如info双端)仍按原逻辑过滤。
-console_show_all: bool = TEST_LEVEL in ('debug', 'console_debug', 'console_info')
-file_show_all: bool = TEST_LEVEL in ('debug', 'file_debug', 'file_info')
-if CONSOLE_LOG_LEVEL > logging.DEBUG and not console_show_all:
+# 定向到该输出端显示全部的等级(含console_info、file_info、debug、console_debug、file_debug)不附加静默过滤器,使pyrogram日志也能完整显示,其余默认等级(如info双端)仍按原逻辑过滤。
+if CONSOLE_LOG_LEVEL > logging.DEBUG and TEST_LEVEL not in TestLevel.console_show_all_levels():
     console_handler.addFilter(PyrogramQuietFilter())
-if FILE_LOG_LEVEL > logging.DEBUG and not file_show_all:
+if FILE_LOG_LEVEL > logging.DEBUG and TEST_LEVEL not in TestLevel.file_show_all_levels():
     file_handler.addFilter(PyrogramQuietFilter())
 log = logging.getLogger('rich')
 

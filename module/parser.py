@@ -11,7 +11,8 @@ from argparse import (
 from module import (
     console,
     VERSION_SEMVER,
-    SOFTWARE_SHORT_NAME
+    SOFTWARE_SHORT_NAME,
+    TestLevel
 )
 from module.enums import (
     Banner,
@@ -75,7 +76,7 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
         self.add_argument(
             '--test',
             nargs='?',
-            const='info',
+            const=TestLevel.INFO,
             default=False,
             help=SUPPRESS
         )
