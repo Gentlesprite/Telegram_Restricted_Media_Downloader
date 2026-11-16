@@ -1805,6 +1805,10 @@ body.resizing {
     color: var(--accent2);
 }
 
+.status-paused {
+    color: var(--warn);
+}
+
 .status-pending {
     color: var(--warn);
 }

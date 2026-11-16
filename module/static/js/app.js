@@ -108,6 +108,11 @@ function dash(text) {
     return text ? esc(text) : '—';
 }
 
+function speedText(speed) {
+    // 暂停期间不会有新进度,速度一律显示为破折号,状态由状态栏的"已暂停"体现。
+    return lastPaused ? '—' : dash(speed);
+}
+
 function progressCell(percent) {
     // --p 供手机端把横向条换成圆环时使用(带 % 的完整角度值);桌面端不读取,无副作用。
     return '<span class="cell-progress" style="--p:' + percent + '%">' +
@@ -158,22 +163,24 @@ function groupStat(members, live) {
 function groupStatCells(stat) {
     var speed = stat.speed ? sizeText(stat.speed) + '/s' : '—';
     var remain = stat.remaining === null ? '—' : secondsText(stat.remaining);
-    return '<span class="cell-speed">' + speed + '</span>' +
+    return '<span class="cell-speed">' + (lastPaused ? '—' : speed) + '</span>' +
         '<span class="cell-remain">' + remain + '</span>';
 }
 
 function taskRow(task) {
     var done = task.percent >= 100;
+    // 传输中的任务在全局暂停时改显"已暂停",速度栏由speedText统一显示为破折号。
+    var statusText = done ? '已完成' : (lastPaused ? '已暂停' : '下载中');
+    var statusClass = done ? 'status-done' : (lastPaused ? 'status-paused' : 'status-running');
     // data-task-id 供"列表结构未变时就地更新进度",避免每秒整表重建。
     return '<div class="task-row" data-task-id="' + escAttr(task.id) + '">' +
         '<span class="cell-name"><span class="ficon">' + esc(task.type || '📄') + '</span>' +
         '<span class="fname" title="' + escAttr(task.filename) + '">' + esc(task.filename) + '</span></span>' +
         progressCell(task.percent) +
         '<span class="cell-size">' + dash(task.info) + '</span>' +
-        '<span class="cell-speed">' + dash(task.speed) + '</span>' +
+        '<span class="cell-speed">' + speedText(task.speed) + '</span>' +
         '<span class="cell-remain">' + dash(task.remaining) + '</span>' +
-        '<span class="cell-status ' + (done ? 'status-done' : 'status-running') + '">' +
-        (done ? '已完成' : '下载中') + '</span>' +
+        '<span class="cell-status ' + statusClass + '">' + statusText + '</span>' +
         '</div>';
 }
 
@@ -531,7 +538,7 @@ function renderOverall(summary, taskCount, ids) {
     document.getElementById(ids.percent).textContent = data.percent + '%';
     document.getElementById(ids.info).textContent = data.info;
     document.getElementById(ids.extra).textContent =
-        extraText(data) ? extraText(data) : (taskCount ? '正在测速' : '暂无速度');
+        lastPaused ? '已暂停' : (extraText(data) ? extraText(data) : (taskCount ? '正在测速' : '暂无速度'));
     document.getElementById(ids.status).textContent = connectionStatus;
 }
 
@@ -2580,6 +2587,11 @@ function uploadRow(file) {
     var state = file.state || 'pending';
     var text = UPLOAD_TEXT[state] || '队列中';
     var cls = UPLOAD_CLASS[state] || 'status-pending';
+    // 传输中的文件在全局暂停时改显"已暂停",其余状态保持原样。
+    if (lastPaused && state === 'uploading') {
+        text = '已暂停';
+        cls = 'status-paused';
+    }
     var progress;
     if (uploadDone(file)) {
         progress = progressCell(100);
@@ -2595,7 +2607,7 @@ function uploadRow(file) {
         '<span class="fname" title="' + escAttr(file.path || file.file) + '">' + esc(file.path || file.file) + '</span></span>' +
         progress +
         '<span class="cell-size">' + dash(file.size) + '</span>' +
-        '<span class="cell-speed">' + dash(file.speed) + '</span>' +
+        '<span class="cell-speed">' + speedText(file.speed) + '</span>' +
         '<span class="cell-remain">' + dash(file.remaining) + '</span>' +
         '<span class="cell-status ' + cls + '" title="' + escAttr(file.error) + '">' + text + '</span>' +
         '</div>';
@@ -2608,7 +2620,10 @@ function uploadStatusCell(group) {
     if (group.complete === group.count) {
         return '<span class="cell-status status-done">已完成</span>';
     }
-    return '<span class="cell-status status-running">上传中</span>';
+    // 分组内还有文件在传,全局暂停时改显"已暂停"。
+    return lastPaused
+        ? '<span class="cell-status status-paused">已暂停</span>'
+        : '<span class="cell-status status-running">上传中</span>';
 }
 
 function uploadBlock(group) {
@@ -2726,6 +2741,8 @@ var POLL_INTERVAL_MS = 1000;
 /* 上传列表结构指纹:文件路径 + 状态,不含进度/速度等每秒变化的数值。 */
 function uploadStructKey(uploads) {
     var parts = [];
+    // 暂停状态并入结构指纹:暂停/恢复时重建列表,让状态栏同步显示"已暂停"。
+    parts.push('paused|' + (lastPaused ? '1' : '0'));
     for (var i = 0; i < (uploads || []).length; i++) {
         parts.push((uploads[i].path || uploads[i].file || '') + '|' + uploads[i].state);
     }
@@ -2761,7 +2778,7 @@ function updateUploadRows(uploads) {
         }
         var speed = row.querySelector('.cell-speed');
         if (speed) {
-            speed.textContent = dash(file.speed);
+            speed.textContent = speedText(file.speed);
         }
         var remain = row.querySelector('.cell-remain');
         if (remain) {
@@ -2774,6 +2791,8 @@ function updateUploadRows(uploads) {
    刻意不包含进度/速度等每秒变化的数值,否则每次轮询都会触发重建。 */
 function structKeyOf(data) {
     var parts = [];
+    // 暂停状态并入结构指纹:暂停/恢复时重建列表,让状态栏同步显示"已暂停"。
+    parts.push('paused|' + (lastPaused ? '1' : '0'));
     var links = data.links || [];
     for (var i = 0; i < links.length; i++) {
         var members = links[i].queue || [];
@@ -2821,7 +2840,7 @@ function updateTaskRows(data) {
         }
         var speed = row.querySelector('.cell-speed');
         if (speed) {
-            speed.textContent = dash(task.speed);
+            speed.textContent = speedText(task.speed);
         }
         var remain = row.querySelector('.cell-remain');
         if (remain) {
@@ -2840,6 +2859,9 @@ function render(data, force) {
     }
     lastRenderKey = key;
     connectionStatus = data.connection_status || '';
+    // 先同步暂停状态:总进度区与上传列表在下方渲染,需拿到本轮的暂停标志才能显示"已暂停"。
+    lastPaused = !!data.is_paused;
+    renderPauseState(lastPaused);
     var downloads = (data.tasks || []).length;
     lastDownloadActive = downloads;
     document.getElementById('badgeDownload').textContent = downloads;
@@ -2860,8 +2882,6 @@ function render(data, force) {
     if (currentSection === 'notice') {
         renderNotices(data.notices);  // 通知仅通知板块下发,新通知到来时指纹变化即重绘。
     }
-    lastPaused = !!data.is_paused;
-    renderPauseState(lastPaused);
     renderOuterLinks(data.outer_links);
     renderStatus();
     // 只有列表结构变化(成员增减/状态改变)才重建 DOM;
