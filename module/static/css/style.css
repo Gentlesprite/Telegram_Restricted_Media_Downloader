@@ -107,7 +107,8 @@ body {
 }
 
 .side-item,
-.support-btn {
+.support-btn,
+.menu-btn {
     padding: 12px 14px;
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -123,7 +124,8 @@ body {
 }
 
 .side-item:hover,
-.support-btn:hover {
+.support-btn:hover,
+.menu-btn:hover {
     border-color: var(--accent);
     color: var(--text);
 }
@@ -340,24 +342,15 @@ h1 {
     position: relative;
 }
 
+/* 菜单按钮复用左侧栏项的视觉样式,这里只保留方形尺寸与图标居中。 */
 .menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 30px;
     height: 26px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: transparent;
-    color: var(--muted);
-    font-family: inherit;
-    font-size: 13px;
+    padding: 0;
     line-height: 1;
-    cursor: pointer;
-    transition: border-color .15s ease, color .15s ease, background .15s ease;
-}
-
-.menu-btn:hover {
-    border-color: var(--accent);
-    background: rgba(56, 249, 215, .12);
-    color: var(--accent);
 }
 
 .menu-dropdown {
@@ -721,6 +714,7 @@ body.logged-out .wrap {
    .group-head 不并入:它仍维持独立的白色微亮分组条样式以区分层次。 */
 .side-item,
 .support-btn,
+.menu-btn,
 .tab,
 .stat div,
 .panel,
