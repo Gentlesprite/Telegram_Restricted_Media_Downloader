@@ -270,12 +270,6 @@ body {
 /* 悬停提示统一由 app.js 的 .name-tip 接管:任何带 data-tip 或 title 的元素都显示同一套玻璃提示,
    这里不要再给 [data-tip] 加伪元素提示,否则会与 JS 提示重复弹出两个。 */
 
-h1 {
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: .5px;
-}
-
 /* 顶栏左侧:统一下载、上传、监听三个板块的运行状态。 */
 .status {
     display: inline-flex;
@@ -735,8 +729,7 @@ body.logged-out .wrap {
 .menu-dropdown,
 .logo-tip,
 .name-tip,
-.modal-card,
-th {
+.modal-card {
     background-color: rgba(26, 26, 30, .72);
     background-image:
         linear-gradient(135deg, rgba(255, 255, 255, .01), rgba(255, 255, 255, 0) 40%),
@@ -996,34 +989,6 @@ th {
     justify-content: space-between;
     gap: 12px;
     margin-bottom: 10px;
-}
-
-.section-head h2 {
-    margin-bottom: 0;
-}
-
-h2 {
-    margin-bottom: 10px;
-    padding-left: 9px;
-    border-left: 3px solid var(--accent);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-}
-
-.toggle {
-    padding: 4px 12px;
-    border: 1px solid var(--border);
-    border-radius: 99px;
-    background: transparent;
-    color: var(--muted);
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.toggle:hover {
-    border-color: var(--accent);
-    color: var(--accent);
 }
 
 /* 折叠与刷新按钮套用dock视觉,但沿用原有尺寸与字重,避免被撑大。 */
@@ -1839,14 +1804,6 @@ body.resizing {
     color: var(--warn);
 }
 
-.pending-row {
-    opacity: .82;
-}
-
-.pending-row .pct {
-    color: var(--warn);
-}
-
 .status-done {
     color: var(--muted);
 }
@@ -1875,39 +1832,6 @@ body.resizing {
     color: #5f6879;
     font-size: 13px;
     text-align: center;
-}
-
-/* 表格 */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-}
-
-th,
-td {
-    padding: 9px 10px;
-    border-bottom: 1px solid rgba(36, 43, 57, .6);
-    text-align: left;
-}
-
-th {
-    /* 同上:表头比卡片实一档,但仍要保留磨砂块的渐变与噪点。 */
-    background-color: var(--panel2);
-    color: var(--muted);
-    font-weight: 600;
-}
-
-td {
-    font-variant-numeric: tabular-nums;
-}
-
-tbody tr:last-child td {
-    border-bottom: none;
-}
-
-tbody tr:hover {
-    background: rgba(56, 249, 215, .05);
 }
 
 .offline {
