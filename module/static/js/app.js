@@ -2685,7 +2685,7 @@ function uploadBlock(group) {
         '<span class="gname" title="' + escAttr(group.name) + '">' + esc(group.name) + '</span>' +
         '<span class="gcount">' + group.count + ' 个文件</span></span>' +
         progressCell(group.percent) +
-        '<span class="cell-size">' + countText(group.complete, group.count, 0, group.failed) + '</span>' +
+        '<span class="cell-size">' + countText(group.complete, group.count, group.count - group.complete - group.failed, group.failed) + '</span>' +
         groupStatCells(group.stat) +
         uploadStatusCell(group) +
         '</div>' +
