@@ -1756,13 +1756,18 @@ body.resizing {
 
 .pct {
     flex: none;
-    min-width: 44px;  /* 用最小宽度而非定宽:进度栏也会显示状态文字(已跳过/队列中),
+    min-width: 44px;  /* 用最小宽度而非定宽:进度栏也会显示不支持类型的原因文字,
                          定宽 44px 在火狐里会被逐字折行成竖排,最小宽度可让盒子随文字撑开。 */
     white-space: nowrap;
     text-align: right;
     font-size: 12px;
     color: var(--accent);
     font-variant-numeric: tabular-nums;
+}
+
+/* 进度栏无进度时的破折号,与大小、速度等列的空值同色。 */
+.pct.dash {
+    color: var(--muted);
 }
 
 /* 不支持或被忽略的类型的提示文字,占满进度栏并省略超长内容。 */

@@ -181,7 +181,6 @@ function memberRow(item) {
     var state = item.state || 'pending';
     var text = STATE_TEXT[state] || '队列中';
     var cls = STATE_CLASS[state] || 'status-pending';
-    var pending = state === 'pending';
     var progress;
     if (state === 'success') {
         progress = progressCell(100);
@@ -189,7 +188,7 @@ function memberRow(item) {
         progress = '<span class="cell-progress"><span class="pct note" title="' + escAttr(item.note) + '">' +
             esc(item.note) + '</span></span>';
     } else {
-        progress = '<span class="cell-progress"><span class="pct' + (pending ? ' pending' : '') + '">' + text + '</span></span>';
+        progress = '<span class="cell-progress"><span class="pct dash">—</span></span>';
     }
     return '<div class="task-row member-row">' +
         '<span class="cell-name"><span class="ficon">' + (STATE_ICON[state] || '⏳') + '</span>' +
@@ -2587,8 +2586,7 @@ function uploadRow(file) {
     } else if (state === 'uploading') {
         progress = progressCell(file.percent || 0);
     } else {
-        progress = '<span class="cell-progress"><span class="pct' +
-            (state === 'pending' ? ' pending' : '') + '">' + text + '</span></span>';
+        progress = '<span class="cell-progress"><span class="pct dash">—</span></span>';
     }
     // data-upload-id 供"上传列表结构未变时就地更新进度",避免每秒整表重建。
     return '<div class="task-row member-row" data-upload-id="' +
