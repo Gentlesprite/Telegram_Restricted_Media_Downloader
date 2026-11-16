@@ -224,6 +224,11 @@ function countText(complete, total, remaining) {
 function linkStatusCell(link) {
     var remaining = link.remaining || 0;
     var failed = link.failed || 0;
+    // 还没有任务数据时(频道名未获取、链接刚登记尚未拉到成员),总数和完成数都是 0。
+    // 此时"已完成"会误导,应显示破折号表示尚无状态。频道块与链接块共用本函数,一处覆盖两层。
+    if (!link.member) {
+        return '<span class="cell-status status-idle">—</span>';
+    }
     if (failed) {
         return '<span class="cell-status status-failed">失败 ' + failed + ' 条</span>';
     }
