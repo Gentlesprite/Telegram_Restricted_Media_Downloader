@@ -1365,6 +1365,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 offset=skip_chunks,
                                 download_type=download_type
                         ):
+                            # 全局暂停时挂起当前传输,恢复后从中断处继续。
+                            if self.app.is_paused:
+                                await self.pause_event.wait()
                             f.write(chunk)
                             downloaded += len(chunk)
                             progress(downloaded, *progress_args)

@@ -116,6 +116,9 @@ class TelegramUploader:
         # 上传缺失的分片。
         for part_index in missing_parts:
             try:
+                # 全局暂停时挂起当前上传,恢复后从中断的分片继续。
+                if self.app.is_paused:
+                    await self.pause_event.wait()
                 # 上传单个分片。
                 part_size = 512 * 1024
                 await self.client.save_file(
