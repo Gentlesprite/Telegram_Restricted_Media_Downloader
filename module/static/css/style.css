@@ -320,11 +320,13 @@ body.paused .logo:hover {
 /* (按钮已提升为 .topbar 直接子元素,原 .top-actions 包裹已移除。) */
 
 /* 顶栏按钮复用左侧栏项的视觉样式,只保留横向图标排布与紧凑尺寸。
-   暂停按钮锁高32px,字号与内边距不能照搬左侧栏项,否则会撑破顶栏。 */
+   顶栏四个按钮统一锁高32px,字号与内边距不能照搬左侧栏项,否则会撑破顶栏;
+   不锁高时emoji字形行高差会让按钮高低不齐。 */
 .support-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    height: 32px;
     padding: 6px 14px;
     font-size: 13px;
     letter-spacing: .5px;
@@ -384,20 +386,21 @@ body.paused .logo:hover {
     position: relative;
 }
 
-/* 菜单按钮复用左侧栏项的视觉样式,这里只保留方形尺寸与图标居中。 */
+/* 菜单按钮复用左侧栏项的视觉样式,这里只保留方形尺寸与图标居中;
+   宽高统一为32px做成正方形,并与暂停、购买代理、支持作者等高。 */
 .menu-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 26px;
+    width: 32px;
+    height: 32px;
     padding: 0;
     line-height: 1;
 }
 
 .menu-dropdown {
     position: absolute;
-    top: 32px;
+    top: calc(100% + 6px);
     right: 0;
     z-index: 40;
     min-width: 132px;
