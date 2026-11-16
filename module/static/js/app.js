@@ -2757,7 +2757,7 @@ function renderUpload(uploads) {
         statCell('成功', count.success, 'ok', 'success', 'upload'),
         statCell('失败', count.failure, 'bad', 'failure', 'upload'),
         statCell('上传中', count.uploading, '', 'uploading', 'upload'),
-        statCell('队列', count.pending, 'skip', 'pending', 'upload')
+        statCell('队列', count.pending, 'queue', 'pending', 'upload')
     ]);
     return count.active;
 }
