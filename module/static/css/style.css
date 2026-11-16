@@ -177,17 +177,33 @@ body {
     display: inline-block;
     padding: 4px 9px;
     border-radius: 8px;
-    background: linear-gradient(135deg, var(--accent2), var(--accent));
-    color: #06231d;
+    border: 1px solid var(--glass-edge);
+    /* 与网页其它卡片同一套磨砂配方:暗色半透底 + 顶部微渐变 + 冷蓝晕染 + 噪点,
+       同样不使用 backdrop-filter(与其余卡片保持一致,不做逐帧背景采样)。 */
+    background-color: rgba(26, 26, 30, .72);
+    background-image:
+        linear-gradient(135deg, rgba(255, 255, 255, .01), rgba(255, 255, 255, 0) 40%),
+        radial-gradient(130% 90% at 15% 0%, rgba(130, 160, 255, .01), rgba(130, 160, 255, 0) 62%),
+        var(--frost-noise);
+    background-repeat: no-repeat, no-repeat, repeat;
+    background-size: auto, auto, 128px 128px;
+    box-shadow:
+        inset 0 -1px 0 rgba(0, 0, 0, .22),
+        0 4px 16px rgba(0, 0, 0, .28);
+    color: var(--muted);  /* 次要文字用灰,与统计卡标签(.stat span)同一层级;悬停再转主色 */
     font-size: 12px;
     font-weight: 800;
     letter-spacing: .5px;
-    transition: box-shadow .25s ease;
+    transition: box-shadow .25s ease, color .25s ease;
 }
 
-/* 悬停时 TRMD 呈现静态青色辉光(纯高亮,无扫光等动效)。 */
+/* 悬停反馈沿用网页的通用语言:文字转主色,并叠一层极淡辉光。 */
 .logo:hover {
-    box-shadow: 0 0 16px rgba(56, 249, 215, .55);
+    color: var(--accent);
+    box-shadow:
+        inset 0 -1px 0 rgba(0, 0, 0, .22),
+        0 4px 16px rgba(0, 0, 0, .28),
+        0 0 14px rgba(56, 249, 215, .28);
 }
 
 /* 鼠标悬停在logo上时滑出版本信息,纯CSS实现,无需点击。 */
