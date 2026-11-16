@@ -215,22 +215,31 @@ function memberRow(item) {
         '</div>';
 }
 
-function countText(complete, total, remaining) {
-    // 有剩余时在数量后标注剩余条数,已完成的只显示"完成/总数"。
+function countText(complete, total, remaining, failed) {
+    // 条数统一放在数量列,状态栏只放状态词。失败不计入 remaining,两者不会重复计数。
     var text = complete + '/' + total;
-    return remaining ? text + ' (剩' + remaining + '条)' : text;
+    var tags = [];
+    if (remaining) {
+        tags.push('剩' + remaining + '条');
+    }
+    if (failed) {
+        tags.push('失败' + failed + '条');
+    }
+    return tags.length ? text + ' (' + tags.join(' ') + ')' : text;
 }
 
 function linkStatusCell(link) {
     var remaining = link.remaining || 0;
     var failed = link.failed || 0;
+    // 失败优先于空状态:链接级解析失败(频道/消息不存在)时 member=0、failed=1,
+    // 若先判空会把已有的失败信息吞掉,所以保持原有的"失败"判定在最前。
+    if (failed) {
+        return '<span class="cell-status status-failed">失败</span>';
+    }
     // 还没有任务数据时(频道名未获取、链接刚登记尚未拉到成员),总数和完成数都是 0。
     // 此时"已完成"会误导,应显示破折号表示尚无状态。频道块与链接块共用本函数,一处覆盖两层。
     if (!link.member) {
         return '<span class="cell-status status-idle">—</span>';
-    }
-    if (failed) {
-        return '<span class="cell-status status-failed">失败 ' + failed + ' 条</span>';
     }
     if (remaining) {
         // 全局暂停时,外层分组的状态与内层成员保持一致。
@@ -294,7 +303,7 @@ function channelBlock(group, live) {
         esc(group.name || group.channel) + '</span>' +
         '<span class="gcount">' + group.count + ' 个链接</span></span>' +
         progressCell(group.percent) +
-        '<span class="cell-size">' + countText(group.complete, group.member, group.remaining) + '</span>' +
+        '<span class="cell-size">' + countText(group.complete, group.member, group.remaining, group.failed) + '</span>' +
         groupStatCells(stat) +
         linkStatusCell(group) +
         '</div>' +
@@ -335,7 +344,7 @@ function linkBlock(link, live) {
         '<span class="fname" title="' + escAttr(link.link) + '">' + esc(link.link) + '</span>' +
         '<span class="gcount">' + (link.queue_total || 0) + ' 条未完成 / 共 ' + (link.total || 0) + ' 条</span></span>' +
         progressCell(link.percent) +
-        '<span class="cell-size">' + countText(link.complete, link.member, link.remaining) + '</span>' +
+        '<span class="cell-size">' + countText(link.complete, link.member, link.remaining, link.failed) + '</span>' +
         groupStatCells(stat) +
         linkStatusCell(link) +
         '</div>' +
