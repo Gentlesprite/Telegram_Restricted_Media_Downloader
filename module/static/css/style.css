@@ -190,7 +190,7 @@ body {
     box-shadow:
         inset 0 -1px 0 rgba(0, 0, 0, .22),
         0 4px 16px rgba(0, 0, 0, .28);
-    color: var(--muted);  /* 次要文字用灰,与统计卡标签(.stat span)同一层级;悬停再转主色 */
+    color: var(--muted);  /* 空闲时保持次要文字灰,与统计卡标签同一层级 */
     font-size: 12px;
     font-weight: 800;
     letter-spacing: .5px;
@@ -204,6 +204,24 @@ body {
         inset 0 -1px 0 rgba(0, 0, 0, .22),
         0 4px 16px rgba(0, 0, 0, .28),
         0 0 14px rgba(56, 249, 215, .28);
+}
+
+/* 有下载/上传/监听在跑时徽标转绿,与状态点 active 同色,表示"正在工作"。 */
+body.busy .logo {
+    color: var(--accent2);
+}
+
+/* 全局暂停时徽标文字转暂停橙,与顶栏暂停按钮、列表状态栏的"已暂停"同色。
+   标志位由 JS 挂在 body 上(见 renderPauseState),这里只负责取色。 */
+body.paused .logo {
+    color: var(--paused);
+}
+
+/* 悬停优先于忙碌态与暂停态:任何状态下悬停都转主色,保证悬停反馈始终可见。
+   (body.busy .logo 与 body.paused .logo 特异性都是 0-2-1,高于 .logo:hover 的 0-2-0,故需显式声明本条。) */
+body.busy .logo:hover,
+body.paused .logo:hover {
+    color: var(--accent);
 }
 
 /* 鼠标悬停在logo上时滑出版本信息,纯CSS实现,无需点击。 */
@@ -719,6 +737,12 @@ body.logged-out .wrap {
 .dot.active {
     background: var(--accent2);
     box-shadow: 0 0 0 4px rgba(67, 233, 123, .16);
+}
+
+/* 全局暂停时状态点由绿转橙,与徽标文字、顶栏暂停按钮、列表状态栏的"已暂停"同色。 */
+body.paused .dot.active {
+    background: var(--paused);
+    box-shadow: 0 0 0 4px rgba(var(--paused-rgb), .16);
 }
 
 /* 面板 */

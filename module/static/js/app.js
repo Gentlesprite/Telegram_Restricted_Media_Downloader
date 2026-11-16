@@ -682,6 +682,9 @@ function renderStatus() {
         parts.push('监听 ' + lastListenCount);
     }
     var active = parts.length > 0;
+    // 忙碌标志挂在 body 上,供徽标等纯 CSS 元素取色(空闲为灰、有任务为绿、暂停为橙)。
+    // 这里只按真实活动判定,不把"已暂停"算作忙碌,否则空闲时按下暂停会误显示成绿色。
+    document.body.classList.toggle('busy', !!(lastDownloadActive || lastUploadActive || lastListenCount));
     document.getElementById('dot').className = active ? 'dot active' : 'dot';
     document.getElementById('statusText').textContent = active ? parts.join(' · ') : '空闲 · 等待任务';
 }
@@ -2481,6 +2484,8 @@ async function setPause(paused) {
 
 function renderPauseState(isPaused) {
     var btn = document.getElementById('btnPause');
+    // 暂停标志挂在 body 上,供徽标等纯 CSS 元素取色,不必为它们单独写 JS 改样式。
+    document.body.classList.toggle('paused', !!isPaused);
     if (!btn) {
         return;  // 页面未包含暂停按钮时跳过。
     }
