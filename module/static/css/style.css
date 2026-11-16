@@ -110,7 +110,8 @@ body {
 .support-btn,
 .menu-btn,
 #toggleAll,
-#toggleUpload {
+#toggleUpload,
+#toggleStorage {
     padding: 12px 14px;
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -129,7 +130,8 @@ body {
 .support-btn:hover,
 .menu-btn:hover,
 #toggleAll:hover,
-#toggleUpload:hover {
+#toggleUpload:hover,
+#toggleStorage:hover {
     border-color: var(--accent);
     color: var(--text);
 }
@@ -301,7 +303,8 @@ h1 {
 .support-btn:active,
 .menu-btn:active,
 #toggleAll:active,
-#toggleUpload:active {
+#toggleUpload:active,
+#toggleStorage:active {
     background: rgba(56, 249, 215, .1);
     color: var(--accent);
 }
@@ -724,6 +727,7 @@ body.logged-out .wrap {
 .menu-btn,
 #toggleAll,
 #toggleUpload,
+#toggleStorage,
 .tab,
 .stat div,
 .panel,
@@ -1022,9 +1026,10 @@ h2 {
     color: var(--accent);
 }
 
-/* 折叠按钮套用dock视觉,但沿用原有尺寸与字重,避免被撑大。 */
+/* 折叠与刷新按钮套用dock视觉,但沿用原有尺寸与字重,避免被撑大。 */
 #toggleAll,
-#toggleUpload {
+#toggleUpload,
+#toggleStorage {
     padding: 4px 12px;
     font-size: 12px;
 }
