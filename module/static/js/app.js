@@ -220,10 +220,10 @@ function countText(complete, total, remaining, failed) {
     var text = complete + '/' + total;
     var tags = [];
     if (remaining) {
-        tags.push('剩' + remaining + '条');
+        tags.push('剩' + remaining + '个');
     }
     if (failed) {
-        tags.push('失败' + failed + '条');
+        tags.push('失败' + failed + '个');
     }
     return tags.length ? text + ' (' + tags.join(' ') + ')' : text;
 }
@@ -342,7 +342,7 @@ function linkBlock(link, live) {
         '<span class="cell-name"><span class="arrow"></span>' +
         '<span class="ficon">🔗</span>' +
         '<span class="fname" title="' + escAttr(link.link) + '">' + esc(link.link) + '</span>' +
-        '<span class="gcount">' + (link.queue_total || 0) + ' 条未完成 / 共 ' + (link.total || 0) + ' 条</span></span>' +
+        '<span class="gcount">' + (link.queue_total || 0) + ' 个未完成 / 共 ' + (link.total || 0) + ' 个</span></span>' +
         progressCell(link.percent) +
         '<span class="cell-size">' + countText(link.complete, link.member, link.remaining, link.failed) + '</span>' +
         groupStatCells(stat) +
@@ -2648,7 +2648,7 @@ function uploadRow(file) {
 
 function uploadStatusCell(group) {
     if (group.failed) {
-        return '<span class="cell-status status-failed">失败 ' + group.failed + ' 个</span>';
+        return '<span class="cell-status status-failed">失败</span>';
     }
     if (group.complete === group.count) {
         return '<span class="cell-status status-done">已完成</span>';
@@ -2685,7 +2685,7 @@ function uploadBlock(group) {
         '<span class="gname" title="' + escAttr(group.name) + '">' + esc(group.name) + '</span>' +
         '<span class="gcount">' + group.count + ' 个文件</span></span>' +
         progressCell(group.percent) +
-        '<span class="cell-size">' + group.complete + '/' + group.count + '</span>' +
+        '<span class="cell-size">' + countText(group.complete, group.count, 0, group.failed) + '</span>' +
         groupStatCells(group.stat) +
         uploadStatusCell(group) +
         '</div>' +
