@@ -22,6 +22,8 @@
     --accent2: #43e97b;
     --danger: #ff5c7a;
     --warn: #ffc857;
+    --info: #7fb3ff;  /* 队列蓝,统计卡的"队列"数字同色 */
+    --paused: #a78bfa;  /* 暂停紫,仅用于"已暂停"状态 */
     --cols: minmax(0, 1fr) 210px 148px 92px 84px 64px;
     --page-max: 100%;  /* 内容区最大宽度,默认跟随视口铺满;想恢复居中留白可改成一个像素值。 */
 }
@@ -942,7 +944,7 @@ body.logged-out .wrap {
 }
 
 .queue {
-    color: #7fb3ff;
+    color: var(--info);
 }
 
 .page[hidden] {
@@ -1801,20 +1803,22 @@ body.resizing {
     text-overflow: ellipsis;
 }
 
+/* 状态栏配色与统计卡数字保持一致,每个状态一个颜色:
+   下载中/上传中=白、已完成=绿、失败=红、已跳过=黄、队列中=蓝、已暂停=紫。 */
 .status-running {
-    color: var(--accent2);
+    color: var(--text);
 }
 
 .status-paused {
-    color: var(--warn);
+    color: var(--paused);
 }
 
 .status-pending {
-    color: var(--warn);
+    color: var(--info);
 }
 
 .status-done {
-    color: var(--muted);
+    color: var(--accent2);
 }
 
 .status-failed {
@@ -1822,7 +1826,7 @@ body.resizing {
 }
 
 .status-skip {
-    color: var(--muted);
+    color: var(--warn);
 }
 
 .member-row {
