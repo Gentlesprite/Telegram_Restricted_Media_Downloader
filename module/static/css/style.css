@@ -106,7 +106,8 @@ body {
     top: 24px;
 }
 
-.side-item {
+.side-item,
+.support-btn {
     padding: 12px 14px;
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -121,7 +122,8 @@ body {
     transition: border-color .15s ease, color .15s ease, background .15s ease;
 }
 
-.side-item:hover {
+.side-item:hover,
+.support-btn:hover {
     border-color: var(--accent);
     color: var(--text);
 }
@@ -278,28 +280,15 @@ h1 {
 
 /* (按钮已提升为 .topbar 直接子元素,原 .top-actions 包裹已移除。) */
 
-/* 顶栏操作按钮按次要按钮处理:中性文字与常规描边,仅在交互时上色,避免彩色填充和发光显得花哨。 */
+/* 顶栏按钮复用左侧栏项的视觉样式,只保留横向图标排布与紧凑尺寸。
+   暂停按钮锁高32px,字号与内边距不能照搬左侧栏项,否则会撑破顶栏。 */
 .support-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 14px;  /* 由 7px 收 1px,抵消新增的 1px 边框,保持按钮总高与顶栏不变。 */
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--panel);
-    color: var(--text);
-    font-family: inherit;
+    padding: 6px 14px;
     font-size: 13px;
-    font-weight: 600;
     letter-spacing: .5px;
-    cursor: pointer;
-    white-space: nowrap;  /* 禁止中文标签折行,避免窄屏下被压成竖排(显示不全)。 */
-    transition: background .15s ease, border-color .15s ease, color .15s ease;
-}
-
-.support-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
 }
 
 .support-btn:active {
@@ -727,6 +716,7 @@ body.logged-out .wrap {
    背景平滑渐变透出半透明底色即呈现磨砂观感,与真玻璃差异极小。
    .group-head 不并入:它仍维持独立的白色微亮分组条样式以区分层次。 */
 .side-item,
+.support-btn,
 .tab,
 .stat div,
 .panel,
