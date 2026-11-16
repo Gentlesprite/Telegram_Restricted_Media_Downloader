@@ -291,8 +291,10 @@ h1 {
     letter-spacing: .5px;
 }
 
+/* 点击瞬间给出绿字反馈,与dock栏选中态同色;暂停态在后面覆盖为黄色。 */
 .support-btn:active {
     background: rgba(56, 249, 215, .1);
+    color: var(--accent);
 }
 
 /* 全局暂停激活态:用系统警示色标出"已暂停"(纯静态,不带动画)。 */
@@ -325,13 +327,15 @@ h1 {
     line-height: 1;
 }
 
-/* 支持作者按钮:悬停改用系统警示色高亮,与其余按钮共用一套克制配色(纯静态,不带动画)。 */
 #supportBtn:hover {
     border-color: var(--danger);
     color: var(--danger);
 }
 
-/* 顶栏更多菜单:按钮保持低调,展开的下拉面板浮在内容之上。 */
+#supportBtn:active {
+    color: var(--danger);
+}
+
 .menu-wrap {
     position: relative;
 }
