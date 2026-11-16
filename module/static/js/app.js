@@ -113,6 +113,11 @@ function speedText(speed) {
     return lastPaused ? '—' : dash(speed);
 }
 
+function remainText(remaining) {
+    // 暂停期间不会有新进度,剩余时间一律显示为破折号,状态由状态栏的"已暂停"体现。
+    return lastPaused ? '—' : dash(remaining);
+}
+
 function progressCell(percent) {
     // --p 供手机端把横向条换成圆环时使用(带 % 的完整角度值);桌面端不读取,无副作用。
     return '<span class="cell-progress" style="--p:' + percent + '%">' +
@@ -163,8 +168,8 @@ function groupStat(members, live) {
 function groupStatCells(stat) {
     var speed = stat.speed ? sizeText(stat.speed) + '/s' : '—';
     var remain = stat.remaining === null ? '—' : secondsText(stat.remaining);
-    return '<span class="cell-speed">' + (lastPaused ? '—' : speed) + '</span>' +
-        '<span class="cell-remain">' + remain + '</span>';
+    return '<span class="cell-speed">' + speedText(speed) + '</span>' +
+        '<span class="cell-remain">' + remainText(remain) + '</span>';
 }
 
 function taskRow(task) {
@@ -179,7 +184,7 @@ function taskRow(task) {
         progressCell(task.percent) +
         '<span class="cell-size">' + dash(task.info) + '</span>' +
         '<span class="cell-speed">' + speedText(task.speed) + '</span>' +
-        '<span class="cell-remain">' + dash(task.remaining) + '</span>' +
+        '<span class="cell-remain">' + remainText(task.remaining) + '</span>' +
         '<span class="cell-status ' + statusClass + '">' + statusText + '</span>' +
         '</div>';
 }
@@ -2608,7 +2613,7 @@ function uploadRow(file) {
         progress +
         '<span class="cell-size">' + dash(file.size) + '</span>' +
         '<span class="cell-speed">' + speedText(file.speed) + '</span>' +
-        '<span class="cell-remain">' + dash(file.remaining) + '</span>' +
+        '<span class="cell-remain">' + remainText(file.remaining) + '</span>' +
         '<span class="cell-status ' + cls + '" title="' + escAttr(file.error) + '">' + text + '</span>' +
         '</div>';
 }
@@ -2782,7 +2787,7 @@ function updateUploadRows(uploads) {
         }
         var remain = row.querySelector('.cell-remain');
         if (remain) {
-            remain.textContent = dash(file.remaining);
+            remain.textContent = remainText(file.remaining);
         }
     }
 }
@@ -2844,7 +2849,7 @@ function updateTaskRows(data) {
         }
         var remain = row.querySelector('.cell-remain');
         if (remain) {
-            remain.textContent = dash(task.remaining);
+            remain.textContent = remainText(task.remaining);
         }
     }
 }
