@@ -108,7 +108,9 @@ body {
 
 .side-item,
 .support-btn,
-.menu-btn {
+.menu-btn,
+#toggleAll,
+#toggleUpload {
     padding: 12px 14px;
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -125,7 +127,9 @@ body {
 
 .side-item:hover,
 .support-btn:hover,
-.menu-btn:hover {
+.menu-btn:hover,
+#toggleAll:hover,
+#toggleUpload:hover {
     border-color: var(--accent);
     color: var(--text);
 }
@@ -715,6 +719,8 @@ body.logged-out .wrap {
 .side-item,
 .support-btn,
 .menu-btn,
+#toggleAll,
+#toggleUpload,
 .tab,
 .stat div,
 .panel,
@@ -1011,6 +1017,13 @@ h2 {
 .toggle:hover {
     border-color: var(--accent);
     color: var(--accent);
+}
+
+/* 折叠按钮套用dock视觉,但沿用原有尺寸与字重,避免被撑大。 */
+#toggleAll,
+#toggleUpload {
+    padding: 4px 12px;
+    font-size: 12px;
 }
 
 /* 记录页分页条:每页条数选择、翻页按钮与页码信息。 */
