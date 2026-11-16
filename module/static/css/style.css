@@ -23,7 +23,8 @@
     --danger: #ff5c7a;
     --warn: #ffc857;
     --info: #7fb3ff;  /* 队列蓝,统计卡的"队列"数字同色 */
-    --paused: #a78bfa;  /* 暂停紫,仅用于"已暂停"状态 */
+    --paused: #ff9f43;  /* 暂停橙,顶栏按钮与列表"已暂停"共用,避免两处各用各的色 */
+    --paused-rgb: 255, 159, 67;  /* 暂停橙的 RGB 分量,供半透明背景与边框使用 */
     --cols: minmax(0, 1fr) 210px 148px 92px 84px 64px;
     --page-max: 100%;  /* 内容区最大宽度,默认跟随视口铺满;想恢复居中留白可改成一个像素值。 */
 }
@@ -305,16 +306,17 @@ body {
     color: var(--accent);
 }
 
-/* 全局暂停激活态:用系统警示色标出"已暂停"(纯静态,不带动画)。 */
+/* 全局暂停激活态:与列表状态栏的"已暂停"共用 --paused,保证顶栏按钮与列表同一概念同色。
+   刻意不用 --warn(黄),那是"已跳过"的颜色,两处混用会让"跳过"与"已暂停"难以区分。 */
 .support-btn.paused {
-    border-color: rgba(255, 200, 87, .5);
-    background: rgba(255, 200, 87, .08);
-    color: var(--warn);
+    border-color: rgba(var(--paused-rgb), .5);
+    background: rgba(var(--paused-rgb), .08);
+    color: var(--paused);
 }
 
 .support-btn.paused:hover {
-    border-color: var(--warn);
-    background: rgba(255, 200, 87, .14);
+    border-color: var(--paused);
+    background: rgba(var(--paused-rgb), .14);
 }
 
 /* 暂停/恢复两态标签等长(图标+两字),固定宽度并居中可杜绝切换时
