@@ -297,8 +297,11 @@ h1 {
     letter-spacing: .5px;
 }
 
-/* 点击瞬间给出绿字反馈,与dock栏选中态同色;暂停态在后面覆盖为黄色。 */
-.support-btn:active {
+/* 操作按钮点击瞬间给出绿字反馈,与dock栏选中态同色;暂停态在后面覆盖为黄色。 */
+.support-btn:active,
+.menu-btn:active,
+#toggleAll:active,
+#toggleUpload:active {
     background: rgba(56, 249, 215, .1);
     color: var(--accent);
 }
