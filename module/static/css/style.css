@@ -334,11 +334,17 @@ body.paused .logo:hover {
 .support-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;  /* 与下载和上传列表列的emoji文案间距一致。 */
     height: 32px;
     padding: 6px 14px;
     font-size: 13px;
     letter-spacing: .5px;
+}
+
+/* 顶栏按钮emoji统一字号与行高,保证与文案的间距一致。 */
+.btn-emoji {
+    font-size: 14px;
+    line-height: 1;
 }
 
 /* 左侧栏项与顶栏、面板内按钮统一:按住时给出绿字填充反馈,与dock栏选中态同色;
@@ -380,8 +386,6 @@ body.paused .logo:hover {
 
 .support-icon {
     color: var(--danger);
-    font-size: 14px;
-    line-height: 1;
 }
 
 #supportBtn:hover {
@@ -1736,7 +1740,7 @@ body.resizing {
 .cell-name {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 5px;
     min-width: 0;
     overflow: hidden;  /* 列宽被压缩到极限时,图标与计数不得溢出覆盖右侧列。 */
 }

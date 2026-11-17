@@ -2482,7 +2482,9 @@ function renderPauseState(isPaused) {
     }
     // 图标用 U+FE0F 以 emoji 彩色字形呈现(⏸️ / ▶️),两种 emoji 字形高度一致,
     // 不会造成顶栏高度抖动、下方卡片下移。
-    btn.textContent = isPaused ? '▶\uFE0F恢复' : '⏸\uFE0F暂停';
+    // 分别更新图标与文案,避免整体覆盖抹掉.btn-emoji结构导致gap失效。
+    btn.querySelector('.btn-emoji').textContent = isPaused ? '▶\uFE0F' : '⏸\uFE0F';
+    btn.querySelector('.btn-label').textContent = isPaused ? '恢复' : '暂停';
     btn.classList.toggle('paused', !!isPaused);
 }
 
