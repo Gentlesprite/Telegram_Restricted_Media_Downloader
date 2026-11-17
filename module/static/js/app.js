@@ -228,28 +228,6 @@ function countText(complete, total, remaining, failed) {
     return tags.length ? text + ' (' + tags.join(' ') + ')' : text;
 }
 
-function linkStatusCell(link) {
-    var remaining = link.remaining || 0;
-    var failed = link.failed || 0;
-    // 失败优先于空状态:链接级解析失败(频道/消息不存在)时 member=0、failed=1,
-    // 若先判空会把已有的失败信息吞掉,所以保持原有的"失败"判定在最前。
-    if (failed) {
-        return '<span class="cell-status status-failed">失败</span>';
-    }
-    // 还没有任务数据时(频道名未获取、链接刚登记尚未拉到成员),总数和完成数都是 0。
-    // 此时"已完成"会误导,应显示破折号表示尚无状态。频道块与链接块共用本函数,一处覆盖两层。
-    if (!link.member) {
-        return '<span class="cell-status status-idle">—</span>';
-    }
-    if (remaining) {
-        // 全局暂停时,外层分组的状态与内层成员保持一致。
-        return lastPaused
-            ? '<span class="cell-status status-paused">已暂停</span>'
-            : '<span class="cell-status status-running">下载中</span>';
-    }
-    return '<span class="cell-status status-done">已完成</span>';
-}
-
 function getChannelGroups(links) {
     var groups = [];  // 按频道分组下载链接,保持频道首次出现的顺序。
     var index = {};
@@ -2643,19 +2621,6 @@ function uploadRow(file) {
         '<span class="cell-remain">' + remainText(file.remaining) + '</span>' +
         '<span class="cell-status ' + cls + '" title="' + escAttr(file.error) + '">' + text + '</span>' +
         '</div>';
-}
-
-function uploadStatusCell(group) {
-    if (group.failed) {
-        return '<span class="cell-status status-failed">失败</span>';
-    }
-    if (group.complete === group.count) {
-        return '<span class="cell-status status-done">已完成</span>';
-    }
-    // 分组内还有文件在传,全局暂停时改显"已暂停"。
-    return lastPaused
-        ? '<span class="cell-status status-paused">已暂停</span>'
-        : '<span class="cell-status status-running">上传中</span>';
 }
 
 function uploadBlock(group) {
