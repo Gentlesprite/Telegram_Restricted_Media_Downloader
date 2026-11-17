@@ -305,7 +305,8 @@ function channelBlock(group, live) {
         progressCell(group.percent) +
         '<span class="cell-size">' + countText(group.complete, group.member, group.remaining, group.failed) + '</span>' +
         groupStatCells(stat) +
-        linkStatusCell(group) +
+        // 组头不显示汇总状态,真实状态只在最内层成员行显示。
+        '<span class="cell-status status-idle">—</span>' +
         '</div>' +
         '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
     var body = '';
@@ -346,7 +347,8 @@ function linkBlock(link, live) {
         progressCell(link.percent) +
         '<span class="cell-size">' + countText(link.complete, link.member, link.remaining, link.failed) + '</span>' +
         groupStatCells(stat) +
-        linkStatusCell(link) +
+        // 组头不显示汇总状态,真实状态只在最内层成员行显示。
+        '<span class="cell-status status-idle">—</span>' +
         '</div>' +
         '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
     for (var i = 0; i < members.length; i++) {
@@ -2684,7 +2686,8 @@ function uploadBlock(group) {
         progressCell(group.percent) +
         '<span class="cell-size">' + countText(group.complete, group.count, group.count - group.complete - group.failed, group.failed) + '</span>' +
         groupStatCells(group.stat) +
-        uploadStatusCell(group) +
+        // 组头不显示汇总状态,真实状态只在最内层文件行显示。
+        '<span class="cell-status status-idle">—</span>' +
         '</div>' +
         '<div class="group-body"' + (isCollapsed ? ' style="display:none"' : '') + '>';
     for (var i = 0; i < files.length; i++) {
