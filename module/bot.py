@@ -99,7 +99,8 @@ from module.enums import (
     BotCommandText,
     BotCallbackText,
     CalenderKeyboard,
-    BotCallbackPrefix
+    BotCallbackPrefix,
+    DownloadChatPromptWord
 )
 
 
@@ -760,7 +761,7 @@ class Bot:
         log.info(f'"{chat_id}"已添加至:{self.download_chat_filter}。')
         format_dtype = ','.join([_t(_) for _ in DownloadType()])
         include_comment = self.download_chat_filter[chat_id]['comment']
-        comment: str = '开' if include_comment else '关'
+        comment: str = _t(DownloadChatPromptWord.ON) if include_comment else _t(DownloadChatPromptWord.OFF)
         topic_prompt: str = format_limited_text(
             sorted((topic_key.split('(')[0] for topic_key, status in topic.items() if status), key=int)
             if topic else [], unit='个话题'
@@ -770,10 +771,10 @@ class Bot:
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
             text=f'💬下载频道:`{chat_id}`\n'
-                 f'⏮️当前选择的起始日期为:未定义\n'
-                 f'⏭️当前选择的结束日期为:未定义\n'
+                 f'⏮️当前选择的起始日期为:{_t(DownloadChatPromptWord.EARLIEST)}\n'
+                 f'⏭️当前选择的结束日期为:{_t(DownloadChatPromptWord.LATEST)}\n'
                  f'📝当前选择的下载类型为:{format_dtype}\n'
-                 f'🔑当前匹配的关键词为:未定义\n'
+                 f'🔑当前匹配的关键词为:{_t(DownloadChatPromptWord.NOT_SET)}\n'
                  f'👥包含评论区:{comment}'
                  f'{topic_line}',
             reply_markup=attach_task(
@@ -4096,8 +4097,10 @@ class DownloadChatHandler(CallbackHandler):
     def __get_update_time(downloader, chat_id):
         start_timestamp = downloader.download_chat_filter[chat_id]['date_range']['start_date']
         end_timestamp = downloader.download_chat_filter[chat_id]['date_range']['end_date']
-        start_time = datetime.datetime.fromtimestamp(start_timestamp) if start_timestamp else '未定义'
-        end_time = datetime.datetime.fromtimestamp(end_timestamp) if end_timestamp else '未定义'
+        start_time = datetime.datetime.fromtimestamp(start_timestamp) if start_timestamp else _t(
+            DownloadChatPromptWord.EARLIEST)
+        end_time = datetime.datetime.fromtimestamp(end_timestamp) if end_timestamp else _t(
+            DownloadChatPromptWord.LATEST)
         return start_time, end_time
 
     @staticmethod
@@ -4112,13 +4115,13 @@ class DownloadChatHandler(CallbackHandler):
     def __get_format_keywords(downloader, chat_id):
         keywords = downloader.download_chat_filter[chat_id]['keyword']
         if not keywords:
-            return '未定义'
+            return _t(DownloadChatPromptWord.NOT_SET)
         return format_limited_text(keywords.keys(), unit='个关键词')
 
     @staticmethod
     def __get_format_comment_status(downloader, chat_id):
         status = downloader.download_chat_filter[chat_id]['comment']
-        return '开' if status else '关'
+        return _t(DownloadChatPromptWord.ON) if status else _t(DownloadChatPromptWord.OFF)
 
     @staticmethod
     def __remove_chat_id(downloader, chat_id):

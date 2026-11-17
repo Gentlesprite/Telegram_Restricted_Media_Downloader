@@ -53,7 +53,12 @@ translations: dict = {
     'IP': ['IP地址'],
     'port': ['端口'],
     'username': ['账号'],
-    'password': ['密码']
+    'password': ['密码'],
+    'earliest': ['最早'],
+    'latest': ['最新'],
+    'not set': ['未设置'],
+    'on': ['开'],
+    'off': ['关']
 }
 
 
