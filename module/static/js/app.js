@@ -3601,6 +3601,7 @@ function initVersion() {
    避免浏览器默认提示与自定义风格混杂(未截断的名称原本会冒出原生提示)。 */
 var nameTipEl = null;
 var nameTipFor = null;
+var nameTipTimer = null;
 var tipMouseX = 0;
 var tipMouseY = 0;
 
@@ -3628,11 +3629,17 @@ function takeTipText(el) {
     return el.getAttribute('data-tip') || '';
 }
 
-function showNameTip(el) {
+function showNameTip(el, autoHide) {
     var text = takeTipText(el);
     var tip = nameTipNode();
     if (!text || !tip) {
         return;
+    }
+    if (autoHide && !nameTipTimer) {
+        nameTipTimer = setTimeout(function () {
+            nameTipTimer = null;
+            hideNameTip();
+        }, 2500);  // 触摸触发的提示定时关闭,避免一直遮挡视野。
     }
     tip.textContent = text;
     tip.classList.add('show');  // 先显示以取得实际尺寸,再据此定位。
@@ -3653,6 +3660,8 @@ function showNameTip(el) {
 }
 
 function hideNameTip() {
+    clearTimeout(nameTipTimer);
+    nameTipTimer = null;
     if (nameTipEl) {
         nameTipEl.classList.remove('show');
     }
@@ -3677,10 +3686,12 @@ function initNameTip() {
         tipMouseX = event.clientX;
         tipMouseY = event.clientY;
     });
-    document.addEventListener('mouseover', function (event) {
+    document.addEventListener('pointerover', function (event) {
         if (document.body.classList.contains('resizing')) {
             return;  // 拖拽列宽时不弹提示,避免干扰。
         }
+        tipMouseX = event.clientX;
+        tipMouseY = event.clientY;
         if (nameTipFor && !nameTipFor.isConnected) {
             hideNameTip();
         }
@@ -3688,9 +3699,12 @@ function initNameTip() {
         if (!el || nameTipFor === el) {
             return;
         }
-        showNameTip(el);
+        showNameTip(el, event.pointerType !== 'mouse');  // 触摸触发定时关闭,鼠标悬停保持原样。
     });
-    document.addEventListener('mouseout', function (event) {
+    document.addEventListener('pointerout', function (event) {
+        if (event.pointerType !== 'mouse') {
+            return;  // 触摸离开不立即隐藏,交给定时器。
+        }
         var el = nameTipTarget(event.target);
         var to = nameTipTarget(event.relatedTarget);
         if (el && nameTipFor === el && to !== el) {
