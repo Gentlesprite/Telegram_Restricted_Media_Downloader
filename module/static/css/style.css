@@ -1499,12 +1499,9 @@ body.resizing {
     transition: border-color .15s ease, color .15s ease, background .15s ease;
 }
 
-.hfilter-ok {
+.hfilter-ok:hover {
     border-color: var(--accent);
     color: var(--accent);
-}
-
-.hfilter-ok:hover {
     background: rgba(56, 249, 215, .12);
 }
 
