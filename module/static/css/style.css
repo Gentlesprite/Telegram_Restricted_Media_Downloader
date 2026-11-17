@@ -47,7 +47,7 @@ body {
     min-height: 100vh;
     padding: 24px 16px 48px;
     color: var(--text);
-    font-family: system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    font-family: system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', 'JetBrainsMono NF', sans-serif;
 }
 
 /*
