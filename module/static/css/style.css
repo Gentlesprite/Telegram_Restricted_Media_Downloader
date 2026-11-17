@@ -1008,7 +1008,7 @@ body.paused .dot.active {
 .tab {
     padding: 7px 18px;
     border: 1px solid var(--border);
-    border-radius: 99px;
+    border-radius: 12px;
     /* 同上:保留统一磨砂块的渐变与噪点,不覆盖整条 background。 */
     background-color: var(--panel);
     color: var(--muted);
@@ -1081,7 +1081,7 @@ body.paused .dot.active {
     box-sizing: border-box;
     padding: 4px 8px;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 12px;
     background: rgba(34, 34, 39, .85);  /* 比--panel2(.72)实一档,与筛选面板内的控件同档,浮层上更清晰。 */
     color: var(--text);
     font-family: inherit;
