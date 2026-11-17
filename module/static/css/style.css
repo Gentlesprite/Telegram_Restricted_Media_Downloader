@@ -109,7 +109,9 @@ body {
     top: 24px;
 }
 
+/* 状态筛选卡与左侧栏项共用字体、颜色和按压基础样式。 */
 .side-item,
+.stat div[data-filter],
 .support-btn,
 .menu-btn,
 #toggleAll,
@@ -139,7 +141,9 @@ body {
     color: var(--text);
 }
 
-.side-item.active {
+/* 状态筛选卡选中态复用左侧栏项的强调色,标签文字靠继承一起高亮。 */
+.side-item.active,
+.stat div[data-filter].active {
     border-color: var(--accent);
     background: rgba(56, 249, 215, .12);
     color: var(--accent);
@@ -772,7 +776,7 @@ body.paused .dot.active {
 #toggleUpload,
 #toggleStorage,
 .tab,
-.stat div,
+.stat div[data-filter],
 .panel,
 .list,
 .menu-dropdown,
@@ -934,7 +938,8 @@ body.paused .dot.active {
     margin: 12px 0 4px;
 }
 
-.stat div {
+/* 选择器带上[data-filter]以匹配共用基础规则的特异性,保住卡片自身的内边距与圆角。 */
+.stat div[data-filter] {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -945,29 +950,16 @@ body.paused .dot.active {
     background-color: var(--panel);
 }
 
-/* 统计卡可点击筛选 */
-.stat div[data-filter] {
-    cursor: pointer;
-    transition: border-color .15s ease, background .15s ease, color .15s ease;
-}
-
+/* 统计卡可点击筛选:基础样式、按压与选中态均复用左侧栏项,此处只留差异。 */
 .stat div[data-filter]:hover {
     border-color: var(--accent);
 }
 
-.stat div[data-filter].active {
-    border-color: var(--accent);
-    background: rgba(56, 249, 215, .12);
-    color: var(--accent);
-}
-
 /* .panel 与 .list 已并入上方统一磨砂块,不再单独定义,避免两套样式互相覆盖。 */
 
-/* 统计卡的标签与数值都是两三个字,列宽被压缩时不允许折行:
-   火狐允许 CJK 逐字断行,一旦压缩就会竖排成"已跳/过"。 */
+/* 标签继承父级卡片的字号、字重与颜色,选中时随卡片一起高亮;
+   两三个字被压缩时不允许折行,避免火狐里竖排成"已跳/过"。 */
 .stat span {
-    font-size: 12px;
-    color: var(--muted);
     white-space: nowrap;
 }
 

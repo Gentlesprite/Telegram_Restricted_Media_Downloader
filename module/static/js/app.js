@@ -2753,7 +2753,7 @@ function renderUpload(uploads) {
     renderStat('uploadStat', [
         statCell('成功', count.success, 'ok', 'success', 'upload'),
         statCell('失败', count.failure, 'bad', 'failure', 'upload'),
-        statCell('上传中', count.uploading, '', 'uploading', 'upload'),
+        statCell('上传中', count.uploading, 'status-running', 'uploading', 'upload'),
         statCell('队列', count.pending, 'queue', 'pending', 'upload')
     ]);
     return count.active;
@@ -2903,7 +2903,7 @@ function render(data, force) {
             statCell('成功', data.count.success, 'ok', 'success', 'download'),
             statCell('失败', data.count.failure, 'bad', 'failure', 'download'),
             statCell('跳过', data.count.skip, 'skip', 'skip', 'download'),
-            statCell('下载中', downloads, '', 'active', 'download'),
+            statCell('下载中', downloads, 'status-running', 'active', 'download'),
             statCell('队列', countQueueMembers(data.links), 'queue', 'queue', 'download')
         ]);
     }
