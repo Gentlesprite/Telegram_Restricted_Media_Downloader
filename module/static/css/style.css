@@ -141,6 +141,11 @@ body {
     color: var(--text);
 }
 
+#btnPause:not(.paused):hover,
+#linkProxySeller:hover {
+    color: var(--accent);
+}
+
 /* 状态筛选卡选中态复用左侧栏项的强调色,标签文字靠继承一起高亮。 */
 .side-item.active,
 .stat div[data-filter].active {
@@ -392,8 +397,6 @@ body.paused .logo:hover {
     position: relative;
 }
 
-/* 菜单按钮复用左侧栏项的视觉样式,这里只保留方形尺寸与图标居中;
-   宽高统一为32px做成正方形,并与暂停、购买代理、支持作者等高。 */
 .menu-btn {
     display: inline-flex;
     align-items: center;
