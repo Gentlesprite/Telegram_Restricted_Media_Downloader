@@ -529,7 +529,9 @@ class UploadTask:
         if isinstance(self.NOTIFY, Callable):
             asyncio.create_task(
                 self.NOTIFY(
-                    message, requester=self.owner, notice_type=NoticeType.UPLOAD
+                    message,
+                    requester=self.owner,
+                    notice_type=NoticeType.UPLOAD
                 )
             )
 
