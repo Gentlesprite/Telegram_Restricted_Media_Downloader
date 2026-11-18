@@ -431,7 +431,9 @@ body.paused .logo:hover {
 }
 
 .menu-item {
-    display: block;
+    display: flex;  /* 改用flex为emoji与文案之间提供gap。 */
+    align-items: center;
+    gap: 5px;  /* 与下载和上传列表列的emoji文案间距一致。 */
     box-sizing: border-box;  /* 避免 width:100% 叠加 padding 超出下拉框导致水平错位。 */
     width: 100%;
     margin: 0;  /* 清除 <button> 的默认外边距,否则与 <a> 菜单项垂直间距不一致导致不对齐。 */
