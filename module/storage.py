@@ -24,8 +24,8 @@ from module import log
 from module.language import _t
 from module.path_tool import safe_delete
 from module.enums import (
-    DownloadStatus,
-    KeyWord
+    KeyWord,
+    DownloadStatus
 )
 
 

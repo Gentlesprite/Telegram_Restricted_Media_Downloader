@@ -20,7 +20,11 @@ from typing import (
 
 import pyrogram
 
-from pyrogram import raw, types, utils
+from pyrogram import (
+    raw,
+    types,
+    utils
+)
 from pyrogram.raw.core import TLObject
 from pyrogram.session.session import Result
 from pyrogram.errors.exceptions import PhoneNumberInvalid

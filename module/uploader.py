@@ -18,13 +18,16 @@ from typing import (
 
 import pyrogram
 
-from pyrogram import raw, utils
+from pyrogram import (
+    raw,
+    utils
+)
 from pyrogram.errors.exceptions import (
     FilePartMissing,
-    FilePartLengthInvalid,
     ChatAdminRequired,
-    PhotoInvalidDimensions,
-    PhotoSaveFileInvalid
+    PhotoSaveFileInvalid,
+    FilePartLengthInvalid,
+    PhotoInvalidDimensions
 )
 from pyrogram.errors.exceptions.bad_request_400 import ChannelPrivate as ChannelPrivate_400
 from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate as ChannelPrivate_406
