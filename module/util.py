@@ -9,6 +9,8 @@ import sys
 import time
 import json
 import socket
+import ctypes
+import locale
 import string
 import random
 import asyncio
@@ -54,6 +56,7 @@ from module import (
     REQUIRE_PYROGRAM_VERSION
 )
 from module.enums import (
+    Language,
     Link,
     LinkType,
     DownloadType,
@@ -83,6 +86,34 @@ def safe_length(
         return len(obj)
     except Exception:  # noqa
         return default
+
+
+def get_system_language(default_language=Language.EN_US) -> str:
+    """获取系统语言并映射为支持的语言,不支持时回退为英文。"""
+    system_language: str = ''
+    if PLATFORM == 'Windows':
+        try:
+            language_id: int = ctypes.windll.kernel32.GetUserDefaultUILanguage()  # noqa.
+            system_language = locale.windows_locale.get(language_id, '')
+        except Exception:  # noqa.
+            pass
+    if not system_language:
+        for env_key in ('LC_ALL', 'LC_MESSAGES', 'LANG', 'LANGUAGE'):
+            env_language: str = os.environ.get(env_key, '')
+            if env_language and env_language != 'C':
+                system_language = env_language
+                break
+    if not system_language:
+        try:
+            system_language = locale.getlocale(locale.LC_ALL)[0] or ''
+        except Exception:  # noqa.
+            pass
+    language: str = system_language.replace('-', '_').lower()
+    if language.startswith('zh'):
+        return Language.ZH_CN
+    if language.startswith('en'):
+        return Language.EN_US
+    return default_language
 
 
 def get_terminal_width() -> int:

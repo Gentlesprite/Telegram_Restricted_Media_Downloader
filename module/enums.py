@@ -176,6 +176,11 @@ class Issues:
                 yield value
 
 
+class Language:
+    ZH_CN: str = 'zh-CN'
+    EN_US: str = 'en-US'
+
+
 class Extension:
     PHOTO = {
         'image/avif': 'avif',

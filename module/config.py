@@ -34,7 +34,8 @@ from module.enums import (
 )
 from module.util import (
     ctrl_c,
-    get_work_directory
+    get_work_directory,
+    get_system_language
 )
 
 
@@ -620,7 +621,8 @@ class GlobalConfig(BaseConfig):
                 'video_note': True,
                 'live_photo': True
             },
-        'authorized_users': []
+        'authorized_users': [],
+        'language': get_system_language()
     }
 
     def __init__(self):
@@ -641,6 +643,7 @@ class GlobalConfig(BaseConfig):
         )
         self.forward_type: dict = self.config.get('forward_type')
         self.authorized_users: list = self.config.get('authorized_users', [])
+        self.language: str = self.config.get('language')
 
     def get_nesting_config(self, default_nesting, param, nesting_param):
         return self.config.get(param, default_nesting).get(nesting_param)
@@ -659,6 +662,7 @@ class GlobalConfig(BaseConfig):
         )
         self.forward_type: dict = self.config.get('forward_type')
         self.authorized_users: list = self.config.get('authorized_users', [])
+        self.language: str = self.config.get('language')
         p = '全局配置文件已重新加载。'
         console.log(p, style='#FF4689')
         log.info(f'{p.replace("。", ":")}{self.config}')
