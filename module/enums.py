@@ -180,6 +180,13 @@ class Language:
     ZH_CN: str = 'zh-CN'
     EN_US: str = 'en-US'
 
+    @property
+    def index(self):
+        return {
+            Language.ZH_CN: 0,
+            Language.EN_US: 1
+        }
+
 
 class Extension:
     PHOTO = {
