@@ -182,7 +182,32 @@ translations: dict = {
     'default 3': ['(默认3)', '(default 3)'],
     'default 5': ['(默认5)', '(default 5)'],
     'default all': ['(默认为所有已支持的下载类型)', '(default is all supported download types)'],
-    'bot configured notice': ['(检测到已配置机器人,此步骤可忽略)', '(bot configured, this step can be skipped)']
+    'bot configured notice': ['(检测到已配置机器人,此步骤可忽略)', '(bot configured, this step can be skipped)'],
+    '/help': ['展示可用命令。\n`/help`', 'Show available commands.\n`/help`'],
+    '/download': ['分配新的下载任务(多种使用方式见使用说明)。\n`/download https://t.me/x/x 起始ID 结束ID`',
+                  'Assign a new download task (see the manual for more usages).\n`/download https://t.me/x/x start_ID end_ID`'],
+    '/table': ['在终端输出当前下载情况的统计信息。\n`/table`',
+               'Print the current download statistics in the terminal.\n`/table`'],
+    '/forward': ['从频道A转发至频道B 起始ID 结束ID。\n`/forward https://t.me/A https://t.me/B 1 100`',
+                 'Forward from channel A to channel B with start_ID end_ID.\n`/forward https://t.me/A https://t.me/B 1 100`'],
+    '/exit': ['退出软件。\n`/exit`', 'Exit the software.\n`/exit`'],
+    '/listen_download': [
+        '实时监听该链接的最新消息(任意消息)进行下载。\n`/listen_download https://t.me/A https://t.me/B https://t.me/n`',
+        'Listen for the latest messages of the link (any message) and download.\n`/listen_download https://t.me/A https://t.me/B https://t.me/n`'],
+    '/listen_forward': [
+        '实时监听该链接的最新消息(任意消息)进行转发。\n`/listen_forward 监听频道 转发频道`',
+        'Listen for the latest messages of the link (any message) and forward.\n`/listen_forward source_channel target_channel`'],
+    '/listen_info': ['查看当前已经创建的监听信息。\n`/listen_info`',
+                     'Show the currently created listening information.\n`/listen_info`'],
+    '/upload': ['上传本地的文件到指定频道。\n`/upload 本地文件 目标频道`',
+                'Upload a local file to the specified channel.\n`/upload local_file target_channel`'],
+    '/upload_r': ['递归上传文件夹(包含子文件夹)到指定频道。\n`/upload_r 本地文件夹 目标频道`',
+                  'Upload a folder (including subfolders) to the specified channel.\n`/upload_r local_folder target_channel`'],
+    '/download_chat': [
+        '获取该频道全部内容,用户通过自定义条件进行内容筛选,最终下载该频道中用户所需内容。\n`/download_chat 频道链接`',
+        'Fetch all content of the channel, filter it by custom conditions, and download what you need.\n`/download_chat channel_link`'],
+    '/auth': ['添加/移除/查看授权使用机器人的用户,支持用户ID或@用户名。\n`/auth`或`/auth 1234567890`或`/auth @username`',
+              'Add/remove/view users authorized to use the bot, supports user ID or @username.\n`/auth` or `/auth 1234567890` or `/auth @username`']
 }
 
 

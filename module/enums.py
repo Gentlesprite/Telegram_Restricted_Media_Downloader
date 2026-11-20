@@ -1556,23 +1556,18 @@ class GetStdioParams:
 
 
 class BotCommandText:
-    HELP: tuple = ('help', '展示可用命令。\n`/help`')
-    DOWNLOAD: tuple = (
-        'download', '分配新的下载任务(多种使用方式见使用说明)。\n`/download https://t.me/x/x 起始ID 结束ID`')
-    TABLE: tuple = ('table', '在终端输出当前下载情况的统计信息。\n`/table`')
-    FORWARD: tuple = ('forward', '从频道A转发至频道B 起始ID 结束ID。\n`/forward https://t.me/A https://t.me/B 1 100`')
-    EXIT: tuple = ('exit', '退出软件。\n`/exit`')
-    LISTEN_DOWNLOAD: tuple = ('listen_download',
-                              '实时监听该链接的最新消息(任意消息)进行下载。\n`/listen_download https://t.me/A https://t.me/B https://t.me/n`')
-    LISTEN_FORWARD: tuple = (
-        'listen_forward', '实时监听该链接的最新消息(任意消息)进行转发。\n`/listen_forward 监听频道 转发频道`')
-    LISTEN_INFO: tuple = ('listen_info', '查看当前已经创建的监听信息。\n`/listen_info`')
-    UPLOAD: tuple = ('upload', '上传本地的文件到指定频道。\n`/upload 本地文件 目标频道`')
-    UPLOAD_R: tuple = ('upload_r', '递归上传文件夹(包含子文件夹)到指定频道。\n`/upload_r 本地文件夹 目标频道`')
-    DOWNLOAD_CHAT: tuple = ('download_chat',
-                            '获取该频道全部内容,用户通过自定义条件进行内容筛选,最终下载该频道中用户所需内容。\n`/download_chat 频道链接`')
-    AUTH: tuple = ('auth',
-                   '添加/移除/查看授权使用机器人的用户,支持用户ID或@用户名。\n`/auth`或`/auth 1234567890`或`/auth @username`')
+    HELP: tuple = ('help', _t('/help'))
+    DOWNLOAD: tuple = ('download', _t('/download'))
+    TABLE: tuple = ('table', _t('/table'))
+    FORWARD: tuple = ('forward', _t('/forward'))
+    EXIT: tuple = ('exit', _t('/exit'))
+    LISTEN_DOWNLOAD: tuple = ('listen_download', _t('/listen_download'))
+    LISTEN_FORWARD: tuple = ('listen_forward', _t('/listen_forward'))
+    LISTEN_INFO: tuple = ('listen_info', _t('/listen_info'))
+    UPLOAD: tuple = ('upload', _t('/upload'))
+    UPLOAD_R: tuple = ('upload_r', _t('/upload_r'))
+    DOWNLOAD_CHAT: tuple = ('download_chat', _t('/download_chat'))
+    AUTH: tuple = ('auth', _t('/auth'))
 
     @staticmethod
     def with_description(text: tuple) -> str:
