@@ -491,7 +491,7 @@ class Validator:
     def is_contain_chinese(text: str) -> bool:
         for ch in text:
             if u'\u4e00' <= ch <= u'\u9fff':
-                log.warning('如果无法正常下载,请尝试不使用中文路径后重试。')
+                console.log('如果无法正常下载,请尝试不使用中文路径后重试。', style='#FF4689')
                 return True
         return False
 
@@ -502,13 +502,13 @@ class Validator:
                 if api_id.isdigit():
                     return True
                 else:
-                    log.warning(f'意外的参数:"{api_id}",不是「纯数字」请重新输入!')
+                    console.log(f'意外的参数:"{api_id}",不是「纯数字」请重新输入!', style='#FF4689')
                     return False
             else:
-                log.warning(f'意外的参数,填写的"{api_id}"可能是「api_hash」,请填入正确的「api_id」!')
+                console.log(f'意外的参数,填写的"{api_id}"可能是「api_hash」,请填入正确的「api_id」!', style='#FF4689')
                 return False
         except (AttributeError, TypeError):
-            log.error('手动编辑config.yaml时,api_id需要有引号!')
+            console.log('手动编辑config.yaml时,api_id需要有引号!', style='#FF4689')
             return False
 
     @staticmethod
@@ -545,7 +545,7 @@ class Validator:
                     elif question == 'n':
                         break
                     else:
-                        log.warning(f'意外的参数:"{question}",支持的参数 - 「y|n」')
+                        console.log(f'意外的参数:"{question}",支持的参数 - 「y|n」', style='#FF4689')
                 except Exception as e:
                     log.error(f'意外的错误,原因:"{e}"')
                     break
@@ -597,7 +597,7 @@ class Validator:
                     if i in support_dtype:
                         valid_dtype.append(i)
                     else:
-                        log.warning(f'"{i}"不在支持的下载类型中,已移除。')
+                        console.log(f'"{i}"不在支持的下载类型中,已移除。', style='#FF4689')
                 dtype[:] = valid_dtype
                 return bool(dtype)
             return False
