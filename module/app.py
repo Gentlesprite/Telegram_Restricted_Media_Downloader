@@ -237,7 +237,7 @@ class Application(UserConfig, StatisticalTable):
                 subprocess.Popen(shutdown_command, shell=True)  # 异步执行关机。
             # 实时显示倒计时。
             for remaining in range(second, 0, -1):
-                console.print(f'即将在{remaining}秒后关机, 按「CTRL+C」可取消。', end='\r', style='#ff4805')
+                console.print(f'即将在{remaining}秒后关机,按「CTRL+C」可取消。', end='\r', style='#ff4805')
                 time.sleep(1)
             console.print('\n关机即将执行!', style='#f6ad00')
         except KeyboardInterrupt:
