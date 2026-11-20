@@ -222,7 +222,7 @@ class Application(UserConfig, StatisticalTable):
         self.download_type = [_ for _ in DownloadType()]
         self.config['download_type'] = self.download_type
         self.save_config(config=self.config)
-        console.log('未找到任何支持的下载类型,已设置为[#f08a5d]「默认」[/#f08a5d]所有已支持的下载类型。')
+        console.log(_t(KeyWord.NO_SUPPORTED_DTYPE_FOUND))
 
     def shutdown_task(self, second: int) -> None:
         """下载完成后自动关机的功能。"""
@@ -236,9 +236,9 @@ class Application(UserConfig, StatisticalTable):
                 subprocess.Popen(shutdown_command, shell=True)  # 异步执行关机。
             # 实时显示倒计时。
             for remaining in range(second, 0, -1):
-                console.print(f'即将在{remaining}秒后关机,按「CTRL+C」可取消。', end='\r', style='#ff4805')
+                console.print(_t(KeyWord.SHUTDOWN_COUNTDOWN).format(remaining=remaining), end='\r', style='#ff4805')
                 time.sleep(1)
-            console.print('\n关机即将执行!', style='#f6ad00')
+            console.print(_t(KeyWord.SHUTDOWN_ABOUT_TO_EXECUTE), style='#f6ad00')
         except KeyboardInterrupt:
             cancel_flag: bool = False
             # 如果用户按下 CTRL+C，取消关机。
@@ -252,7 +252,7 @@ class Application(UserConfig, StatisticalTable):
                     cancel_flag: bool = True
                 except Exception as e:
                     log.warning(f'取消关机任务失败,可能是当前系统不支持,{_t(KeyWord.REASON)}:"{e}"')
-            console.print('\n关机已被用户取消!', style='#4bd898') if cancel_flag else 0
+            console.print(_t(KeyWord.SHUTDOWN_CANCELLED_BY_USER), style='#4bd898') if cancel_flag else 0
         except Exception as e:
             log.error(f'执行关机任务失败,可能是当前系统不支持自动关机,{_t(KeyWord.REASON)}:"{e}"')
 
@@ -331,7 +331,7 @@ class DownloadFileName:
                 origin_filename = getattr(document_obj, 'file_name', None)
                 if origin_filename and is_compressed_file(origin_filename):
                     console.log(
-                        f'检测到压缩文件"{origin_filename}",为确保完整性(如分卷)已保留原始文件名,如遇命名冲突请手动处理。',
+                        _t(KeyWord.COMPRESSED_FILE_DETECTED).format(filename=origin_filename),
                         style='#FF4689')
                     return origin_filename
                 return self.get_filename()

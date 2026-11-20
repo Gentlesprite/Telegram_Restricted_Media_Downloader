@@ -350,6 +350,11 @@ class KeyWord:
     ISSUE_MULTI_SESSION_TIP: str = 'issue multi session tip'
     ISSUE_UPDATE_PACKAGE_TIP: str = 'issue update package tip'
     VALUE_IS_NOT_SUPPORTED_DTYPE: str = 'value is not a supported download type'
+    NO_SUPPORTED_DTYPE_FOUND: str = 'no supported download type found'
+    SHUTDOWN_COUNTDOWN: str = 'shutdown countdown'
+    SHUTDOWN_ABOUT_TO_EXECUTE: str = 'shutdown about to execute'
+    SHUTDOWN_CANCELLED_BY_USER: str = 'shutdown cancelled by user'
+    COMPRESSED_FILE_DETECTED: str = 'compressed file detected'
 
 
 class ConnectionState:

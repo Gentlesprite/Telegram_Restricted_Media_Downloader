@@ -350,6 +350,16 @@ translations: dict = {
         '🔧 [#FF79D4]Solution[/#FF79D4][#FCFF79](choose one):[/#FCFF79]\n[#D4FC79]1. Close redundant instances.[/#D4FC79]\n[#D4FC79]2. Use[/#D4FC79]"[#79FCD4]{exe} --session SESSION[/#79FCD4]"[#D4FC79]to specify a new SESSION location and retry[/#D4FC79]([#FFB579]replace SESSION with the actual path[/#FFB579])。'],
     'value is not a supported download type': ['"{value}"不是支持的下载类型,已移除。',
                                                '"{value}" is not a supported download type, removed.'],
+    'no supported download type found': [
+        '未找到任何支持的下载类型,已设置为[#f08a5d]「默认」[/#f08a5d]所有已支持的下载类型。',
+        'No supported download type found, set to [#f08a5d]「default」[/#f08a5d] all supported types.'],
+    'shutdown countdown': ['即将在{remaining}秒后关机,按「CTRL+C」可取消。',
+                           'Shutting down in {remaining} seconds, press 「CTRL+C」 to cancel.'],
+    'shutdown about to execute': ['\n关机即将执行!', '\nShutting down now!'],
+    'shutdown cancelled by user': ['\n关机已被用户取消!', '\nShutdown cancelled by the user!'],
+    'compressed file detected': [
+        '检测到压缩文件"{filename}",为确保完整性(如分卷)已保留原始文件名,如遇命名冲突请手动处理。',
+        'Compressed file "{filename}" detected; the original filename was kept to ensure integrity (e.g. split archives). Handle name conflicts manually.'],
     'issue update package tip': [
         '❌ [#FF7979]检测到({package_name})版本{current_version}与需求版本{require_version}不一致[/#FF7979][#FCFF79],可能已经引发兼容问题导致运行异常。[/#FCFF79]\n⚖️ [#D4FC79]需使用[/#D4FC79][#79FCD4]{command}[/#79FCD4][#D4FC79]升级或降级至需求版本{require_version}后重试[/#D4FC79][#D4FC79]。[/#D4FC79]',
         '❌ [#FF7979]Detected that ({package_name}) version {current_version} does not match the required version {require_version}[/#FF7979][#FCFF79], which may cause compatibility issues and abnormal behavior.[/#FCFF79]\n⚖️ [#D4FC79]Please use[/#D4FC79][#79FCD4]{command}[/#79FCD4][#D4FC79]to upgrade or downgrade to the required version {require_version} and retry[/#D4FC79][#D4FC79].[/#D4FC79]']
