@@ -148,8 +148,8 @@ class TelegramUploader:
 
             except Exception as e:
                 log.error(
-                    f'{_t(KeyWord.UPLOAD_FILE_PART)}:{part_index},'
-                    f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.FAILURE)},'
+                    f'{_t(KeyWord.UPLOAD_FILE_PART_BRACKETED)}:{part_index},'
+                    f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(UploadStatus.FAILURE)},'
                     f'{_t(KeyWord.REASON)}:"{e}"'
                 )
                 raise  # 重新抛出异常,由重试机制处理。
@@ -454,7 +454,7 @@ class TelegramUploader:
             )
             upload_task.status = UploadStatus.SENT
             self.valid_link_cache = {k: v for k, v in self.valid_link_cache.items() if v != chat_id}
-            log.info(f'[Upload Worker]单条消息发送完成,{_t(KeyWord.CHANNEL)}:"{chat_id}"')
+            log.info(f'[Upload Worker]单条消息发送完成,{_t(KeyWord.CHANNEL_BRACKETED)}:"{chat_id}"')
         except Exception as e:
             log.error(f'"[Upload Worker]发送单条消息失败,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
 
@@ -554,8 +554,8 @@ class TelegramUploader:
             except FilePartMissing as e:
                 missing_part = getattr(e, 'value')
                 console.log(
-                    f'{_t(KeyWord.UPLOAD_FILE_PART)}:{missing_part},'
-                    f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.UPLOADING)}。'
+                    f'{_t(KeyWord.UPLOAD_FILE_PART_BRACKETED)}:{missing_part},'
+                    f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(UploadStatus.UPLOADING)}。'
                 )
                 fp = upload_task.file_part
                 if missing_part in fp:
@@ -571,8 +571,8 @@ class TelegramUploader:
                 upload_task.reset_upload(file_id=self.client.rnd_id())
                 console.log(
                     f'{_t(KeyWord.UPLOAD_TASK)}'
-                    f'{_t(KeyWord.RESUME)}:"{file_path}",'
-                    f'{_t(KeyWord.RETRY_TIMES)}:{reset}/{max_retry},'
+                    f'{_t(KeyWord.RESUME_BRACKETED)}:"{file_path}",'
+                    f'{_t(KeyWord.RETRY_TIMES_BRACKETED)}:{reset}/{max_retry},'
                     f'{_t(KeyWord.REASON)}:"{e}"'
                 )
                 continue
@@ -583,8 +583,8 @@ class TelegramUploader:
             except Exception as e:
                 console.log(
                     f'{_t(KeyWord.UPLOAD_TASK)}'
-                    f'{_t(KeyWord.RE_UPLOAD)}:"{file_path}",'
-                    f'{_t(KeyWord.RETRY_TIMES)}:{retry + 1}/{max_retry},'
+                    f'{_t(KeyWord.RE_UPLOAD_BRACKETED)}:"{file_path}",'
+                    f'{_t(KeyWord.RETRY_TIMES_BRACKETED)}:{retry + 1}/{max_retry},'
                     f'{_t(KeyWord.REASON)}:"{e}"'
                 )
                 retry += 1  # 只有非FilePartMissing异常才递增重试计数。
@@ -625,7 +625,8 @@ class TelegramUploader:
                 continue
             break
         upload_task.status = UploadStatus.UPLOADING
-        console.log(f'{_t(KeyWord.UPLOAD_TASK)}{_t(KeyWord.RESUME)}:"{file_path}"。') if upload_task.file_part else None
+        console.log(
+            f'{_t(KeyWord.UPLOAD_TASK)}{_t(KeyWord.RESUME_BRACKETED)}:"{file_path}"。') if upload_task.file_part else None
         format_file_size: str = MetaData.suitable_units_display(file_size)
         upload_file_name: str = split_path(file_path).get('file_name') or ''
         task_id = self.pb.progress.add_task(
@@ -659,7 +660,7 @@ class TelegramUploader:
         if _task:
             self.current_task_num += 1
             MetaData.print_current_task_num(
-                prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
+                prompt=_t(KeyWord.CURRENT_UPLOAD_TASK_BRACKETED),
                 num=self.current_task_num
             )
             await _task
@@ -754,7 +755,7 @@ class TelegramUploader:
         upload_task.status = UploadStatus.SUCCESS
         self.__storage_upload(upload_task=upload_task, status=UploadStatus.SUCCESS)
         MetaData.print_current_task_num(
-            prompt=_t(KeyWord.CURRENT_UPLOAD_TASK),
+            prompt=_t(KeyWord.CURRENT_UPLOAD_TASK_BRACKETED),
             num=self.current_task_num
         )
 

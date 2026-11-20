@@ -420,14 +420,14 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             if not self.check_type(message):
                 console.log(
-                    f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{message_id}"'
+                    f'{_t(KeyWord.CHANNEL_BRACKETED)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID_BRACKETED)}:"{message_id}"'
                     f' -> '
-                    f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
-                    f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SKIP)}。'
+                    f'{_t(KeyWord.CHANNEL_BRACKETED)}:"{target_chat_id}",'
+                    f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(KeyWord.FORWARD_SKIP)}。'
                 )
                 await asyncio.create_task(
                     self.done_notice(
-                        f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{message_id}'
+                        f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID_BRACKETED)}:{message_id}'
                         f' ➡️ '
                         f'"{target_chat_id}",{_t(KeyWord.FORWARD_SKIP)}(该类型已过滤)。',
                         requester=owner,
@@ -504,14 +504,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                         ConnectionStatus.leave_flood()
             p_message_id = ','.join(map(str, media_group)) if media_group else message_id
             console.log(
-                f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{p_message_id}"'
+                f'{_t(KeyWord.CHANNEL_BRACKETED)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID_BRACKETED)}:"{p_message_id}"'
                 f' -> '
-                f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
-                f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
+                f'{_t(KeyWord.CHANNEL_BRACKETED)}:"{target_chat_id}",'
+                f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
             )
             await asyncio.create_task(
                 self.done_notice(
-                    f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{p_message_id}'
+                    f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID_BRACKETED)}:{p_message_id}'
                     f' ➡️ '
                     f'"{target_chat_id}",{_t(KeyWord.FORWARD_SUCCESS)}。',
                     requester=owner,
@@ -560,7 +560,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
             finally:
                 self.last_message.text = original_text
-            p = f'{_t(KeyWord.DOWNLOAD_AND_UPLOAD_TASK)}{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.LINK)}:"{link}"。'
+            p = f'{_t(KeyWord.DOWNLOAD_AND_UPLOAD_TASK)}{_t(KeyWord.CHANNEL_BRACKETED)}:"{target_chat_id}",{_t(KeyWord.LINK_BRACKETED)}:"{link}"。'
             console.log(p, style='#FF4689')
             log.info(p)
 
@@ -773,14 +773,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                     break
                 except Exception as e:
                     log.warning(
-                        f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{i.id}"'
+                        f'{_t(KeyWord.CHANNEL_BRACKETED)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID_BRACKETED)}:"{i.id}"'
                         f' -> '
-                        f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
-                        f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_FAILURE)},'
+                        f'{_t(KeyWord.CHANNEL_BRACKETED)}:"{target_chat_id}",'
+                        f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(KeyWord.FORWARD_FAILURE)},'
                         f'{_t(KeyWord.REASON)}:"{e}"')
                     await asyncio.create_task(
                         self.done_notice(
-                            f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{i.id}'
+                            f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID_BRACKETED)}:{i.id}'
                             f' ➡️ '
                             f'"{target_chat_id}",{_t(KeyWord.FORWARD_FAILURE)}。'
                             f'\n(具体原因请前往终端查看报错信息)',
@@ -1318,8 +1318,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             if compare_file_size(a_size=local_file_size, b_size=compare_size):
                 console.log(
                     f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                    f'{_t(KeyWord.RESUME)}:"{file_name}",'
-                    f'{_t(KeyWord.STATUS)}:{_t(KeyWord.ALREADY_EXIST)}')
+                    f'{_t(KeyWord.RESUME_BRACKETED)}:"{file_name}",'
+                    f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(KeyWord.ALREADY_EXIST_BRACKETED)}')
                 return file_name
             else:
                 result: str = safe_replace(origin_file=file_name, overwrite_file=temp_path).get('e_code')
@@ -1331,8 +1331,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             if compare_file_size(a_size=local_file_size, b_size=compare_size):
                 console.log(
                     f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                    f'{_t(KeyWord.RESUME)}:"{temp_path}",'
-                    f'{_t(KeyWord.STATUS)}:{_t(KeyWord.ALREADY_EXIST)}')
+                    f'{_t(KeyWord.RESUME_BRACKETED)}:"{temp_path}",'
+                    f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(KeyWord.ALREADY_EXIST_BRACKETED)}')
                 result: str = safe_replace(origin_file=temp_path, overwrite_file=file_name).get('e_code')
                 log.warning(result) if result is not None else None
                 return file_name
@@ -1340,7 +1340,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 safe_delete(temp_path)
                 log.warning(
                     f'错误的缓存文件"{temp_path}",'
-                    f'已清除({_t(KeyWord.ERROR_SIZE)}:{local_file_size} > {_t(KeyWord.ACTUAL_SIZE)}:{compare_size})。')
+                    f'已清除({_t(KeyWord.ERROR_SIZE_BRACKETED)}:{local_file_size} > {_t(KeyWord.ACTUAL_SIZE_BRACKETED)}:{compare_size})。')
         downloaded = os.path.getsize(temp_path) if os.path.exists(temp_path) else 0  # 获取已下载的字节数。
         if downloaded == 0:
             mode = 'wb'
@@ -1348,8 +1348,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             mode = 'r+b'
             console.log(
                 f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                f'{_t(KeyWord.RESUME)}:"{file_name}",'
-                f'{_t(KeyWord.ERROR_SIZE)}:{MetaData.suitable_units_display(downloaded)}。')
+                f'{_t(KeyWord.RESUME_BRACKETED)}:"{file_name}",'
+                f'{_t(KeyWord.ERROR_SIZE_BRACKETED)}:{MetaData.suitable_units_display(downloaded)}。')
         try:
             with open(file=temp_path, mode=mode) as f:
                 skip_chunks: int = downloaded // chunk_size  # 计算要跳过的块数。
@@ -1523,9 +1523,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                 # 如果是匹配到的消息类型就创建任务。
                 console.log(
                     f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                    f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
-                    f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
-                    f'{_t(KeyWord.LINK_TYPE)}:{_t(link_type)}。'  # 链接类型。
+                    f'{_t(KeyWord.CHANNEL_BRACKETED)}:"{chat_id}",'  # 频道名。
+                    f'{_t(KeyWord.LINK_BRACKETED)}:"{link}",'  # 链接。
+                    f'{_t(KeyWord.LINK_TYPE_BRACKETED)}:{_t(link_type)}。'  # 链接类型。
                 )
                 task.set_item_status(message_id=message.id, status=DownloadStatus.DOWNLOADING)
                 # 若保存路径含 %MESSAGE_ID% 通配符,预取媒体组成员 id 列表并缓存。
@@ -1557,10 +1557,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                 else:
                     console.log(
                         f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                        f'{_t(KeyWord.FILE)}:"{file_name}",'
-                        f'{_t(KeyWord.SIZE)}:{format_file_size},'
-                        f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.DOWNLOADING))},'
-                        f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.DOWNLOADING)}。'
+                        f'{_t(KeyWord.FILE_BRACKETED)}:"{file_name}",'
+                        f'{_t(KeyWord.SIZE_BRACKETED)}:{format_file_size},'
+                        f'{_t(KeyWord.TYPE_BRACKETED)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.DOWNLOADING))},'
+                        f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(DownloadStatus.DOWNLOADING)}。'
                     )
                     ChatInfo.add(chat=getattr(message, 'chat', None), chat_id=chat_id)
                     task_id = self.pb.progress.add_task(
@@ -1596,7 +1596,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     self.app.increase_task_num()
                     MetaData.print_current_task_num(
-                        prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
+                        prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK_BRACKETED),
                         num=self.app.current_task_num
                     )
                     _task.add_done_callback(
@@ -1628,10 +1628,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     if file_name:
                         console.log(
                             f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                            f'{_t(KeyWord.FILE)}:"{file_name}",'
-                            f'{_t(KeyWord.SIZE)}:{format_file_size},'
-                            f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.SKIP))},'
-                            f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。'
+                            f'{_t(KeyWord.FILE_BRACKETED)}:"{file_name}",'
+                            f'{_t(KeyWord.SIZE_BRACKETED)}:{format_file_size},'
+                            f'{_t(KeyWord.TYPE_BRACKETED)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.SKIP))},'
+                            f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(DownloadStatus.SKIP)}。'
                         )
                         task.set_error(key=file_name, value=_reason)
                         task.update_member(
@@ -1650,9 +1650,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                     task.update_member(message_id=message.id, status=DownloadStatus.SKIP, note=_reason)
                     console.log(
                         f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                        f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
-                        f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
-                        f'{_t(KeyWord.LINK_TYPE)}:{_error}'  # 链接类型。
+                        f'{_t(KeyWord.CHANNEL_BRACKETED)}:"{chat_id}",'  # 频道名。
+                        f'{_t(KeyWord.LINK_BRACKETED)}:"{link}",'  # 链接。
+                        f'{_t(KeyWord.LINK_TYPE_BRACKETED)}:{_error}'  # 链接类型。
                     )
                     log.info(
                         f'已跳过下载"{link}",不支持或被忽略的类型,{_t(KeyWord.REASON)}:"{e}"')
@@ -1682,19 +1682,19 @@ class TelegramRestrictedMediaDownloader(Bot):
                 log.warning(result) if result is not None else None
             console.log(
                 f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                f'{_t(KeyWord.FILE)}:"{file_path}",'
-                f'{_t(KeyWord.SIZE)}:{format_local_size},'
-                f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, temp_file_path, DownloadStatus.SUCCESS))},'
-                f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SUCCESS)}。',
+                f'{_t(KeyWord.FILE_BRACKETED)}:"{file_path}",'
+                f'{_t(KeyWord.SIZE_BRACKETED)}:{format_local_size},'
+                f'{_t(KeyWord.TYPE_BRACKETED)}:{_t(self.app.get_file_type(message, temp_file_path, DownloadStatus.SUCCESS))},'
+                f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(DownloadStatus.SUCCESS)}。',
             )
             return True
         console.log(
             f'{_t(KeyWord.DOWNLOAD_TASK)}'
-            f'{_t(KeyWord.FILE)}:"{file_path}",'
-            f'{_t(KeyWord.ERROR_SIZE)}:{format_local_size},'
-            f'{_t(KeyWord.ACTUAL_SIZE)}:{format_sever_size},'
-            f'{_t(KeyWord.TYPE)}:{_t(self.app.get_download_type(message, DownloadStatus.FAILURE))},'
-            f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
+            f'{_t(KeyWord.FILE_BRACKETED)}:"{file_path}",'
+            f'{_t(KeyWord.ERROR_SIZE_BRACKETED)}:{format_local_size},'
+            f'{_t(KeyWord.ACTUAL_SIZE_BRACKETED)}:{format_sever_size},'
+            f'{_t(KeyWord.TYPE_BRACKETED)}:{_t(self.app.get_download_type(message, DownloadStatus.FAILURE))},'
+            f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(DownloadStatus.FAILURE)}。'
         )
         return False
 
@@ -1725,14 +1725,14 @@ class TelegramRestrictedMediaDownloader(Bot):
             if retry_count == 0:
                 console.log(
                     f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                    f'{_t(KeyWord.ALREADY_EXIST)}:"{_future}"'
+                    f'{_t(KeyWord.ALREADY_EXIST_BRACKETED)}:"{_future}"'
                 )
                 console.log(
                     f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                    f'{_t(KeyWord.FILE)}:"{file_name}",'
-                    f'{_t(KeyWord.SIZE)}:{format_file_size},'
-                    f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.SKIP))},'
-                    f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。', style='#e6db74'
+                    f'{_t(KeyWord.FILE_BRACKETED)}:"{file_name}",'
+                    f'{_t(KeyWord.SIZE_BRACKETED)}:{format_file_size},'
+                    f'{_t(KeyWord.TYPE_BRACKETED)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.SKIP))},'
+                    f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(DownloadStatus.SKIP)}。', style='#e6db74'
                 )
                 if download_task is not None:
                     download_task.update_member(  # 文件已存在,标记为跳过。
@@ -1779,7 +1779,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         save_message_entities(
                             message, self.env_save_directory(message), self.media_group_ids_cache)
                     MetaData.print_current_task_num(
-                        prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
+                        prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK_BRACKETED),
                         num=self.app.current_task_num
                     )
                     if download_task is not None:
@@ -1836,18 +1836,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                     task.add_done_callback(
                         partial(
                             self.__retry_call,
-                            f'{_t(KeyWord.RE_DOWNLOAD)}:"{file_name}",'
-                            f'{_t(KeyWord.RETRY_TIMES)}:{retry_count}/{_max_retry}。'
+                            f'{_t(KeyWord.RE_DOWNLOAD_BRACKETED)}:"{file_name}",'
+                            f'{_t(KeyWord.RETRY_TIMES_BRACKETED)}:{retry_count}/{_max_retry}。'
                         )
                     )
                 else:
                     _error = f'(达到最大重试次数:{_max_retry}次)。'
                     console.log(
                         f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                        f'{_t(KeyWord.FILE)}:"{file_name}",'
-                        f'{_t(KeyWord.SIZE)}:{format_file_size},'
-                        f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.FAILURE))},'
-                        f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}'
+                        f'{_t(KeyWord.FILE_BRACKETED)}:"{file_name}",'
+                        f'{_t(KeyWord.SIZE_BRACKETED)}:{format_file_size},'
+                        f'{_t(KeyWord.TYPE_BRACKETED)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.FAILURE))},'
+                        f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(DownloadStatus.FAILURE)}'
                         f'{_error}'
                     )
                     download_task.set_error(key=file_name, value=_error.replace('。', ''))
@@ -2378,7 +2378,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             return links
         except Exception as e:
             log.error(
-                f'{_t(KeyWord.CHANNEL)}:"{chat_id}",无法进行下载,{_t(KeyWord.REASON)}:"{e}"',
+                f'{_t(KeyWord.CHANNEL_BRACKETED)}:"{chat_id}",无法进行下载,{_t(KeyWord.REASON)}:"{e}"',
                 exc_info=True
             )
             # 失败提示改为发送新消息,不覆盖原菜单,保留其"执行|取消任务"按钮以便重试或取消。
@@ -2722,7 +2722,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     elif i == '' or i.startswith('#'):
                         continue
                     else:
-                        log.warning(f'"{i}"是一个非法链接,{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。')
+                        log.warning(f'"{i}"是一个非法链接,{_t(KeyWord.STATUS_BRACKETED)}:{_t(DownloadStatus.SKIP)}。')
             elif link.startswith(start_content):
                 links.add(link)
         elif isinstance(link, list):

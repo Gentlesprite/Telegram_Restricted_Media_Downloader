@@ -1800,7 +1800,7 @@ class Bot:
             else:
                 log.warning('done_notice未指定requester且last_message为空,该通知将没有创建者。')
         NoticeHub.push(notice_type=notice_type, text=text, owner=owner)
-        log.debug(f'已推送通知,{_t(KeyWord.TYPE)}:"{notice_type}",创建者:"{owner}",内容:"{text}"。')
+        log.debug(f'已推送通知,{_t(KeyWord.TYPE_BRACKETED)}:"{notice_type}",创建者:"{owner}",内容:"{text}"。')
 
     async def start_bot(
             self,

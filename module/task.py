@@ -357,15 +357,15 @@ class DownloadTask:
                 if reason:
                     log.error(
                         f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                        f'{_t(KeyWord.LINK)}:"{link}"{reason},'
+                        f'{_t(KeyWord.LINK_BRACKETED)}:"{link}"{reason},'
                         f'{_t(KeyWord.REASON)}:"{e_code.get("all_member")}",'
-                        f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
+                        f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(DownloadStatus.FAILURE)}。'
                     )
                 else:
                     log.warning(
                         f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                        f'{_t(KeyWord.LINK)}:"{link}"{e_code.get("all_member")},'
-                        f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
+                        f'{_t(KeyWord.LINK_BRACKETED)}:"{link}"{e_code.get("all_member")},'
+                        f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(DownloadStatus.FAILURE)}。'
                     )
             elif status == DownloadStatus.DOWNLOADING:
                 # 若同一链接此前曾解析失败(登记过 -1 哨兵成员/失败计数/错误),本次成功需清除,避免残留失败计数。
@@ -390,8 +390,8 @@ class DownloadTask:
             if task.member_num == task.complete_num:
                 console.log(
                     f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                    f'{_t(KeyWord.LINK)}:"{link}",'
-                    f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SUCCESS)}。'
+                    f'{_t(KeyWord.LINK_BRACKETED)}:"{link}",'
+                    f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(DownloadStatus.SUCCESS)}。'
                 )
                 task.error_msg = {}
                 asyncio.create_task(
@@ -471,10 +471,10 @@ class UploadTask:
                         elif value == UploadStatus.UPLOADING:
                             console.log(
                                 f'{_t(KeyWord.UPLOAD_TASK)}'
-                                f'{_t(KeyWord.CHANNEL)}:"{self.chat_id}",'
-                                f'{_t(KeyWord.FILE)}:"{self.file_path}",'
-                                f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(self.file_size)},'
-                                f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.UPLOADING)}。'
+                                f'{_t(KeyWord.CHANNEL_BRACKETED)}:"{self.chat_id}",'
+                                f'{_t(KeyWord.FILE_BRACKETED)}:"{self.file_path}",'
+                                f'{_t(KeyWord.SIZE_BRACKETED)}:{MetaData.suitable_units_display(self.file_size)},'
+                                f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(UploadStatus.UPLOADING)}。'
                             )
                         elif value == UploadStatus.SUCCESS:
                             more = ''
@@ -484,10 +484,10 @@ class UploadTask:
                                 more += '(本地文件已删除)'
                             console.log(
                                 f'{_t(KeyWord.UPLOAD_TASK)}'
-                                f'{_t(KeyWord.CHANNEL)}:"{self.chat_id}",'
-                                f'{_t(KeyWord.FILE)}:"{self.file_path}",'
-                                f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(self.file_size)},'
-                                f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.SUCCESS)}{more}。',
+                                f'{_t(KeyWord.CHANNEL_BRACKETED)}:"{self.chat_id}",'
+                                f'{_t(KeyWord.FILE_BRACKETED)}:"{self.file_path}",'
+                                f'{_t(KeyWord.SIZE_BRACKETED)}:{MetaData.suitable_units_display(self.file_size)},'
+                                f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(UploadStatus.SUCCESS)}{more}。',
                             )
                             self.notice(f'"{self.file_path}" ⬆️ "{self.chat_id}"上传完成。\n{more}')
                         elif value == UploadStatus.SENT:
@@ -495,11 +495,11 @@ class UploadTask:
                         elif value == UploadStatus.FAILURE:
                             log.error(
                                 f'{_t(KeyWord.UPLOAD_TASK)}'
-                                f'{_t(KeyWord.CHANNEL)}:"{self.chat_id}",'
-                                f'{_t(KeyWord.FILE)}:"{self.file_path}",'
-                                f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(self.file_size)},'
+                                f'{_t(KeyWord.CHANNEL_BRACKETED)}:"{self.chat_id}",'
+                                f'{_t(KeyWord.FILE_BRACKETED)}:"{self.file_path}",'
+                                f'{_t(KeyWord.SIZE_BRACKETED)}:{MetaData.suitable_units_display(self.file_size)},'
                                 f'{_t(KeyWord.REASON)}:"{self.error_msg}",'
-                                f'{_t(KeyWord.STATUS)}:{_t(str(value))}。'
+                                f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(str(value))}。'
                             )
                             self.notice(f'"{self.file_path}" ⬆️ "{self.chat_id}"上传失败。')
                     elif name == 'chat_id':
