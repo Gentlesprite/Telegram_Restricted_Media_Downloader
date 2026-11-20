@@ -98,30 +98,28 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
         console.print(
             f'Kurigram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n'
             f'under the terms of the {pyrogram.__license__}.')
-        console.print(
-            f'欢迎使用[#b4009e]{SOFTWARE_SHORT_NAME}[/#b4009e] {__version__} (Kurigram {pyrogram.__version__})')
+        console.print(_t(KeyWord.CLIENT_WELCOME).format(
+            name=SOFTWARE_SHORT_NAME, version=__version__, pyrogram_version=pyrogram.__version__))
         while True:
             try:
                 while True:
-                    value = (await ainput('请输入「电话号码」([#6a2c70]电话号码[/#6a2c70]需以[#b83b5e]「+地区」[/#b83b5e]开头!'
-                                          '如:[#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):')).strip()
+                    value = (await ainput(_t(KeyWord.CLIENT_INPUT_PHONE))).strip()
                     if not value.startswith('+'):
-                        console.log(f'意外的参数:"{value}",电话号码需以「+地区」开头!', style='#FF4689')
+                        console.log(_t(KeyWord.CLIENT_PHONE_NEED_REGION).format(value=value), style='#FF4689')
                         continue
                     if len(value) < 8 or len(value) > 16:
-                        console.log(f'意外的参数:"{value}",电话号码无效!', style='#FF4689')
+                        console.log(_t(KeyWord.CLIENT_PHONE_INVALID).format(value=value), style='#FF4689')
                         continue
                     if not value:
                         continue
 
-                    confirm = (await ainput(
-                        f'所输入的「{value}」是否[#B1DB74]正确[/#B1DB74]? - 「y|n」(默认y):')).strip().lower()
+                    confirm = (await ainput(_t(KeyWord.CLIENT_CONFIRM_PHONE).format(value=value))).strip().lower()
                     if confirm in ('y', ''):
                         break
                     elif confirm == 'n':
                         continue
                     else:
-                        console.log(f'意外的参数:"{confirm}",支持的参数 - 「y|n」', style='#FF4689')
+                        console.log(_t(KeyWord.CLIENT_CONFIRM_YN_DEFAULT_Y).format(value=confirm), style='#FF4689')
                 self.phone_number = value
                 sent_code = await self.send_code(self.phone_number)
             except pyrogram.errors.BadRequest as e:
@@ -133,21 +131,21 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             else:
                 break
         if sent_code.type == pyrogram.enums.SentCodeType.SETUP_EMAIL_REQUIRED:
-            console.print('需要「设置邮箱」以完成授权。')
+            console.print(_t(KeyWord.CLIENT_EMAIL_SETUP_REQUIRED))
 
             while True:
                 try:
                     while True:
-                        email = await ainput('请输入「邮箱」:')
+                        email = await ainput(_t(KeyWord.CLIENT_INPUT_EMAIL))
                         if not email:
                             continue
-                        confirm = (await ainput(f'所输入的「{email}」是否正确? - 「y|n」(默认y):')).strip().lower()
+                        confirm = (await ainput(_t(KeyWord.CLIENT_CONFIRM_EMAIL).format(value=email))).strip().lower()
                         if confirm in ('y', ''):
                             break
                         elif confirm == 'n':
                             continue
                         else:
-                            console.log(f'意外的参数:"{confirm}",支持的参数 - 「y|n」', style='#FF4689')
+                            console.log(_t(KeyWord.CLIENT_CONFIRM_YN_DEFAULT_Y).format(value=confirm), style='#FF4689')
                     await self.invoke(
                         raw.functions.account.SendVerifyEmailCode(
                             purpose=raw.types.EmailVerifyPurposeLoginSetup(
@@ -158,7 +156,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                         )
                     )
 
-                    email_code = await ainput('请输入「验证码」:')
+                    email_code = await ainput(_t(KeyWord.CLIENT_INPUT_CODE))
 
                     email_sent_code = await self.invoke(
                         raw.functions.account.VerifyEmail(
@@ -191,12 +189,11 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 pyrogram.enums.SentCodeType.EMAIL_CODE: 'email code'
             }
 
-            console.print(
-                f'[#f08a5d]「验证码」[/#f08a5d]已通过[#f9ed69]「{sent_code_descriptions[sent_code.type]}」[/#f9ed69]发送。')
+            console.print(_t(KeyWord.CLIENT_CODE_SENT_VIA).format(method=sent_code_descriptions[sent_code.type]))
 
         while True:
             if not self.phone_code:
-                self.phone_code = (await ainput('请输入收到的[#f08a5d]「验证码」[/#f08a5d]:')).strip()
+                self.phone_code = (await ainput(_t(KeyWord.CLIENT_INPUT_RECEIVED_CODE))).strip()
 
             try:
                 signed_in = await self.sign_in(self.phone_number, sent_code.phone_code_hash, self.phone_code)
@@ -204,28 +201,25 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 console.print(e.MESSAGE)
                 self.phone_code = None
             except pyrogram.errors.SessionPasswordNeeded as _:
-                console.print(
-                    '当前登录账号设置了[#f08a5d]「两步验证」[/#f08a5d],需要提供两步验证的[#f9ed69]「密码」[/#f9ed69]。')
+                console.print(_t(KeyWord.CLIENT_TWO_STEP_REQUIRED))
 
                 while True:
-                    console.print('密码提示:{}'.format(await self.get_password_hint()))
+                    console.print(_t(KeyWord.CLIENT_PASSWORD_HINT).format(hint=await self.get_password_hint()))
 
                     if not self.password:
                         self.password = (await ainput(
-                            '输入[#f08a5d]「两步验证」[/#f08a5d]的[#f9ed69]「密码」[/#f9ed69](为空代表[#FF4689]忘记密码[/#FF4689]):',
+                            _t(KeyWord.CLIENT_INPUT_PASSWORD),
                             password=self.hide_password)).strip()
 
                     try:
                         if not self.password:
-                            confirm = (await ainput(
-                                '所输入的[#f08a5d]「恢复密码」[/#f08a5d]是否正确? - 「y|n」(默认y):')).strip().lower()
+                            confirm = (await ainput(_t(KeyWord.CLIENT_CONFIRM_RECOVERY_PASSWORD))).strip().lower()
                             if confirm in ('y', ''):
                                 email_pattern = await self.send_recovery_code()
-                                console.print(
-                                    f'[#f08a5d]「恢复代码」[/#f08a5d]已发送到邮箱[#f9ed69]「{email_pattern}」[/#f9ed69]。')
+                                console.print(_t(KeyWord.CLIENT_RECOVERY_CODE_SENT).format(email=email_pattern))
 
                                 while True:
-                                    recovery_code = (await ainput('请输入[#f08a5d]「恢复代码」[/#f08a5d]:')).strip()
+                                    recovery_code = (await ainput(_t(KeyWord.CLIENT_INPUT_RECOVERY_CODE))).strip()
 
                                     try:
                                         return await self.recover_password(recovery_code)
@@ -248,8 +242,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             return signed_in
 
         while True:
-            first_name = (await ainput('输入[#f08a5d]「名字」[/#f08a5d]:')).strip()
-            last_name = (await ainput('输入[#f9ed69]「姓氏」[/#f9ed69](为空代表跳过): ')).strip()
+            first_name = (await ainput(_t(KeyWord.CLIENT_INPUT_FIRST_NAME))).strip()
+            last_name = (await ainput(_t(KeyWord.CLIENT_INPUT_LAST_NAME))).strip()
 
             try:
                 signed_up = await self.sign_up(
