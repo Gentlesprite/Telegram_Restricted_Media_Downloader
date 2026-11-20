@@ -157,8 +157,8 @@ async def collect_message_id(
         return group_ids
     try:
         group = await message.get_media_group()
-    except Exception as e:  # noqa: BLE001  预取失败(如 FloodWait/超时)不影响主流程,错误不往外抛。
-        log.warning(f'预取媒体组成员id列表失败,原因:"{e}"。')
+    except Exception as e:  # noqa: BLE001 预取失败(如FloodWait/超时)不影响主流程,错误不往外抛。
+        log.warning(f'预取媒体组成员id列表失败,原因:"{e}"')
         group = None
     group_ids = [m.id for m in group if getattr(m, 'id', None) is not None] if group else []
     cache[media_group_id] = group_ids
@@ -199,8 +199,8 @@ def save_message_entities(
         file_path = os.path.join(save_directory, f'{entity_key}_entities.json')
         with open(file_path, 'w', encoding='UTF-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2, default=str)
-    except Exception as e:  # noqa: BLE001  实体落盘失败绝不影响下载主流程,错误不往外抛。
-        log.warning(f'保存消息实体JSON失败,原因:"{e}"。')
+    except Exception as e:  # noqa: BLE001 实体落盘失败绝不影响下载主流程,错误不往外抛。
+        log.warning(f'保存消息实体JSON失败,原因:"{e}"')
 
 
 def message_entity_to_dict(entity) -> dict:
@@ -693,7 +693,7 @@ def reset_web_session() -> str:
         with open(file=TRMD_WEB_SESSION, mode='w', encoding='UTF-8') as f:
             f.write(token)
     except OSError as e:
-        log.warning(f'重置网页面板令牌失败,原因:"{e}"。')
+        log.warning(f'重置网页面板令牌失败,原因:"{e}"')
     return token
 
 
@@ -712,7 +712,7 @@ def get_web_session() -> str:
             f.write(token)
         log.info(f'已生成网页面板令牌:"{TRMD_WEB_SESSION}"。')
     except OSError as e:
-        log.warning(f'保存网页面板令牌失败,原因:"{e}"。')
+        log.warning(f'保存网页面板令牌失败,原因:"{e}"')
     return token
 
 
