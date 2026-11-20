@@ -874,7 +874,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             result = pending_result.value
 
             if result is None:
-                raise TimeoutError('请求超时')
+                raise TimeoutError('Request timed out')
 
             if isinstance(result, raw.types.RpcError):
                 if isinstance(
