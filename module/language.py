@@ -427,7 +427,28 @@ translations: dict = {
     'edit message': ['编辑消息', 'edit message'],
     'get media group': ['获取媒体组消息', 'get media group messages'],
     'get comments': ['获取评论区消息', 'get comment messages'],
-    'get topics': ['获取话题列表', 'get topic list']
+    'get topics': ['获取话题列表', 'get topic list'],
+    'config key added': ['"{}"不在全局配置文件中,已添加。', '"{}" not in the global config file, added.'],
+    'config key removed': ['"{}"不在模板中,已删除。', '"{}" not in the template, removed.'],
+    'config nested key added': ['"{}"不在{name}配置文件中,已添加。',
+                                '"{}" not in the {name} config, added.'],
+    'config nested key removed': ['"{}"不在{name}配置文件中,已删除。',
+                                  '"{}" not in the {name} config, removed.'],
+    'config file not found': ['未找到配置文件,已生成新的模板文件. . .',
+                              'Config file not found, a new template has been generated. . .'],
+    'config path quote warning': ['「注意」链接路径和保存路径不能有引号!',
+                                  '「Note」Link paths and save paths cannot contain quotes!'],
+    'config backup': ['原来的配置文件已备份至"{path}"', 'The original config was backed up to "{path}"'],
+    'config same as template': ['配置文件与模板文件完全一致,无需备份。',
+                                'The config is identical to the template, no backup needed.'],
+    'config enter uses last': ['「注意」直接回车代表使用上次的记录。',
+                               '「Note」Pressing Enter directly uses the last record.'],
+    'config saved': ['配置已保存!', 'Config saved!'],
+    'config not saved': ['不保存当前填写参数。', 'Current parameters not saved.'],
+    'config not saved interrupted': ['不保存当前填写参数(用户手动终止配置参数)。',
+                                     'Current parameters not saved (configuration manually interrupted).'],
+    'config interrupted': ['用户手动终止配置参数。', 'Configuration manually interrupted.'],
+    'config global reloaded': ['全局配置文件已重新加载', 'Global config reloaded']
 }
 
 
