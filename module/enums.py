@@ -141,6 +141,14 @@ class KeyWord:
     FORWARD_FAILURE: str = 'forward failure'
     FORWARD_SKIP: str = 'skip forward'
     UPLOAD_FILE_PART: str = 'upload file part'
+    CHINESE_PATH_WARNING: str = 'chinese path warning'
+    INVALID_API_ID: str = 'invalid api id'
+    API_ID_TOO_LONG: str = 'api id too long'
+    API_ID_NEED_QUOTES: str = 'api id need quotes'
+    DIRECTORY_NOT_EXIST: str = 'directory not exist'
+    DIRECTORY_CREATED: str = 'directory created'
+    INVALID_YES_NO: str = 'invalid yes no'
+    UNSUPPORTED_DTYPE: str = 'unsupported dtype'
 
 
 class ConnectionState:
@@ -491,7 +499,7 @@ class Validator:
     def is_contain_chinese(text: str) -> bool:
         for ch in text:
             if u'\u4e00' <= ch <= u'\u9fff':
-                console.log('如果无法正常下载,请尝试不使用中文路径后重试。', style='#FF4689')
+                console.log(_t(KeyWord.CHINESE_PATH_WARNING), style='#FF4689')
                 return True
         return False
 
@@ -502,13 +510,13 @@ class Validator:
                 if api_id.isdigit():
                     return True
                 else:
-                    console.log(f'意外的参数:"{api_id}",不是「纯数字」请重新输入!', style='#FF4689')
+                    console.log(_t(KeyWord.INVALID_API_ID).format(value=api_id), style='#FF4689')
                     return False
             else:
-                console.log(f'意外的参数,填写的"{api_id}"可能是「api_hash」,请填入正确的「api_id」!', style='#FF4689')
+                console.log(_t(KeyWord.API_ID_TOO_LONG).format(value=api_id), style='#FF4689')
                 return False
         except (AttributeError, TypeError):
-            console.log('手动编辑config.yaml时,api_id需要有引号!', style='#FF4689')
+            console.log(_t(KeyWord.API_ID_NEED_QUOTES), style='#FF4689')
             return False
 
     @staticmethod
@@ -537,15 +545,16 @@ class Validator:
         if not os.path.exists(save_directory):
             while True:
                 try:
-                    question = console.input(f'目录:"{save_directory}"不存在,是否创建? - 「y|n」(默认y):').strip().lower()
+                    prompt = _t(KeyWord.DIRECTORY_NOT_EXIST).format(value=save_directory)
+                    question = console.input(prompt).strip().lower()
                     if question in ('y', ''):
                         os.makedirs(save_directory, exist_ok=True)
-                        console.log(f'成功创建目录:"{save_directory}"')
+                        console.log(_t(KeyWord.DIRECTORY_CREATED).format(value=save_directory))
                         break
                     elif question == 'n':
                         break
                     else:
-                        console.log(f'意外的参数:"{question}",支持的参数 - 「y|n」', style='#FF4689')
+                        console.log(_t(KeyWord.INVALID_YES_NO).format(value=question), style='#FF4689')
                 except Exception as e:
                     log.error(f'意外的错误,原因:"{e}"')
                     break
@@ -597,7 +606,7 @@ class Validator:
                     if i in support_dtype:
                         valid_dtype.append(i)
                     else:
-                        console.log(f'"{i}"不在支持的下载类型中,已移除。', style='#FF4689')
+                        console.log(_t(KeyWord.UNSUPPORTED_DTYPE).format(value=i), style='#FF4689')
                 dtype[:] = valid_dtype
                 return bool(dtype)
             return False

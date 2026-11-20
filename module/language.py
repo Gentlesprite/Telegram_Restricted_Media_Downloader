@@ -63,7 +63,22 @@ translations: dict = {
     'latest': ['最新', 'Latest'],
     'not set': ['未设置', 'Not set'],
     'on': ['开', 'On'],
-    'off': ['关', 'Off']
+    'off': ['关', 'Off'],
+    'chinese path warning': ['如果无法正常下载,请尝试不使用中文路径后重试。',
+                             'If download fails, try not using a Chinese path.'],
+    'invalid api id': ['意外的参数:"{value}",不是「纯数字」请重新输入!',
+                       'Unexpected parameter "{value}", not a pure number, please re-enter!'],
+    'api id too long': ['意外的参数,填写的"{value}"可能是「api_hash」,请填入正确的「api_id」!',
+                        'Unexpected parameter "{value}" may be an api_hash, please enter the correct api_id!'],
+    'api id need quotes': ['手动编辑config.yaml时,api_id需要有引号!',
+                           'When manually editing config.yaml, api_id must be quoted!'],
+    'directory not exist': ['目录:"{value}"不存在,是否创建? - 「y|n」(默认y):',
+                            'Directory "{value}" does not exist, create it? - 「y|n」(default y):'],
+    'directory created': ['成功创建目录:"{value}"', 'Directory "{value}" created successfully'],
+    'invalid yes no': ['意外的参数:"{value}",支持的参数 - 「y|n」',
+                       'Unexpected parameter "{value}", supported values - 「y|n」'],
+    'unsupported dtype': ['"{value}"不在支持的下载类型中,已移除。',
+                          '"{value}" is not a supported download type, removed.']
 }
 
 @lru_cache(maxsize=1)
