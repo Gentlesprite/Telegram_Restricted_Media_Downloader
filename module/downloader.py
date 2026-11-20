@@ -2828,7 +2828,6 @@ class TelegramRestrictedMediaDownloader(Bot):
         run_error: bool = False
         try:
             check_environment()
-            MetaData.print_helper()
             MetaData.print_meta()
             self.app.print_env_table(self.app)
             self.app.print_config_table(self.app)

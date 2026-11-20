@@ -24,7 +24,6 @@ from rich.style import Style
 from rich.live import Live
 from rich.text import Text
 from rich.table import Table
-from rich.markdown import Markdown
 from rich.progress import (
     Progress,
     BarColumn,
@@ -39,7 +38,6 @@ from pyrogram import __version__ as pyrogram_version  # noqa.
 from module import (
     log,
     console,
-    README,
     __version__,
     __license__,
     __copyright__,
@@ -721,11 +719,6 @@ class MetaData:
                 'number': '{:.2f}'.format(values[-1]),
                 'unit': units[len(values) - 1]
             }
-
-    @staticmethod
-    def print_helper():
-        console.print(Markdown('# 配置文件说明'))
-        console.print(Markdown(README))
 
     @staticmethod
     def __qr_terminal_str(str_obj: str, version: int = 1, render: Callable = QrcodeRender.render_2by1) -> str:
