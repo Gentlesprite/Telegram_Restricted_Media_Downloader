@@ -466,7 +466,7 @@ translations: dict = {
     'config not saved interrupted': ['不保存当前填写参数(用户手动终止配置参数)。',
                                      'Current parameters not saved (configuration manually interrupted).'],
     'config interrupted': ['用户手动终止配置参数。', 'Configuration manually interrupted.'],
-    'config global reloaded': ['全局配置文件已重新加载', 'Global config reloaded'],
+    'config global reloaded': ['全局配置文件已重新加载。', 'Global config reloaded.'],
     'yes': ['是', 'Yes'],
     'no': ['否', 'No'],
     'total': ['合计', 'Total'],
