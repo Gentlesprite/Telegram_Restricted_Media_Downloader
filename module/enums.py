@@ -1062,7 +1062,7 @@ class GetStdioParams:
             elif is_save_config == 'n':
                 return {'is_ki_save_config': False}
             else:
-                log.warning(f'意外的参数:"{is_save_config}",支持的参数 - 「{valid_format}」')
+                console.log(f'意外的参数:"{is_save_config}",支持的参数 - 「{valid_format}」', style='#FF4689')
 
     @staticmethod
     def get_is_re_config(valid_format: str = 'y|n') -> dict:
@@ -1081,7 +1081,7 @@ class GetStdioParams:
                 return {'is_re_config': False}
             else:
                 console.print('\n') if sys.platform == 'win32' else None
-                log.warning(f'意外的参数:"{is_re_config}",支持的参数 - 「{valid_format}」(默认n)')
+                console.log(f'意外的参数:"{is_re_config}",支持的参数 - 「{valid_format}」(默认n)', style='#FF4689')
 
     @staticmethod
     def get_is_change_account(valid_format: str = 'y|n') -> dict:
@@ -1096,7 +1096,7 @@ class GetStdioParams:
                 console.print('用户需要切换「账号」。', style=style)
                 return {'is_change_account': True}
             else:
-                log.warning(f'意外的参数:"{is_change_account}",支持的参数 - 「{valid_format}」!')
+                console.log(f'意外的参数:"{is_change_account}",支持的参数 - 「{valid_format}」!', style='#FF4689')
 
     @staticmethod
     def get_session_directory():
@@ -1135,7 +1135,7 @@ class GetStdioParams:
                     'record_flag': True
                 }
             else:
-                log.warning(f'意外的参数:"{api_hash}",不是一个「{valid_length}位」的「值」!请重新输入!')
+                console.log(f'意外的参数:"{api_hash}",不是一个「{valid_length}位」的「值」!请重新输入!', style='#FF4689')
 
     @staticmethod
     def get_enable_bot(valid_format: str = 'y|n') -> dict:
@@ -1148,7 +1148,7 @@ class GetStdioParams:
                 console.print(f'请配置「bot_token」。', style=ProcessConfig.stdio_style('bot_token'))
                 return {'enable_bot': True}
             else:
-                log.warning(f'意外的参数:"{enable_bot}",支持的参数 - 「{valid_format}」!')
+                console.log(f'意外的参数:"{enable_bot}",支持的参数 - 「{valid_format}」!', style='#FF4689')
 
     @staticmethod
     def get_bot_token(last_record: str, valid_format: str = ':') -> dict:
@@ -1164,7 +1164,7 @@ class GetStdioParams:
                     'record_flag': True
                 }
             else:
-                log.warning(f'意外的参数:"{bot_token}",「bot_token」中需要包含":",请重新输入!')
+                console.log(f'意外的参数:"{bot_token}",「bot_token」中需要包含":",请重新输入!', style='#FF4689')
 
     @staticmethod
     def get_links(last_record: str, valid_format: str = '.txt', enable_bot: bool = False) -> dict:
@@ -1195,10 +1195,10 @@ class GetStdioParams:
                         'record_flag': True
                     }
                 elif not os.path.normpath(links_file_path).lower().endswith('.txt'):
-                    log.warning(f'意外的参数:"{links_file_path}",文件路径必须以「{valid_format}」结尾,请重新输入!')
+                    console.log(f'意外的参数:"{links_file_path}",文件路径必须以「{valid_format}」结尾,请重新输入!', style='#FF4689')
                 else:
-                    log.warning(
-                        f'意外的参数:"{links_file_path}",文件「必须存在」(区分大小写),请重新输入!')
+                    console.log(
+                        f'意外的参数:"{links_file_path}",文件「必须存在」(区分大小写),请重新输入!', style='#FF4689')
             except Exception as e:
                 log.warning(
                     f'意外的参数:"{links_file_path}",文件路径必须以「{valid_format}」结尾,并且「必须存在」,请重新输入!{_t(KeyWord.REASON)}:"{e}"')
@@ -1215,7 +1215,7 @@ class GetStdioParams:
                     save_directory = last_record
                 else:
                     save_directory = os.path.join(os.getcwd(), 'downloads')
-                    log.warning('没有上一次的记录,已设置为默认目录。')
+                    console.log('没有上一次的记录,已设置为默认目录。', style='#FF4689')
             if Validator.is_valid_save_directory(save_directory):
                 console.print(f'已设置「save_directory」为:「{save_directory}」',
                               style=ProcessConfig.stdio_style('save_directory'))
@@ -1225,9 +1225,9 @@ class GetStdioParams:
                     'record_flag': True
                 }
             elif os.path.isfile(save_directory):
-                log.warning(f'意外的参数:"{save_directory}",指定的路径是一个文件并非目录,请重新输入!')
+                console.log(f'意外的参数:"{save_directory}",指定的路径是一个文件并非目录,请重新输入!', style='#FF4689')
             else:
-                log.warning(f'意外的参数:"{save_directory}",指定的路径无效或不是一个目录,请重新输入!')
+                console.log(f'意外的参数:"{save_directory}",指定的路径无效或不是一个目录,请重新输入!', style='#FF4689')
 
     @staticmethod
     def get_max_download_task(last_record) -> dict:
@@ -1250,7 +1250,7 @@ class GetStdioParams:
                         'record_flag': True
                     }
                 else:
-                    log.warning(f'意外的参数:"{max_download_task}",任务数必须是「正整数」,请重新输入!')
+                    console.log(f'意外的参数:"{max_download_task}",任务数必须是「正整数」,请重新输入!', style='#FF4689')
             except Exception as e:
                 log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{e}"')
 
@@ -1273,7 +1273,7 @@ class GetStdioParams:
                         'record_flag': True
                     }
                 else:
-                    log.warning(f'意外的参数:"{max_retry_count}",最大重试次数必须是「正整数」,请重新输入!')
+                    console.log(f'意外的参数:"{max_retry_count}",最大重试次数必须是「正整数」,请重新输入!', style='#FF4689')
             except Exception as e:
                 log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{e}"')
 
@@ -1309,7 +1309,7 @@ class GetStdioParams:
                 }
             else:
                 prompt: str = f'意外的参数:"{download_type}"' if download_type else '请重新输入下载类型'
-                log.warning(f'{prompt},支持的参数 - 「video photo document」(以空格分隔可多选)')
+                console.log(f'{prompt},支持的参数 - 「video photo document」(以空格分隔可多选)', style='#FF4689')
 
     @staticmethod
     def get_is_shutdown(last_record: str, valid_format: str = 'y|n') -> dict:
@@ -1343,7 +1343,7 @@ class GetStdioParams:
                     console.print(f, style=_style)
                     return {'is_shutdown': False, 'record_flag': True}
                 else:
-                    log.warning(f'意外的参数:"{is_shutdown}",支持的参数 - 「{valid_format}」')
+                    console.log(f'意外的参数:"{is_shutdown}",支持的参数 - 「{valid_format}」', style='#FF4689')
 
             except Exception as e:
                 log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{e}"')
@@ -1376,7 +1376,7 @@ class GetStdioParams:
                                   style=ProcessConfig.stdio_style('enable_proxy'))
                     return {'enable_proxy': False, 'record_flag': True}
             else:
-                log.error(f'意外的参数:"{enable_proxy}",请输入有效参数!支持的参数 - 「{valid_format}」!')
+                console.log(f'意外的参数:"{enable_proxy}",请输入有效参数!支持的参数 - 「{valid_format}」!', style='#FF4689')
 
     @staticmethod
     @ProcessConfig.get_system_proxy('scheme')
@@ -1397,8 +1397,8 @@ class GetStdioParams:
                     'record_flag': True
                 }
             else:
-                log.warning(
-                    f'意外的参数:"{scheme}",请输入有效的代理类型!支持的参数 - 「{fmt_valid_format}」!')
+                console.log(
+                    f'意外的参数:"{scheme}",请输入有效的代理类型!支持的参数 - 「{fmt_valid_format}」!', style='#FF4689')
 
     @staticmethod
     @ProcessConfig.get_system_proxy('hostname')
@@ -1420,8 +1420,8 @@ class GetStdioParams:
                         'record_flag': True
                     }
             except ValueError:
-                log.warning(
-                    f'"{hostname}"不是一个「ip地址」,请输入有效的ipv4地址!支持的参数 - 「{valid_format}」!')
+                console.log(
+                    f'"{hostname}"不是一个「ip地址」,请输入有效的ipv4地址!支持的参数 - 「{valid_format}」!', style='#FF4689')
 
     @staticmethod
     @ProcessConfig.get_system_proxy('port')
@@ -1444,9 +1444,9 @@ class GetStdioParams:
                         'record_flag': True
                     }
                 else:
-                    log.warning(f'意外的参数:"{port}",端口号必须在「{valid_format}」之间!')
+                    console.log(f'意外的参数:"{port}",端口号必须在「{valid_format}」之间!', style='#FF4689')
             except ValueError:
-                log.warning(f'意外的参数:"{port}",请输入一个有效的整数!支持的参数 - 「{valid_format}」')
+                console.log(f'意外的参数:"{port}",请输入一个有效的整数!支持的参数 - 「{valid_format}」', style='#FF4689')
             except Exception as e:
                 log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{e}"')
 
@@ -1466,7 +1466,7 @@ class GetStdioParams:
                 console.print(f'已设置为:「代理不需要认证」', style=style)
                 return {'username': None, 'password': None, 'record_flag': True}
             else:
-                log.warning(f'意外的参数:"{is_proxy}",支持的参数 - 「{valid_format}」!')
+                console.log(f'意外的参数:"{is_proxy}",支持的参数 - 「{valid_format}」!', style='#FF4689')
 
 
 class BotCommandText:
