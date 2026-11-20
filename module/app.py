@@ -208,13 +208,17 @@ class Application(UserConfig, StatisticalTable):
         return self.get_download_type(message=message, default_type=download_type)
 
     def check_download_type(self) -> None:
+        changed: bool = False
         for dtype in self.download_type[:]:  # 遍历副本,避免删除元素后跳过后续的项。
             if dtype not in DownloadType():
                 self.download_type.remove(dtype)
+                changed = True
                 p = f'"{dtype}"不是支持的下载类型,已移除。'
                 console.log(p, style='#FF4689')
                 log.info(p)
         if self.download_type:
+            if changed:
+                self.save_config(config=self.config)
             return None
         self.download_type = [_ for _ in DownloadType()]
         self.config['download_type'] = self.download_type
