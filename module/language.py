@@ -517,7 +517,14 @@ translations: dict = {
     'upload count title': ['媒体上传统计', 'Media upload statistics'],
     'count csv name': ['媒体下载统计表', 'media download statistics'],
     'link csv name': ['下载链接统计表', 'download link statistics'],
-    'upload csv name': ['上传任务统计表', 'upload task statistics']
+    'upload csv name': ['上传任务统计表', 'upload task statistics'],
+    'parser help': ['展示帮助', 'Show help'],
+    'parser version': ['展示版本信息', 'Show version information'],
+    'parser quiet': ['跳过重新配置文件的确认提示', 'Skip the confirmation prompt for reconfiguring the file'],
+    'parser config': ['设置用户配置文件的路径', 'Set the path to the user configuration file'],
+    'parser session': ['设置会话文件的路径', 'Set the path to the session file'],
+    'parser temp': ['设置运行缓存的路径', 'Set the path to the runtime cache'],
+    'parser port': ['设置网页面板的端口', 'Set the web panel port']
 
 }
 

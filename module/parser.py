@@ -14,10 +14,12 @@ from module import (
     SOFTWARE_SHORT_NAME,
     TestLevel
 )
+from module.language import _t
 from module.enums import (
     Banner,
     WebMeta,
-    GradientColor
+    KeyWord,
+    GradientColor,
 )
 
 
@@ -28,41 +30,41 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             '-h', '--help',
             action='help',
             default=SUPPRESS,
-            help='展示帮助'
+            help=_t(KeyWord.PARSER_HELP)
         )
         self.add_argument(
             '-v', '--version',
             action='version',
             version=f'{SOFTWARE_SHORT_NAME} {VERSION_SEMVER}',
             default=SUPPRESS,
-            help='展示版本信息'
+            help=_t(KeyWord.PARSER_VERSION)
         )
         self.add_argument(
             '-q', '--quiet',
             action='store_true',
             default=False,
-            help='跳过重新配置文件的确认提示'
+            help=_t(KeyWord.PARSER_QUIET)
         )
         self.add_argument(
             '-c', '--config',
             type=str,
             required=False,
             default='',
-            help='设置用户配置文件的路径'
+            help=_t(KeyWord.PARSER_CONFIG)
         )
         self.add_argument(
             '-s', '--session',
             type=str,
             required=False,
             default='',
-            help='设置会话文件的路径'
+            help=_t(KeyWord.PARSER_SESSION)
         )
         self.add_argument(
             '-t', '--temp',
             type=str,
             required=False,
             default='',
-            help='设置运行缓存的路径'
+            help=_t(KeyWord.PARSER_TEMP)
         )
         self.add_argument(
             '-p', '--port',
@@ -71,7 +73,7 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             metavar='PORT',
             const=WebMeta.DEFAULT_PORT,
             default=WebMeta.DEFAULT_PORT,
-            help='设置网页面板的端口'
+            help=_t(KeyWord.PARSER_PORT)
         )
         self.add_argument(
             '--test',
