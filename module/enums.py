@@ -778,7 +778,7 @@ class ProcessConfig:
                                 elif question == 'n':
                                     break
                                 else:
-                                    log.warning(f'意外的参数:"{question}",支持的参数 - 「y|n」')
+                                    console.log(f'意外的参数:"{question}",支持的参数 - 「y|n」', style='#FF4689')
                             except Exception as e:
                                 log.error(f'意外的错误,原因:"{e}"')
                                 break
@@ -881,7 +881,7 @@ class ProcessConfig:
             console.print(Issues.PROXY_CONFIG_TIP)
             result: bool = True
         if any(advance_account_truth_table) and all(advance_account_truth_table) is False:
-            log.warning('代理账号或密码未输入!')
+            console.log('代理账号或密码未输入!', style='#FF4689')
             result: bool = True
         return result
 
