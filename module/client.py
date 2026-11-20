@@ -106,10 +106,10 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                     value = (await ainput('请输入「电话号码」([#6a2c70]电话号码[/#6a2c70]需以[#b83b5e]「+地区」[/#b83b5e]开头!'
                                           '如:[#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):')).strip()
                     if not value.startswith('+'):
-                        log.warning(f'意外的参数:"{value}",电话号码需以「+地区」开头!')
+                        console.log(f'意外的参数:"{value}",电话号码需以「+地区」开头!', style='#FF4689')
                         continue
                     if len(value) < 8 or len(value) > 16:
-                        log.warning(f'意外的参数:"{value}",电话号码无效!')
+                        console.log(f'意外的参数:"{value}",电话号码无效!', style='#FF4689')
                         continue
                     if not value:
                         continue
@@ -121,7 +121,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                     elif confirm == 'n':
                         continue
                     else:
-                        log.warning(f'意外的参数:"{confirm}",支持的参数 - 「y|n」')
+                        console.log(f'意外的参数:"{confirm}",支持的参数 - 「y|n」', style='#FF4689')
                 self.phone_number = value
                 sent_code = await self.send_code(self.phone_number)
             except pyrogram.errors.BadRequest as e:
@@ -147,7 +147,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                         elif confirm == 'n':
                             continue
                         else:
-                            log.warning(f'意外的参数:"{confirm}",支持的参数 - 「y|n」')
+                            console.log(f'意外的参数:"{confirm}",支持的参数 - 「y|n」', style='#FF4689')
                     await self.invoke(
                         raw.functions.account.SendVerifyEmailCode(
                             purpose=raw.types.EmailVerifyPurposeLoginSetup(
