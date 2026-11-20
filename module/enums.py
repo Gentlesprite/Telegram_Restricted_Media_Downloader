@@ -211,18 +211,24 @@ class KeyWord:
     DEFAULT_ALL: str = 'default all'
     BOT_CONFIGURED_NOTICE: str = 'bot configured notice'
     BOT_STEP_DOWNLOAD_LINK: str = 'step download link'
-    BOT_STEP_DOWNLOAD_CHAT_LINK: str = 'step download chat link'
+    BOT_STEP_DOWNLOAD_CHAT_LINK: str = 'step download_chat link'
     BOT_STEP_UPLOAD_PATH: str = 'step upload path'
     BOT_STEP_UPLOAD_TARGET: str = 'step upload target'
-    BOT_STEP_UPLOAD_R_PATH: str = 'step upload r path'
-    BOT_STEP_UPLOAD_R_TARGET: str = 'step upload r target'
+    BOT_STEP_UPLOAD_R_PATH: str = 'step upload_r path'
+    BOT_STEP_UPLOAD_R_TARGET: str = 'step upload_r target'
     BOT_STEP_FORWARD_ORIGIN: str = 'step forward origin'
     BOT_STEP_FORWARD_TARGET: str = 'step forward target'
-    BOT_STEP_FORWARD_START_ID: str = 'step forward start id'
-    BOT_STEP_FORWARD_END_ID: str = 'step forward end id'
-    BOT_STEP_LISTEN_DOWNLOAD_ORIGIN: str = 'step listen download origin'
-    BOT_STEP_LISTEN_FORWARD_ORIGIN: str = 'step listen forward origin'
-    BOT_STEP_LISTEN_FORWARD_TARGET: str = 'step listen forward target'
+    BOT_STEP_FORWARD_START_ID: str = 'step forward start_id'
+    BOT_STEP_FORWARD_END_ID: str = 'step forward end_id'
+    BOT_STEP_LISTEN_DOWNLOAD_ORIGIN: str = 'step listen_download origin'
+    BOT_STEP_LISTEN_FORWARD_ORIGIN: str = 'step listen_forward origin'
+    BOT_STEP_LISTEN_FORWARD_TARGET: str = 'step listen_forward target'
+    BOT_MESSAGE_RIGHT: str = 'bot message right'
+    BOT_MESSAGE_INVALID: str = 'bot message invalid'
+    BOT_MESSAGE_TASK_ASSIGN: str = 'bot message task assign'
+    BOT_MESSAGE_TOO_MANY_MESSAGE: str = 'bot message too many message'
+    BOT_MESSAGE_TOO_MANY_INVALID_DOWNLOAD: str = 'bot message too many invalid download'
+    BOT_MESSAGE_TOO_MANY_INVALID_FORWARD: str = 'bot message too many invalid forward'
 
 
 class ConnectionState:
@@ -1750,12 +1756,12 @@ class BotStepText:
 
 
 class BotMessage:
-    RIGHT: str = '✅以下链接已创建下载任务:\n'
-    INVALID: str = '🚫以下链接不合法已被移除:\n'
-    TASK_ASSIGN: str = '🌟任务已分配。'
-    TOO_MANY_MESSAGE: str = '⚠️消息过长,本次操作不再逐条展示。'
-    TOO_MANY_INVALID_DOWNLOAD_MESSAGE: str = '⚠️{count}条消息因不合法已跳过下载,数量过多不再逐条列出。'
-    TOO_MANY_INVALID_FORWARD_MESSAGE: str = '⚠️{count}条消息因不存在已跳过转发,数量过多不再逐条列出。'
+    RIGHT: str = _t(KeyWord.BOT_MESSAGE_RIGHT)
+    INVALID: str = _t(KeyWord.BOT_MESSAGE_INVALID)
+    TASK_ASSIGN: str = _t(KeyWord.BOT_MESSAGE_TASK_ASSIGN)
+    TOO_MANY_MESSAGE: str = _t(KeyWord.BOT_MESSAGE_TOO_MANY_MESSAGE)
+    TOO_MANY_INVALID_DOWNLOAD_MESSAGE: str = _t(KeyWord.BOT_MESSAGE_TOO_MANY_INVALID_DOWNLOAD)
+    TOO_MANY_INVALID_FORWARD_MESSAGE: str = _t(KeyWord.BOT_MESSAGE_TOO_MANY_INVALID_FORWARD)
 
 
 class BotButton:
