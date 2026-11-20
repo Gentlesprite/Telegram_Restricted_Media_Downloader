@@ -120,7 +120,7 @@ class StatisticalTable:
             [_t(DownloadType.ANIMATION), success_animation, failure_animation, skip_animation, total_animation],
             [_t(DownloadType.VIDEO_NOTE), success_video_note, failure_video_note, skip_video_note, total_video_note],
             [_t(DownloadType.LIVE_PHOTO), success_live_photo, failure_live_photo, skip_live_photo, total_live_photo],
-            ['合计',
+            [_t(KeyWord.TOTAL),
              sum([success_video, success_photo, success_document, success_audio, success_voice, success_animation,
                   success_video_note, success_live_photo]),
              sum([failure_video, failure_photo, failure_document, failure_audio, failure_voice, failure_animation,
@@ -132,7 +132,7 @@ class StatisticalTable:
              ]
         ]
         if len(table_data) < 3:
-            log.error(f'无法输出计数表格,{_t(KeyWord.REASON)}:"表格数据非法"')
+            console.log(_t(KeyWord.INVALID_COUNT_TABLE_DATA).format(reason=_t(KeyWord.REASON)), style='#FF4689')
             return False
         check_count: int = 0
         for row in table_data:
@@ -142,8 +142,14 @@ class StatisticalTable:
         if check_count == 0:
             log.debug(f'无法生成计数统计表,{_t(KeyWord.REASON)}:"没有任何下载"')
             return False
-        title: str = '媒体下载统计'
-        header: tuple = ('类型&状态', '成功下载', '失败下载', '跳过下载', '合计')
+        title: str = _t(KeyWord.COUNT_TABLE_TITLE)
+        header: tuple = (
+            _t(KeyWord.TYPE_STATUS),
+            _t(KeyWord.SUCCESS_DOWNLOAD),
+            _t(KeyWord.FAILURE_DOWNLOAD),
+            _t(KeyWord.SKIP_DOWNLOAD),
+            _t(KeyWord.TOTAL)
+        )
         if export:
             try:
                 export_directory: str = '/app/form/CountForm' if is_docker() else export_directory
@@ -151,7 +157,7 @@ class StatisticalTable:
                 with open(
                         file=os.path.join(
                             export_directory,
-                            f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_媒体下载统计表.csv'
+                            f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_{_t(KeyWord.COUNT_CSV_NAME)}.csv'
                         ),
                         mode='w',
                         newline='',
@@ -217,15 +223,21 @@ class StatisticalTable:
             if not data:
                 log.debug(f'无法生成下载链接统计表,{_t(KeyWord.REASON)}:"没有任何下载"')
                 return False
-            title: str = '下载链接统计'
-            header: tuple = ('编号', '链接', '文件名', '完成率', '错误信息')
+            title: str = _t(KeyWord.LINK_TABLE_TITLE)
+            header: tuple = (
+                _t(KeyWord.INDEX),
+                _t(KeyWord.LINK),
+                _t(KeyWord.FILENAME),
+                _t(KeyWord.COMPLETION_RATE),
+                _t(KeyWord.ERROR_INFO)
+            )
             if export:
                 try:
                     export_directory: str = '/app/form/LinkForm' if is_docker() else export_directory
                     os.makedirs(export_directory, exist_ok=True)  # noqa.
                     with open(file=os.path.join(
                             export_directory,
-                            f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_下载链接统计表.csv'
+                            f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_{_t(KeyWord.LINK_CSV_NAME)}.csv'
                     ),
                             mode='w',
                             newline='',
@@ -269,15 +281,15 @@ class StatisticalTable:
         if not tasks:
             log.debug(f'无法生成上传统计表,{_t(KeyWord.REASON)}:"没有任何上传"')
             return False
-        meta_table_title: str = '上传任务统计'
+        meta_table_title: str = _t(KeyWord.UPLOAD_TASK_TITLE)
         meta_table_header: tuple = (
-            '编号',
-            '频道',
-            '文件',
-            '文件大小',
-            '状态',
-            '上传后自动删除',
-            '错误信息'
+            _t(KeyWord.INDEX),
+            _t(KeyWord.CHANNEL),
+            _t(KeyWord.FILE),
+            _t(KeyWord.FILE_SIZE),
+            _t(KeyWord.STATUS),
+            _t(KeyWord.AUTO_DELETE_AFTER_UPLOAD),
+            _t(KeyWord.ERROR_INFO)
         )
         meta_table_data = []
         for index, task in enumerate(tasks, start=1):
@@ -285,11 +297,11 @@ class StatisticalTable:
                 status = _t(str(task.status.value))
             else:
                 status = _t(str(task.status))
-            delete = '是' if getattr(task, 'with_delete', False) else '否'
+            delete = _t(KeyWord.YES) if getattr(task, 'with_delete', False) else _t(KeyWord.NO)
             error_msg = getattr(task, 'error_msg', False) or ''
             row = [
                 index,
-                str(task.chat_id) if task.chat_id else '未知',
+                str(task.chat_id) if task.chat_id else _t(KeyWord.UNKNOWN),
                 task.file_path,
                 MetaData.suitable_units_display(task.file_size),
                 status,
@@ -301,8 +313,8 @@ class StatisticalTable:
         # 检查数据有效性。
         if len(meta_table_data) < 1:
             return False
-        count_table_title = '媒体上传统计'
-        count_table_header: tuple = ('状态', '数量')
+        count_table_title = _t(KeyWord.UPLOAD_COUNT_TITLE)
+        count_table_header: tuple = (_t(KeyWord.STATUS), _t(KeyWord.QUANTITY))
         pending_tasks = len([t for t in tasks if t.status == UploadStatus.PENDING])
         uploading_tasks = len([t for t in tasks if t.status == UploadStatus.UPLOADING])
         success_tasks = len([t for t in tasks if t.status == UploadStatus.SUCCESS])
@@ -317,8 +329,8 @@ class StatisticalTable:
             [_t(UploadStatus.SUCCESS), success_tasks],
             [_t(UploadStatus.FAILURE), failure_tasks],
             [_t(UploadStatus.SENT), sent_tasks],
-            ['自动删除', delete_tasks],
-            ['合计', total_tasks]
+            [_t(KeyWord.AUTO_DELETE), delete_tasks],
+            [_t(KeyWord.TOTAL), total_tasks]
         ]
 
         if export:
@@ -326,7 +338,7 @@ class StatisticalTable:
                 export_directory: str = '/app/form/Normal' if is_docker() else export_directory
                 os.makedirs(export_directory, exist_ok=True)
                 timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-                filename = f'{timestamp}_上传任务统计表.csv'
+                filename = f'{timestamp}_{_t(KeyWord.UPLOAD_CSV_NAME)}.csv'
 
                 with open(
                         file=os.path.join(export_directory, filename),
@@ -347,11 +359,11 @@ class StatisticalTable:
 
                     writer.writerow([])
                     writer.writerow(
-                        ['平均大小', MetaData.suitable_units_display(
+                        [_t(KeyWord.AVERAGE_SIZE), MetaData.suitable_units_display(
                             total_size / total_tasks if total_tasks > 0 else 0)]
                     )
                     writer.writerow(
-                        ['总大小', MetaData.suitable_units_display(
+                        [_t(KeyWord.TOTAL_SIZE), MetaData.suitable_units_display(
                             total_size)]
                     )
 
@@ -403,13 +415,17 @@ class StatisticalTable:
                         key, value = i
                         proxy_key.append(key)
                         proxy_value.append(value)
-                proxy_table = PanelTable(title='代理配置', header=tuple(proxy_key), data=[proxy_value])
+                proxy_table = PanelTable(
+                    title=_t(KeyWord.PROXY_CONFIGURATION),
+                    header=tuple(proxy_key),
+                    data=[proxy_value]
+                )
                 proxy_table.print_meta()
         except Exception as e:
             log.error(f'打印代理配置表时出错,{_t(KeyWord.REASON)}:"{e}"')
         try:
             if app.links and os.path.isdir(app.links):
-                log.warning(f'"{app.links}"是一个文件夹,并非.txt文本,请重新填写媒体链接文本文件的路径。')
+                console.log(_t(KeyWord.LINKS_IS_DIRECTORY).format(path=app.links), style='#FF4689')
             else:
                 with open(file=app.links, mode='r', encoding='UTF-8') as _:
                     res: list = [content.strip() for content in _.readlines() if content.strip()]
@@ -418,13 +434,13 @@ class StatisticalTable:
                     for i in enumerate(res, start=1):
                         format_res.append(list(i))
                     link_table = PanelTable(
-                        title='链接内容',
-                        header=('编号', '链接'),
+                        title=_t(KeyWord.LINK_CONTENT),
+                        header=(_t(KeyWord.INDEX), _t(KeyWord.LINK)),
                         data=format_res
                     )
                     link_table.print_meta()
         except FileNotFoundError:
-            log.warning('无法读取媒体链接文件,可能已被删除。')
+            console.log(_t(KeyWord.LINK_FILE_MISSING), style='#FF4689')
         except (PermissionError, AttributeError) as e:  # v1.1.3 用户错误填写路径提示。
             log.error(f'读取"{app.links}"时出错,{_t(KeyWord.REASON)}:"{e}"')
         except Exception as e:
@@ -457,7 +473,11 @@ class StatisticalTable:
                  ProcessConfig.get_dtype(_dtype).get('live_photo', False)
                  ]
             ]
-            download_type_table = PanelTable(title='下载类型', header=('类型', '是否下载'), data=data)
+            download_type_table = PanelTable(
+                title=_t(KeyWord.DOWNLOAD_TYPE_TABLE),
+                header=(_t(KeyWord.TYPE), _t(KeyWord.WHETHER_DOWNLOAD)),
+                data=data
+            )
             download_type_table.print_meta()
         except Exception as e:
             log.error(f'打印下载类型统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
@@ -480,18 +500,19 @@ class StatisticalTable:
             f'缓存目录:"{app.temp_directory}"。')
         log.info(f'使用系统代理:"{app.enable_proxy}"。')
         PanelTable(
-            title='运行环境',
-            header=('名称', '值'),
+            title=_t(KeyWord.RUNTIME_ENVIRONMENT),
+            header=(_t(KeyWord.NAME), _t(KeyWord.VALUE)),
             data=[
-                ['平台', app.platform],
-                ['Python版本', sys.version.split()[0]],
-                ['TRMD版本', f'{VERSION_WITH_COMMIT}({update_version}⬆)' if update_version else VERSION_WITH_COMMIT],
-                ['Pyrogram版本', pyrogram_version],
-                ['用户配置文件', app.config_path],
-                ['保存目录', app.save_directory],
-                ['会话目录', app.work_directory],
-                ['缓存目录', app.temp_directory],
-                ['使用系统代理', app.enable_proxy]
+                [_t(KeyWord.PLATFORM), app.platform],
+                [_t(KeyWord.PYTHON_VERSION), sys.version.split()[0]],
+                [_t(KeyWord.TRMD_VERSION),
+                 f'{VERSION_WITH_COMMIT}({update_version}⬆)' if update_version else VERSION_WITH_COMMIT],
+                [_t(KeyWord.PYROGRAM_VERSION), pyrogram_version],
+                [_t(KeyWord.USER_CONFIG_FILE), app.config_path],
+                [_t(KeyWord.SAVE_DIRECTORY), app.save_directory],
+                [_t(KeyWord.SESSION_DIRECTORY), app.work_directory],
+                [_t(KeyWord.CACHE_DIRECTORY), app.temp_directory],
+                [_t(KeyWord.USE_SYSTEM_PROXY), app.enable_proxy]
             ],
             show_lines=True
         ).print_meta()
@@ -631,7 +652,7 @@ class MetaData:
             prompt: str,
             num: int
     ) -> None:
-        console.log(f'{prompt}:{num}。', justify='right', style='#B1DB74')
+        console.log(_t(KeyWord.TASK_NUM_FORMAT).format(prompt=prompt, num=num), justify='right', style='#B1DB74')
 
     @staticmethod
     def check_run_env() -> bool:  # 检测是windows平台下控制台运行还是IDE运行。
@@ -654,7 +675,7 @@ class MetaData:
                 )
                 console.print(
                     GradientColor.gen_gradient_text(
-                        text='微信扫码支持作者,您的支持是我持续更新的动力。',
+                        text=_t(KeyWord.QR_SUPPORT),
                         gradient_color=GradientColor.YELLOW2GREEN_10
                     ),
                     justify='center'
@@ -685,7 +706,7 @@ class MetaData:
     @staticmethod
     def print_disclaimer():
         console.print(GradientColor.gen_gradient_text(
-            '\t所有使用本软件的行为及其后果均由使用者自行承担全部法律责任，开发者不对任何使用行为及其后果负责。',
+            _t(KeyWord.DISCLAIMER),
             gradient_color=GradientColor.BLUE2PURPLE_14)
         )
 
