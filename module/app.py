@@ -208,7 +208,7 @@ class Application(UserConfig, StatisticalTable):
         return self.get_download_type(message=message, default_type=download_type)
 
     def check_download_type(self) -> None:
-        for dtype in self.download_type:
+        for dtype in self.download_type[:]:  # 遍历副本,避免删除元素后跳过后续的项。
             if dtype not in DownloadType():
                 self.download_type.remove(dtype)
                 p = f'"{dtype}"不是支持的下载类型,已移除。'
