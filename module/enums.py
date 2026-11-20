@@ -149,6 +149,11 @@ class KeyWord:
     DIRECTORY_CREATED: str = 'directory created'
     INVALID_YES_NO: str = 'invalid yes no'
     UNSUPPORTED_DTYPE: str = 'unsupported dtype'
+    SYSTEM_PROXY_FOUND: str = 'system proxy found'
+    AUTO_PROXY_VALUE: str = 'auto proxy value'
+    PROXY_NOT_CONFIG: str = 'proxy not config'
+    PROXY_AUTH_EMPTY: str = 'proxy auth empty'
+    UNKNOWN: str = 'unknown'
 
 
 class ConnectionState:
@@ -770,15 +775,16 @@ class ProcessConfig:
                     if param_name == 'scheme' and ProcessConfig.PROXY_AUTO_FILL is False:
                         while True:
                             try:
-                                question = console.input(
-                                    f'获取到系统代理"{ProcessConfig.format_proxy_prompt(system_proxy)}",是否自动填入? - 「y|n」(默认y):').strip().lower()
+                                prompt = _t(KeyWord.SYSTEM_PROXY_FOUND).format(
+                                    value=ProcessConfig.format_proxy_prompt(system_proxy))
+                                question = console.input(prompt).strip().lower()
                                 if question in ('y', ''):
                                     ProcessConfig.PROXY_AUTO_FILL = True
                                     break
                                 elif question == 'n':
                                     break
                                 else:
-                                    console.log(f'意外的参数:"{question}",支持的参数 - 「y|n」', style='#FF4689')
+                                    console.log(_t(KeyWord.INVALID_YES_NO).format(value=question), style='#FF4689')
                             except Exception as e:
                                 log.error(f'意外的错误,原因:"{e}"')
                                 break
@@ -788,7 +794,7 @@ class ProcessConfig:
                         # 根据参数类型打印相应的提示信息。
                         if param_name == 'scheme':
                             console.print(
-                                f'已从系统代理自动获取「scheme」为:「{value}」',
+                                _t(KeyWord.AUTO_PROXY_VALUE).format(name=param_name, value=value),
                                 style=ProcessConfig.stdio_style('scheme')
                             )
                             return {
@@ -797,7 +803,7 @@ class ProcessConfig:
                             }
                         elif param_name == 'hostname':
                             console.print(
-                                f'已从系统代理自动获取「hostname」为:「{value}」',
+                                _t(KeyWord.AUTO_PROXY_VALUE).format(name=param_name, value=value),
                                 style=ProcessConfig.stdio_style('hostname')
                             )
                             return {
@@ -806,7 +812,7 @@ class ProcessConfig:
                             }
                         elif param_name == 'port':
                             console.print(
-                                f'已从系统代理自动获取「port」为:「{value}」',
+                                _t(KeyWord.AUTO_PROXY_VALUE).format(name=param_name, value=value),
                                 style=ProcessConfig.stdio_style('port')
                             )
                             return {
@@ -877,20 +883,21 @@ class ProcessConfig:
             if _[0] in ['username', 'password']:
                 advance_account_truth_table.append(_[1])
         if all(basic_truth_table) is False:  # noqa.
-            console.print('请配置代理!', style=ProcessConfig.stdio_style('config_proxy'))
+            console.print(_t(KeyWord.PROXY_NOT_CONFIG), style=ProcessConfig.stdio_style('config_proxy'))
             console.print(Issues.PROXY_CONFIG_TIP)
             result: bool = True
         if any(advance_account_truth_table) and all(advance_account_truth_table) is False:
-            console.log('代理账号或密码未输入!', style='#FF4689')
+            console.log(_t(KeyWord.PROXY_AUTH_EMPTY), style='#FF4689')
             result: bool = True
         return result
 
     @staticmethod
     def get_proxy_info(proxy_config: dict) -> dict:
+        unknown: str = _t(KeyWord.UNKNOWN)
         return {
-            'scheme': proxy_config.get('scheme', '未知'),
-            'hostname': proxy_config.get('hostname', '未知'),
-            'port': proxy_config.get('port', '未知')
+            'scheme': proxy_config.get('scheme', unknown),
+            'hostname': proxy_config.get('hostname', unknown),
+            'port': proxy_config.get('port', unknown)
         }
 
 

@@ -78,8 +78,16 @@ translations: dict = {
     'invalid yes no': ['意外的参数:"{value}",支持的参数 - 「y|n」',
                        'Unexpected parameter "{value}", supported values - 「y|n」'],
     'unsupported dtype': ['"{value}"不在支持的下载类型中,已移除。',
-                          '"{value}" is not a supported download type, removed.']
+                          '"{value}" is not a supported download type, removed.'],
+    'system proxy found': ['获取到系统代理"{value}",是否自动填入? - 「y|n」(默认y):',
+                           'System proxy "{value}" detected, auto-fill? - 「y|n」(default y):'],
+    'auto proxy value': ['已从系统代理自动获取「{name}」为:「{value}」',
+                         'Auto-filled 「{name}」 from system proxy as:「{value}」'],
+    'proxy not config': ['请配置代理!', 'Please configure the proxy!'],
+    'proxy auth empty': ['代理账号或密码未输入!', 'Proxy username or password not entered!'],
+    'unknown': ['未知', 'Unknown']
 }
+
 
 @lru_cache(maxsize=1)
 def get_language() -> str:
