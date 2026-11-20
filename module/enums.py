@@ -154,6 +154,62 @@ class KeyWord:
     PROXY_NOT_CONFIG: str = 'proxy not config'
     PROXY_AUTH_EMPTY: str = 'proxy auth empty'
     UNKNOWN: str = 'unknown'
+    ASK_SAVE_CONFIG: str = 'ask save config'
+    ASK_RECONFIG: str = 'ask reconfig'
+    ASK_CHANGE_ACCOUNT: str = 'ask change account'
+    ASK_SESSION_DIRECTORY: str = 'ask session directory'
+    ASK_LAST_RECORD: str = 'ask last record'
+    ASK_BOT_TOKEN: str = 'ask bot token'
+    ASK_ENABLE_BOT: str = 'ask enable bot'
+    ASK_LINKS: str = 'ask links'
+    ASK_SAVE_DIRECTORY: str = 'ask save directory'
+    ASK_MAX_DOWNLOAD_TASK: str = 'ask max download task'
+    ASK_MAX_RETRY_COUNT: str = 'ask max retry count'
+    ASK_DOWNLOAD_TYPE: str = 'ask download type'
+    ASK_IS_SHUTDOWN: str = 'ask is shutdown'
+    ASK_ENABLE_PROXY: str = 'ask enable proxy'
+    ASK_SCHEME: str = 'ask scheme'
+    ASK_HOSTNAME: str = 'ask hostname'
+    ASK_PORT: str = 'ask port'
+    ASK_PROXY_AUTH: str = 'ask proxy auth'
+    ASK_USERNAME: str = 'ask username'
+    ASK_PASSWORD: str = 'ask password'
+    INVALID_PARAM: str = 'invalid param'
+    INVALID_PARAM_DEFAULT: str = 'invalid param default'
+    INVALID_PARAM_BANG: str = 'invalid param bang'
+    INVALID_HASH: str = 'invalid hash'
+    INVALID_BOT_TOKEN: str = 'invalid bot token'
+    INVALID_LINKS_FORMAT: str = 'invalid links format'
+    LINKS_NOT_EXIST: str = 'links not exist'
+    DEFAULT_SAVE_DIR: str = 'default save dir'
+    SAVE_DIR_IS_FILE: str = 'save dir is file'
+    SAVE_DIR_INVALID: str = 'save dir invalid'
+    INVALID_TASK: str = 'invalid task'
+    INVALID_RETRY: str = 'invalid retry'
+    INVALID_DTYPE: str = 'invalid dtype'
+    REINPUT_DTYPE: str = 'reinput dtype'
+    INVALID_ENABLE_PROXY: str = 'invalid enable proxy'
+    INVALID_SCHEME: str = 'invalid scheme'
+    INVALID_IP: str = 'invalid ip'
+    INVALID_PORT_RANGE: str = 'invalid port range'
+    INVALID_PORT: str = 'invalid port'
+    INPUT_TIMEOUT: str = 'input timeout'
+    NO_SWITCH_ACCOUNT: str = 'no switch account'
+    SWITCH_ACCOUNT: str = 'switch account'
+    SESSION_DIR_SET: str = 'session dir set'
+    PARAM_SET: str = 'param set'
+    BOT_DISABLED: str = 'bot disabled'
+    CONFIG_BOT_TOKEN: str = 'config bot token'
+    SHUTDOWN_YES: str = 'shutdown yes'
+    SHUTDOWN_NO: str = 'shutdown no'
+    PROXY_AUTH_YES: str = 'proxy auth yes'
+    PROXY_AUTH_NO: str = 'proxy auth no'
+    UNDEFINED: str = 'undefined'
+    DEFAULT_N: str = 'default n'
+    DEFAULT_3: str = 'default 3'
+    DEFAULT_5: str = 'default 5'
+    DEFAULT_ALL: str = 'default all'
+    BOT_CONFIGURED_NOTICE: str = 'bot configured notice'
 
 
 class ConnectionState:
@@ -914,7 +970,7 @@ class GetStdioParams:
         """跨平台的输入超时后自动设置为默认值,报错时返回默认input。"""
 
         def timeout_notice():
-            console.print('\n输入超时,已自动设置为默认值。\n', style='#FF4689')
+            console.print(_t(KeyWord.INPUT_TIMEOUT), style='#FF4689')
 
         if sys.platform == 'win32':
             try:
@@ -1055,23 +1111,24 @@ class GetStdioParams:
     @staticmethod
     def get_is_ki_save_config(valid_format: str = 'y|n') -> dict:
         while True:
-            is_save_config: str = console.input(
-                f'「退出提示」是否需要保存当前已填写的参数? - 「{valid_format}」:').strip().lower()
+            prompt: str = _t(KeyWord.ASK_SAVE_CONFIG).format(format=valid_format)
+            is_save_config: str = console.input(prompt).strip().lower()
             if is_save_config == 'y':
                 return {'is_ki_save_config': True}
             elif is_save_config == 'n':
                 return {'is_ki_save_config': False}
             else:
-                console.log(f'意外的参数:"{is_save_config}",支持的参数 - 「{valid_format}」', style='#FF4689')
+                console.log(_t(KeyWord.INVALID_PARAM).format(value=is_save_config, format=valid_format),
+                            style='#FF4689')
 
     @staticmethod
     def get_is_re_config(valid_format: str = 'y|n') -> dict:
-        prompt: str = f'检测到已配置完成的配置文件,是否需要重新配置?(配置文件将自动备份) - 「{valid_format}」'
+        prompt: str = _t(KeyWord.ASK_RECONFIG).format(format=valid_format)
         timeout: int = 5
         while True:
             is_re_config: str = GetStdioParams.__timeout_input(
                 prompt=f'{prompt}:',
-                error_prompt=f'{prompt}(默认n):',
+                error_prompt=f'{prompt}{_t(KeyWord.DEFAULT_N)}:',
                 default='n',
                 timeout=timeout
             ).strip().lower()
@@ -1081,41 +1138,43 @@ class GetStdioParams:
                 return {'is_re_config': False}
             else:
                 console.print('\n') if sys.platform == 'win32' else None
-                console.log(f'意外的参数:"{is_re_config}",支持的参数 - 「{valid_format}」(默认n)', style='#FF4689')
+                console.log(_t(KeyWord.INVALID_PARAM_DEFAULT).format(value=is_re_config, format=valid_format),
+                            style='#FF4689')
 
     @staticmethod
     def get_is_change_account(valid_format: str = 'y|n') -> dict:
         style: str = '#FF4689'
         while True:
-            is_change_account = console.input(
-                '是否需要切换账号? - 「y|n」(默认n):').strip().lower()
+            is_change_account = console.input(_t(KeyWord.ASK_CHANGE_ACCOUNT)).strip().lower()
             if is_change_account in ('n', ''):
-                console.print('用户不需要切换「账号」。', style=style)
+                console.print(_t(KeyWord.NO_SWITCH_ACCOUNT), style=style)
                 return {'is_change_account': False}
             elif is_change_account == 'y':
-                console.print('用户需要切换「账号」。', style=style)
+                console.print(_t(KeyWord.SWITCH_ACCOUNT), style=style)
                 return {'is_change_account': True}
             else:
-                console.log(f'意外的参数:"{is_change_account}",支持的参数 - 「{valid_format}」!', style='#FF4689')
+                console.log(_t(KeyWord.INVALID_PARAM_BANG).format(value=is_change_account, format=valid_format),
+                            style='#FF4689')
 
     @staticmethod
     def get_session_directory():
         style: str = '#FF4689'
         while True:
-            session_directory = console.input(
-                '请输入「会话文件目录」(可为「空目录」,也可为「已登录的会话文件目录」):').strip().strip('"')
-            console.print(f'「会话文件夹的路径」设置为:{session_directory}。', style=style)
+            session_directory = console.input(_t(KeyWord.ASK_SESSION_DIRECTORY)).strip().strip('"')
+            console.print(_t(KeyWord.SESSION_DIR_SET).format(value=session_directory), style=style)
             return {'session_directory': session_directory}
 
     @staticmethod
     def get_api_id(last_record: str) -> dict:
         while True:
-            api_id = console.input(
-                f'请输入「api_id」上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」:').strip()
+            prompt: str = _t(KeyWord.ASK_LAST_RECORD).format(
+                name='api_id', record=last_record if last_record else _t(KeyWord.UNDEFINED))
+            api_id = console.input(prompt).strip()
             if api_id == '' and last_record is not None:
                 api_id = last_record
             if Validator.is_valid_api_id(api_id):
-                console.print(f'已设置「api_id」为:「{api_id}」', style=ProcessConfig.stdio_style('api_id'))
+                console.print(_t(KeyWord.PARAM_SET).format(name='api_id', value=api_id),
+                              style=ProcessConfig.stdio_style('api_id'))
                 return {
                     'api_id': api_id,
                     'record_flag': True
@@ -1124,47 +1183,52 @@ class GetStdioParams:
     @staticmethod
     def get_api_hash(last_record: str, valid_length: int = 32) -> dict:
         while True:
-            api_hash = console.input(
-                f'请输入「api_hash」上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」:').strip().lower()
+            prompt: str = _t(KeyWord.ASK_LAST_RECORD).format(
+                name='api_hash', record=last_record if last_record else _t(KeyWord.UNDEFINED))
+            api_hash = console.input(prompt).strip().lower()
             if api_hash == '' and last_record is not None:
                 api_hash = last_record
             if Validator.is_valid_api_hash(api_hash, valid_length):
-                console.print(f'已设置「api_hash」为:「{api_hash}」', style=ProcessConfig.stdio_style('api_hash'))
+                console.print(_t(KeyWord.PARAM_SET).format(name='api_hash', value=api_hash),
+                              style=ProcessConfig.stdio_style('api_hash'))
                 return {
                     'api_hash': api_hash,
                     'record_flag': True
                 }
             else:
-                console.log(f'意外的参数:"{api_hash}",不是一个「{valid_length}位」的「值」!请重新输入!', style='#FF4689')
+                console.log(_t(KeyWord.INVALID_HASH).format(value=api_hash, length=valid_length), style='#FF4689')
 
     @staticmethod
     def get_enable_bot(valid_format: str = 'y|n') -> dict:
         while True:
-            enable_bot = console.input('是否启用「机器人」(需要提供bot_token)? - 「y|n」(默认n):').strip().lower()
+            enable_bot = console.input(_t(KeyWord.ASK_ENABLE_BOT)).strip().lower()
             if enable_bot in ('n', ''):
-                console.print(f'已设置为不启用「机器人」。', style=ProcessConfig.stdio_style('bot_token'))
+                console.print(_t(KeyWord.BOT_DISABLED), style=ProcessConfig.stdio_style('bot_token'))
                 return {'enable_bot': False}
             elif enable_bot == 'y':
-                console.print(f'请配置「bot_token」。', style=ProcessConfig.stdio_style('bot_token'))
+                console.print(_t(KeyWord.CONFIG_BOT_TOKEN), style=ProcessConfig.stdio_style('bot_token'))
                 return {'enable_bot': True}
             else:
-                console.log(f'意外的参数:"{enable_bot}",支持的参数 - 「{valid_format}」!', style='#FF4689')
+                console.log(_t(KeyWord.INVALID_PARAM_BANG).format(value=enable_bot, format=valid_format),
+                            style='#FF4689')
 
     @staticmethod
     def get_bot_token(last_record: str, valid_format: str = ':') -> dict:
         while True:
-            bot_token = console.input(
-                f'请输入当前账号的「bot_token」上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」:').strip()
+            prompt: str = _t(KeyWord.ASK_BOT_TOKEN).format(
+                record=last_record if last_record else _t(KeyWord.UNDEFINED))
+            bot_token = console.input(prompt).strip()
             if bot_token == '' and last_record is not None:
                 bot_token = last_record
             if Validator.is_valid_bot_token(bot_token, valid_format):
-                console.print(f'已设置「bot_token」为:「{bot_token}」', style=ProcessConfig.stdio_style('bot_token'))
+                console.print(_t(KeyWord.PARAM_SET).format(name='bot_token', value=bot_token),
+                              style=ProcessConfig.stdio_style('bot_token'))
                 return {
                     'bot_token': bot_token,
                     'record_flag': True
                 }
             else:
-                console.log(f'意外的参数:"{bot_token}",「bot_token」中需要包含":",请重新输入!', style='#FF4689')
+                console.log(_t(KeyWord.INVALID_BOT_TOKEN).format(value=bot_token), style='#FF4689')
 
     @staticmethod
     def get_links(last_record: str, valid_format: str = '.txt', enable_bot: bool = False) -> dict:
@@ -1172,10 +1236,12 @@ class GetStdioParams:
         links_file_path = None
         while True:
             try:
-                bot_notice = '(检测到已配置机器人,此步骤可忽略)' if enable_bot else ''
-                links_file_path = console.input(
-                    f'请输入需要下载的媒体链接的「完整路径」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」'
-                    f'格式 - 「{valid_format}」{bot_notice}:').strip().strip('"')
+                bot_notice = _t(KeyWord.BOT_CONFIGURED_NOTICE) if enable_bot else ''
+                prompt: str = _t(KeyWord.ASK_LINKS).format(
+                    record=last_record if last_record else _t(KeyWord.UNDEFINED),
+                    format=valid_format,
+                    notice=bot_notice)
+                links_file_path = console.input(prompt).strip().strip('"')
                 if links_file_path == '':
                     if last_record is not None:
                         links_file_path = last_record
@@ -1188,17 +1254,18 @@ class GetStdioParams:
                     except Exception as e:
                         log.warning(f'无法创建文件:"{links_file_path}"请排查权限问题,{_t(KeyWord.REASON)}:"{e}"')
                 if Validator.is_valid_links_file(links_file_path, valid_format):
-                    console.print(f'已设置「links」为:「{links_file_path}」', style=ProcessConfig.stdio_style('links'))
+                    console.print(_t(KeyWord.PARAM_SET).format(name='links', value=links_file_path),
+                                  style=ProcessConfig.stdio_style('links'))
                     Validator.is_contain_chinese(links_file_path)
                     return {
                         'links': links_file_path,
                         'record_flag': True
                     }
                 elif not os.path.normpath(links_file_path).lower().endswith('.txt'):
-                    console.log(f'意外的参数:"{links_file_path}",文件路径必须以「{valid_format}」结尾,请重新输入!', style='#FF4689')
+                    console.log(_t(KeyWord.INVALID_LINKS_FORMAT).format(value=links_file_path, format=valid_format),
+                                style='#FF4689')
                 else:
-                    console.log(
-                        f'意外的参数:"{links_file_path}",文件「必须存在」(区分大小写),请重新输入!', style='#FF4689')
+                    console.log(_t(KeyWord.LINKS_NOT_EXIST).format(value=links_file_path), style='#FF4689')
             except Exception as e:
                 log.warning(
                     f'意外的参数:"{links_file_path}",文件路径必须以「{valid_format}」结尾,并且「必须存在」,请重新输入!{_t(KeyWord.REASON)}:"{e}"')
@@ -1207,17 +1274,17 @@ class GetStdioParams:
     def get_save_directory(last_record) -> dict:
         # 输入媒体保存路径,确保是一个有效的目录路径。
         while True:
-            save_directory = console.input(
-                f'请输入媒体「保存路径」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」:').strip().strip(
-                '"')
+            prompt: str = _t(KeyWord.ASK_SAVE_DIRECTORY).format(
+                record=last_record if last_record else _t(KeyWord.UNDEFINED))
+            save_directory = console.input(prompt).strip().strip('"')
             if save_directory == '':
                 if last_record is not None:
                     save_directory = last_record
                 else:
                     save_directory = os.path.join(os.getcwd(), 'downloads')
-                    console.log('没有上一次的记录,已设置为默认目录。', style='#FF4689')
+                    console.log(_t(KeyWord.DEFAULT_SAVE_DIR), style='#FF4689')
             if Validator.is_valid_save_directory(save_directory):
-                console.print(f'已设置「save_directory」为:「{save_directory}」',
+                console.print(_t(KeyWord.PARAM_SET).format(name='save_directory', value=save_directory),
                               style=ProcessConfig.stdio_style('save_directory'))
                 Validator.is_contain_chinese(save_directory)
                 return {
@@ -1225,55 +1292,58 @@ class GetStdioParams:
                     'record_flag': True
                 }
             elif os.path.isfile(save_directory):
-                console.log(f'意外的参数:"{save_directory}",指定的路径是一个文件并非目录,请重新输入!', style='#FF4689')
+                console.log(_t(KeyWord.SAVE_DIR_IS_FILE).format(value=save_directory), style='#FF4689')
             else:
-                console.log(f'意外的参数:"{save_directory}",指定的路径无效或不是一个目录,请重新输入!', style='#FF4689')
+                console.log(_t(KeyWord.SAVE_DIR_INVALID).format(value=save_directory), style='#FF4689')
 
     @staticmethod
     def get_max_download_task(last_record) -> dict:
         # 输入最大下载任务数,确保是一个整数且不超过特定限制。
-        default_prompt: str = '(默认3)' if last_record is None else ''
+        default_prompt: str = _t(KeyWord.DEFAULT_3) if last_record is None else ''
         while True:
             try:
-                max_download_task = console.input(
-                    f'请输入「最大下载任务数」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」'
-                    f',值过高可能会导致网络相关问题,建议默认{default_prompt}:').strip()
+                prompt: str = _t(KeyWord.ASK_MAX_DOWNLOAD_TASK).format(
+                    record=last_record if last_record else _t(KeyWord.UNDEFINED),
+                    default=default_prompt)
+                max_download_task = console.input(prompt).strip()
                 if max_download_task == '' and last_record is not None:
                     max_download_task = last_record
                 if max_download_task == '':
                     max_download_task = 3
                 if Validator.is_valid_number(max_download_task):
-                    console.print(f'已设置「max_download_task」为:「{max_download_task}」',
+                    console.print(_t(KeyWord.PARAM_SET).format(name='max_download_task', value=max_download_task),
                                   style=ProcessConfig.stdio_style('max_download_task'))
                     return {
                         'max_download_task': int(max_download_task),
                         'record_flag': True
                     }
                 else:
-                    console.log(f'意外的参数:"{max_download_task}",任务数必须是「正整数」,请重新输入!', style='#FF4689')
+                    console.log(_t(KeyWord.INVALID_TASK).format(value=max_download_task), style='#FF4689')
             except Exception as e:
                 log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{e}"')
 
     @staticmethod
     def get_max_retry_count(last_record) -> dict:
-        default_prompt: str = '(默认5)' if last_record is None else ''
+        default_prompt: str = _t(KeyWord.DEFAULT_5) if last_record is None else ''
         while True:
             try:
-                max_retry_count = console.input(
-                    f'请输入任务失败时「最大重试次数」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」{default_prompt}:').strip()
+                prompt: str = _t(KeyWord.ASK_MAX_RETRY_COUNT).format(
+                    record=last_record if last_record else _t(KeyWord.UNDEFINED),
+                    default=default_prompt)
+                max_retry_count = console.input(prompt).strip()
                 if max_retry_count == '' and last_record is not None:
                     max_retry_count = last_record
                 if max_retry_count == '':
                     max_retry_count = 5
                 if Validator.is_valid_number(max_retry_count):
-                    console.print(f'已设置「max_retry_count」为:「{max_retry_count}」',
+                    console.print(_t(KeyWord.PARAM_SET).format(name='max_retry_count', value=max_retry_count),
                                   style=ProcessConfig.stdio_style('max_retry_count'))
                     return {
                         'max_retry_count': int(max_retry_count),
                         'record_flag': True
                     }
                 else:
-                    console.log(f'意外的参数:"{max_retry_count}",最大重试次数必须是「正整数」,请重新输入!', style='#FF4689')
+                    console.log(_t(KeyWord.INVALID_RETRY).format(value=max_retry_count), style='#FF4689')
             except Exception as e:
                 log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{e}"')
 
@@ -1287,11 +1357,12 @@ class GetStdioParams:
                 if meta.get(dtype) is True:  # noqa.
                     record.append(dtype)
             last_record: str = ' '.join(record)
-        default_prompt: str = '(默认为所有已支持的下载类型)' if last_record is None else ''
+        default_prompt: str = _t(KeyWord.DEFAULT_ALL) if last_record is None else ''
         while True:
-            download_type: Union[str, list] = console.input(
-                f'输入需要下载的「媒体类型」(以空格分隔可多选)。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」'
-                f'格式 - 「video photo document audio voice animation video_note live_photo」{default_prompt}:').strip()
+            prompt: str = _t(KeyWord.ASK_DOWNLOAD_TYPE).format(
+                record=last_record if last_record else _t(KeyWord.UNDEFINED),
+                default=default_prompt)
+            download_type: Union[str, list] = console.input(prompt).strip()
             if download_type == '' and last_record is not None:
                 download_type = last_record
             if download_type == '':
@@ -1300,7 +1371,7 @@ class GetStdioParams:
             if Validator.is_valid_download_type(download_type):
                 dtype = ' '.join(download_type) if download_type else [_ for _ in DownloadType()]
                 console.print(
-                    f'已设置「download_type」为:「{dtype}」',
+                    _t(KeyWord.PARAM_SET).format(name='download_type', value=dtype),
                     style=ProcessConfig.stdio_style('download_type')
                 )
                 return {
@@ -1308,8 +1379,9 @@ class GetStdioParams:
                     'record_flag': True
                 }
             else:
-                prompt: str = f'意外的参数:"{download_type}"' if download_type else '请重新输入下载类型'
-                console.log(f'{prompt},支持的参数 - 「video photo document」(以空格分隔可多选)', style='#FF4689')
+                reason: str = (_t(KeyWord.INVALID_DTYPE).format(value=download_type) if download_type
+                               else _t(KeyWord.REINPUT_DTYPE))
+                console.log(reason, style='#FF4689')
 
     @staticmethod
     def get_is_shutdown(last_record: str, valid_format: str = 'y|n') -> dict:
@@ -1320,14 +1392,15 @@ class GetStdioParams:
             last_record: str = 'n'
         else:
             last_record = GetStdioParams.UNDEFINED
-        t = f'已设置「is_shutdown」为:「y」,下载完成后将自动关机!'  # v1.3.0 修复配置is_shutdown参数时显示错误。
-        f = f'已设置「is_shutdown」为:「n」'
-        default_prompt: str = '(默认n)' if last_record == GetStdioParams.UNDEFINED else ''
+        t = _t(KeyWord.SHUTDOWN_YES)  # v1.3.0 修复配置is_shutdown参数时显示错误。
+        f = _t(KeyWord.SHUTDOWN_NO)
+        default_prompt: str = _t(KeyWord.DEFAULT_N) if last_record == GetStdioParams.UNDEFINED else ''
         while True:
             try:
-                is_shutdown = console.input(
-                    f'下载完成后是否「自动关机」。上一次的记录是:「{last_record}」 - 「{valid_format}」'
-                    f'{default_prompt}:').strip().lower()
+                prompt: str = _t(KeyWord.ASK_IS_SHUTDOWN).format(
+                    record=_t(KeyWord.UNDEFINED) if last_record == GetStdioParams.UNDEFINED else last_record,
+                    format=valid_format, default=default_prompt)
+                is_shutdown = console.input(prompt).strip().lower()
                 if is_shutdown == '' and last_record != GetStdioParams.UNDEFINED:
                     if last_record == 'y':
                         console.print(t, style=_style)
@@ -1343,7 +1416,8 @@ class GetStdioParams:
                     console.print(f, style=_style)
                     return {'is_shutdown': False, 'record_flag': True}
                 else:
-                    console.log(f'意外的参数:"{is_shutdown}",支持的参数 - 「{valid_format}」', style='#FF4689')
+                    console.log(_t(KeyWord.INVALID_PARAM).format(value=is_shutdown, format=valid_format),
+                                style='#FF4689')
 
             except Exception as e:
                 log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{e}"')
@@ -1354,11 +1428,12 @@ class GetStdioParams:
             ep_notice: str = 'y' if last_record else 'n'
         else:
             ep_notice: str = GetStdioParams.UNDEFINED
-        default_prompt: str = '(默认n)' if ep_notice == GetStdioParams.UNDEFINED else ''
+        default_prompt: str = _t(KeyWord.DEFAULT_N) if ep_notice == GetStdioParams.UNDEFINED else ''
         while True:  # 询问是否开启代理。
-            enable_proxy = console.input(
-                f'是否需要使用「代理」。上一次的记录是:「{ep_notice}」'
-                f'格式 - 「{valid_format}」{default_prompt}:').strip().lower()
+            prompt: str = _t(KeyWord.ASK_ENABLE_PROXY).format(
+                record=_t(KeyWord.UNDEFINED) if ep_notice == GetStdioParams.UNDEFINED else ep_notice,
+                format=valid_format, default=default_prompt)
+            enable_proxy = console.input(prompt).strip().lower()
             if enable_proxy == '' and last_record is not None:
                 if last_record is True:
                     enable_proxy = 'y'
@@ -1368,15 +1443,16 @@ class GetStdioParams:
                 enable_proxy = 'n'
             if Validator.is_valid_enable_proxy(enable_proxy):
                 if enable_proxy == 'y':
-                    console.print(f'已设置「enable_proxy」为:「{enable_proxy}」',
+                    console.print(_t(KeyWord.PARAM_SET).format(name='enable_proxy', value=enable_proxy),
                                   style=ProcessConfig.stdio_style('enable_proxy'))
                     return {'enable_proxy': True, 'record_flag': True}
                 elif enable_proxy == 'n':
-                    console.print(f'已设置「enable_proxy」为:「{enable_proxy}」',
+                    console.print(_t(KeyWord.PARAM_SET).format(name='enable_proxy', value=enable_proxy),
                                   style=ProcessConfig.stdio_style('enable_proxy'))
                     return {'enable_proxy': False, 'record_flag': True}
             else:
-                console.log(f'意外的参数:"{enable_proxy}",请输入有效参数!支持的参数 - 「{valid_format}」!', style='#FF4689')
+                console.log(_t(KeyWord.INVALID_ENABLE_PROXY).format(value=enable_proxy, format=valid_format),
+                            style='#FF4689')
 
     @staticmethod
     @ProcessConfig.get_system_proxy('scheme')
@@ -1385,20 +1461,22 @@ class GetStdioParams:
             valid_format: list = ['http', 'socks4', 'socks5']
         fmt_valid_format = '|'.join(valid_format)
         while True:  # v1.3.0 修复代理配置scheme参数配置抛出AttributeError。
-            scheme = console.input(
-                f'请输入「代理类型」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」'
-                f'格式 - 「{fmt_valid_format}」:').strip().lower()
+            prompt: str = _t(KeyWord.ASK_SCHEME).format(
+                record=last_record if last_record else _t(KeyWord.UNDEFINED),
+                format=fmt_valid_format)
+            scheme = console.input(prompt).strip().lower()
             if scheme == '' and last_record is not None:
                 scheme = last_record
             if Validator.is_valid_scheme(scheme, valid_format):
-                console.print(f'已设置「scheme」为:「{scheme}」', style=ProcessConfig.stdio_style('scheme'))
+                console.print(_t(KeyWord.PARAM_SET).format(name='scheme', value=scheme),
+                              style=ProcessConfig.stdio_style('scheme'))
                 return {
                     'scheme': scheme,
                     'record_flag': True
                 }
             else:
-                console.log(
-                    f'意外的参数:"{scheme}",请输入有效的代理类型!支持的参数 - 「{fmt_valid_format}」!', style='#FF4689')
+                console.log(_t(KeyWord.INVALID_SCHEME).format(value=scheme, format=fmt_valid_format),
+                            style='#FF4689')
 
     @staticmethod
     @ProcessConfig.get_system_proxy('hostname')
@@ -1408,20 +1486,22 @@ class GetStdioParams:
             scheme, _, __ = ProcessConfig.get_proxy_info(proxy_config).values()
             # 输入代理IP地址。
             try:
-                hostname = console.input(
-                    f'请输入代理类型为:"{scheme}"的「ip地址」。上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」'
-                    f'格式 - 「{valid_format}」:').strip()
+                prompt: str = _t(KeyWord.ASK_HOSTNAME).format(
+                    scheme=scheme,
+                    record=last_record if last_record else _t(KeyWord.UNDEFINED),
+                    format=valid_format)
+                hostname = console.input(prompt).strip()
                 if hostname == '' and last_record is not None:
                     hostname = last_record
                 if Validator.is_valid_hostname(hostname):
-                    console.print(f'已设置「hostname」为:「{hostname}」', style=ProcessConfig.stdio_style('hostname'))
+                    console.print(_t(KeyWord.PARAM_SET).format(name='hostname', value=hostname),
+                                  style=ProcessConfig.stdio_style('hostname'))
                     return {
                         'hostname': hostname,
                         'record_flag': True
                     }
             except ValueError:
-                console.log(
-                    f'"{hostname}"不是一个「ip地址」,请输入有效的ipv4地址!支持的参数 - 「{valid_format}」!', style='#FF4689')
+                console.log(_t(KeyWord.INVALID_IP).format(value=hostname, format=valid_format), style='#FF4689')
 
     @staticmethod
     @ProcessConfig.get_system_proxy('port')
@@ -1431,22 +1511,26 @@ class GetStdioParams:
         while True:
             try:  # hostname,scheme可能出现None。
                 scheme, hostname, __ = ProcessConfig.get_proxy_info(proxy_config).values()
-                port = console.input(
-                    f'请输入ip地址为:"{hostname}",代理类型为:"{scheme}"的「代理端口」。'
-                    f'上一次的记录是:「{last_record if last_record else GetStdioParams.UNDEFINED}」'
-                    f'格式 - 「{valid_format}」:').strip()
+                prompt: str = _t(KeyWord.ASK_PORT).format(
+                    hostname=hostname,
+                    scheme=scheme,
+                    record=last_record if last_record else _t(KeyWord.UNDEFINED),
+                    format=valid_format)
+                port = console.input(prompt).strip()
                 if port == '' and last_record is not None:
                     port = last_record
                 if Validator.is_valid_port(port):
-                    console.print(f'已设置「port」为:「{port}」', style=ProcessConfig.stdio_style('port'))
+                    console.print(_t(KeyWord.PARAM_SET).format(name='port', value=port),
+                                  style=ProcessConfig.stdio_style('port'))
                     return {
                         'port': int(port),
                         'record_flag': True
                     }
                 else:
-                    console.log(f'意外的参数:"{port}",端口号必须在「{valid_format}」之间!', style='#FF4689')
+                    console.log(_t(KeyWord.INVALID_PORT_RANGE).format(value=port, format=valid_format),
+                                style='#FF4689')
             except ValueError:
-                console.log(f'意外的参数:"{port}",请输入一个有效的整数!支持的参数 - 「{valid_format}」', style='#FF4689')
+                console.log(_t(KeyWord.INVALID_PORT).format(value=port, format=valid_format), style='#FF4689')
             except Exception as e:
                 log.error(f'意外的错误,{_t(KeyWord.REASON)}:"{e}"')
 
@@ -1456,17 +1540,19 @@ class GetStdioParams:
         style = ProcessConfig.stdio_style('proxy_authentication')
         valid_format: str = 'y|n'
         while True:
-            is_proxy = console.input(f'代理是否需要「认证」? - 「{valid_format}」(默认n):').strip().lower()
+            prompt: str = _t(KeyWord.ASK_PROXY_AUTH).format(format=valid_format)
+            is_proxy = console.input(prompt).strip().lower()
             if is_proxy == 'y':
-                username = console.input('请输入「账号」:').strip()
-                password = console.input('请输入「密码」:').strip()
-                console.print(f'已设置为:「代理需要认证」', style=style)
+                username = console.input(_t(KeyWord.ASK_USERNAME)).strip()
+                password = console.input(_t(KeyWord.ASK_PASSWORD)).strip()
+                console.print(_t(KeyWord.PROXY_AUTH_YES), style=style)
                 return {'username': username, 'password': password, 'record_flag': True}
             elif is_proxy in ('n', ''):
-                console.print(f'已设置为:「代理不需要认证」', style=style)
+                console.print(_t(KeyWord.PROXY_AUTH_NO), style=style)
                 return {'username': None, 'password': None, 'record_flag': True}
             else:
-                console.log(f'意外的参数:"{is_proxy}",支持的参数 - 「{valid_format}」!', style='#FF4689')
+                console.log(_t(KeyWord.INVALID_PARAM_BANG).format(value=is_proxy, format=valid_format),
+                            style='#FF4689')
 
 
 class BotCommandText:
