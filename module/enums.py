@@ -349,6 +349,7 @@ class KeyWord:
     ISSUE_PROXY_CONFIG_TIP: str = 'issue proxy config tip'
     ISSUE_MULTI_SESSION_TIP: str = 'issue multi session tip'
     ISSUE_UPDATE_PACKAGE_TIP: str = 'issue update package tip'
+    VALUE_IS_NOT_SUPPORTED_DTYPE: str = 'value is not a supported download type'
 
 
 class ConnectionState:

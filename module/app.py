@@ -213,9 +213,8 @@ class Application(UserConfig, StatisticalTable):
             if dtype not in DownloadType():
                 self.download_type.remove(dtype)
                 changed = True
-                p = f'"{dtype}"不是支持的下载类型,已移除。'
-                console.log(p, style='#FF4689')
-                log.info(p)
+                console.log(_t(KeyWord.VALUE_IS_NOT_SUPPORTED_DTYPE).format(value=dtype), style='#FF4689')
+                log.info(_t(KeyWord.VALUE_IS_NOT_SUPPORTED_DTYPE, index=0).format(value=dtype))
         if self.download_type:
             if changed:
                 self.save_config(config=self.config)
@@ -331,8 +330,9 @@ class DownloadFileName:
             elif _mime_type:
                 origin_filename = getattr(document_obj, 'file_name', None)
                 if origin_filename and is_compressed_file(origin_filename):
-                    log.warning(
-                        f'检测到压缩文件"{origin_filename}",为确保完整性(如分卷)已保留原始文件名,如遇命名冲突请手动处理。')
+                    console.log(
+                        f'检测到压缩文件"{origin_filename}",为确保完整性(如分卷)已保留原始文件名,如遇命名冲突请手动处理。',
+                        style='#FF4689')
                     return origin_filename
                 return self.get_filename()
 
