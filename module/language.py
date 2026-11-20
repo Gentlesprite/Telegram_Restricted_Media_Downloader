@@ -401,7 +401,33 @@ translations: dict = {
                                'Enter the [#f9ed69]「last name」[/#f9ed69] (empty to skip): '],
     'issue update package tip': [
         '❌ [#FF7979]检测到({package_name})版本{current_version}与需求版本{require_version}不一致[/#FF7979][#FCFF79],可能已经引发兼容问题导致运行异常。[/#FCFF79]\n⚖️ [#D4FC79]需使用[/#D4FC79][#79FCD4]{command}[/#79FCD4][#D4FC79]升级或降级至需求版本{require_version}后重试[/#D4FC79][#D4FC79]。[/#D4FC79]',
-        '❌ [#FF7979]Detected that ({package_name}) version {current_version} does not match the required version {require_version}[/#FF7979][#FCFF79], which may cause compatibility issues and abnormal behavior.[/#FCFF79]\n⚖️ [#D4FC79]Please use[/#D4FC79][#79FCD4]{command}[/#79FCD4][#D4FC79]to upgrade or downgrade to the required version {require_version} and retry[/#D4FC79][#D4FC79].[/#D4FC79]']
+        '❌ [#FF7979]Detected that ({package_name}) version {current_version} does not match the required version {require_version}[/#FF7979][#FCFF79], which may cause compatibility issues and abnormal behavior.[/#FCFF79]\n⚖️ [#D4FC79]Please use[/#D4FC79][#79FCD4]{command}[/#79FCD4][#D4FC79]to upgrade or downgrade to the required version {require_version} and retry[/#D4FC79][#D4FC79].[/#D4FC79]'],
+    'connection ok': ['连接正常', 'Connection OK'],
+    'reconnecting': ['正在重连', 'Reconnecting'],
+    'waiting': ['正在等待', 'Waiting'],
+    'connection failure': ['连接异常', 'Connection failure'],
+    'retrying reconnect': ['正在尝试重连。', 'Retrying reconnect.'],
+    'flood waiting': ['请求频繁,等待中。', 'Too many requests, waiting.'],
+    'sending data': ['正在发送数据。', 'Sending data.'],
+    'waiting for connection': ['正在等待客户端连接建立。', 'Waiting for the client connection to be established.'],
+    'sending request': ['正在发送"{name}"请求。', 'Sending "{name}" request.'],
+    'flood wait': ['[{name}]请求频繁,"{query}"要求等待{amount}秒后继续运行。',
+                   '[{name}] Too many requests; "{query}" requires waiting {amount} seconds before continuing.'],
+    'flood wait action': ['[{name}]{action}请求频繁,要求等待{amount}秒后继续运行。',
+                          '[{name}] {action} too many requests, waiting {amount} seconds before continuing.'],
+    'reconnect due to error': ['由于"{error}"导致无法调用"{query}",正在尝试重连。',
+                               'Unable to call "{query}" due to "{error}", retrying reconnect.'],
+    'network proxy failure': ['由于网络/代理连接失败,正在尝试重连。',
+                              'Network/proxy connection failed, retrying reconnect.'],
+    'rate limit reached': ['请求已达每分钟{limit}次的上限,等待{wait}秒后继续。',
+                           'Request rate limit of {limit} per minute reached, waiting {wait} seconds before continuing.'],
+    'forward message': ['转发消息', 'forward message'],
+    'send message': ['发送消息', 'send message'],
+    'download': ['下载', 'download'],
+    'edit message': ['编辑消息', 'edit message'],
+    'get media group': ['获取媒体组消息', 'get media group messages'],
+    'get comments': ['获取评论区消息', 'get comment messages'],
+    'get topics': ['获取话题列表', 'get topic list']
 }
 
 

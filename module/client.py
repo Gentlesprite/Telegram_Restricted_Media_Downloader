@@ -68,7 +68,8 @@ from module.util import (
 from module.enums import (
     KeyWord,
     WaitingKind,
-    DownloadType
+    DownloadType,
+    ConnectionStatusPrompt
 )
 from module.stdio import ConnectionStatus
 from module.language import _t
@@ -734,7 +735,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
     ):
         show_waiting = not self.is_started.is_set()
         if show_waiting:
-            ConnectionStatus.enter_busy('正在等待客户端连接建立。')
+            ConnectionStatus.enter_busy(_t(ConnectionStatusPrompt.WAITING_FOR_CONNECTION))
         try:
             await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
         except asyncio.TimeoutError:
@@ -755,7 +756,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
         try:
             while True:
                 try:
-                    ConnectionStatus.enter_busy(f'正在发送"{query_name}"请求。')
+                    ConnectionStatus.enter_busy(_t(ConnectionStatusPrompt.SENDING_REQUEST).format(name=query_name))
                     try:
                         result = await self.send(query, timeout=timeout)
                     except BaseException:
@@ -781,7 +782,8 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                         amount,
                         query_name,
                     )
-                    message = f'[{self.client.name}]请求频繁,"{query_name}"要求等待{amount}秒后继续运行。'
+                    message = _t(ConnectionStatusPrompt.FLOOD_WAIT).format(
+                        name=self.client.name, query=query_name, amount=amount)
                     if waiting_kind != WaitingKind.FLOOD:
                         if waiting_kind == WaitingKind.RECONNECT:
                             ConnectionStatus.leave()
@@ -795,7 +797,8 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                     log.info(
                         'Retrying "%s" due to: %s', query_name, str(e) or repr(e)
                     )
-                    message = f'由于"{str(e) or repr(e)}"导致无法调用"{query_name}",正在尝试重连。'
+                    message = _t(ConnectionStatusPrompt.RECONNECT_DUE_TO_ERROR).format(
+                        error=str(e) or repr(e), query=query_name)
                     if waiting_kind != WaitingKind.RECONNECT:
                         if waiting_kind == WaitingKind.FLOOD:
                             ConnectionStatus.leave_flood()

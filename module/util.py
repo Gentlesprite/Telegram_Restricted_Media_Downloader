@@ -55,6 +55,7 @@ from module import (
     REFERRAL_RECORD_PATH,
     REQUIRE_PYROGRAM_VERSION
 )
+from module.language import _t
 from module.enums import (
     Language,
     Link,
@@ -62,7 +63,8 @@ from module.enums import (
     DownloadType,
     BotCallbackText,
     BotCallbackPrefix,
-    SaveDirectoryPrefix
+    SaveDirectoryPrefix,
+    ConnectionStatusPrompt
 )
 from module.parser import PARSE_ARGS
 
@@ -1079,9 +1081,10 @@ class LimitCall:  # https://github.com/tangyoha/telegram_media_downloader/blob/m
 
             if not waiting:
                 waiting = True  # 达到上限时只提示一次,避免每秒重复打印。
-                ConnectionStatus.enter_flood(
-                    f'请求已达每分钟{self.max_limit_call_times}次的上限,等待{int(self.time_window - time_span) + 1}秒后继续。'
-                )
+                ConnectionStatus.enter_flood(_t(ConnectionStatusPrompt.RATE_LIMIT_REACHED).format(
+                    limit=self.max_limit_call_times,
+                    wait=int(self.time_window - time_span) + 1
+                ))
 
             await asyncio.sleep(1)
 

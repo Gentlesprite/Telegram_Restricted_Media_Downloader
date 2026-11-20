@@ -105,7 +105,8 @@ from module.enums import (
     DownloadType,
     DownloadStatus,
     BotCallbackText,
-    SaveDirectoryPrefix
+    SaveDirectoryPrefix,
+    ConnectionStatusPrompt
 )
 from module.path_tool import (
     split_path,
@@ -451,9 +452,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         break
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
-                        ConnectionStatus.enter_flood(
-                            f'[{self.app.client.name}]转发消息请求频繁,要求等待{amount}秒后继续运行。'
-                        )
+                        ConnectionStatus.enter_flood(_t(ConnectionStatusPrompt.FLOOD_WAIT_ACTION).format(
+                            name=self.app.client.name,
+                            action=_t(ConnectionStatusPrompt.ACTION_FORWARD_MESSAGE),
+                            amount=amount
+                        ))
                         await asyncio.sleep(amount)
                         ConnectionStatus.leave_flood()
             elif getattr(message, 'text', False):
@@ -469,9 +472,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         break
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
-                        ConnectionStatus.enter_flood(
-                            f'[{self.app.client.name}]发送消息请求频繁,要求等待{amount}秒后继续运行。'
-                        )
+                        ConnectionStatus.enter_flood(_t(ConnectionStatusPrompt.FLOOD_WAIT_ACTION).format(
+                            name=self.app.client.name,
+                            action=_t(ConnectionStatusPrompt.ACTION_SEND_MESSAGE),
+                            amount=amount
+                        ))
                         await asyncio.sleep(amount)
                         ConnectionStatus.leave_flood()
                     except Exception as e:
@@ -490,9 +495,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         break
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
-                        ConnectionStatus.enter_flood(
-                            f'[{self.app.client.name}]转发消息请求频繁,要求等待{amount}秒后继续运行。'
-                        )
+                        ConnectionStatus.enter_flood(_t(ConnectionStatusPrompt.FLOOD_WAIT_ACTION).format(
+                            name=self.app.client.name,
+                            action=_t(ConnectionStatusPrompt.ACTION_FORWARD_MESSAGE),
+                            amount=amount
+                        ))
                         await asyncio.sleep(amount)
                         ConnectionStatus.leave_flood()
             p_message_id = ','.join(map(str, media_group)) if media_group else message_id
@@ -1396,9 +1403,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                             break
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
-                        ConnectionStatus.enter_flood(
-                            f'[{self.app.client.name}]下载请求频繁,要求等待{amount}秒后继续运行。'
-                        )
+                        ConnectionStatus.enter_flood(_t(ConnectionStatusPrompt.FLOOD_WAIT_ACTION).format(
+                            name=self.app.client.name,
+                            action=_t(ConnectionStatusPrompt.ACTION_DOWNLOAD),
+                            amount=amount
+                        ))
                         await asyncio.sleep(amount)
                         ConnectionStatus.leave_flood()
         except PermissionError as e:
@@ -1883,9 +1892,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                     return callback_query.message  # 文本本就相同,属良性no-op,按成功处理使外层照常更新时间戳,避免忙等重试。
                 except (FloodWait, FloodPremiumWait) as _e:
                     _amount = _e.value
-                    ConnectionStatus.enter_flood(
-                        f'[{self.app.client.name}]编辑消息请求频繁,要求等待{_amount}秒后继续运行。'
-                    )
+                    ConnectionStatus.enter_flood(_t(ConnectionStatusPrompt.FLOOD_WAIT_ACTION).format(
+                        name=self.app.client.name,
+                        action=_t(ConnectionStatusPrompt.ACTION_EDIT_MESSAGE),
+                        amount=_amount
+                    ))
                     await asyncio.sleep(_amount)
                     ConnectionStatus.leave_flood()
                 except Exception as _e:
@@ -2017,9 +2028,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 break
                             except (FloodWait, FloodPremiumWait) as e:
                                 amount = e.value
-                                ConnectionStatus.enter_flood(
-                                    f'[{self.app.client.name}]获取媒体组消息请求频繁,要求等待{amount}秒后继续运行。'
-                                )
+                                ConnectionStatus.enter_flood(_t(ConnectionStatusPrompt.FLOOD_WAIT_ACTION).format(
+                                    name=self.app.client.name,
+                                    action=_t(ConnectionStatusPrompt.ACTION_GET_MEDIA_GROUP),
+                                    amount=amount
+                                ))
                                 await asyncio.sleep(amount)
                                 ConnectionStatus.leave_flood()
                         if group_members:
@@ -2223,9 +2236,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         break  # 消息没有评论区或消息ID无效，跳过。
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
-                        ConnectionStatus.enter_flood(
-                            f'[{self.app.client.name}]获取评论区消息请求频繁,要求等待{amount}秒后继续运行。'
-                        )
+                        ConnectionStatus.enter_flood(_t(ConnectionStatusPrompt.FLOOD_WAIT_ACTION).format(
+                            name=self.app.client.name,
+                            action=_t(ConnectionStatusPrompt.ACTION_GET_COMMENTS),
+                            amount=amount
+                        ))
                         await asyncio.sleep(amount)
                         ConnectionStatus.leave_flood()
                         del links[links_mark:]  # 回滚本次已收集的评论,重试时重新收集。
@@ -2271,9 +2286,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                             break  # 消息没有评论区或消息ID无效，跳过。
                         except (FloodWait, FloodPremiumWait) as e:
                             amount = e.value
-                            ConnectionStatus.enter_flood(
-                                f'[{self.app.client.name}]获取评论区消息请求频繁,要求等待{amount}秒后继续运行。'
-                            )
+                            ConnectionStatus.enter_flood(_t(ConnectionStatusPrompt.FLOOD_WAIT_ACTION).format(
+                                name=self.app.client.name,
+                                action=_t(ConnectionStatusPrompt.ACTION_GET_COMMENTS),
+                                amount=amount
+                            ))
                             await asyncio.sleep(amount)
                             ConnectionStatus.leave_flood()
                             del links[links_mark:]  # 回滚本次已收集的评论,重试时重新收集。
@@ -2446,9 +2463,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                     except MessageNotModified:
                         last_update_time = current_time  # 文本本就相同,属良性no-op,按成功处理避免忙等。
                     except (FloodWait, FloodPremiumWait) as _e:
-                        ConnectionStatus.enter_flood(
-                            f'[{self.app.client.name}]编辑消息请求频繁,要求等待{_e.value}秒后继续运行。'
-                        )
+                        ConnectionStatus.enter_flood(_t(ConnectionStatusPrompt.FLOOD_WAIT_ACTION).format(
+                            name=self.app.client.name,
+                            action=_t(ConnectionStatusPrompt.ACTION_EDIT_MESSAGE),
+                            amount=_e.value
+                        ))
                         await asyncio.sleep(_e.value)
                         ConnectionStatus.leave_flood()
                         continue  # 不刷新时间戳,下轮继续尝试编辑。

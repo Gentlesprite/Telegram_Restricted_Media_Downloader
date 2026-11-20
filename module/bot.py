@@ -100,7 +100,8 @@ from module.enums import (
     BotCallbackText,
     CalenderKeyboard,
     BotCallbackPrefix,
-    DownloadChatPromptWord
+    DownloadChatPromptWord,
+    ConnectionStatusPrompt
 )
 
 
@@ -719,9 +720,11 @@ class Bot:
                 break
             except (FloodWait, FloodPremiumWait) as e:  # 限流单独处理:走项目既有的限流等待,无限重试而非吞掉。
                 amount = e.value
-                ConnectionStatus.enter_flood(
-                    f'[{self.user.name}]获取话题列表请求频繁,要求等待{amount}秒后继续运行。'
-                )
+                ConnectionStatus.enter_flood(_t(ConnectionStatusPrompt.FLOOD_WAIT_ACTION).format(
+                    name=self.user.name,
+                    action=_t(ConnectionStatusPrompt.ACTION_GET_TOPICS),
+                    amount=amount
+                ))
                 await asyncio.sleep(amount)
                 ConnectionStatus.leave_flood()
                 continue
@@ -2015,9 +2018,11 @@ class Bot:
                 return None
             except (FloodWait, FloodPremiumWait) as e:
                 amount = e.value
-                ConnectionStatus.enter_flood(
-                    f'[{self.bot.name}]编辑消息请求频繁,要求等待{amount}秒后继续运行。'
-                )
+                ConnectionStatus.enter_flood(_t(ConnectionStatusPrompt.FLOOD_WAIT_ACTION).format(
+                    name=self.bot.name,
+                    action=_t(ConnectionStatusPrompt.ACTION_EDIT_MESSAGE),
+                    amount=amount
+                ))
                 await asyncio.sleep(amount)
                 ConnectionStatus.leave_flood()
             except Exception:

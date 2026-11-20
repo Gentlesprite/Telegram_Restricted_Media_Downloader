@@ -382,6 +382,31 @@ class ConnectionState:
     CONNECTING: str = 'connecting'
 
 
+class ConnectionStatusPrompt:
+    """连接状态常驻提示的文案,集中定义以便统一翻译。"""
+    HEALTH_OK: str = 'connection ok'
+    HEALTH_RECONNECT: str = 'reconnecting'
+    HEALTH_FLOOD: str = 'waiting'
+    HEALTH_FAILURE: str = 'connection failure'
+    RECONNECTING: str = 'retrying reconnect'
+    FLOOD_WAITING: str = 'flood waiting'
+    SENDING: str = 'sending data'
+    WAITING_FOR_CONNECTION: str = 'waiting for connection'
+    SENDING_REQUEST: str = 'sending request'
+    FLOOD_WAIT: str = 'flood wait'
+    FLOOD_WAIT_ACTION: str = 'flood wait action'
+    RECONNECT_DUE_TO_ERROR: str = 'reconnect due to error'
+    NETWORK_PROXY_FAILURE: str = 'network proxy failure'
+    RATE_LIMIT_REACHED: str = 'rate limit reached'
+    ACTION_FORWARD_MESSAGE: str = 'forward message'
+    ACTION_SEND_MESSAGE: str = 'send message'
+    ACTION_DOWNLOAD: str = 'download'
+    ACTION_EDIT_MESSAGE: str = 'edit message'
+    ACTION_GET_MEDIA_GROUP: str = 'get media group'
+    ACTION_GET_COMMENTS: str = 'get comments'
+    ACTION_GET_TOPICS: str = 'get topics'
+
+
 class WaitingKind:
     NONE: str = 'none'
     RECONNECT: str = 'reconnect'

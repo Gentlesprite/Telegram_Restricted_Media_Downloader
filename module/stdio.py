@@ -59,7 +59,8 @@ from module.enums import (
     UploadStatus,
     ProcessConfig,
     GradientColor,
-    ConnectionState
+    ConnectionState,
+    ConnectionStatusPrompt
 )
 
 
@@ -816,10 +817,10 @@ class ConnectionStatus:
     _displayed_message: str = ''
     _render_token: int = 0
     _logger_installed: bool = False
-    HEALTH_OK: tuple = ('✓', '#B1DB74', '连接正常')
-    HEALTH_RECONNECT: tuple = ('↻', '#FFB579', '正在重连')
-    HEALTH_FLOOD: tuple = ('◉', '#FF4689', '正在等待')
-    HEALTH_FAILURE: tuple = ('✕', '#FF7979', '连接异常')
+    HEALTH_OK: tuple = ('✓', '#B1DB74', _t(ConnectionStatusPrompt.HEALTH_OK))
+    HEALTH_RECONNECT: tuple = ('↻', '#FFB579', _t(ConnectionStatusPrompt.HEALTH_RECONNECT))
+    HEALTH_FLOOD: tuple = ('◉', '#FF4689', _t(ConnectionStatusPrompt.HEALTH_FLOOD))
+    HEALTH_FAILURE: tuple = ('✕', '#FF7979', _t(ConnectionStatusPrompt.HEALTH_FAILURE))
     BUSY_DELAY: float = 1
     CONNECTED_GRACE: float = 1
 
@@ -865,16 +866,16 @@ class ConnectionStatus:
         with cls._lock:
             if cls._log_failure:
                 glyph, style, text = cls.HEALTH_FAILURE
-                msg = cls._current_message or '连接异常'
+                msg = cls._current_message or _t(ConnectionStatusPrompt.HEALTH_FAILURE)
             elif cls._connecting > 0:
                 glyph, style, text = cls.HEALTH_RECONNECT
-                msg = cls._current_message or '正在尝试重连。'
+                msg = cls._current_message or _t(ConnectionStatusPrompt.RECONNECTING)
             elif cls._flood_waiting > 0:
                 glyph, style, text = cls.HEALTH_FLOOD
-                msg = cls._flood_message or '请求频繁,等待中。'
+                msg = cls._flood_message or _t(ConnectionStatusPrompt.FLOOD_WAITING)
             elif cls._active > 0:
                 glyph, style, text = cls.HEALTH_OK
-                msg = cls._busy_message or '正在发送数据。'
+                msg = cls._busy_message or _t(ConnectionStatusPrompt.SENDING)
             else:
                 glyph, style, text = cls.HEALTH_OK
                 msg = ''
@@ -911,11 +912,11 @@ class ConnectionStatus:
         if cls._live is None:
             return
         if cls._connecting > 0 or cls._log_failure:
-            cls._render(ConnectionState.CONNECTING, cls._current_message or '正在尝试重连。')
+            cls._render(ConnectionState.CONNECTING, cls._current_message or _t(ConnectionStatusPrompt.RECONNECTING))
         elif cls._flood_waiting > 0:
-            cls._render(ConnectionState.CONNECTING, cls._flood_message or '请求频繁,等待中。')
+            cls._render(ConnectionState.CONNECTING, cls._flood_message or _t(ConnectionStatusPrompt.FLOOD_WAITING))
         elif cls._active > 0:
-            cls._render(ConnectionState.CONNECTING, cls._busy_message or '正在发送数据。')
+            cls._render(ConnectionState.CONNECTING, cls._busy_message or _t(ConnectionStatusPrompt.SENDING))
         else:
             # 期望回到已连接:若当前正显示连接中,延迟一小段宽限,避免分块请求间隙反复闪烁。
             if cls._state != ConnectionState.CONNECTED:
@@ -1091,7 +1092,7 @@ class ConnectionStatusLogHandler(logging.Handler):
         except Exception:  # noqa.
             return
         if 'Proxy connection failed' in message or 'Unable to connect due to network issues' in message:
-            ConnectionStatus.mark_failure('由于网络/代理连接失败,正在尝试重连。')
+            ConnectionStatus.mark_failure(_t(ConnectionStatusPrompt.NETWORK_PROXY_FAILURE))
         elif ('Connection established' in message
               or 'Proxy connection established' in message
               or 'Connected!' in message):
