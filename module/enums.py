@@ -210,6 +210,19 @@ class KeyWord:
     DEFAULT_5: str = 'default 5'
     DEFAULT_ALL: str = 'default all'
     BOT_CONFIGURED_NOTICE: str = 'bot configured notice'
+    BOT_STEP_DOWNLOAD_LINK: str = 'step download link'
+    BOT_STEP_DOWNLOAD_CHAT_LINK: str = 'step download chat link'
+    BOT_STEP_UPLOAD_PATH: str = 'step upload path'
+    BOT_STEP_UPLOAD_TARGET: str = 'step upload target'
+    BOT_STEP_UPLOAD_R_PATH: str = 'step upload r path'
+    BOT_STEP_UPLOAD_R_TARGET: str = 'step upload r target'
+    BOT_STEP_FORWARD_ORIGIN: str = 'step forward origin'
+    BOT_STEP_FORWARD_TARGET: str = 'step forward target'
+    BOT_STEP_FORWARD_START_ID: str = 'step forward start id'
+    BOT_STEP_FORWARD_END_ID: str = 'step forward end id'
+    BOT_STEP_LISTEN_DOWNLOAD_ORIGIN: str = 'step listen download origin'
+    BOT_STEP_LISTEN_FORWARD_ORIGIN: str = 'step listen forward origin'
+    BOT_STEP_LISTEN_FORWARD_TARGET: str = 'step listen forward target'
 
 
 class ConnectionState:
@@ -1721,19 +1734,19 @@ class BotStepKeyword:
 
 
 class BotStepText:
-    DOWNLOAD_LINK: tuple = (BotStepKeyword.LINK, '⬇️请直接发送需要下载的链接')
-    DOWNLOAD_CHAT_LINK: tuple = (BotStepKeyword.LINK, '💬请直接发送需要下载的频道链接')
-    UPLOAD_PATH: tuple = (BotStepKeyword.PATH, '📤请发送需要上传的本地文件路径')
-    UPLOAD_TARGET: tuple = (BotStepKeyword.TARGET, '📤请发送需要上传到的目标频道链接')
-    UPLOAD_R_PATH: tuple = (BotStepKeyword.PATH, '📁请发送需要上传的本地文件夹路径')
-    UPLOAD_R_TARGET: tuple = (BotStepKeyword.TARGET, '📁请发送需要上传到的目标频道链接')
-    FORWARD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, '↗️请发送源频道链接')
-    FORWARD_TARGET: tuple = (BotStepKeyword.TARGET, '↗️请发送需要转发到的目标频道链接')
-    FORWARD_START_ID: tuple = (BotStepKeyword.START_ID, '↗️请发送起始消息ID(数字)')
-    FORWARD_END_ID: tuple = (BotStepKeyword.END_ID, '↗️请发送结束消息ID(数字)')
-    LISTEN_DOWNLOAD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, '🕵️请发送需要监听下载的频道链接')
-    LISTEN_FORWARD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, '📲请发送需要监听频道的链接')
-    LISTEN_FORWARD_TARGET: tuple = (BotStepKeyword.TARGET, '📲请发送需要转发到的目标频道链接')
+    DOWNLOAD_LINK: tuple = (BotStepKeyword.LINK, _t(KeyWord.BOT_STEP_DOWNLOAD_LINK))
+    DOWNLOAD_CHAT_LINK: tuple = (BotStepKeyword.LINK, _t(KeyWord.BOT_STEP_DOWNLOAD_CHAT_LINK))
+    UPLOAD_PATH: tuple = (BotStepKeyword.PATH, _t(KeyWord.BOT_STEP_UPLOAD_PATH))
+    UPLOAD_TARGET: tuple = (BotStepKeyword.TARGET, _t(KeyWord.BOT_STEP_UPLOAD_TARGET))
+    UPLOAD_R_PATH: tuple = (BotStepKeyword.PATH, _t(KeyWord.BOT_STEP_UPLOAD_R_PATH))
+    UPLOAD_R_TARGET: tuple = (BotStepKeyword.TARGET, _t(KeyWord.BOT_STEP_UPLOAD_R_TARGET))
+    FORWARD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, _t(KeyWord.BOT_STEP_FORWARD_ORIGIN))
+    FORWARD_TARGET: tuple = (BotStepKeyword.TARGET, _t(KeyWord.BOT_STEP_FORWARD_TARGET))
+    FORWARD_START_ID: tuple = (BotStepKeyword.START_ID, _t(KeyWord.BOT_STEP_FORWARD_START_ID))
+    FORWARD_END_ID: tuple = (BotStepKeyword.END_ID, _t(KeyWord.BOT_STEP_FORWARD_END_ID))
+    LISTEN_DOWNLOAD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, _t(KeyWord.BOT_STEP_LISTEN_DOWNLOAD_ORIGIN))
+    LISTEN_FORWARD_ORIGIN: tuple = (BotStepKeyword.ORIGIN, _t(KeyWord.BOT_STEP_LISTEN_FORWARD_ORIGIN))
+    LISTEN_FORWARD_TARGET: tuple = (BotStepKeyword.TARGET, _t(KeyWord.BOT_STEP_LISTEN_FORWARD_TARGET))
 
 
 class BotMessage:

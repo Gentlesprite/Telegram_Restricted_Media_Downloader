@@ -207,7 +207,22 @@ translations: dict = {
         '获取该频道全部内容,用户通过自定义条件进行内容筛选,最终下载该频道中用户所需内容。\n`/download_chat 频道链接`',
         'Fetch all content of the channel, filter it by custom conditions, and download what you need.\n`/download_chat channel_link`'],
     '/auth': ['添加/移除/查看授权使用机器人的用户,支持用户ID或@用户名。\n`/auth`或`/auth 1234567890`或`/auth @username`',
-              'Add/remove/view users authorized to use the bot, supports user ID or @username.\n`/auth` or `/auth 1234567890` or `/auth @username`']
+              'Add/remove/view users authorized to use the bot, supports user ID or @username.\n`/auth` or `/auth 1234567890` or `/auth @username`'],
+    'step download link': ['⬇️请直接发送需要下载的链接', '⬇️Please send the link to download'],
+    'step download chat link': ['💬请直接发送需要下载的频道链接', '💬Please send the channel link to download'],
+    'step upload path': ['📤请发送需要上传的本地文件路径', '📤Please send the local file path to upload'],
+    'step upload target': ['📤请发送需要上传到的目标频道链接', '📤Please send the target channel link to upload to'],
+    'step upload r path': ['📁请发送需要上传的本地文件夹路径', '📁Please send the local folder path to upload'],
+    'step upload r target': ['📁请发送需要上传到的目标频道链接', '📁Please send the target channel link to upload to'],
+    'step forward origin': ['↗️请发送源频道链接', '↗️Please send the source channel link'],
+    'step forward target': ['↗️请发送需要转发到的目标频道链接', '↗️Please send the target channel link to forward to'],
+    'step forward start id': ['↗️请发送起始消息ID(数字)', '↗️Please send the start message ID (number)'],
+    'step forward end id': ['↗️请发送结束消息ID(数字)', '↗️Please send the end message ID (number)'],
+    'step listen download origin': ['🕵️请发送需要监听下载的频道链接',
+                                    '🕵️Please send the channel link to listen and download'],
+    'step listen forward origin': ['📲请发送需要监听频道的链接', '📲Please send the channel link to listen'],
+    'step listen forward target': ['📲请发送需要转发到的目标频道链接',
+                                   '📲Please send the target channel link to forward to']
 }
 
 
