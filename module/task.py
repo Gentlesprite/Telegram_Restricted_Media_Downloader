@@ -350,7 +350,8 @@ class DownloadTask:
                 task.error_msg = e_code
                 # 链接级解析失败(如频道不存在/消息不存在)不会走 add_item,导致网页没有失败成员、无法归类到失败板块。
                 # 登记一个 message_id=-1 的哨兵失败成员(真实消息 id 从 1 起,-1 无歧义),让现有网页逻辑自然识别为失败。
-                fail_reason: str = (e_code or {}).get('error_msg') or (e_code or {}).get('all_member') or '下载失败'
+                fail_reason: str = (e_code or {}).get('error_msg') or (e_code or {}).get('all_member') or _t(
+                    KeyWord.DOWNLOAD_FAILED)
                 task.update_member(message_id=-1, status=DownloadStatus.FAILURE, name=fail_reason)
                 task.add_fail(-1)
                 reason: str = e_code.get('error_msg')
@@ -396,7 +397,7 @@ class DownloadTask:
                 task.error_msg = {}
                 asyncio.create_task(
                     self.done_notice(
-                        f'"{link}"下载完成。',
+                        _t(KeyWord.TASK_DOWNLOAD_DONE_NOTICE).format(link=link),
                         requester=task.owner,
                         notice_type=NoticeType.DOWNLOAD
                     )
@@ -479,9 +480,9 @@ class UploadTask:
                         elif value == UploadStatus.SUCCESS:
                             more = ''
                             if self.send_as_media_group:
-                                more += f'(等待所有媒体上传完成以媒体组发送)'
+                                more += _t(KeyWord.TASK_WAIT_MEDIA_GROUP)
                             if self.with_delete:
-                                more += '(本地文件已删除)'
+                                more += _t(KeyWord.TASK_LOCAL_DELETED)
                             console.log(
                                 f'{_t(KeyWord.UPLOAD_TASK)}'
                                 f'{_t(KeyWord.CHANNEL_BRACKETED)}:"{self.chat_id}",'
@@ -489,7 +490,8 @@ class UploadTask:
                                 f'{_t(KeyWord.SIZE_BRACKETED)}:{MetaData.suitable_units_display(self.file_size)},'
                                 f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(UploadStatus.SUCCESS)}{more}。',
                             )
-                            self.notice(f'"{self.file_path}" ⬆️ "{self.chat_id}"上传完成。\n{more}')
+                            self.notice(_t(KeyWord.TASK_UPLOAD_DONE_NOTICE).format(
+                                path=self.file_path, chat=self.chat_id, more=more))
                         elif value == UploadStatus.SENT:
                             pass
                         elif value == UploadStatus.FAILURE:
@@ -501,7 +503,8 @@ class UploadTask:
                                 f'{_t(KeyWord.REASON)}:"{self.error_msg}",'
                                 f'{_t(KeyWord.STATUS_BRACKETED)}:{_t(str(value))}。'
                             )
-                            self.notice(f'"{self.file_path}" ⬆️ "{self.chat_id}"上传失败。')
+                            self.notice(_t(KeyWord.TASK_UPLOAD_FAIL_NOTICE).format(
+                                path=self.file_path, chat=self.chat_id))
                     elif name == 'chat_id':
                         if value:
                             self.upload_manager_path: str = os.path.join(
