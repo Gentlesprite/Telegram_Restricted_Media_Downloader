@@ -29,11 +29,8 @@ from pyrogram.file_id import (
 )
 
 from module import log
-from module.language import _t
-from module.enums import (
-    KeyWord,
-    Extension
-)
+from module.language import _
+from module.enums import Extension
 
 _mimetypes = mimetypes.MimeTypes()
 
@@ -99,10 +96,16 @@ def gen_backup_config(old_path: str, absolute_backup_dir: str, error_config: boo
     try:
         os.makedirs(absolute_backup_dir, exist_ok=True)
     except PermissionError as e:
-        log.error(f'权限不足,无法创建目录"{absolute_backup_dir}",{_t(KeyWord.REASON)}:"{e}"')
+        log.error(_('Insufficient permission to create directory "{directory}" due to "{error}"').format(
+            directory=absolute_backup_dir,
+            error=e
+        ))
         raise SystemExit(1)
     except OSError as e:
-        log.error(f'无法创建目录"{absolute_backup_dir}",{_t(KeyWord.REASON)}:"{e}"')
+        log.error(_('Failed to create directory "{directory}" due to "{error}"').format(
+            directory=absolute_backup_dir,
+            error=e
+        ))
         raise SystemExit(1)
 
     time_format: str = '%Y-%m-%d_%H-%M-%S'
@@ -116,13 +119,24 @@ def gen_backup_config(old_path: str, absolute_backup_dir: str, error_config: boo
         shutil.move(old_path, new_path)
         return new_path
     except FileNotFoundError as e:
-        log.error(f'源文件"{old_path}"不存在,{_t(KeyWord.REASON)}:"{e}"')
+        log.error(_('Source file "{old_path}" does not exist due to "{error}"').format(
+            old_path=old_path,
+            error=e
+        ))
         raise SystemExit(1)
     except PermissionError as e:
-        log.error(f'权限不足,无法移动"{old_path}"->"{new_path}",{_t(KeyWord.REASON)}:"{e}"')
+        log.error(_('Insufficient permission to move "{old_path}" -> "{new_path}" due to "{error}"').format(
+            old_path=old_path,
+            new_path=new_path,
+            error=e
+        ))
         raise SystemExit(1)
     except Exception as e:
-        log.error(f'无法移动"{old_path}"->"{new_path}",{_t(KeyWord.REASON)}:"{e}"')
+        log.error(_('Failed to move "{old_path}" -> "{new_path}" due to "{error}"').format(
+            old_path=old_path,
+            new_path=new_path,
+            error=e
+        ))
         raise SystemExit(1)
 
 
@@ -136,15 +150,21 @@ def safe_delete(file_p_d: str) -> bool:
             os.remove(file_p_d)
             return True
         else:
-            log.warning(f'"{file_p_d}"不是有效的文件或目录,无法删除。')
+            log.warning(_('"{path}" is not a valid file or directory, cannot delete.').format(path=file_p_d))
             return False
     except FileNotFoundError:
         return True
     except PermissionError as e:
-        log.error(f'权限不足,无法删除"{file_p_d}",{_t(KeyWord.REASON)}:"{e}"')
+        log.error(_('Insufficient permission to delete "{path}" due to "{error}"').format(
+            path=file_p_d,
+            error=e
+        ))
         return False
     except Exception as e:
-        log.error(f'无法删除"{file_p_d}",{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+        log.error(_('Failed to delete "{path}" due to "{error}"').format(
+            path=file_p_d,
+            error=e
+        ), exc_info=True)
         return False
 
 
@@ -159,7 +179,7 @@ def safe_scan_directory_file(
 def safe_replace(origin_file: str, overwrite_file: str) -> dict:
     e_code = None
     if not os.path.isfile(origin_file):
-        e_code = f'"{origin_file}"不存在或不是一个文件。'
+        e_code = _('"{origin_file}" does not exist or is not a file.').format(origin_file=origin_file)
         return {'e_code': e_code}
 
     try:
@@ -169,9 +189,9 @@ def safe_replace(origin_file: str, overwrite_file: str) -> dict:
             try:
                 shutil.move(origin_file, overwrite_file)
             except Exception as e2:
-                e_code = f'移动文件失败,{_t(KeyWord.REASON)}:"{e2}"'
+                e_code = _('Failed to move the file due to "{error}"').format(error=e2)
         else:
-            e_code = f'覆盖文件失败,{_t(KeyWord.REASON)}:"{e}"'
+            e_code = _('Failed to overwrite the file due to "{error}"').format(error=e)
 
     return {'e_code': e_code}
 
@@ -183,23 +203,42 @@ def move_to_save_directory(temp_file_path: str, save_directory: str) -> dict:
         if os.path.isdir(save_directory):
             file_name: str = split_path(temp_file_path).get('file_name')
             if os.path.exists(os.path.join(save_directory, file_name)):
-                return {'e_code': f'"{file_name}"已存在于保存路径无法移动,请手动解决冲突。'}
+                return {'e_code': _(
+                    '"{file_name}" already exists in the save path and cannot be moved, please resolve the conflict manually.').format(
+                    file_name=file_name
+                )}
             shutil.move(temp_file_path, save_directory)
-            log.info(f'移动文件至保存目录:"{temp_file_path}" -> "{save_directory}"。')
+            log.info(_('Moving file to save directory: "{temp_path}" -> "{save_directory}".').format(
+                temp_path=temp_file_path,
+                save_directory=save_directory
+            ))
             return {'e_code': None}
         else:
             save_directory: str = os.path.join(os.getcwd(), 'downloads')
             os.makedirs(save_directory, exist_ok=True)
             shutil.move(temp_file_path, save_directory)
-            log.info(f'移动文件至保存目录:"{temp_file_path}" -> "{save_directory}"。')
-            return {'e_code': f'"{save_directory}"不是一个目录,已将文件下载到默认目录。'}
+            log.info(_('Moving file to save directory: "{temp_path}" -> "{save_directory}".').format(
+                temp_path=temp_file_path,
+                save_directory=save_directory
+            ))
+            return {'e_code': _(
+                '"{save_directory}" is not a directory, the file was downloaded to the default directory.').format(
+                save_directory=save_directory
+            )}
     except FileExistsError as e:
-        return {'e_code': f'"{save_directory}"已存在,不能重复保存,{_t(KeyWord.REASON)}:"{e}"'}
+        return {'e_code': _('"{save_directory}" already exists, cannot save again due to "{error}"').format(
+            save_directory=save_directory,
+            error=e
+        )}
     except PermissionError as e:
         return {
-            'e_code': f'"{save_directory}"进程无权限访问,可能是文件只读、被其他进程占用锁定或当前用户无写入权限,{_t(KeyWord.REASON)}:"{e}"'}
+            'e_code': _(
+                'The process has no access to "{save_directory}", it may be read-only, locked by another process, or the current user has no write permission due to "{error}"').format(
+                save_directory=save_directory,
+                error=e
+            )}
     except Exception as e:
-        return {'e_code': f'意外的错误,{_t(KeyWord.REASON)}:"{e}"'}
+        return {'e_code': _('Unexpected error due to "{error}"').format(error=e)}
 
 
 def get_extension(file_id: str, mime_type: str, dot: bool = True) -> str:
@@ -259,7 +298,7 @@ def __get_file_type(file_id: str) -> FileType:
     else:
         buffer = BytesIO(decoded[:-2])
 
-    file_type, _ = struct.unpack('<ii', buffer.read(8))
+    file_type, i = struct.unpack('<ii', buffer.read(8))
 
     file_type &= ~WEB_LOCATION_FLAG
     file_type &= ~FILE_REFERENCE_FLAG
@@ -267,7 +306,10 @@ def __get_file_type(file_id: str) -> FileType:
     try:
         file_type = FileType(file_type)
     except ValueError as exc:
-        raise ValueError(f'文件ID:"{file_id}",未知的文件类型:"{file_type}"。') from exc
+        raise ValueError(_('File ID: "{file_id}", unknown file type: "{file_type}".').format(
+            file_id=file_id,
+            file_type=file_type
+        )) from exc
     return file_type
 
 
@@ -353,6 +395,8 @@ def calc_sha256(file_path, chunk_size=8192) -> Union[str, None]:
                 sha256_hash.update(chunk)
         return sha256_hash.hexdigest()
     except PermissionError as e:
-        log.error(f'权限不足,无法计算文件SHA256,{_t(KeyWord.REASON)}:"{e}"')
+        log.error(_('Insufficient permission to calculate file SHA256 due to "{error}"').format(
+            error=e
+        ))
     except Exception as e:
-        log.exception(f'计算文件SHA256失败,{_t(KeyWord.REASON)}:"{e}"')
+        log.exception(_('Failed to calculate file SHA256 due to "{error}"').format(error=e))

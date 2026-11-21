@@ -60,7 +60,7 @@ from module import (
     SOFTWARE_SHORT_NAME
 )
 from module.remote import rc
-from module.language import _t
+from module.language import _
 from module.notice import NoticeHub
 from module.config import GlobalConfig
 from module.path_tool import safe_scan_directory_file
@@ -88,7 +88,6 @@ from module.util import (
 )
 from module.enums import (
     Issues,
-    KeyWord,
     BotButton,
     BotMessage,
     BotStepText,
@@ -99,8 +98,7 @@ from module.enums import (
     BotCommandText,
     BotCallbackText,
     CalenderKeyboard,
-    BotCallbackPrefix,
-    DownloadChatPromptWord
+    BotCallbackPrefix
 )
 
 
@@ -232,7 +230,10 @@ class Bot:
             groups = {g: list(handlers) for g, handlers in dispatcher.groups.items()}
             groups.setdefault(group, []).append(handler)
             dispatcher.groups = groups
-        log.info(f'添加handler到group={group},当前handler数量:{len(groups[group])}')
+        log.info(_('Added handler to group={group}, current handler count: {count}').format(
+            group=group,
+            count=len(groups[group])
+        ))
 
     def remove_handler(self, handler, group: int = 0):
         """从指定的group中移除handler。group或handler不存在时静默跳过(与旧实现一致)。
@@ -246,7 +247,10 @@ class Bot:
                 return
             groups[group].remove(handler)
             dispatcher.groups = groups
-        log.info(f'从group={group}移除handler,剩余handler数量:{len(groups[group])}')
+        log.info(_('Removed handler from group={group}, remaining handler count: {count}').format(
+            group=group,
+            count=len(groups[group])
+        ))
 
     def add_keyword_mode_handler(
             self,
@@ -281,12 +285,15 @@ class Bot:
             )
             self.keyword_handlers[chat_id] = (task_chat_id, keyword_handler)
             self.add_handler(keyword_handler, group=-1)
-            log.info(f'用户输入模式已打开,chat_id:"{chat_id}",task_chat_id:"{task_chat_id}"。')
+            log.info(_('User input mode enabled, chat_id:"{chat_id}", task_chat_id:"{task_chat_id}".').format(
+                chat_id=chat_id,
+                task_chat_id=task_chat_id
+            ))
         else:
             old = self.keyword_handlers.pop(chat_id, None)
             if old:
                 self.remove_handler(old[1], group=-1)
-                log.info('用户输入模式已关闭,Handler已清空。')
+                log.info(_('Input mode closed, handlers cleared.'))
 
     def add_command_mode_handler(
             self,
@@ -313,12 +320,15 @@ class Bot:
             )
             self.command_handlers[chat_id] = command_handler
             self.add_handler(command_handler, group=-1)
-            log.info(f'命令输入模式已打开,chat_id:"{chat_id}",command:"{command}"。')
+            log.info(_('Command input mode enabled, chat_id:"{chat_id}", command:"{command}".').format(
+                chat_id=chat_id,
+                command=command
+            ))
         else:
             old = self.command_handlers.pop(chat_id, None)
             if old:
                 self.remove_handler(old, group=-1)
-                log.info('命令输入模式已关闭,Handler已清空。')
+                log.info(_('Command input mode closed, handlers cleared.'))
             self.pending_tasks.pop(chat_id, None)
 
     async def start_command_guide(
@@ -393,7 +403,7 @@ class Bot:
                 await _client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text='❌请输入有效的链接,请重新发送。',
+                    text=_('❌Please enter a valid link and send it again.'),
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
                 return None
@@ -402,7 +412,7 @@ class Bot:
                 await _client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text='❌请输入数字ID,请重新发送。',
+                    text=_('❌Please enter a numeric ID and send it again.'),
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
                 return None
@@ -462,7 +472,7 @@ class Bot:
         await client.send_message(
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
-            text='⚠️未知命令\n请查看帮助后重试。',
+            text=_('⚠️Unknown command.\nPlease check the help and retry.'),
             link_preview_options=Bot.LINK_PREVIEW_OPTIONS
         )
 
@@ -492,7 +502,9 @@ class Bot:
                 keyword_index: int = self.adding_keywords[chat_id].index(keyword)
                 try:
                     await callback_query.message.edit_text(
-                        text=f'🚛`{keyword}`已被添加,选择处理方式后继续。',
+                        text=_('🚛`{keyword}` has been added. Choose how to handle it to continue.').format(
+                            keyword=keyword
+                        ),
                         reply_markup=attach_task(
                             InlineKeyboardMarkup([
                                 [
@@ -539,17 +551,17 @@ class Bot:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text='❌起始ID>结束ID'
+                    text=_('❌Start ID > end ID')
                 )
                 return False
         if start_id == -1 or end_id == -1:
-            text: str = '未知错误'
+            text: str = _('Unknown error')
             if start_id == -1:
-                text: str = '没有指定起始ID'
+                text: str = _('Start ID not specified')
             if end_id == -1:
-                text: str = '没有指定结束ID'
+                text: str = _('End ID not specified')
             if start_id == end_id:
-                text: str = '没有指定起始ID和结束ID'
+                text: str = _('Start ID and end ID not specified')
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
@@ -580,7 +592,8 @@ class Bot:
                 await client.send_message(
                     chat_id=requester,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'⬇️请使用以下命令分配下载任务\n`/download https://t.me/x/x`',
+                    text=_(
+                        '⬇️Use the following command to assign a download task\n`/download https://t.me/x/x`').format(),
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
         elif len(text) <= 25 or text == '/download https://t.me/x/x' or text.endswith('.txt'):
@@ -588,7 +601,7 @@ class Bot:
             await client.send_message(
                 chat_id=requester,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❌链接错误\n请查看帮助后重试。',
+                text=_('❌Link error.\nPlease check the help and retry.'),
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
         else:
@@ -605,7 +618,7 @@ class Bot:
         """解析/download命令(含裸链规整后的),返回链接信息。"""
         link: list = text.split()
         link.remove('/download') if '/download' in link else None
-        link = [_.rstrip('/') for _ in link]
+        link = [j.rstrip('/') for j in link]
         if (
                 safe_index(link, 0, '').startswith('https://t.me/') and
                 not safe_index(link, 1, 'https://t.me/').startswith('https://t.me/') and
@@ -626,8 +639,8 @@ class Bot:
             for i in range(start_id, end_id + 1):
                 right_link.add(f'{link[0]}/{i}?single')  # v1.6.7 修复范围下载链接为组时,重复下载问题。
         else:
-            right_link: set = set([_ for _ in link if _.startswith('https://t.me/')])
-            invalid_link: set = set([_ for _ in link if not _.startswith('https://t.me/')])
+            right_link: set = set([j for j in link if j.startswith('https://t.me/')])
+            invalid_link: set = set([j for j in link if not j.startswith('https://t.me/')])
         if right_link:
             if with_upload:
                 # 下载后上传场景下,下载环节的通知由后续上传结果统一反馈,这里不再单独发送,避免重复刷屏。
@@ -674,7 +687,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❌命令语法错误\n请查看帮助后重试。',
+                text=_('❌Command syntax error.\nPlease check the help and retry.'),
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
@@ -687,7 +700,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❌找不到频道',
+                text=_('❌Channel not found'),
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
@@ -696,7 +709,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❌无法获取频道名',
+                text=_('❌Unable to get channel name'),
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
@@ -704,8 +717,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='⚠️该频道已在下载中\n'
-                     f'{chat_link}',
+                text=_('⚠️This channel is already downloading\n{link}').format(link=chat_link),
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
@@ -720,20 +732,32 @@ class Bot:
             except (FloodWait, FloodPremiumWait) as e:  # 限流单独处理:走项目既有的限流等待,无限重试而非吞掉。
                 amount = e.value
                 ConnectionStatus.enter_flood(
-                    f'[{self.user.name}]获取话题列表请求频繁,要求等待{amount}秒后继续运行。'
+                    _('[{user_name}] Too many requests to get topic list, wait {seconds} seconds before continuing.').format(
+                        user_name=self.user.name,
+                        seconds=amount
+                    )
                 )
                 await asyncio.sleep(amount)
                 ConnectionStatus.leave_flood()
                 continue
             except (RPCError, AttributeError, ValueError) as e:  # 非话题频道或解析异常按无话题处理,不显示话题按钮。
                 topic.clear()
-                log.debug(f'"{chat_id}"未获取到话题,不显示话题按钮,{_t(KeyWord.REASON)}:"{e}"')
+                log.debug(_('"{chat_id}" no topics found, topic buttons not shown due to "{error}"').format(
+                    chat_id=chat_id,
+                    error=e
+                ))
                 break
             except Exception as e:
                 topic.clear()
-                log.info(f'"{chat_id}"未获取到话题,不显示话题按钮,{_t(KeyWord.REASON)}:"{e}"')
+                log.info(_('"{chat_id}" no topics found, topic buttons not shown due to "{error}"').format(
+                    chat_id=chat_id,
+                    error=e
+                ))
                 break
-        log.info(f'"{chat_id}"是话题频道,显示话题按钮,共{len(topic)}个话题。') if topic else None
+        log.info(_('"{chat_id}" is a topic channel, showing topic buttons, {count} topics in total.').format(
+            chat_id=chat_id,
+            count=len(topic)
+        )) if topic else None
         self.download_chat_filter[chat_id] = {
             'date_range':
                 {
@@ -758,25 +782,27 @@ class Bot:
             'topic': topic
         }
         self.download_chat_active[message.from_user.id] = chat_id
-        log.info(f'"{chat_id}"已添加至:{self.download_chat_filter}。')
-        format_dtype = ','.join([_t(_) for _ in DownloadType()])
+        log.info(_('"{chat_id}" added to: {filter}.').format(chat_id=chat_id, filter=self.download_chat_filter))
+        format_dtype = ','.join([str(i) for i in DownloadType()])
         include_comment = self.download_chat_filter[chat_id]['comment']
-        comment: str = _t(DownloadChatPromptWord.ON) if include_comment else _t(DownloadChatPromptWord.OFF)
+        comment: str = _('On') if include_comment else _('Off')
         topic_prompt: str = format_limited_text(
             sorted((topic_key.split('(')[0] for topic_key, status in topic.items() if status), key=int)
-            if topic else [], unit='个话题'
+            if topic else [], unit=_('topic(s)')
         )
-        topic_line: str = f'\n🗂️包含话题:{topic_prompt}' if topic_prompt else ''
+        topic_line: str = _('\n🗂️Included topics: {topic_prompt}').format(
+            topic_prompt=topic_prompt
+        ) if topic_prompt else ''
         await client.send_message(
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
-            text=f'💬下载频道:`{chat_id}`\n'
-                 f'⏮️当前选择的起始日期为:{_t(DownloadChatPromptWord.EARLIEST)}\n'
-                 f'⏭️当前选择的结束日期为:{_t(DownloadChatPromptWord.LATEST)}\n'
-                 f'📝当前选择的下载类型为:{format_dtype}\n'
-                 f'🔑当前匹配的关键词为:{_t(DownloadChatPromptWord.NOT_SET)}\n'
-                 f'👥包含评论区:{comment}'
-                 f'{topic_line}',
+            text=_(
+                '💬Download channel:`{chat_id}`\n⏮️Current start date:Earliest\n⏭️Current end date:Latest\n📝Current download types:{format_dtype}\n🔑Current matching keyword:Not set\n👥Include comments:{comment}{topic_line}').format(
+                chat_id=chat_id,
+                format_dtype=format_dtype,
+                comment=comment,
+                topic_line=topic_line
+            ),
             reply_markup=attach_task(
                 KeyboardButton.download_chat_filter_button(include_comment, bool(topic)), chat_id
             ),
@@ -997,12 +1023,12 @@ class Bot:
             docker_host_ip_tip: str = f'\n{Issues.DOCKER_HOST_IP_TIP}' if is_docker() else docker_host_ip_tip
             web_link: str = f'{web.protocol}://{web.LOCAL_IP}:{web.port}'
             web_rows = [
-                ['端口', str(web.port)],
-                ['账号', f'`{web.username}`'],
-                ['密码', f'`{web.password}`'],
-                ['链接', f'[{web_link}]({web_link})'],
+                [_('Port'), str(web.port)],
+                [_('Username'), f'`{web.username}`'],
+                [_('Password'), f'`{web.password}`'],
+                [_('Link'), f'[{web_link}]({web_link})'],
             ]
-            web_panel = PanelTable(title='🌐 Web配置', header=('属性', '内容'), data=web_rows)
+            web_panel = PanelTable(title=_('🌐 Web configuration'), header=(_('Attribute'), _('Content')), data=web_rows)
             web_auth = web_panel.to_markdown_chunks()[0]
         config: dict = rc.cached_config()
         update_version: str = check_update(  # 远程版本更高时返回该版本号,用于提示可更新。
@@ -1039,17 +1065,18 @@ class Bot:
             _syntax = _parts[1] if len(_parts) > 1 else '&ndash;'
             command_rows.append([f'/{item[0]}', _desc, _syntax])
         # 复用PanelTable渲染与/table同款的GitHub风格富文本表格,说明与语法分列。
-        panel = PanelTable(title='🎮️ 可用命令', header=('命令', '说明', '语法'), data=command_rows)
+        panel = PanelTable(title=_('🎮️ Available commands'), header=(_('Command'), _('Description'), _('Syntax')),
+                           data=command_rows)
         table_markdown: str = panel.to_markdown_chunks()[0]
         # 复用PanelTable渲染与/table同款的GitHub风格富文本表格,版本/版权/许可分列。
         info_rows = [
-            ['版本', f'`{version}`'],
-            ['版权', f'`{__copyright__.replace(" <https://github.com/Gentlesprite>", ".")}`'],
-            ['许可', f'`Licensed under the terms of the {__license__}.`']
+            [_('Version'), f'`{version}`'],
+            [_('Copyright'), f'`{__copyright__.replace(" <https://github.com/Gentlesprite>", ".")}`'],
+            [_('License'), f'`Licensed under the terms of the {__license__}.`']
         ]
         info_panel = PanelTable(
             title=f'💎 {SOFTWARE_SHORT_NAME}',
-            header=('属性', '内容'),
+            header=(_('Attribute'), _('Content')),
             data=info_rows
         )
         header_md: str = info_panel.to_markdown_chunks()[0]
@@ -1063,11 +1090,11 @@ class Bot:
         if more_feature:
             parts.append('')
             feature_panel = PanelTable(
-                title='✨ 其他功能',
-                header=('功能', '说明'),
+                title=_('✨ Other features'),
+                header=(_('Function'), _('Description')),
                 data=[
                     [
-                        '📨 转发消息',
+                        _('📨 Forward message'),
                         '转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`'
                         '类型的消息给我,即可创建下载任务。'
                     ]
@@ -1101,7 +1128,9 @@ class Bot:
         try:
             await callback_query.answer()
         except QueryIdInvalid as e:  # 弱网下answer回调可能超过Telegram的query_id有效期(约数秒)而失效。
-            log.info(f'回调应答超时,query_id已失效,跳过本次应答,{_t(KeyWord.REASON)}:"{e}"')
+            log.info(_('Callback answer timed out, query_id expired, skipped this answer due to "{error}"').format(
+                error=e
+            ))
         data = callback_query.data
         if not data:
             return None
@@ -1139,7 +1168,7 @@ class Bot:
                 ]
             ]
         )
-        text: str = '📊请选择输出「统计表」的类型:'
+        text: str = _('📊Please select the type of 「statistics table」 to output:')
         if not all([client, message]):
             return {
                 'keyboard': keyboard,
@@ -1176,7 +1205,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text=f'❌命令错误\n{e}\n请使用`/forward https://t.me/A https://t.me/B 1 100`'
+                text=_('❌Command error\n{error}\nUse `/forward https://t.me/A https://t.me/B 1 100`').format(error=e)
             )
             return None
         return {
@@ -1224,7 +1253,7 @@ class Bot:
                         user_client=self.user,
                         bot_client=self.bot,
                         bot_message=message,
-                        error_msg=f'⬇️目标频道不存在\n{target_link}'
+                        error_msg=_('⬇️Target channel does not exist\n{target_link}').format(target_link=target_link)
                     )
                 if not valid_link_cache[target_link]:
                     return None
@@ -1252,7 +1281,7 @@ class Bot:
                     await client.send_message(
                         chat_id=message.from_user.id,
                         reply_parameters=ReplyParameters(message_id=message.id),
-                        text=f'📤上传任务已创建,请耐心等待\n`{file_path}`',
+                        text=_('📤Upload task created, please wait\n`{file_path}`').format(file_path=file_path),
                         link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                     )
                     await asyncio.gather(*upload_folder)
@@ -1260,16 +1289,18 @@ class Bot:
                     await client.send_message(
                         chat_id=message.from_user.id,
                         reply_parameters=ReplyParameters(message_id=message.id),
-                        text=f'⚠️文件夹为空\n`{file_path}`',
+                        text=_('⚠️Folder is empty\n`{file_path}`').format(file_path=file_path),
                         link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                     )
                 return None
             if not os.path.isfile(file_path):
-                log.error(f'上传出错,{_t(KeyWord.REASON)}:"{file_path}"不存在。')
+                log.error(_('Upload failed due to missing file: "{file_path}".').format(
+                    file_path=file_path
+                ))
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'⚠️上传文件不存在\n`{file_path}`',
+                    text=_('⚠️Upload file does not exist\n`{file_path}`').format(file_path=file_path),
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
                 return None
@@ -1278,7 +1309,7 @@ class Bot:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'⚠️上传文件大小为0\n`{file_path}`',
+                    text=_('⚠️Upload file size is 0\n`{file_path}`').format(file_path=file_path),
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
 
@@ -1287,19 +1318,24 @@ class Bot:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'⚠️上传大小超过限制({format_file_size})\n'
-                         f'`{file_path}`\n'
-                         f'(普通用户2000MiB,会员用户4000MiB)',
+                    text=_(
+                        '⚠️Upload size exceeds the limit ({format_file_size})\n`{file_path}`\n(2000MiB for regular users, 4000MiB for premium users)').format(
+                        format_file_size=format_file_size,
+                        file_path=file_path
+                    ),
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
             if not recursion:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'📤上传任务已创建,请耐心等待\n`{file_path}`',
+                    text=_('📤Upload task created, please wait\n`{file_path}`').format(file_path=file_path),
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
-            log.info(f'上传文件:"{file_path}",上传频道:"{target_link}"。')
+            log.info(_('Uploading file: "{file_path}", target channel: "{target_link}".').format(
+                file_path=file_path,
+                target_link=target_link
+            ))
             # 登记上传任务创建者,上传完成或失败的通知在网页面板显示"谁创建的任务"。
             NoticeHub.add_owner(owner=message.from_user.id, user=message.from_user)
             if target_link.startswith('https://t.me/') or target_link in ('me', 'self'):  # 验证目标链接格式。
@@ -1321,7 +1357,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❌命令错误\n请查看帮助后重试。',
+                text=_('❌Command error.\nPlease check the help and retry.'),
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             return None
@@ -1333,7 +1369,7 @@ class Bot:
     ) -> None:
         last_message = await client.send_message(
             chat_id=message.from_user.id,
-            text='🚧已收到退出命令。',
+            text=_('🚧Exit command received.'),
             reply_parameters=ReplyParameters(message_id=message.id),
             link_preview_options=Bot.LINK_PREVIEW_OPTIONS
         )
@@ -1342,7 +1378,7 @@ class Bot:
             client=client,
             message=message,
             last_message_id=last_message.id,
-            text='✅退出成功。'
+            text=_('✅Exited successfully.')
         )
         raise SystemExit(0)
 
@@ -1384,7 +1420,8 @@ class Bot:
                             last_message = await client.send_message(
                                 chat_id=message.from_user.id,
                                 reply_parameters=ReplyParameters(message_id=message.id),
-                                text='❌同一频道不能同时存在两个监听\n(您已使用`/listen_forward`创建了以下链接的监听转发)'
+                                text=_(
+                                    '❌The same channel cannot have two listeners at the same time.\n(You have created a listen-and-forward for the following link with `/listen_forward`)')
                             )
                         last_message: Union[pyrogram.types.Message, str, None] = await self.safe_edit_message(
                             client=client,
@@ -1402,7 +1439,7 @@ class Bot:
                         client=client,
                         message=message,
                         last_message_id=last_message.id,
-                        text='❌没有找到有效的链接'
+                        text=_('❌No valid link found')
                     )
                     return None
             links: list = list(set(links))
@@ -1415,15 +1452,14 @@ class Bot:
                     await self.start_command_guide(message=message, command=BotCommandText.LISTEN_FORWARD[0])
                     return None
                 elif len_args == 2:
-                    e: str = '命令缺少转发频道'
+                    e: str = _('Command is missing the forward channel')
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'❌{e}\n'
-                         '⬇️语法如下\n'
-                         f'`/listen_forward 监听频道 转发频道`\n'
-                         '⬇️请使用\n'
-                         f'`/listen_forward https://t.me/A https://t.me/B`\n'
+                    text=_(
+                        '❌{error}\n⬇️Syntax below\n`/listen_forward listen_channel forward_channel`\n⬇️Use\n`/listen_forward https://t.me/A https://t.me/B`\n').format(
+                        error=e
+                    )
                 )
                 return None
             listen_link: str = args[1]
@@ -1432,23 +1468,23 @@ class Bot:
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text='❌同一频道不能同时存在两个监听\n(您已使用`/listen_download`创建了以下链接的监听下载)\n'
-                         f'{listen_link}'
+                    text=_('❌The same channel cannot have two listeners\n'
+                           '(You have created a listen download for the following link with '
+                           '`/listen_download`)\n{link}').format(link=listen_link)
                 )
                 return None
             if not listen_link.startswith('https://t.me/'):
-                e = '监听频道链接错误'
+                e = _('Invalid listen channel link')
             if not target_link.startswith('https://t.me/'):
-                e = '转发频道链接错误'
+                e = _('Invalid forward channel link')
             if e != '':
                 await client.send_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=f'❌{e}\n'
-                         '⬇️语法如下\n'
-                         f'`/listen_forward 监听频道 转发频道`\n'
-                         '⬇️请使用\n'
-                         f'`/listen_forward https://t.me/A https://t.me/B`\n'
+                    text=_(
+                        '❌{error}\n⬇️Syntax below\n`/listen_forward listen_channel forward_channel`\n⬇️Use\n`/listen_forward https://t.me/A https://t.me/B`\n').format(
+                        error=e
+                    )
                 )
                 return None
         return {'command': command, 'links': links}
@@ -1530,7 +1566,7 @@ class Bot:
             if edit_message is not None:
                 try:
                     await edit_message.edit_text(
-                        text='🌫️目前没有正在监听的频道。',
+                        text=_('🌫️No channels are being monitored.'),
                         reply_markup=self.menu_keyboard('listen'))
                 except MessageNotModified:
                     pass
@@ -1539,13 +1575,15 @@ class Bot:
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                    text='🌫️目前没有正在监听的频道。'
+                    text=_('🌫️No channels are being monitored.')
                 )
         else:
             if self.listen_download_chat:
-                await __listen_info(self.listen_download_chat, '🕵️以下链接为已创建的`监听下载`频道:\n')
+                await __listen_info(self.listen_download_chat,
+                                    _('🕵️The following links are created `listen download` channels:\n'))
             if self.listen_forward_chat:
-                await __listen_info(self.listen_forward_chat, '📲以下链接为已创建的`监听转发`频道:\n')
+                await __listen_info(self.listen_forward_chat,
+                                    _('📲The following links are created `listen forward` channels:\n'))
             if edit_message is not None:
                 try:
                     await edit_message.edit_reply_markup(self.menu_keyboard('listen'))
@@ -1563,7 +1601,7 @@ class Bot:
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='⛔该命令仅`root`可用。'
+                text=_('⛔This command is only available to 「root」.')
             )
             return None
         text: str = message.text
@@ -1609,7 +1647,10 @@ class Bot:
             )).id
         except Exception as e:
             await _respond(
-                text=f'❌无法解析用户"{target}"\n{_t(KeyWord.REASON)}:"{e}"',
+                text=_('❌Unable to resolve user "{target}" due to "{error}"').format(
+                    target=target,
+                    error=e
+                ),
                 reply_markup=auth_kb if edit_message is not None else None
             )
             return None
@@ -1618,14 +1659,14 @@ class Bot:
         # root用户本身就拥有全部权限,无需重复授权。
         if self.root and uid == self.root[0]:
             await _respond(
-                text='👑该用户为`root`,已拥有全部权限,无需授权。',
+                text=_('👑This user is 「root」 and already has full permissions.'),
                 reply_markup=auth_kb if edit_message is not None else None
             )
             return None
         # 已存在则展示移除按钮,不再重复添加。
         if uid in self.gc.authorized_users:
             await _respond(
-                text=f'👥用户`{uid}`已在授权列表中,是否移除?',
+                text=_('👥User `{uid}` is already authorized. Remove?').format(uid=uid),
                 reply_markup=InlineKeyboardMarkup([
                     [
                         InlineKeyboardButton(
@@ -1646,10 +1687,13 @@ class Bot:
         self.gc.config['authorized_users'] = self.gc.authorized_users
         self.gc.save_config(self.gc.config)
         await _respond(
-            text=f'✅已添加授权用户`ID`:\n`{uid}`',
+            text=_('✅Added authorized user 「ID」:\n`{uid}`').format(uid=uid),
             reply_markup=auth_kb
         )
-        log.info(f'已添加授权用户:{uid},当前授权用户:{self.gc.authorized_users}。')
+        log.info(_('Added authorized user: {uid}, current authorized users: {users}.').format(
+            uid=uid,
+            users=self.gc.authorized_users
+        ))
 
     def add_auth_mode_handler(
             self,
@@ -1674,12 +1718,12 @@ class Bot:
             )
             self.auth_handlers[chat_id] = auth_handler
             self.add_handler(auth_handler, group=-1)
-            log.info(f'添加授权用户输入模式已打开,chat_id:"{chat_id}"。')
+            log.info(_('Added authorized user input mode enabled, chat_id:"{chat_id}".').format(chat_id=chat_id))
         else:
             old = self.auth_handlers.pop(chat_id, None)
             if old:
                 self.remove_handler(old, group=-1)
-                log.info('添加授权用户输入模式已关闭,Handler已清空。')
+                log.info(_('Add auth user input mode closed, handlers cleared.'))
 
     async def handle_auth_input(
             self,
@@ -1728,7 +1772,7 @@ class Bot:
                 )
             ]
         ])
-        text = '🔐「授权用户」管理,请选择操作:'
+        text = _('🔐「Authorized users」management, please select an action:')
         if edit_message is not None:
             try:
                 await edit_message.edit_text(text=text, reply_markup=auth_menu_kb)
@@ -1767,10 +1811,10 @@ class Bot:
                 )
 
         if not users:
-            await _respond('🌫️目前没有额外的授权用户,仅`root`可使用机器人。')
+            await _respond(_('🌫️No additional authorized users; only 「root」 can use the bot.'))
             return None
         lines = '\n'.join(str(u) for u in users)
-        await _respond(f'👥以下为已授权的用户`ID`:\n`{lines}`')
+        await _respond(_('👥The following 「ID」s are authorized:\n`{lines}`').format(lines=lines))
 
     async def handle_forwarded_media(
             self,
@@ -1793,11 +1837,16 @@ class Bot:
             if self.last_message is not None:
                 owner = self.last_message.from_user.id
                 log.warning(
-                    'done_notice未指定requester,回退到last_message(chat_id={chat_id}),请为该调用处补充owner以消除回退。')
+                    _('done_notice has no requester, falling back to last_message (chat_id={chat_id}); please provide owner at the call site to avoid fallback.'))
             else:
-                log.warning('done_notice未指定requester且last_message为空,该通知将没有创建者。')
+                log.warning(
+                    _('done_notice has no requester and last_message is empty; this notice will have no owner.'))
         NoticeHub.push(notice_type=notice_type, text=text, owner=owner)
-        log.debug(f'已推送通知,{_t(KeyWord.TYPE)}:"{notice_type}",创建者:"{owner}",内容:"{text}"。')
+        log.debug(_('Pushed notification, [Type]:"{notice_type}", creator:"{owner}", content:"{text}".').format(
+            notice_type=notice_type,
+            owner=owner,
+            text=text
+        ))
 
     async def start_bot(
             self,
@@ -1949,15 +1998,22 @@ class Bot:
             )
             self.is_bot_running: bool = True
             await self.send_message_to_bot(text='/start')
-            return f'🤖「机器人」启动成功 ({BotButton.CLOSE_NOTICE if self.gc.config.get(BotCallbackText.NOTICE) else BotButton.OPEN_NOTICE})。'
+            return _('🤖「Bot」started successfully ({bot_notice_state}).').format(
+                bot_notice_state=BotButton.CLOSE_NOTICE if self.gc.config.get(
+                    BotCallbackText.NOTICE) else BotButton.OPEN_NOTICE
+            )
         except AccessTokenInvalid as e:
             self.is_bot_running: bool = False
-            log.error(f'机器人启动失败,bot_token错误,{_t(KeyWord.REASON)}:"{e}"')
-            return f'🤖「机器人」启动失败,「bot_token」错误,{_t(KeyWord.REASON)}:"{e}"'
+            log.error(_('Bot failed to start, wrong bot_token due to "{error}"').format(
+                error=e
+            ))
+            return _('🤖 「bot」 failed to start, wrong 「bot_token」 due to "{error}"').format(
+                error=e
+            )
         except Exception as e:
             self.is_bot_running: bool = False
-            log.error(f'机器人启动失败,{_t(KeyWord.REASON)}:"{e}"')
-            return f'🤖「机器人」启动失败,{_t(KeyWord.REASON)}:"{e}"'
+            log.error(_('Bot failed to start due to "{error}"').format(error=e))
+            return _('🤖 「bot」 failed to start due to "{error}"').format(error=e)
 
     async def send_message_to_bot(self, text: str, catch: bool = False):
         try:
@@ -1981,7 +2037,11 @@ class Bot:
     ) -> list:
         n = '\n'
         right_msg = f'{BotMessage.RIGHT}{n.join(sorted(right_link))}' if right_link else ''
-        invalid_msg = f'{BotMessage.INVALID}{n.join(sorted(invalid_link))}{n}(具体原因请前往终端查看报错信息)' if invalid_link else ''
+        invalid_msg = _('{invalid}{links}{newline}(see the terminal for details)').format(
+            invalid=BotMessage.INVALID,
+            links=n.join(sorted(invalid_link)),
+            newline=n
+        ) if invalid_link else ''
         return safe_message(f'{right_msg}{n}{invalid_msg}')
 
     async def safe_edit_message(
@@ -2016,7 +2076,10 @@ class Bot:
             except (FloodWait, FloodPremiumWait) as e:
                 amount = e.value
                 ConnectionStatus.enter_flood(
-                    f'[{self.bot.name}]编辑消息请求频繁,要求等待{amount}秒后继续运行。'
+                    _('[{bot_name}] Too many requests to edit the message, wait {seconds} seconds before continuing.').format(
+                        bot_name=self.bot.name,
+                        seconds=amount
+                    )
                 )
                 await asyncio.sleep(amount)
                 ConnectionStatus.leave_flood()
@@ -2042,7 +2105,9 @@ class Bot:
         except MessageNotModified:
             pass
         except Exception as e:
-            log.error(f'通过机器人发送统计表(首片)失败,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(_('Failed to send statistics table via bot (first part) due to "{error}"').format(
+                error=e
+            ))
         for index, chunk in enumerate(rest, start=2):
             try:
                 await self.bot.send_rich_message(
@@ -2050,7 +2115,10 @@ class Bot:
                     rich_message=pyrogram.types.InputRichMessage(markdown=chunk)
                 )
             except Exception as e:
-                log.error(f'通过机器人发送统计表(第{index}片)失败,{_t(KeyWord.REASON)}:"{e}"')
+                log.error(_('Failed to send statistics table via bot (part {index}) due to "{error}"').format(
+                    index=index,
+                    error=e
+                ))
 
 
 class KeyboardButton:
@@ -2144,8 +2212,9 @@ class KeyboardButton:
         except MessageNotModified:
             pass
         except Exception as e:
-            await self.callback_query.message.reply_text('切换按钮状态失败\n(具体原因请前往终端查看报错信息)')
-            log.error(f'切换按钮状态失败,{_t(KeyWord.REASON)}:"{e}"')
+            await self.callback_query.message.reply_text(
+                _('Failed to switch button state.\n(See the terminal for details)'))
+            log.error(_('Failed to switch button state due to "{error}"').format(error=e))
 
     async def toggle_upload_setting_button(
             self,
@@ -2435,19 +2504,27 @@ class KeyboardButton:
         except Exception as _e:
             if choice:
                 if choice == 'link':
-                    prompt: str = '链接'
+                    prompt: str = _('Link')
                 elif choice == 'count':
-                    prompt: str = '计数'
+                    prompt: str = _('Count')
                 elif choice == 'upload':
-                    prompt: str = '上传'
+                    prompt: str = _('Upload')
                 else:
                     prompt: str = ''
                 await self.callback_query.message.reply_text(
-                    f'设置启用或禁用导出{prompt}统计表失败\n(具体原因请前往终端查看报错信息)'
+                    _('Failed to enable or disable exporting {prompt} statistics table\n(see the terminal for details)').format(
+                        prompt=prompt
+                    )
                 )
-                log.error(f'设置启用或禁用导出{prompt}统计表失败,{_t(KeyWord.REASON)}:"{_e}"')
+                log.error(
+                    _('Failed to enable or disable exporting {prompt} statistics table due to "{error}"').format(
+                        prompt=prompt,
+                        error=_e
+                    ))
             else:
-                log.error(f'设置启用或禁用导出统计表失败,{_t(KeyWord.REASON)}:"{_e}"')
+                log.error(_('Failed to enable or disable exporting the statistics table due to "{error}"').format(
+                    error=_e
+                ))
 
     async def back_table_button(self):
         try:
@@ -2611,7 +2688,10 @@ class KeyboardButton:
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        text=BotButton.ENABLE_ALL if only_one_enabled else f'{BotButton.DISABLE_ALL}(但保留id为1的话题)',
+                        text=BotButton.ENABLE_ALL if only_one_enabled else _(
+                            '{disable_all} (but keep the topic with id 1)').format(
+                            disable_all=BotButton.DISABLE_ALL
+                        ),
                         callback_data=(BotCallbackText.TOPIC_ENABLE_ALL if only_one_enabled
                                        else BotCallbackText.TOPIC_DISABLE_ALL)
                     )
@@ -2769,7 +2849,7 @@ class KeyboardButton:
         ]
         keyboard.append(nav_row)
 
-        week_days = ['一', '二', '三', '四', '五', '六', '日']
+        week_days = [_('Mon'), '二', '三', '四', '五', '六', '日']
         week_row = [InlineKeyboardButton(day, callback_data=BotCallbackText.NULL) for day in week_days]
         keyboard.append(week_row)
 
@@ -2895,7 +2975,7 @@ class KeyboardButton:
         time_keyboard = [
             [
                 InlineKeyboardButton(
-                    text=f'步进值:{adjust_step}',
+                    text=_('Step value: {adjust_step}').format(adjust_step=adjust_step),
                     callback_data=f'adjust_step_{dtype}_{adjust_step}'
                 )
             ],
@@ -2905,7 +2985,7 @@ class KeyboardButton:
                     callback_data=f'set_time_{_dtype}_{_get_updated_time(hour, -adjust_step)}'
                 ),
                 InlineKeyboardButton(
-                    text='时', callback_data=BotCallbackText.NULL
+                    text=_('Hour'), callback_data=BotCallbackText.NULL
                 ),
                 InlineKeyboardButton(
                     text='▶️',
@@ -2918,7 +2998,7 @@ class KeyboardButton:
                     callback_data=f'set_time_{_dtype}_{_get_updated_time(minute, -adjust_step)}'
                 ),
                 InlineKeyboardButton(
-                    text='分', callback_data=BotCallbackText.NULL
+                    text=_('Minute'), callback_data=BotCallbackText.NULL
                 ),
                 InlineKeyboardButton(
                     text='▶️',
@@ -2931,7 +3011,7 @@ class KeyboardButton:
                     callback_data=f'set_time_{_dtype}_{_get_updated_time(second, -adjust_step)}'
                 ),
                 InlineKeyboardButton(
-                    text='秒', callback_data=BotCallbackText.NULL
+                    text=_('Second'), callback_data=BotCallbackText.NULL
                 ),
                 InlineKeyboardButton(
                     text='▶️',
@@ -3032,14 +3112,17 @@ class NoticeHandler(CallbackHandler):
         try:
             downloader.gc.config[BotCallbackText.NOTICE] = not downloader.gc.config.get(BotCallbackText.NOTICE)
             downloader.gc.save_config(downloader.gc.config)
-            n_s = '启用' if downloader.gc.config.get(BotCallbackText.NOTICE) else '禁用'
-            n_p = f'启动提示已{n_s}。'
+            n_s = _('Enable') if downloader.gc.config.get(BotCallbackText.NOTICE) else _('Disabled')
+            n_p = _('Startup notice {n_s}.').format(n_s=n_s)
             log.info(n_p)
             console.log(n_p, style='#FF4689')
             await kb.toggle_setting_button(global_config=downloader.gc.config, user_config=downloader.app.config)
         except Exception as e:
-            await query.message.reply_text('启用或禁用机器人消息通知失败\n(具体原因请前往终端查看报错信息)')
-            log.error(f'启用或禁用机器人消息通知失败,{_t(KeyWord.REASON)}:"{e}"')
+            await query.message.reply_text(
+                _('Failed to enable or disable bot message notifications.\n(See the terminal for details)'))
+            log.error(_('Failed to enable or disable bot message notifications due to "{error}"').format(
+                error=e
+            ))
 
 
 class PayHandler(CallbackHandler):
@@ -3052,13 +3135,13 @@ class PayHandler(CallbackHandler):
         res = await downloader.send_pay_qr(
             client=client,
             chat_id=query.from_user.id,
-            load_name='收款码'
+            load_name=_('Payment QR code')
         )
         MetaData.pay()
         if res:
-            msg = '✅\n收款「二维码」已发送至您的「终端」十分感谢您的支持!'
+            msg = _('✅\nThe QR code for payment has been sent to your terminal. Thank you for your support!')
         else:
-            msg = '✅\n收款「二维码」已发送至您的「终端」与「对话框」十分感谢您的支持!'
+            msg = _('✅\nThe QR code for payment has been sent to your terminal and chat. Thank you for your support!')
         await query.message.reply_text(msg)
 
 
@@ -3143,8 +3226,10 @@ class ListenInfoHandler(CallbackHandler):
                 edit_message=query.message
             )
         except Exception as e:
-            await query.message.reply_text('查看监听信息失败\n(具体原因请前往终端查看报错信息)')
-            log.error(f'发送查看监听信息命令失败,{_t(KeyWord.REASON)}:"{e}"')
+            await query.message.reply_text(_('Failed to view listen info.\n(See the terminal for details)'))
+            log.error(_('Failed to send the view-listen-info command due to "{error}"').format(
+                error=e
+            ))
 
 
 class LookupAuthInfoHandler(CallbackHandler):
@@ -3162,8 +3247,10 @@ class LookupAuthInfoHandler(CallbackHandler):
                 edit_message=query.message
             )
         except Exception as e:
-            await query.message.reply_text('查看授权用户失败\n(具体原因请前往终端查看报错信息)')
-            log.error(f'发送查看授权用户命令失败,{_t(KeyWord.REASON)}:"{e}"')
+            await query.message.reply_text(_('Failed to view authorized users.\n(See the terminal for details)'))
+            log.error(_('Failed to send the view-authorized-users command due to "{error}"').format(
+                error=e
+            ))
 
 
 class ViewAuthListHandler(CallbackHandler):
@@ -3181,8 +3268,10 @@ class ViewAuthListHandler(CallbackHandler):
                 edit_message=query.message
             )
         except Exception as e:
-            await query.message.reply_text('查看授权用户失败\n(具体原因请前往终端查看报错信息)')
-            log.error(f'发送查看授权用户命令失败,{_t(KeyWord.REASON)}:"{e}"')
+            await query.message.reply_text(_('Failed to view authorized users.\n(See the terminal for details)'))
+            log.error(_('Failed to send the view-authorized-users command due to "{error}"').format(
+                error=e
+            ))
 
 
 class AddAuthHandler(CallbackHandler):
@@ -3194,16 +3283,18 @@ class AddAuthHandler(CallbackHandler):
         # 仅root可发起授权,非root直接拒绝。
         if not downloader.root or query.from_user.id != downloader.root[0]:
             try:
-                await query.answer('⛔该操作仅`root`可用。', show_alert=True)
+                await query.answer(_('⛔This action is only available to 「root」.'), show_alert=True)
             except QueryIdInvalid as e:  # 弱网下失效,或已被首次answer消费导致query_id无效。
-                log.info(f'应答超时,query_id已失效,跳过本次应答,{_t(KeyWord.REASON)}:"{e}"')
+                log.info(_('Answer timed out, query_id expired, skipped this answer due to "{error}"').format(
+                    error=e
+                ))
             return None
         # 打开输入模式,提示root发送待授权用户ID或@用户名,并支持取消。
         try:
             await query.message.edit_text(
-                text='➕请输入要授权的用户`ID`或`@用户名`:',
+                text=_('➕Enter the 「ID」 or 「@username」 of the user to authorize:'),
                 reply_markup=KeyboardButton.single_button(
-                    text='🔙取消',
+                    text=_('🔙Cancel'),
                     callback_data=BotCallbackText.CANCEL_AUTH_INPUT
                 )
             )
@@ -3230,7 +3321,7 @@ class CancelAuthInputHandler(CallbackHandler):
         )
         try:
             await query.message.edit_text(
-                text='🔐授权用户管理',
+                text=_('🔐Authorized user management'),
                 reply_markup=downloader.menu_keyboard('auth')
             )
         except MessageNotModified:
@@ -3247,14 +3338,17 @@ class ShutdownHandler(CallbackHandler):
         try:
             downloader.app.config['is_shutdown'] = not downloader.app.config.get('is_shutdown')
             downloader.app.save_config(downloader.app.config)
-            s_s = '启用' if downloader.app.config.get('is_shutdown') else '禁用'
-            s_p = f'退出后关机已{s_s}。'
+            s_s = _('Enable') if downloader.app.config.get('is_shutdown') else _('Disabled')
+            s_p = _('Shut down on exit {s_s}.').format(s_s=s_s)
             log.info(s_p)
             console.log(s_p, style='#FF4689')
             await kb.toggle_setting_button(global_config=downloader.gc.config, user_config=downloader.app.config)
         except Exception as e:
-            await query.message.reply_text('启用或禁用自动关机失败\n(具体原因请前往终端查看报错信息)')
-            log.error(f'启用或禁用自动关机失败,{_t(KeyWord.REASON)}:"{e}"')
+            await query.message.reply_text(
+                _('Failed to enable or disable auto shutdown.\n(See the terminal for details)'))
+            log.error(_('Failed to enable or disable auto shutdown due to "{error}"').format(
+                error=e
+            ))
 
 
 class SettingsHandler(CallbackHandler):
@@ -3305,18 +3399,18 @@ class TableHandler(CallbackHandler):
             choice = ''
             res = None
             if data == BotCallbackText.LINK_TABLE:
-                prompt_string = '链接统计表'
-                false_text = '🌫️没有链接需要统计。'
+                prompt_string = _('link statistics table')
+                false_text = _('🌫️No links to count.')
                 choice = BotCallbackText.EXPORT_LINK_TABLE
                 res = downloader.app.print_link_table(DownloadTask.TASKS)
             elif data == BotCallbackText.COUNT_TABLE:
-                prompt_string = '计数统计表'
-                false_text = '🌫️当前没有任何下载。'
+                prompt_string = _('count statistics table')
+                false_text = _('🌫️No downloads yet.')
                 choice = BotCallbackText.EXPORT_COUNT_TABLE
                 res = downloader.app.print_count_table()
             elif data == BotCallbackText.UPLOAD_TABLE:
-                prompt_string = '上传统计表'
-                false_text = '🌫️当前没有任何上传。'
+                prompt_string = _('upload statistics table')
+                false_text = _('🌫️No uploads yet.')
                 choice = BotCallbackText.EXPORT_UPLOAD_TABLE
                 res = downloader.app.print_upload_table(UploadTask.TASKS)
             if res:
@@ -3331,7 +3425,9 @@ class TableHandler(CallbackHandler):
             else:
                 try:
                     await query.message.edit_text(
-                        f'❌`{prompt_string}`打印失败。\n(具体原因请前往终端查看报错信息)')
+                        _('❌`{prompt_string}` printing failed.\n(see the terminal for details)').format(
+                            prompt_string=prompt_string
+                        ))
                 except MessageNotModified:
                     pass
             await kb.back_table_button()
@@ -3355,33 +3451,38 @@ class TableHandler(CallbackHandler):
             folder = ''
             res = False
             if data == BotCallbackText.EXPORT_LINK_TABLE:
-                prompt_string = '链接统计表'
+                prompt_string = _('link statistics table')
                 folder = 'DownloadRecordForm'
                 res = downloader.app.print_link_table(link_tasks=DownloadTask.TASKS, export=True, only_export=True)
             elif data == BotCallbackText.EXPORT_COUNT_TABLE:
-                prompt_string = '计数统计表'
+                prompt_string = _('count statistics table')
                 folder = 'DownloadRecordForm'
                 res = downloader.app.print_count_table(export=True, only_export=True)
             elif data == BotCallbackText.EXPORT_UPLOAD_TABLE:
-                prompt_string = '上传统计表'
+                prompt_string = _('upload statistics table')
                 folder = 'UploadRecordForm'
                 res = downloader.app.print_upload_table(upload_tasks=UploadTask.TASKS, export=True, only_export=True)
             if res:
                 folder = 'form' if is_docker() else folder
                 try:
                     await query.message.edit_text(
-                        f'✅`{prompt_string}`已发送至您的「终端」并已「导出」为表格请注意查收。\n(请查看软件目录下`{folder}`文件夹)')
+                        _('✅`{prompt_string}` has been sent to your 「terminal」 and 「exported」 as a table.\n(Check the `{folder}` folder in the software directory)').format(
+                            prompt_string=prompt_string,
+                            folder=folder
+                        ))
                 except MessageNotModified:
                     pass
             elif res is False:
                 try:
-                    await query.message.edit_text('🌫️没有链接需要统计。')
+                    await query.message.edit_text(_('🌫️No links to count.'))
                 except MessageNotModified:
                     pass
             else:
                 try:
                     await query.message.edit_text(
-                        f'❌`{prompt_string}`导出失败。\n(具体原因请前往终端查看报错信息)')
+                        _('❌`{prompt_string}` export failed.\n(see the terminal for details)').format(
+                            prompt_string=prompt_string
+                        ))
                 except MessageNotModified:
                     pass
             await kb.back_table_button()
@@ -3393,15 +3494,15 @@ class TableHandler(CallbackHandler):
         export_config = downloader.gc.config.get('export_table')
         export_config[table_type] = not export_config.get(table_type)
         if table_type == 'link':
-            t_t = '链接统计表'
+            t_t = _('link statistics table')
         elif table_type == 'count':
-            t_t = '计数统计表'
+            t_t = _('count statistics table')
         elif table_type == 'upload':
-            t_t = '上传统计表'
+            t_t = _('upload statistics table')
         else:
-            t_t = '统计表'
-        s_t = '启用' if export_config.get(table_type) else '禁用'
-        t_p = f'退出后导出{t_t}已{s_t}。'
+            t_t = _('statistics table')
+        s_t = _('Enable') if export_config.get(table_type) else _('Disabled')
+        t_p = _('Export {t_t} on exit {s_t}.').format(t_t=t_t, s_t=s_t)
         console.log(t_p, style='#FF4689')
         log.info(t_p)
         downloader.gc.save_config(downloader.gc.config)
@@ -3423,20 +3524,23 @@ class UploadDownloadSettingHandler(CallbackHandler):
             downloader.gc.save_config(downloader.gc.config)
             await kb.toggle_upload_setting_button(global_config=downloader.gc.config)
         except Exception as e:
-            await query.message.reply_text('上传设置失败\n(具体原因请前往终端查看报错信息)')
-            log.error(f'上传设置失败,{_t(KeyWord.REASON)}:"{e}"')
+            await query.message.reply_text(_('Upload settings failed.\n(See the terminal for details)'))
+            log.error(_('Upload settings failed due to "{error}"').format(error=e))
 
     @staticmethod
     def __toggle_upload_param(downloader, param):
         current = downloader.gc.get_nesting_config(
             default_nesting=downloader.gc.default_upload_nesting, param='upload', nesting_param=param)
         downloader.gc.config.get('upload', downloader.gc.default_upload_nesting)[param] = not current
-        u_s = '禁用' if current else '开启'
+        u_s = _('Disable') if current else _('Enabled')
         u_p = ''
         if param == 'delete':
-            u_p = f'遇到"受限转发"时,下载后上传并"删除上传完成的本地文件"的行为已{u_s}。'
+            u_p = _(
+                'For "restricted forwarding", uploading after download and "deleting uploaded local files" is {u_s}.').format(
+                u_s=u_s
+            )
         elif param == 'download_upload':
-            u_p = f'遇到"受限转发"时,下载后上传已{u_s}。'
+            u_p = _('For "restricted forwarding", upload after download is {u_s}.').format(u_s=u_s)
         console.log(u_p, style='#FF4689')
         log.info(u_p)
 
@@ -3478,22 +3582,22 @@ class DownloadTypeHandler(CallbackHandler):
             downloader.app.save_config(downloader.app.config)
             await kb.toggle_download_setting_button(downloader.app.config)
         except ValueError:
-            await query.message.reply_text('⚠️至少需要选择一个下载类型')
+            await query.message.reply_text(_('⚠️Select at least one download type'))
         except Exception as e:
-            await query.message.reply_text('下载类型设置失败\n(具体原因请前往终端查看报错信息)')
-            log.error(f'下载类型设置失败,{_t(KeyWord.REASON)}:"{e}"')
+            await query.message.reply_text(_('Download type settings failed.\n(See the terminal for details)'))
+            log.error(_('Download type settings failed due to "{error}"').format(error=e))
 
     @staticmethod
     def __toggle_download_type(downloader, param):
         if param in downloader.app.download_type:
             if len(downloader.app.download_type) == 1:
                 raise ValueError
-            f_s = '禁用'
+            f_s = _('Disable')
             downloader.app.download_type.remove(param)
         else:
-            f_s = '启用'
+            f_s = _('Enable')
             downloader.app.download_type.append(param)
-        f_p = f'已{f_s}"{param}"类型的下载。'
+        f_p = _('Download for "{f_s}" {param}.').format(f_s=f_s, param=param)
         console.log(f_p, style='#FF4689')
         log.info(f_p)
 
@@ -3537,10 +3641,10 @@ class ForwardTypeHandler(CallbackHandler):
             downloader.gc.save_config(downloader.gc.config)
             await kb.toggle_forward_setting_button(downloader.gc.config)
         except ValueError:
-            await query.message.reply_text('⚠️至少需要选择一个转发类型')
+            await query.message.reply_text(_('⚠️Select at least one forward type'))
         except Exception as e:
-            await query.message.reply_text('转发设置失败\n(具体原因请前往终端查看报错信息)')
-            log.error(f'转发设置失败,{_t(KeyWord.REASON)}:"{e}"')
+            await query.message.reply_text(_('Forward settings failed.\n(See the terminal for details)'))
+            log.error(_('Forward settings failed due to "{error}"').format(error=e))
 
     @staticmethod
     def __toggle_forward_type(downloader, param):
@@ -3550,8 +3654,8 @@ class ForwardTypeHandler(CallbackHandler):
         if list(forward_type.values()).count(True) == 1 and status:
             raise ValueError
         forward_type[param] = not status
-        f_s = '禁用' if status else '启用'
-        f_p = f'已{f_s}"{param}"类型的转发。'
+        f_s = _('Disable') if status else _('Enable')
+        f_p = _('Forward for "{f_s}" {param}.').format(f_s=f_s, param=param)
         console.log(f_p, style='#FF4689')
         log.info(f_p)
 
@@ -3566,7 +3670,7 @@ class AuthUserHandler(CallbackHandler):
         if uid not in bot.gc.authorized_users:
             try:
                 await query.message.edit_text(
-                    text=f'用户`{uid}`已不在授权列表中。',
+                    text=_('User `{uid}` is no longer authorized.').format(uid=uid),
                     reply_markup=bot.menu_keyboard('auth'))
             except MessageNotModified:
                 pass
@@ -3578,15 +3682,15 @@ class AuthUserHandler(CallbackHandler):
             bot.root.remove(uid)
         bot.gc.config['authorized_users'] = bot.gc.authorized_users
         bot.gc.save_config(bot.gc.config)
-        p = f'已移除授权用户:{uid}。'
+        p = _('Removed authorized user: {uid}.').format(uid=uid)
         # 移除结果直接显示在text中,并复位为授权用户菜单(添加/移除、查看、返回)。
         try:
             await query.message.edit_text(
-                text=f'✅用户`{uid}`已移除授权。',
+                text=_('✅User `{uid}` authorization removed.').format(uid=uid),
                 reply_markup=bot.menu_keyboard('auth'))
         except MessageNotModified:
             pass
-        log.info(f'{p}当前授权用户:{bot.gc.authorized_users}')
+        log.info(_('{prefix}Current authorized users: {users}').format(prefix=p, users=bot.gc.authorized_users))
 
 
 class ListenRemoveHandler(CallbackHandler):
@@ -3612,9 +3716,12 @@ class ListenRemoveHandler(CallbackHandler):
                     KeyboardButton.single_button(text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL))
             except MessageNotModified:
                 pass
-            p = f'已删除监听下载,频道链接:"{link}"。'
+            p = _('Listen-and-download removed, channel link: "{link}".').format(link=link)
             console.log(p, style='#FF4689')
-            log.info(f'{p}当前的监听下载信息:{list(downloader.listen_download_chat)}')
+            log.info(_('{prefix}Current listen download info: {info}').format(
+                prefix=p,
+                info=list(downloader.listen_download_chat)
+            ))
             return None
         if not isinstance(downloader.cd.data, dict):
             return None
@@ -3626,7 +3733,7 @@ class ListenRemoveHandler(CallbackHandler):
         downloader.listen_forward_owner.pop(link, None)
         m = link.split()
         joined = ' -> '.join(m)
-        p = f'已删除监听转发,转发规则:"{joined}"。'
+        p = _('Listen-and-forward removed, forward rule: "{joined}".').format(joined=joined)
         try:
             await query.message.edit_text(' ➡️ '.join(m))
         except MessageNotModified:
@@ -3637,7 +3744,10 @@ class ListenRemoveHandler(CallbackHandler):
         except MessageNotModified:
             pass
         console.log(p, style='#FF4689')
-        log.info(f'{p}当前的监听转发信息:{list(downloader.listen_forward_chat)}')
+        log.info(_('{prefix}Current listen-and-forward info: {info}').format(
+            prefix=p,
+            info=list(downloader.listen_forward_chat)
+        ))
 
 
 class DownloadChatHandler(CallbackHandler):
@@ -3712,7 +3822,9 @@ class DownloadChatHandler(CallbackHandler):
             )
             if data == BotCallbackText.DOWNLOAD_CHAT_ID:
                 # 点击执行任务时统一打印记录download_chat配置的字典,无论是否使用关键词,便于核对本次任务的筛选条件。
-                log.info(f'执行/download_chat任务,当前筛选配置:{downloader.download_chat_filter}。')
+                log.info(_('Executing /download_chat task, current filter config: {filter}.').format(
+                    filter=downloader.download_chat_filter
+                ))
                 # 仅派发成功(返回匹配到的链接列表)才清除配置;失败时保留配置与原菜单,便于直接重试。
                 if await downloader.download_chat(chat_id=chat_id, callback_query=query) is not None:
                     self.__remove_chat_id(downloader, chat_id)
@@ -3753,10 +3865,10 @@ class DownloadChatHandler(CallbackHandler):
             p_s_d = ''
             if data == BotCallbackText.FILTER_START_DATE:
                 dtype = CalenderKeyboard.START_TIME_BUTTON
-                p_s_d = '起始'
+                p_s_d = _('Start')
             elif data == BotCallbackText.FILTER_END_DATE:
                 dtype = CalenderKeyboard.END_TIME_BUTTON
-                p_s_d = '结束'
+                p_s_d = _('End')
             # 已选过日期时,日历直接跳到选中日期所在的年月,并绿色标记那一天。
             start_time, end_time = self.__get_update_time(downloader, chat_id)
             selected_time = start_time if data == BotCallbackText.FILTER_START_DATE else end_time
@@ -3768,7 +3880,10 @@ class DownloadChatHandler(CallbackHandler):
                 year = selected_time.year
                 month = selected_time.month
             try:
-                await query.message.edit_text(text=f'📅选择{p_s_d}日期:\n{self.__filter_prompt(downloader, chat_id)}')
+                await query.message.edit_text(text=_('📅Select {p_s_d} date:\n{filter_prompt}').format(
+                    p_s_d=p_s_d,
+                    filter_prompt=self.__filter_prompt(downloader, chat_id)
+                ))
             except MessageNotModified:
                 pass
             await kb.calendar_keyboard(dtype=dtype, year=year, month=month, selected_date=selected_date,
@@ -3811,7 +3926,7 @@ class DownloadChatHandler(CallbackHandler):
                                                                                           datetime.datetime) else None
                 await kb.calendar_keyboard(year=year, month=month, dtype=dtype, selected_date=selected_date,
                                            chat_id=chat_id)
-                log.info(f'日期切换为{year}年,{month}月。')
+                log.info(_('Date switched to {year} year, {month} month.').format(year=year, month=month))
         elif data.startswith(BotCallbackPrefix.SELECT_YEAR):
             # 打开年份选择键盘,回调数据形如"select_year_{start|end}_{页面中心年}_{当前月}_{选中年份}"。
             parts = data.split('_')
@@ -3830,7 +3945,10 @@ class DownloadChatHandler(CallbackHandler):
                 month = int(parts[-1])
                 selected_year = year
             await kb.year_keyboard(dtype=dtype, year=year, month=month, selected_year=selected_year, chat_id=chat_id)
-            log.info(f'打开年份选择,选中年份:{selected_year}年,{month}月。')
+            log.info(_('Opened year selection, selected year: {year}, {month} month.').format(
+                year=selected_year,
+                month=month
+            ))
         elif data.startswith(BotCallbackPrefix.SET_YEAR):
             # 选定年份后回到日历视图,回调数据形如"set_year_{start|end}_{所选年}_{当前月}"。
             parts = data.split('_')
@@ -3847,7 +3965,7 @@ class DownloadChatHandler(CallbackHandler):
                                                                                       datetime.datetime) else None
             await kb.calendar_keyboard(year=year, month=month, dtype=dtype, selected_date=selected_date,
                                        chat_id=chat_id)
-            log.info(f'日期切换为{year}年,{month}月。')
+            log.info(_('Date switched to {year} year, {month} month.').format(year=year, month=month))
         elif data.startswith(('set_time_', 'set_specific_time_')):
             parts = data.split('_')
             date = parts[-1]
@@ -3857,14 +3975,17 @@ class DownloadChatHandler(CallbackHandler):
             timestamp = datetime.datetime.timestamp(datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S'))
             if 'start' in data:
                 date_type = 'start_date'
-                p_s_d = '起始'
+                p_s_d = _('Start')
             elif 'end' in data:
                 date_type = 'end_date'
-                p_s_d = '结束'
+                p_s_d = _('End')
             downloader.download_chat_filter[chat_id]['date_range'][date_type] = timestamp
             try:
                 await query.message.edit_text(
-                    text=f'📅选择{p_s_d}日期:\n{self.__filter_prompt(downloader, chat_id)}',
+                    text=_('📅Select {p_s_d} date:\n{filter_prompt}').format(
+                        p_s_d=p_s_d,
+                        filter_prompt=self.__filter_prompt(downloader, chat_id)
+                    ),
                     reply_markup=attach_task(
                         kb.time_keyboard(
                             dtype=dtype,
@@ -3877,7 +3998,10 @@ class DownloadChatHandler(CallbackHandler):
             except MessageNotModified:
                 pass
             log.info(
-                f'日期设置,起始日期:{self.__get_update_time(downloader, chat_id)[0]},结束日期:{self.__get_update_time(downloader, chat_id)[1]}。')
+                _('Date setting, start date: {start}, end date: {end}.').format(
+                    start=self.__get_update_time(downloader, chat_id)[0],
+                    end=self.__get_update_time(downloader, chat_id)[1]
+                ))
         elif data.startswith(('drop_keyword_', 'ignore_keyword')):
             if data.startswith('drop_keyword_'):
                 # 回调数据只携带关键词在列表中的下标,避免超长关键词把callback_data撑破64字节限制。
@@ -3938,10 +4062,12 @@ class DownloadChatHandler(CallbackHandler):
             except MessageNotModified:
                 pass
             except ValueError:
-                await query.message.reply_text('⚠️至少需要选择一个下载类型')
+                await query.message.reply_text(_('⚠️Select at least one download type'))
             except Exception as e:
-                await query.message.reply_text('下载类型设置失败\n(具体原因请前往终端查看报错信息)')
-                log.error(f'下载类型设置失败,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+                await query.message.reply_text(_('Download type settings failed.\n(See the terminal for details)'))
+                log.error(_('Download type settings failed due to "{error}"').format(
+                    error=e
+                ), exc_info=True)
         elif data in (
                 BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER,
                 BotCallbackText.CONFIRM_KEYWORD,
@@ -3953,7 +4079,10 @@ class DownloadChatHandler(CallbackHandler):
                 switched: bool = previous is not None and previous[0] != chat_id
                 panel_text: str = self.__filter_prompt(downloader, chat_id)
                 if switched:
-                    panel_text = f'{panel_text}\n⚠️关键词输入已切换到本任务,之后的输入将写入本任务。'
+                    panel_text = _(
+                        '{panel_text}\n⚠️Keyword input has switched to this task, subsequent input will be written to this task.').format(
+                        panel_text=panel_text
+                    )
                 try:
                     await query.message.edit_text(
                         text=panel_text,
@@ -4067,7 +4196,7 @@ class DownloadChatHandler(CallbackHandler):
                 if topic_key:
                     # 至少保留一个开启的话题,否则没有消息可下载。
                     if topic[topic_key] and list(topic.values()).count(True) == 1:
-                        await query.message.reply_text('⚠️至少需要选择一个话题')
+                        await query.message.reply_text(_('⚠️Select at least one topic'))
                         return None
                     topic[topic_key] = not topic[topic_key]
             # 页码收敛与总页数统一由topic_filter_button给出,面板不再另算一套分页常量。
@@ -4081,7 +4210,10 @@ class DownloadChatHandler(CallbackHandler):
                 except (ValueError, IndexError):
                     start, end = 1, total_pages
                 markup = kb.topic_page_menu_button(total_pages, page, start, end)
-                text = f'📄选择页码(共{total_pages}页,当前第{page}页)'
+                text = _('📄Select page (total {total_pages} pages, current page {page})').format(
+                    total_pages=total_pages,
+                    page=page
+                )
             else:
                 markup = topic_markup
                 text = self.__filter_prompt(downloader, chat_id)
@@ -4097,10 +4229,8 @@ class DownloadChatHandler(CallbackHandler):
     def __get_update_time(downloader, chat_id):
         start_timestamp = downloader.download_chat_filter[chat_id]['date_range']['start_date']
         end_timestamp = downloader.download_chat_filter[chat_id]['date_range']['end_date']
-        start_time = datetime.datetime.fromtimestamp(start_timestamp) if start_timestamp else _t(
-            DownloadChatPromptWord.EARLIEST)
-        end_time = datetime.datetime.fromtimestamp(end_timestamp) if end_timestamp else _t(
-            DownloadChatPromptWord.LATEST)
+        start_time = datetime.datetime.fromtimestamp(start_timestamp) if start_timestamp else _('Earliest')
+        end_time = datetime.datetime.fromtimestamp(end_timestamp) if end_timestamp else _('Latest')
         return start_time, end_time
 
     @staticmethod
@@ -4108,43 +4238,50 @@ class DownloadChatHandler(CallbackHandler):
         download_type = []
         for dtype, status in downloader.download_chat_filter[chat_id]['download_type'].items():
             if status:
-                download_type.append(_t(dtype))
+                download_type.append(dtype)
         return ','.join(download_type)
 
     @staticmethod
     def __get_format_keywords(downloader, chat_id):
         keywords = downloader.download_chat_filter[chat_id]['keyword']
         if not keywords:
-            return _t(DownloadChatPromptWord.NOT_SET)
-        return format_limited_text(keywords.keys(), unit='个关键词')
+            return _('Not set')
+        return format_limited_text(keywords.keys(), unit=_('keyword(s)'))
 
     @staticmethod
     def __get_format_comment_status(downloader, chat_id):
         status = downloader.download_chat_filter[chat_id]['comment']
-        return _t(DownloadChatPromptWord.ON) if status else _t(DownloadChatPromptWord.OFF)
+        return _('On') if status else _('Off')
 
     @staticmethod
     def __remove_chat_id(downloader, chat_id):
         if chat_id in downloader.download_chat_filter:
             downloader.download_chat_filter.pop(chat_id)
-            log.info(f'"{chat_id}"已从{downloader.download_chat_filter}中移除。')
+            log.info(_('"{chat_id}" removed from {filter}.').format(
+                chat_id=chat_id,
+                filter=downloader.download_chat_filter
+            ))
 
     def __filter_prompt(self, downloader, chat_id):
         start_time, end_time = self.__get_update_time(downloader, chat_id)
         topic: dict = downloader.download_chat_filter[chat_id].get('topic', {})
         topic_prompt: str = format_limited_text(
             sorted((topic_key.split('(')[0] for topic_key, status in topic.items() if status), key=int)
-            if topic else [], unit='个话题'
+            if topic else [], unit=_('topic(s)')
         )
-        topic_line: str = f'\n🗂️包含话题:{topic_prompt}' if topic_prompt else ''
+        topic_line: str = _('\n🗂️Included topics: {topic_prompt}').format(
+            topic_prompt=topic_prompt
+        ) if topic_prompt else ''
         return (
-            f'💬下载频道:`{chat_id}`\n'
-            f'⏮️当前选择的起始日期为:{start_time}\n'
-            f'⏭️当前选择的结束日期为:{end_time}\n'
-            f'📝当前选择的下载类型为:{self.__get_format_dtype(downloader, chat_id)}\n'
-            f'🔑当前匹配的关键词为:{self.__get_format_keywords(downloader, chat_id)}\n'
-            f'👥包含评论区:{self.__get_format_comment_status(downloader, chat_id)}'
-            f'{topic_line}'
+            _('💬Download channel:`{chat_id}`\n⏮️Current start date:{start_time}\n⏭️Current end date:{end_time}\n📝Current download types:{dtype}\n🔑Current matching keyword:{keyword}\n👥Include comments:{comment_status}{topic_line}').format(
+                chat_id=chat_id,
+                start_time=start_time,
+                end_time=end_time,
+                dtype=self.__get_format_dtype(downloader, chat_id),
+                keyword=self.__get_format_keywords(downloader, chat_id),
+                comment_status=self.__get_format_comment_status(downloader, chat_id),
+                topic_line=topic_line
+            )
         )
 
     @staticmethod
@@ -4152,14 +4289,16 @@ class DownloadChatHandler(CallbackHandler):
         if isinstance(start_time, datetime.datetime) and isinstance(end_time, datetime.datetime):
             if start_time > end_time:
                 await query.message.reply_text(
-                    text=f'❌日期设置失败\n'
-                         f'`起始日期({start_time})`>`结束日期({end_time})`\n'
+                    text=_('❌Date setting failed\n`start date ({start_time})` > '
+                           '`end date ({end_time})`\n').format(
+                        start_time=start_time, end_time=end_time)
                 )
                 return False
             elif start_time == end_time:
                 await query.message.reply_text(
-                    text=f'❌日期设置失败\n'
-                         f'`起始日期({start_time})`=`结束日期({end_time})`\n'
+                    text=_('❌Date setting failed\n`start date ({start_time})` = '
+                           '`end date ({end_time})`\n').format(
+                        start_time=start_time, end_time=end_time)
                 )
                 return False
         return True
@@ -4171,9 +4310,9 @@ class DownloadChatHandler(CallbackHandler):
         if list(dtype.values()).count(True) == 1 and status:
             raise ValueError
         dtype[param] = not status
-        f_s = '禁用' if status else '启用'
-        f_p = f'已{f_s}"{param}"类型用于/download_chat命令的下载。'
-        log.info(f'{f_p}当前的/download_chat下载类型设置:{dtype}')
+        f_s = _('Disable') if status else _('Enable')
+        f_p = _('Set "{param}" type {status} for the /download_chat command.').format(status=f_s, param=param)
+        log.info(_('{prefix}Current /download_chat download type settings: {dtype}').format(prefix=f_p, dtype=dtype))
 
 
 class CommandButtonHandler(CallbackHandler):

@@ -22,16 +22,18 @@ from module import (
     log,
     console
 )
-from module.language import _t
+from module.language import _
 from module.stdio import MetaData
 from module.parser import PARSE_ARGS
-from module.util import get_work_directory
+from module.util import (
+    get_work_directory,
+    normalize_msgid
+)
 from module.path_tool import (
     safe_delete,
     calc_sha256
 )
 from module.enums import (
-    KeyWord,
     NoticeType,
     UploadStatus,
     DownloadStatus
@@ -170,7 +172,7 @@ class DownloadTask:
         """登记或更新链接下某个消息成员的展示信息与状态。"""
         key: int = int(message_id)
         member: dict = self.member_info.get(key) or {
-            'name': f'消息 {key}',
+            'name': _('Message {key}').format(key=key),
             'size': '',
             'size_byte': 0,
             'date': '',
@@ -227,7 +229,10 @@ class DownloadTask:
         inner_message_id = getattr(message, 'id', None)
         if chat is None:
             # 这类消息下载后通常落在UNKNOWN_CHAT_ID目录,可据此反查根因。
-            log.warning(f'消息"{inner_message_id}"的chat为空(可能已删除或无权访问),无法构造下载去重键,已跳过并发去重。')
+            log.warning(
+                _('The chat of message "{inner_message_id}" is empty (possibly deleted or inaccessible), cannot build the dedup key, skipped concurrent dedup.').format(
+                    inner_message_id=inner_message_id
+                ))
             return None
         return chat.id, message_id if message_id is not None else inner_message_id
 
@@ -350,23 +355,24 @@ class DownloadTask:
                 task.error_msg = e_code
                 # 链接级解析失败(如频道不存在/消息不存在)不会走 add_item,导致网页没有失败成员、无法归类到失败板块。
                 # 登记一个 message_id=-1 的哨兵失败成员(真实消息 id 从 1 起,-1 无歧义),让现有网页逻辑自然识别为失败。
-                fail_reason: str = (e_code or {}).get('error_msg') or (e_code or {}).get('all_member') or '下载失败'
+                fail_reason: str = (e_code or {}).get('error_msg') or (e_code or {}).get('all_member') or _(
+                    'Download failed')
                 task.update_member(message_id=-1, status=DownloadStatus.FAILURE, name=fail_reason)
                 task.add_fail(-1)
                 reason: str = e_code.get('error_msg')
                 if reason:
                     log.error(
-                        f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                        f'{_t(KeyWord.LINK)}:"{link}"{reason},'
-                        f'{_t(KeyWord.REASON)}:"{e_code.get("all_member")}",'
-                        f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
-                    )
+                        _('「📥Download task」[Link]:"{link}"{error},[Reason]:"{detail}",[Status]:Failure.').format(
+                            link=link,
+                            error=reason,
+                            detail=e_code.get("all_member")
+                        ))
                 else:
                     log.warning(
-                        f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                        f'{_t(KeyWord.LINK)}:"{link}"{e_code.get("all_member")},'
-                        f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
-                    )
+                        _('「📥Download task」[Link]:"{link}"{detail},[Status]:Failure.').format(
+                            link=link,
+                            detail=e_code.get("all_member")
+                        ))
             elif status == DownloadStatus.DOWNLOADING:
                 # 若同一链接此前曾解析失败(登记过 -1 哨兵成员/失败计数/错误),本次成功需清除,避免残留失败计数。
                 task.member_info.pop(-1, None)
@@ -389,19 +395,16 @@ class DownloadTask:
             task.add_file_name(file_name)
             if task.member_num == task.complete_num:
                 console.log(
-                    f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                    f'{_t(KeyWord.LINK)}:"{link}",'
-                    f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SUCCESS)}。'
-                )
+                    _('「📥Download task」[Link]:"{link}",[Status]:Success.').format(link=link))
                 task.error_msg = {}
                 asyncio.create_task(
                     self.done_notice(
-                        f'"{link}"下载完成。',
+                        _('"{link}" download completed.').format(link=link),
                         requester=task.owner,
                         notice_type=NoticeType.DOWNLOAD
                     )
                 )
-                log.info(f'链接:"{link}"下载完成。')
+                log.info(_('Link "{link}" download completed.').format(link=link))
             return res
 
         return wrapper
@@ -470,38 +473,45 @@ class UploadTask:
                             pass
                         elif value == UploadStatus.UPLOADING:
                             console.log(
-                                f'{_t(KeyWord.UPLOAD_TASK)}'
-                                f'{_t(KeyWord.CHANNEL)}:"{self.chat_id}",'
-                                f'{_t(KeyWord.FILE)}:"{self.file_path}",'
-                                f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(self.file_size)},'
-                                f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.UPLOADING)}。'
-                            )
+                                _('「📤Upload task」[Channel]:"{chat_id}",[File]:"{file_path}",[Size]:{size},[Status]:Uploading.').format(
+                                    chat_id=self.chat_id,
+                                    file_path=self.file_path,
+                                    size=MetaData.suitable_units_display(self.file_size)
+                                ))
                         elif value == UploadStatus.SUCCESS:
                             more = ''
                             if self.send_as_media_group:
-                                more += f'(等待所有媒体上传完成以媒体组发送)'
+                                more += _(
+                                    '(Waiting for all media uploads to finish before sending as a media group)').format()
                             if self.with_delete:
-                                more += '(本地文件已删除)'
+                                more += _('(Local file deleted)')
                             console.log(
-                                f'{_t(KeyWord.UPLOAD_TASK)}'
-                                f'{_t(KeyWord.CHANNEL)}:"{self.chat_id}",'
-                                f'{_t(KeyWord.FILE)}:"{self.file_path}",'
-                                f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(self.file_size)},'
-                                f'{_t(KeyWord.STATUS)}:{_t(UploadStatus.SUCCESS)}{more}。',
-                            )
-                            self.notice(f'"{self.file_path}" ⬆️ "{self.chat_id}"上传完成。\n{more}')
+                                _('「📤Upload task」[Channel]:"{chat_id}",[File]:"{file_path}",[Size]:{size},[Status]:Success{more}.').format(
+                                    chat_id=self.chat_id,
+                                    file_path=self.file_path,
+                                    size=MetaData.suitable_units_display(self.file_size),
+                                    more=more
+                                ))
+                            self.notice(_('"{file_path}" ⬆️ "{chat_id}" upload completed.\n{more}').format(
+                                file_path=self.file_path,
+                                chat_id=self.chat_id,
+                                more=more
+                            ))
                         elif value == UploadStatus.SENT:
                             pass
                         elif value == UploadStatus.FAILURE:
                             log.error(
-                                f'{_t(KeyWord.UPLOAD_TASK)}'
-                                f'{_t(KeyWord.CHANNEL)}:"{self.chat_id}",'
-                                f'{_t(KeyWord.FILE)}:"{self.file_path}",'
-                                f'{_t(KeyWord.SIZE)}:{MetaData.suitable_units_display(self.file_size)},'
-                                f'{_t(KeyWord.REASON)}:"{self.error_msg}",'
-                                f'{_t(KeyWord.STATUS)}:{_t(str(value))}。'
-                            )
-                            self.notice(f'"{self.file_path}" ⬆️ "{self.chat_id}"上传失败。')
+                                _('「📤Upload task」[Channel]:"{chat_id}",[File]:"{file_path}",[Size]:{size},[Reason]:"{error}",[Status]:{status}.').format(
+                                    chat_id=self.chat_id,
+                                    file_path=self.file_path,
+                                    size=MetaData.suitable_units_display(self.file_size),
+                                    error=self.error_msg,
+                                    status=_(normalize_msgid(str(value)))
+                                ))
+                            self.notice(_('"{file_path}" ⬆️ "{chat_id}" upload failed.').format(
+                                file_path=self.file_path,
+                                chat_id=self.chat_id
+                            ))
                     elif name == 'chat_id':
                         if value:
                             self.upload_manager_path: str = os.path.join(
@@ -567,7 +577,9 @@ class UploadTask:
             try:
                 _json = json.load(f)
             except Exception as e:
-                log.info(f'UploadManager的json内容可能为空,即将重新生成,{_t(KeyWord.REASON)}:"{e}"')
+                log.info(_('UploadManager json may be empty, regenerating due to "{error}"').format(
+                    error=e
+                ))
                 safe_delete(self.upload_manager_path)
                 self.save_json()
         self.file_id = _json.get('file_id', self.file_id)
@@ -640,16 +652,23 @@ class UploadTask:
             if isinstance(part, int) and 0 <= part < self.file_total_parts and part not in valid_parts:
                 valid_parts.append(part)
             else:
-                log.info(f'过滤无效分片索引:{part}(有效范围:0-{self.file_total_parts - 1})。')
+                log.info(_('Filtered invalid part index: {part} (valid range: 0-{last_part}).').format(
+                    part=part,
+                    last_part=self.file_total_parts - 1
+                ))
 
         if len(valid_parts) != len(self.file_part):
             self.file_part = valid_parts
             self.save_json()
-            log.info(f'清理后的分片索引:{valid_parts}。')
+            log.info(_('Cleaned part indices: {valid_parts}.').format(valid_parts=valid_parts))
 
         all_parts = set(range(self.file_total_parts))
         uploaded_parts = set(valid_parts)
         missing_parts = sorted(list(all_parts - uploaded_parts))
 
-        log.info(f'总需分片:{all_parts},已上传:{uploaded_parts},缺失:{missing_parts}。')
+        log.info(_('Total parts: {all_parts}, uploaded: {uploaded_parts}, missing: {missing_parts}.').format(
+            all_parts=all_parts,
+            uploaded_parts=uploaded_parts,
+            missing_parts=missing_parts
+        ))
         return missing_parts

@@ -46,16 +46,15 @@ from module import (
     VERSION_WITH_COMMIT
 )
 from module.remote import rc
-from module.language import _t
+from module.language import _
 from module.util import (
     is_docker,
     check_update,
+    normalize_msgid,
     get_terminal_width
 )
 from module.enums import (
     Banner,
-    KeyWord,
-    DownloadType,
     UploadStatus,
     ProcessConfig,
     GradientColor,
@@ -113,15 +112,15 @@ class StatisticalTable:
         total_video_note: int = sum([success_video_note, failure_video_note, skip_video_note])
         total_live_photo: int = sum([success_live_photo, failure_live_photo, skip_live_photo])
         table_data = [
-            [_t(DownloadType.VIDEO), success_video, failure_video, skip_video, total_video],
-            [_t(DownloadType.PHOTO), success_photo, failure_photo, skip_photo, total_photo],
-            [_t(DownloadType.DOCUMENT), success_document, failure_document, skip_document, total_document],
-            [_t(DownloadType.AUDIO), success_audio, failure_audio, skip_audio, total_audio],
-            [_t(DownloadType.VOICE), success_voice, failure_voice, skip_voice, total_voice],
-            [_t(DownloadType.ANIMATION), success_animation, failure_animation, skip_animation, total_animation],
-            [_t(DownloadType.VIDEO_NOTE), success_video_note, failure_video_note, skip_video_note, total_video_note],
-            [_t(DownloadType.LIVE_PHOTO), success_live_photo, failure_live_photo, skip_live_photo, total_live_photo],
-            ['合计',
+            [_('Video'), success_video, failure_video, skip_video, total_video],
+            [_('Photo'), success_photo, failure_photo, skip_photo, total_photo],
+            [_('Document'), success_document, failure_document, skip_document, total_document],
+            [_('Audio'), success_audio, failure_audio, skip_audio, total_audio],
+            [_('Voice'), success_voice, failure_voice, skip_voice, total_voice],
+            [_('Animation'), success_animation, failure_animation, skip_animation, total_animation],
+            [_('Video note'), success_video_note, failure_video_note, skip_video_note, total_video_note],
+            [_('Live photo'), success_live_photo, failure_live_photo, skip_live_photo, total_live_photo],
+            [_('Total'),
              sum([success_video, success_photo, success_document, success_audio, success_voice, success_animation,
                   success_video_note, success_live_photo]),
              sum([failure_video, failure_photo, failure_document, failure_audio, failure_voice, failure_animation,
@@ -133,7 +132,7 @@ class StatisticalTable:
              ]
         ]
         if len(table_data) < 3:
-            log.error(f'无法输出计数表格,{_t(KeyWord.REASON)}:"表格数据非法"')
+            log.error(_('Failed to output the count table due to "invalid table data"').format())
             return False
         check_count: int = 0
         for row in table_data:
@@ -141,10 +140,11 @@ class StatisticalTable:
                 if isinstance(count, int):
                     check_count += count
         if check_count == 0:
-            log.debug(f'无法生成计数统计表,{_t(KeyWord.REASON)}:"没有任何下载"')
+            log.debug(_('Failed to generate the count table due to "no downloads"').format())
             return False
-        title: str = '媒体下载统计'
-        header: tuple = ('类型&状态', '成功下载', '失败下载', '跳过下载', '合计')
+        title: str = _('Media download statistics')
+        header: tuple = (_('Type & status'), _('Successful download'), _('Failed download'), _('Skipped download'),
+                         _('Total'))
         if export:
             try:
                 export_directory: str = '/app/form/CountForm' if is_docker() else export_directory
@@ -152,7 +152,9 @@ class StatisticalTable:
                 with open(
                         file=os.path.join(
                             export_directory,
-                            f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_媒体下载统计表.csv'
+                            _('{timestamp}_media_download_statistics.csv').format(
+                                timestamp=datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+                            )
                         ),
                         mode='w',
                         newline='',
@@ -162,7 +164,9 @@ class StatisticalTable:
                     writer.writerow(header)
                     writer.writerows(table_data)
             except Exception as e:
-                log.error(f'导出媒体计数统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
+                log.error(_('Error exporting the media count table due to "{error}"').format(
+                    error=e
+                ))
                 if only_export:
                     return None
         try:
@@ -177,7 +181,9 @@ class StatisticalTable:
                 result = panel.to_markdown_chunks()
             return result
         except Exception as e:
-            log.error(f'打印媒体计数统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(_('Error printing the media count table due to "{error}"').format(
+                error=e
+            ))
             return None
 
     @staticmethod
@@ -216,17 +222,20 @@ class StatisticalTable:
                 data.append([index, link, file_names, complete_rate, error_info])
 
             if not data:
-                log.debug(f'无法生成下载链接统计表,{_t(KeyWord.REASON)}:"没有任何下载"')
+                log.debug(_('Failed to generate the download link table due to "no downloads"').format(
+                ))
                 return False
-            title: str = '下载链接统计'
-            header: tuple = ('编号', '链接', '文件名', '完成率', '错误信息')
+            title: str = _('Download link statistics')
+            header: tuple = (_('No.'), _('Link'), _('File name'), _('Completion rate'), _('Error message'))
             if export:
                 try:
                     export_directory: str = '/app/form/LinkForm' if is_docker() else export_directory
                     os.makedirs(export_directory, exist_ok=True)  # noqa.
                     with open(file=os.path.join(
                             export_directory,
-                            f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_下载链接统计表.csv'
+                            _('{timestamp}_download_link_statistics.csv').format(
+                                timestamp=datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+                            )
                     ),
                             mode='w',
                             newline='',
@@ -236,7 +245,9 @@ class StatisticalTable:
                         writer.writerow(header)
                         writer.writerows(data)
                 except Exception as e:
-                    log.error(f'导出下载链接统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
+                    log.error(_('Error exporting the download link table due to "{error}"').format(
+                        error=e
+                    ))
                     if only_export:
                         return None
             result: Union[bool, None, List[str]] = True
@@ -251,7 +262,9 @@ class StatisticalTable:
                 result = panel.to_markdown_chunks()
             return result
         except Exception as e:
-            log.error(f'打印下载链接统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(_('Error printing the download link table due to "{error}"').format(
+                error=e
+            ))
             return None
 
     @staticmethod
@@ -268,29 +281,29 @@ class StatisticalTable:
         """打印统计的上传信息的表格。"""
         tasks = list(upload_tasks)
         if not tasks:
-            log.debug(f'无法生成上传统计表,{_t(KeyWord.REASON)}:"没有任何上传"')
+            log.debug(_('Failed to generate the upload table due to "no uploads"').format())
             return False
-        meta_table_title: str = '上传任务统计'
+        meta_table_title: str = _('Upload task statistics')
         meta_table_header: tuple = (
-            '编号',
-            '频道',
-            '文件',
-            '文件大小',
-            '状态',
-            '上传后自动删除',
-            '错误信息'
+            _('No.'),
+            _('Channel'),
+            _('File'),
+            _('File size'),
+            _('Status'),
+            _('Auto-delete after upload'),
+            _('Error info')
         )
         meta_table_data = []
         for index, task in enumerate(tasks, start=1):
             if isinstance(task.status, Enum):
-                status = _t(str(task.status.value))
+                status = _(normalize_msgid(str(task.status.value)))
             else:
-                status = _t(str(task.status))
-            delete = '是' if getattr(task, 'with_delete', False) else '否'
+                status = _(normalize_msgid(str(task.status)))
+            delete = _('Yes') if getattr(task, 'with_delete', False) else _('No')
             error_msg = getattr(task, 'error_msg', False) or ''
             row = [
                 index,
-                str(task.chat_id) if task.chat_id else '未知',
+                str(task.chat_id) if task.chat_id else _('Unknown'),
                 task.file_path,
                 MetaData.suitable_units_display(task.file_size),
                 status,
@@ -302,8 +315,8 @@ class StatisticalTable:
         # 检查数据有效性。
         if len(meta_table_data) < 1:
             return False
-        count_table_title = '媒体上传统计'
-        count_table_header: tuple = ('状态', '数量')
+        count_table_title = _('Media upload statistics')
+        count_table_header: tuple = (_('Status'), _('Quantity'))
         pending_tasks = len([t for t in tasks if t.status == UploadStatus.PENDING])
         uploading_tasks = len([t for t in tasks if t.status == UploadStatus.UPLOADING])
         success_tasks = len([t for t in tasks if t.status == UploadStatus.SUCCESS])
@@ -313,13 +326,13 @@ class StatisticalTable:
         total_tasks = len(tasks)
         total_size = sum(task.file_size for task in tasks)
         count_table_data = [
-            [_t(UploadStatus.PENDING), pending_tasks],
-            [_t(UploadStatus.UPLOADING), uploading_tasks],
-            [_t(UploadStatus.SUCCESS), success_tasks],
-            [_t(UploadStatus.FAILURE), failure_tasks],
-            [_t(UploadStatus.SENT), sent_tasks],
-            ['自动删除', delete_tasks],
-            ['合计', total_tasks]
+            [_('Pending'), pending_tasks],
+            [_('Uploading'), uploading_tasks],
+            [_('Success'), success_tasks],
+            [_('Failure'), failure_tasks],
+            [_('Sent'), sent_tasks],
+            [_('Auto-delete'), delete_tasks],
+            [_('Total'), total_tasks]
         ]
 
         if export:
@@ -327,7 +340,7 @@ class StatisticalTable:
                 export_directory: str = '/app/form/Normal' if is_docker() else export_directory
                 os.makedirs(export_directory, exist_ok=True)
                 timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-                filename = f'{timestamp}_上传任务统计表.csv'
+                filename = _('{timestamp}_upload_task_statistics.csv').format(timestamp=timestamp)
 
                 with open(
                         file=os.path.join(export_directory, filename),
@@ -348,18 +361,22 @@ class StatisticalTable:
 
                     writer.writerow([])
                     writer.writerow(
-                        ['平均大小', MetaData.suitable_units_display(
+                        [_('Average size'), MetaData.suitable_units_display(
                             total_size / total_tasks if total_tasks > 0 else 0)]
                     )
                     writer.writerow(
-                        ['总大小', MetaData.suitable_units_display(
+                        [_('Total size'), MetaData.suitable_units_display(
                             total_size)]
                     )
 
-                log.info(f'上传任务统计表已导出:{os.path.join(export_directory, filename)}')
+                log.info(_('Upload task statistics table exported: {path}').format(
+                    path=os.path.join(export_directory, filename)
+                ))
 
             except Exception as e:
-                log.error(f'导出上传任务统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
+                log.error(_('Error exporting the upload task table due to "{error}"').format(
+                    error=e
+                ))
                 if only_export:
                     return None
 
@@ -389,7 +406,9 @@ class StatisticalTable:
             return result
 
         except Exception as e:
-            log.error(f'打印上传任务统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(_('Error printing the upload task table due to "{error}"').format(
+                error=e
+            ))
             return None
 
     @staticmethod
@@ -404,64 +423,80 @@ class StatisticalTable:
                         key, value = i
                         proxy_key.append(key)
                         proxy_value.append(value)
-                proxy_table = PanelTable(title='代理配置', header=tuple(proxy_key), data=[proxy_value])
+                proxy_table = PanelTable(title=_('Proxy configuration'), header=tuple(proxy_key), data=[proxy_value])
                 proxy_table.print_meta()
         except Exception as e:
-            log.error(f'打印代理配置表时出错,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(_('Error printing the proxy config table due to "{error}"').format(
+                error=e
+            ))
         try:
             if app.links and os.path.isdir(app.links):
-                log.warning(f'"{app.links}"是一个文件夹,并非.txt文本,请重新填写媒体链接文本文件的路径。')
+                log.warning(
+                    _('"{links}" is a folder, not a .txt file, please re-enter the path to the media link text file.').format(
+                        links=app.links
+                    ))
             else:
-                with open(file=app.links, mode='r', encoding='UTF-8') as _:
-                    res: list = [content.strip() for content in _.readlines() if content.strip()]
+                with open(file=app.links, mode='r', encoding='UTF-8') as j:
+                    res: list = [content.strip() for content in j.readlines() if content.strip()]
                 if res:
                     format_res: list = []
                     for i in enumerate(res, start=1):
                         format_res.append(list(i))
                     link_table = PanelTable(
-                        title='链接内容',
-                        header=('编号', '链接'),
+                        title=_('Link content'),
+                        header=(_('No.'), _('Link')),
                         data=format_res
                     )
                     link_table.print_meta()
         except FileNotFoundError:
-            log.warning('无法读取媒体链接文件,可能已被删除。')
+            log.warning(_('Unable to read the media link file; it may have been deleted.'))
         except (PermissionError, AttributeError) as e:  # v1.1.3 用户错误填写路径提示。
-            log.error(f'读取"{app.links}"时出错,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(_('Error reading "{links}" due to "{error}"').format(
+                links=app.links,
+                error=e
+            ))
         except Exception as e:
-            log.error(f'打印链接内容统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(_('Error printing the link content table due to "{error}"').format(
+                error=e
+            ))
         try:
             _dtype: list = app.download_type.copy()  # 浅拷贝赋值给_dtype,避免传入函数后改变原数据。
             data: list = [
-                [_t(DownloadType.VIDEO),
+                [_('Video'),
                  ProcessConfig.get_dtype(_dtype).get('video', False)
                  ],
-                [_t(DownloadType.PHOTO),
+                [_('Photo'),
                  ProcessConfig.get_dtype(_dtype).get('photo', False)
                  ],
-                [_t(DownloadType.DOCUMENT),
+                [_('Document'),
                  ProcessConfig.get_dtype(_dtype).get('document', False)
                  ],
-                [_t(DownloadType.AUDIO),
+                [_('Audio'),
                  ProcessConfig.get_dtype(_dtype).get('audio', False)
                  ],
-                [_t(DownloadType.VOICE),
+                [_('Voice'),
                  ProcessConfig.get_dtype(_dtype).get('voice', False)
                  ],
-                [_t(DownloadType.ANIMATION),
+                [_('Animation'),
                  ProcessConfig.get_dtype(_dtype).get('animation', False)
                  ],
-                [_t(DownloadType.VIDEO_NOTE),
+                [_('Video note'),
                  ProcessConfig.get_dtype(_dtype).get('video_note', False)
                  ],
-                [_t(DownloadType.LIVE_PHOTO),
+                [_('Live photo'),
                  ProcessConfig.get_dtype(_dtype).get('live_photo', False)
                  ]
             ]
-            download_type_table = PanelTable(title='下载类型', header=('类型', '是否下载'), data=data)
+            download_type_table = PanelTable(
+                title=_('Download types'),
+                header=(_('Type'), _('Download or not')),
+                data=data
+            )
             download_type_table.print_meta()
         except Exception as e:
-            log.error(f'打印下载类型统计表时出错,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(_('Error printing the download type table due to "{error}"').format(
+                error=e
+            ))
 
     @staticmethod
     def print_env_table(app):
@@ -470,29 +505,34 @@ class StatisticalTable:
             local_version=__version__
         )
         log.info(
-            f'平台:"{app.platform}",'
-            f'Python版本:"{sys.version.split()[0]}",'
-            f'最新版本:"{update_version if update_version else __version__}",'
-            f'Pyrogram版本:"{pyrogram_version}"。')
+            _('Platform: "{platform}", Python version: "{python_version}", latest version: "{latest_version}", Pyrogram version: "{pyrogram_version}".').format(
+                platform=app.platform,
+                python_version=sys.version.split()[0],
+                latest_version=update_version if update_version else __version__,
+                pyrogram_version=pyrogram_version
+            ))
         log.info(
-            f'用户配置文件:"{app.config_path}",'
-            f'保存目录:"{app.save_directory}",'
-            f'会话目录:"{app.work_directory}",'
-            f'缓存目录:"{app.temp_directory}"。')
-        log.info(f'使用系统代理:"{app.enable_proxy}"。')
+            _('User config file: "{config_path}", save directory: "{save_directory}", session directory: "{work_directory}", cache directory: "{temp_directory}".').format(
+                config_path=app.config_path,
+                save_directory=app.save_directory,
+                work_directory=app.work_directory,
+                temp_directory=app.temp_directory
+            ))
+        log.info(_('Use system proxy: "{enable_proxy}".').format(enable_proxy=app.enable_proxy))
         PanelTable(
-            title='运行环境',
-            header=('名称', '值'),
+            title=_('Runtime environment'),
+            header=(_('Name'), _('Value')),
             data=[
-                ['平台', app.platform],
-                ['Python版本', sys.version.split()[0]],
-                ['TRMD版本', f'{VERSION_WITH_COMMIT}({update_version}⬆)' if update_version else VERSION_WITH_COMMIT],
-                ['Pyrogram版本', pyrogram_version],
-                ['用户配置文件', app.config_path],
-                ['保存目录', app.save_directory],
-                ['会话目录', app.work_directory],
-                ['缓存目录', app.temp_directory],
-                ['使用系统代理', app.enable_proxy]
+                [_('Platform'), app.platform],
+                [_('Python version'), sys.version.split()[0]],
+                [_('TRMD version'),
+                 f'{VERSION_WITH_COMMIT}({update_version}⬆)' if update_version else VERSION_WITH_COMMIT],
+                [_('Pyrogram version'), pyrogram_version],
+                [_('User config file'), app.config_path],
+                [_('Save directory'), app.save_directory],
+                [_('Session directory'), app.work_directory],
+                [_('Cache directory'), app.temp_directory],
+                [_('Use system proxy'), app.enable_proxy]
             ],
             show_lines=True
         ).print_meta()
@@ -506,7 +546,7 @@ class PanelTable:
         self.table = Table(title=title, highlight=True, show_lines=show_lines)
         self.table.title_style = Style(color='white', bold=True)
         # 添加列。
-        for _, col in enumerate(header):
+        for i, col in enumerate(header):
             style = styles.get(col, {}) if styles else {}
             self.table.add_column(col, **style)
 
@@ -655,7 +695,8 @@ class MetaData:
                 )
                 console.print(
                     GradientColor.gen_gradient_text(
-                        text='微信扫码支持作者,您的支持是我持续更新的动力。',
+                        text=_(
+                            'Scan the QR code with WeChat to support the author. Your support keeps the project updated.'),
                         gradient_color=GradientColor.YELLOW2GREEN_10
                     ),
                     justify='center'
@@ -686,7 +727,7 @@ class MetaData:
     @staticmethod
     def print_disclaimer():
         console.print(GradientColor.gen_gradient_text(
-            '\t所有使用本软件的行为及其后果均由使用者自行承担全部法律责任，开发者不对任何使用行为及其后果负责。',
+            _('All use of this software and its consequences are the sole responsibility of the user. The developer is not responsible for any use or its consequences.'),
             gradient_color=GradientColor.BLUE2PURPLE_14)
         )
 
@@ -723,7 +764,7 @@ class MetaData:
 
     @staticmethod
     def print_helper():
-        console.print(Markdown('# 配置文件说明'))
+        console.print(Markdown(_('# Config file description')))
         console.print(Markdown(README))
 
     @staticmethod
@@ -733,7 +774,7 @@ class MetaData:
         qr.make()
         qr_row: int = len(qr.modules) + 2
         qr_col: int = len(qr.modules[0]) + 2
-        qr_map: list = [[False for _ in range(qr_col)] for _ in range(qr_row)]
+        qr_map: list = [[False for i in range(qr_col)] for i in range(qr_row)]
         for row_id, row in enumerate(qr.modules):
             for col_id, pixel in enumerate(row):
                 qr_map[row_id + 1][col_id + 1] = pixel
@@ -816,10 +857,10 @@ class ConnectionStatus:
     _displayed_message: str = ''
     _render_token: int = 0
     _logger_installed: bool = False
-    HEALTH_OK: tuple = ('✓', '#B1DB74', '连接正常')
-    HEALTH_RECONNECT: tuple = ('↻', '#FFB579', '正在重连')
-    HEALTH_FLOOD: tuple = ('◉', '#FF4689', '正在等待')
-    HEALTH_FAILURE: tuple = ('✕', '#FF7979', '连接异常')
+    HEALTH_OK: tuple = ('✓', '#B1DB74', _('Connection normal'))
+    HEALTH_RECONNECT: tuple = ('↻', '#FFB579', _('Reconnecting'))
+    HEALTH_FLOOD: tuple = ('◉', '#FF4689', _('Waiting'))
+    HEALTH_FAILURE: tuple = ('✕', '#FF7979', _('Connection abnormal'))
     BUSY_DELAY: float = 1
     CONNECTED_GRACE: float = 1
 
@@ -865,16 +906,16 @@ class ConnectionStatus:
         with cls._lock:
             if cls._log_failure:
                 glyph, style, text = cls.HEALTH_FAILURE
-                msg = cls._current_message or '连接异常'
+                msg = cls._current_message or _('Connection failure')
             elif cls._connecting > 0:
                 glyph, style, text = cls.HEALTH_RECONNECT
-                msg = cls._current_message or '正在尝试重连。'
+                msg = cls._current_message or _('Retrying reconnect.')
             elif cls._flood_waiting > 0:
                 glyph, style, text = cls.HEALTH_FLOOD
-                msg = cls._flood_message or '请求频繁,等待中。'
+                msg = cls._flood_message or _('Too many requests, waiting.')
             elif cls._active > 0:
                 glyph, style, text = cls.HEALTH_OK
-                msg = cls._busy_message or '正在发送数据。'
+                msg = cls._busy_message or _('Sending data.')
             else:
                 glyph, style, text = cls.HEALTH_OK
                 msg = ''
@@ -900,7 +941,7 @@ class ConnectionStatus:
         try:
             cls._live.update(
                 Text.assemble(cls._health_prefix(), Text(' • ', 'dim'), Text(message)),
-                refresh=True,
+                refresh=True
             )
         except Exception:  # noqa.
             pass  # 状态提示为辅助显示,刷新失败不应波及业务调用流。
@@ -911,11 +952,11 @@ class ConnectionStatus:
         if cls._live is None:
             return
         if cls._connecting > 0 or cls._log_failure:
-            cls._render(ConnectionState.CONNECTING, cls._current_message or '正在尝试重连。')
+            cls._render(ConnectionState.CONNECTING, cls._current_message or _('Retrying reconnect.'))
         elif cls._flood_waiting > 0:
-            cls._render(ConnectionState.CONNECTING, cls._flood_message or '请求频繁,等待中。')
+            cls._render(ConnectionState.CONNECTING, cls._flood_message or _('Too many requests, waiting.'))
         elif cls._active > 0:
-            cls._render(ConnectionState.CONNECTING, cls._busy_message or '正在发送数据。')
+            cls._render(ConnectionState.CONNECTING, cls._busy_message or _('Sending data.'))
         else:
             # 期望回到已连接:若当前正显示连接中,延迟一小段宽限,避免分块请求间隙反复闪烁。
             if cls._state != ConnectionState.CONNECTED:
@@ -1091,7 +1132,7 @@ class ConnectionStatusLogHandler(logging.Handler):
         except Exception:  # noqa.
             return
         if 'Proxy connection failed' in message or 'Unable to connect due to network issues' in message:
-            ConnectionStatus.mark_failure('由于网络/代理连接失败,正在尝试重连。')
+            ConnectionStatus.mark_failure(_('Network/proxy connection failed, retrying reconnect.'))
         elif ('Connection established' in message
               or 'Proxy connection established' in message
               or 'Connected!' in message):

@@ -64,7 +64,7 @@ from module import (
 )
 from module.web import Web
 from module.remote import rc
-from module.language import _t
+from module.language import _
 from module.filter import Filter
 from module.app import Application
 from module.notice import NoticeHub
@@ -97,7 +97,6 @@ from module.storage import (
 from module.enums import (
     Emoji,
     Issues,
-    KeyWord,
     LinkType,
     BotButton,
     BotMessage,
@@ -130,6 +129,7 @@ from module.util import (
     flip_emoji,
     format_chat_link,
     check_environment,
+    normalize_msgid,
     get_message_dtype,
     collect_message_id,
     safe_delete_message,
@@ -217,7 +217,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.pending_storage_tasks.add(task)
             task.add_done_callback(self.pending_storage_tasks.discard)
         except Exception as e:
-            log.warning(f'登记网页存储失败,{_t(KeyWord.REASON)}:"{e}"')
+            log.warning(_('Failed to register web storage due to "{error}"').format(error=e))
 
     def storage_download(
             self,
@@ -277,7 +277,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
             )
         elif not with_upload and link_count > Bot.MAX_BOT_NOTICE_ITEMS:  # 仅当非下载后上传且链接确实过多时才告警;下载后上传静默由上传结果统一反馈,不算异常。
-            log.info('消息过长,本次任务无法通过机器人显示通知。')
+            log.info(_('Message too long, task notification cannot be shown via bot.'))
         links: Union[set, None] = self.__process_links(link=list(right_link))
 
         if links is None:
@@ -341,7 +341,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         upload_task.with_delete = self.gc.upload_delete
         await self.uploader.create_upload_task(
             link=valid_link_cache.get(target_link, None) or target_link if valid_link_cache else target_link,
-            upload_task=upload_task,
+            upload_task=upload_task
         )
 
     @staticmethod
@@ -353,7 +353,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             last_msg = await client.send_message(
                 chat_id=chat_id,
-                text=f'🚛请稍后{load_name}加载中. . .',
+                text=_('🚛Loading {load_name}, please wait. . .').format(load_name=load_name),
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
             tasks = [client.send_photo(
@@ -364,7 +364,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 client.edit_message_text(
                     chat_id=chat_id,
                     message_id=last_msg.id,
-                    text=f'✅{load_name}加载成功!'
+                    text=_('✅{load_name} loaded successfully!').format(load_name=load_name)
                 )]
             await asyncio.gather(*tasks)
         except Exception as e:
@@ -385,12 +385,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                 self.send_pay_qr(
                     client=client,
                     chat_id=chat_id,
-                    load_name='机器人'
+                    load_name=_('Bot')
                 ),
                 super().start(client, message),
                 client.send_message(
                     chat_id=chat_id,
-                    text='😊欢迎使用,您的支持是我持续更新的动力。',
+                    text=_('😊Welcome! Your support keeps the project updated.'),
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS)
             )
         else:
@@ -419,16 +419,19 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             if not self.check_type(message):
                 console.log(
-                    f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{message_id}"'
-                    f' -> '
-                    f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
-                    f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SKIP)}。'
+                    _('[Channel]:"{origin_chat_id}",[Message ID]:"{message_id}" ➡️ [Channel]:"{target_chat_id}",[Status]:Skip forward.').format(
+                        origin_chat_id=origin_chat_id,
+                        message_id=message_id,
+                        target_chat_id=target_chat_id
+                    )
                 )
                 await asyncio.create_task(
                     self.done_notice(
-                        f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{message_id}'
-                        f' ➡️ '
-                        f'"{target_chat_id}",{_t(KeyWord.FORWARD_SKIP)}(该类型已过滤)。',
+                        _('"{origin_chat_id}",[Message ID]:{message_id} ➡️ "{target_chat_id}",Skip forward(this type is filtered).').format(
+                            origin_chat_id=origin_chat_id,
+                            message_id=message_id,
+                            target_chat_id=target_chat_id
+                        ),
                         requester=owner,
                         notice_type=NoticeType.FORWARD
                     )
@@ -452,7 +455,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
                         ConnectionStatus.enter_flood(
-                            f'[{self.app.client.name}]转发消息请求频繁,要求等待{amount}秒后继续运行。'
+                            _('[{client_name}] Too many requests to forward messages, wait {seconds} seconds before continuing.').format(
+                                client_name=self.app.client.name,
+                                seconds=amount
+                            )
                         )
                         await asyncio.sleep(amount)
                         ConnectionStatus.leave_flood()
@@ -470,12 +476,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
                         ConnectionStatus.enter_flood(
-                            f'[{self.app.client.name}]发送消息请求频繁,要求等待{amount}秒后继续运行。'
+                            _('[{client_name}] Too many requests to send messages, wait {seconds} seconds before continuing.').format(
+                                client_name=self.app.client.name,
+                                seconds=amount
+                            )
                         )
                         await asyncio.sleep(amount)
                         ConnectionStatus.leave_flood()
                     except Exception as e:
-                        log.error(f'无法转发"{message.text}"消息,{_t(KeyWord.REASON)}:"{e}"')
+                        log.error(_('Unable to forward the message "{text}" due to "{error}"').format(
+                            text=message.text,
+                            error=e
+                        ))
                         break
             else:
                 while True:
@@ -491,22 +503,28 @@ class TelegramRestrictedMediaDownloader(Bot):
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
                         ConnectionStatus.enter_flood(
-                            f'[{self.app.client.name}]转发消息请求频繁,要求等待{amount}秒后继续运行。'
+                            _('[{client_name}] Too many requests to forward messages, wait {seconds} seconds before continuing.').format(
+                                client_name=self.app.client.name,
+                                seconds=amount
+                            )
                         )
                         await asyncio.sleep(amount)
                         ConnectionStatus.leave_flood()
             p_message_id = ','.join(map(str, media_group)) if media_group else message_id
             console.log(
-                f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{p_message_id}"'
-                f' -> '
-                f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
-                f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_SUCCESS)}。'
+                _('[Channel]:"{origin_chat_id}",[Message ID]:"{message_id}" ➡️ [Channel]:"{target_chat_id}",[Status]:Forward success.').format(
+                    origin_chat_id=origin_chat_id,
+                    message_id=p_message_id,
+                    target_chat_id=target_chat_id
+                )
             )
             await asyncio.create_task(
                 self.done_notice(
-                    f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{p_message_id}'
-                    f' ➡️ '
-                    f'"{target_chat_id}",{_t(KeyWord.FORWARD_SUCCESS)}。',
+                    _('"{origin_chat_id}",[Message ID]:{message_id} ➡️ "{target_chat_id}",Forward success.').format(
+                        origin_chat_id=origin_chat_id,
+                        message_id=p_message_id,
+                        target_chat_id=target_chat_id
+                    ),
                     requester=owner,
                     notice_type=NoticeType.FORWARD
                 )
@@ -527,9 +545,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await self.bot.send_message(
                     # 谁创建的转发任务就通知谁;未记录创建者时回退到登录账号自己。
                     chat_id=owner if owner is not None else client.me.id,
-                    text=f'⚠️无法转发\n'
-                         f'`{link}`\n'
-                         f'存在内容保护限制(可在[设置]->[上传设置]中设置转发时遇到受限转发进行下载后上传)。',
+                    text=_(
+                        '⚠️Unable to forward\n`{link}`\nContent protection restriction (you can set download-then-upload on restricted forwarding in [Settings] -> [Upload Settings]).').format(
+                        link=link
+                    ),
                     reply_parameters=ReplyParameters(message_id=message_id),
                     reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
                         BotButton.SETTING,
@@ -553,7 +572,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
             finally:
                 self.last_message.text = original_text
-            p = f'{_t(KeyWord.DOWNLOAD_AND_UPLOAD_TASK)}{_t(KeyWord.CHANNEL)}:"{target_chat_id}",{_t(KeyWord.LINK)}:"{link}"。'
+            p = _('「📥📤Download and upload task」[Channel]:"{chat_id}",[Link]:"{link}".').format(
+                chat_id=target_chat_id, link=link)
             console.log(p, style='#FF4689')
             log.info(p)
 
@@ -614,7 +634,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         start_id: int = meta.get('message_range')[0]
         end_id: int = meta.get('message_range')[1]
         last_message: Union[pyrogram.types.Message, None] = None
-        loading = '🚛消息转发中,请稍候...'
+        loading = _('🚛Forwarding messages, please wait...')
         try:
             origin_meta: Union[dict, None] = await parse_link(
                 client=self.app.client,
@@ -625,7 +645,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 link=target_link
             )
             if not all([origin_meta, target_meta]):
-                raise Exception('Invalid origin_link or target_link')
+                raise Exception(_('Invalid origin_link or target_link'))
             origin_chat_id = origin_meta.get('chat_id')
             target_chat_id = target_meta.get('chat_id')
             origin_chat: Union[pyrogram.types.Chat, None] = await get_chat_with_notify(
@@ -633,14 +653,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                 bot_client=client,
                 bot_message=message,
                 chat_id=origin_chat_id,
-                error_msg=f'⬇️源频道不存在\n{origin_link}'
+                error_msg=_('⬇️Source channel does not exist\n{origin_link}').format(origin_link=origin_link)
             )
             target_chat: Union[pyrogram.types.Chat, None] = await get_chat_with_notify(
                 user_client=self.app.client,
                 bot_client=client,
                 bot_message=message,
                 chat_id=target_chat_id,
-                error_msg=f'⬇️目标频道不存在\n{target_link}'
+                error_msg=_('⬇️Target channel does not exist\n{target_link}').format(target_link=target_link)
             )
             if not all([origin_chat, target_chat]):
                 return None
@@ -648,8 +668,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             if target_chat.id == my_id:
                 await client.send_message(
                     chat_id=message.from_user.id,
-                    text='⚠️无法转发到此机器人',
-                    reply_parameters=ReplyParameters(message_id=message.id),
+                    text=_('⚠️Cannot forward to this bot'),
+                    reply_parameters=ReplyParameters(message_id=message.id)
                 )
                 return None
             storage_id: list = []
@@ -730,7 +750,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                     if not self.gc.download_upload:
                         await client.send_message(
                             chat_id=message.from_user.id,
-                            text=f'⚠️无法转发\n`{origin_link}`\n{channel}存在内容保护限制。',
+                            text=_(
+                                '⚠️Cannot forward\n`{origin_link}`\n{channel} has content protection restrictions.').format(
+                                origin_link=origin_link,
+                                channel=channel
+                            ),
                             parse_mode=ParseMode.MARKDOWN,
                             reply_parameters=ReplyParameters(message_id=message.id),
                             reply_markup=KeyboardButton.restrict_forward_button()
@@ -758,25 +782,28 @@ class TelegramRestrictedMediaDownloader(Bot):
                         client=client, message=message,
                         last_message_id=last_message.id,
                         text=(
-                            f'⚠️`{origin_link}`\n'
-                            f'{channel}存在内容保护限制,转发任务已回退至下载后上传\n'
-                            f'(通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型)'
+                            _('⚠️`{origin_link}`\n{channel} has content protection restrictions; forwarding has fallen back to download-then-upload\n(Messages sent via `/forward` with download-then-upload cannot be filtered by `[Forward settings]`)').format(
+                                origin_link=origin_link,
+                                channel=channel
+                            )
                         ),
                     )
                     break
                 except Exception as e:
                     log.warning(
-                        f'{_t(KeyWord.CHANNEL)}:"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:"{i.id}"'
-                        f' -> '
-                        f'{_t(KeyWord.CHANNEL)}:"{target_chat_id}",'
-                        f'{_t(KeyWord.STATUS)}:{_t(KeyWord.FORWARD_FAILURE)},'
-                        f'{_t(KeyWord.REASON)}:"{e}"')
+                        _('[Channel]:"{origin_chat_id}",[Message ID]:"{message_id}" ➡️ [Channel]:"{target_chat_id}",[Status]:Forward failure,[Reason]:"{error}"').format(
+                            origin_chat_id=origin_chat_id,
+                            message_id=i.id,
+                            target_chat_id=target_chat_id,
+                            error=e
+                        ))
                     await asyncio.create_task(
                         self.done_notice(
-                            f'"{origin_chat_id}",{_t(KeyWord.MESSAGE_ID)}:{i.id}'
-                            f' ➡️ '
-                            f'"{target_chat_id}",{_t(KeyWord.FORWARD_FAILURE)}。'
-                            f'\n(具体原因请前往终端查看报错信息)',
+                            _('"{origin_chat_id}",[Message ID]:{message_id} ➡️ "{target_chat_id}",Forward failure。\n(see the terminal for details)').format(
+                                origin_chat_id=origin_chat_id,
+                                message_id=i.id,
+                                target_chat_id=target_chat_id
+                            ),
                             requester=owner,
                             notice_type=NoticeType.FORWARD
                         )
@@ -808,7 +835,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         if not self.gc.download_upload:
                             await client.send_message(
                                 chat_id=message.from_user.id,
-                                text=f'⚠️无法转发\n`{origin_link}`\n{channel}存在内容保护限制。',
+                                text=_(
+                                    '⚠️Cannot forward\n`{origin_link}`\n{channel} has content protection restrictions.').format(
+                                    origin_link=origin_link,
+                                    channel=channel
+                                ),
                                 parse_mode=ParseMode.MARKDOWN,
                                 reply_parameters=ReplyParameters(message_id=message.id),
                                 reply_markup=KeyboardButton.restrict_forward_button()
@@ -830,9 +861,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                             client=client, message=message,
                             last_message_id=last_message.id,
                             text=(
-                                f'`{origin_link}`\n'
-                                f'⚠️{channel}存在内容保护限制,转发任务已回退至下载后上传\n'
-                                f'(通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型)'
+                                _('`{link}`\n⚠️{channel} has content protection restriction, the forward task has fallen back to download-then-upload\n(Messages sent via the `/forward` command as download-then-upload cannot be filtered by `[forward settings]`)').format(
+                                    link=origin_link,
+                                    channel=channel
+                                )
                             ),
                         )
                         return None
@@ -841,7 +873,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         client=client,
                         message=message,
                         last_message_id=last_message.id,
-                        text=safe_message(f'🌫️没有找到任何有效的消息')
+                        text=safe_message(_('🌫️No valid messages found').format())
                     )
                     return None
                 invalid_id: list = []
@@ -888,7 +920,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                     message=message,
                     last_message_id=last_message.id,
                     text=safe_message(
-                        f'{last_message.text.strip(loading)}\n🌟转发任务已完成\n(若设置了转发过滤规则,请前往终端查看转发记录,此处不做展示)'),
+                        _('{text}\n🌟 Forward task completed\n(If a forwarding filter rule is set, see the terminal for forwarding records, not shown here)').format(
+                            text=last_message.text.strip(loading)
+                        )),
                     reply_markup=InlineKeyboardMarkup(
                         [
                             [
@@ -901,27 +935,28 @@ class TelegramRestrictedMediaDownloader(Bot):
                     ) if direct_url else None
                 )
         except AttributeError as e:
-            log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
+            log.exception(_('Error while forwarding due to "{error}"').format(error=e))
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='⬇️出错了\n(具体原因请前往终端查看报错信息)'
+                text=_('⬇️Error.\n(See the terminal for details)')
             )
         except (ValueError, KeyError, UsernameInvalid, ChatWriteForbidden):
             msg: str = ''
             if any('/c' in link for link in (origin_link, target_link)):
-                msg = '(私密频道或话题频道必须让当前账号加入转发频道,并且目标频道需有上传文件的权限)'
+                msg = _(
+                    '(For private or topic channels, the current account must join the source channel, and the target channel must allow uploads)')
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='❌没有找到有效链接\n' + msg
+                text=_('❌No valid link found.\n') + msg
             )
         except Exception as e:
-            log.exception(f'转发时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
+            log.exception(_('Error while forwarding due to "{error}"').format(error=e))
             await client.send_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text='⬇️出错了\n(具体原因请前往终端查看报错信息)'
+                text=_('⬇️Error.\n(See the terminal for details)')
             )
         finally:
             if last_message and getattr(last_message, 'text', '') == loading:
@@ -942,14 +977,18 @@ class TelegramRestrictedMediaDownloader(Bot):
             if command == '/listen_download':
                 self.app.client.remove_handler(self.listen_download_chat.get(link))
                 self.listen_download_chat.pop(link, None)
-                p: str = f'已删除监听下载,频道链接:"{link}"。'
-                log.info(f'{p}当前的监听下载信息:{list(self.listen_download_chat)}')
+                p: str = _('Listen-and-download removed, channel link: "{link}".').format(link=link)
+                log.info(_('{prefix}Current listen download info: {info}').format(
+                    prefix=p, info=list(self.listen_download_chat)))
             else:
                 self.app.client.remove_handler(self.listen_forward_chat.get(link))
                 self.listen_forward_chat.pop(link, None)
                 rule: str = ' -> '.join(args)
-                p: str = f'已删除监听转发,转发规则:"{rule}"。'
-                log.info(f'{p}当前的监听转发信息:{list(self.listen_forward_chat)}')
+                p: str = _('Listen-and-forward removed, forward rule: "{rule}".').format(rule=rule)
+                log.info(_('{prefix}Current listen-and-forward info: {info}').format(
+                    prefix=p,
+                    info=list(self.listen_forward_chat)
+                ))
             console.log(p, style='#FF4689')
             await client.send_message(
                 chat_id=message.from_user.id,
@@ -974,7 +1013,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         await client.send_message(
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
-            text=f'`{named_link}`\n🚛已经在监听列表中。',
+            text=_('`{named_link}`\n🚛Already in the listening list.').format(named_link=named_link),
             link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
             reply_markup=InlineKeyboardMarkup([
                 [
@@ -1005,24 +1044,24 @@ class TelegramRestrictedMediaDownloader(Bot):
             dict: status为是否移除成功,失败时e_code为失败原因。
         """
         if not link:
-            return {'status': False, 'e_code': '缺少要移除的链接。'}
+            return {'status': False, 'e_code': _('Missing link to remove.')}
         if not self.is_bot_running or self.bot is None:
-            return {'status': False, 'e_code': '机器人未运行,无法移除监听。'}
+            return {'status': False, 'e_code': _('The bot is not running; cannot remove the listener.')}
         if kind == 'download':
             if link not in self.listen_download_chat:
-                return {'status': False, 'e_code': '该监听下载不存在。'}
+                return {'status': False, 'e_code': _('This listen-and-download does not exist.')}
             text: str = f'/listen_download {link}'
         elif kind == 'forward':
             if link not in self.listen_forward_chat:
-                return {'status': False, 'e_code': '该监听转发不存在。'}
+                return {'status': False, 'e_code': _('This listen-and-forward does not exist.')}
             text: str = f'/listen_forward {link}'
         else:
-            return {'status': False, 'e_code': '未知的监听类型。'}
+            return {'status': False, 'e_code': _('Unknown listen type.')}
         self.web_remove_listen.add(text)  # 先登记,确保机器人处理该命令时能识别为网页面板发起的移除。
         result = await self.send_message_to_bot(text=text)
         if isinstance(result, Exception) or result is None:
             self.web_remove_listen.discard(text)
-            return {'status': False, 'e_code': f'发送移除命令失败:"{result}"'}
+            return {'status': False, 'e_code': _('Failed to send remove command: "{result}"').format(result=result)}
         return {'status': True}
 
     async def on_listen(
@@ -1072,18 +1111,25 @@ class TelegramRestrictedMediaDownloader(Bot):
                             chat_id=message.from_user.id,
                             reply_parameters=ReplyParameters(message_id=message.id),
                             link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                            text=f'⚠️无法读取\n`{_link}`\n(具体原因请前往终端查看报错信息)'
+                            text=_('Error reading channel "{link}" due to "{error}"').format(
+                                link=_link,
+                                error=e
+                            )
                         )
-                        log.error(f'频道"{_link}"解析失败,{_t(KeyWord.REASON)}:"{e}"')
+                        log.error(_('Failed to resolve channel "{link}" due to "{error}"').format(
+                            link=_link, error=e))
                         return False
                 except Exception as e:
                     await client.send_message(
                         chat_id=message.from_user.id,
                         reply_parameters=ReplyParameters(message_id=message.id),
                         link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                        text=f'⚠️无法读取\n`{_link}`\n(具体原因请前往终端查看报错信息)'
+                        text=_('⚠️Unable to read\n`{link}`\n(see the terminal for details)').format(link=_link)
                     )
-                    log.error(f'读取频道"{_link}"时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
+                    log.error(_('Error reading channel "{link}" due to "{error}"').format(
+                        link=_link,
+                        error=e
+                    ))
                     return False
             else:
                 text: str = f'{command} {_link}'
@@ -1111,7 +1157,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             chat_id=message.from_user.id,
                             reply_parameters=ReplyParameters(message_id=message.id),
                             link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                            text=f'✅新增`监听下载频道`频道:\n')
+                            text=_('✅Added `listen-and-download` channel:\n').format())
                     last_message: Union[pyrogram.types.Message, None] = await self.safe_edit_message(
                         client=client,
                         message=message,
@@ -1124,9 +1170,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                             )
                         ]])
                     )
-                    p = f'已新增监听下载,频道链接:"{link}"。'
+                    p = _('Listen-and-download added, channel link: "{link}".').format(link=link)
                     console.log(p, style='#FF4689')
-                    log.info(f'{p}当前的监听下载信息:{list(self.listen_download_chat)}')
+                    log.info(_('{prefix}Current listen download info: {info}').format(
+                        prefix=p, info=list(self.listen_download_chat)))
         elif command == '/listen_forward':
             listen_link, target_link = links
             if await add_listen_chat(f'{listen_link} {target_link}', self.listen_forward_chat, self.listen_forward):
@@ -1138,7 +1185,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                    text=f'✅新增`监听转发`频道:\n{listen_link} ➡️ {target_link}',
+                    text=_('✅Added `listen-and-forward` channel:\n{listen_link} ➡️ {target_link}').format(
+                        listen_link=listen_link,
+                        target_link=target_link
+                    ),
                     reply_markup=InlineKeyboardMarkup(
                         [
                             [
@@ -1150,9 +1200,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                         ]
                     )
                 )
-                p = f'已新增监听转发,转发规则:"{listen_link} -> {target_link}"。'
+                p = _('Added listen-and-forward, rule: "{origin} -> {target}".').format(
+                    origin=listen_link,
+                    target=target_link
+                )
                 console.log(p, style='#FF4689')
-                log.info(f'{p}当前的监听转发信息:{list(self.listen_forward_chat)}')
+                log.info(_('{prefix}Current listen-and-forward info: {info}').format(
+                    prefix=p,
+                    info=list(self.listen_forward_chat)
+                ))
 
     async def listen_download(
             self,
@@ -1164,7 +1220,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             owner = self.listen_download_chat_owner.get(getattr(getattr(message, 'chat', None), 'id', None))
             await self.create_download_task(message_ids=message.link, single_link=True, owner=owner)
         except Exception as e:
-            log.exception(f'监听下载出现错误,{_t(KeyWord.REASON)}:"{e}"')
+            log.exception(_('Error in listen download due to "{error}"').format(error=e))
 
     def check_type(self, message: pyrogram.types.Message):
         for dtype, is_forward in self.gc.forward_type.items():
@@ -1204,7 +1260,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 not self.gc.forward_type.get('video') or
                                 not self.gc.forward_type.get('photo')
                         ):
-                            log.warning('由于过滤了图片或视频类型的转发,将不再以媒体组方式发送。')
+                            log.warning(
+                                _('Because photo or video forwarding is filtered, it will no longer be sent as a media group.'))
                             raise ValueError
                         if (
                                 getattr(getattr(message, 'chat', None), 'is_creator', False) or
@@ -1262,9 +1319,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
         except (ValueError, KeyError, UsernameInvalid, ChatWriteForbidden) as e:
             log.error(
-                f'监听转发出现错误,{_t(KeyWord.REASON)}:{e}频道性质可能发生改变,包括但不限于(频道解散、频道名改变、频道类型改变、该账户没有在目标频道上传的权限、该账号被当前频道移除)。')
+                _('Error in listen forward due to "{error}" The channel nature may have changed, including but not limited to (channel dissolved, channel name changed, channel type changed, the account has no upload permission in the target channel, the account was removed from the current channel).').format(
+                    error=e))
         except Exception as e:
-            log.exception(f'监听转发出现错误,{_t(KeyWord.REASON)}:"{e}"')
+            log.exception(_('Error in listen forward due to "{error}"').format(error=e))
 
     async def handle_forwarded_media(
             self,
@@ -1277,23 +1335,33 @@ class TelegramRestrictedMediaDownloader(Bot):
         NoticeHub.add_owner(owner=chat_id, user=user_message.from_user)
         last_message = await self.bot.send_message(
             chat_id=chat_id,
-            text=f'🔄正在处理转发内容`{message_id}`...'
+            text=_('🔄Processing forwarded content `{message_id}`...').format(message_id=message_id)
         )
         try:
             task = await self.create_download_task(
                 message_ids=user_message,
-                diy_download_type=[_ for _ in DownloadType()],
+                diy_download_type=[i for i in DownloadType()],
                 single_link=True,
                 owner=user_message.from_user.id
             )
             if task.get('status') == DownloadStatus.DOWNLOADING:
-                await last_message.edit_text(text=f'✅已创建下载任务`{message_id}`。')
+                await last_message.edit_text(text=_('✅Download task `{message_id}` created.').format(
+                    message_id=message_id
+                ))
             else:
-                error_msg = task.get('e_code', {}).get('error_msg', '未知错误。')
-                await last_message.edit_text(text=f'❌无法创建下载任务`{message_id}`\n{error_msg}')
+                error_msg = task.get('e_code', {}).get('error_msg', _('Unknown error.'))
+                await last_message.edit_text(
+                    text=_('❌Unable to create download task `{message_id}`\n{error}').format(
+                        message_id=message_id,
+                        error=error_msg
+                    ))
         except Exception as e:
-            log.error(f'获取原始消息失败,{_t(KeyWord.REASON)}:"{e}"')
-            await last_message.edit_text(text=f'❌无法创建下载任务`{message_id}`\n{e}')
+            log.error(_('Failed to get the original message due to "{error}"').format(
+                error=e))
+            await last_message.edit_text(text=_('❌Unable to create download task `{message_id}`\n{error}').format(
+                message_id=message_id,
+                error=e
+            ))
 
     async def resume_download(
             self,
@@ -1310,39 +1378,44 @@ class TelegramRestrictedMediaDownloader(Bot):
             local_file_size: int = get_file_size(file_path=file_name)
             if compare_file_size(a_size=local_file_size, b_size=compare_size):
                 console.log(
-                    f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                    f'{_t(KeyWord.RESUME)}:"{file_name}",'
-                    f'{_t(KeyWord.STATUS)}:{_t(KeyWord.ALREADY_EXIST)}')
+                    _('「📥Download task」[Resume]:"{file}",[Status]:[Already exists]').format(file=file_name))
                 return file_name
             else:
                 result: str = safe_replace(origin_file=file_name, overwrite_file=temp_path).get('e_code')
                 log.warning(result) if result is not None else None
                 log.warning(
-                    f'不完整的文件,大小:{get_file_size(file_name)}/{compare_size},更改文件名作为缓存:"{file_name}" -> "{temp_path}"。')
+                    _('Incomplete file, size: {get_file_size_file_name_}/{compare_size}; renaming as cache: "{file_name}" -> "{temp_path}".').format(
+                        get_file_size_file_name_=get_file_size(file_name),
+                        compare_size=compare_size,
+                        file_name=file_name,
+                        temp_path=temp_path
+                    ))
         if os.path.exists(temp_path) and compare_size:
             local_file_size: int = get_file_size(file_path=temp_path)
             if compare_file_size(a_size=local_file_size, b_size=compare_size):
                 console.log(
-                    f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                    f'{_t(KeyWord.RESUME)}:"{temp_path}",'
-                    f'{_t(KeyWord.STATUS)}:{_t(KeyWord.ALREADY_EXIST)}')
+                    _('「📥Download task」[Resume]:"{file}",[Status]:[Already exists]').format(file=temp_path))
                 result: str = safe_replace(origin_file=temp_path, overwrite_file=file_name).get('e_code')
                 log.warning(result) if result is not None else None
                 return file_name
             elif local_file_size > compare_size:
                 safe_delete(temp_path)
                 log.warning(
-                    f'错误的缓存文件"{temp_path}",'
-                    f'已清除({_t(KeyWord.ERROR_SIZE)}:{local_file_size} > {_t(KeyWord.ACTUAL_SIZE)}:{compare_size})。')
+                    _('Invalid cache file "{temp_path}" removed ([Error size]: {local_file_size} > [Actual size]: {compare_size}).').format(
+                        temp_path=temp_path,
+                        local_file_size=local_file_size,
+                        compare_size=compare_size
+                    ))
         downloaded = os.path.getsize(temp_path) if os.path.exists(temp_path) else 0  # 获取已下载的字节数。
         if downloaded == 0:
             mode = 'wb'
         else:
             mode = 'r+b'
             console.log(
-                f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                f'{_t(KeyWord.RESUME)}:"{file_name}",'
-                f'{_t(KeyWord.ERROR_SIZE)}:{MetaData.suitable_units_display(downloaded)}。')
+                _('「📥Download task」[Resume]:"{file}",[Error size]:{size}.').format(
+                    file=file_name,
+                    size=MetaData.suitable_units_display(downloaded)
+                ))
         try:
             with open(file=temp_path, mode=mode) as f:
                 skip_chunks: int = downloaded // chunk_size  # 计算要跳过的块数。
@@ -1350,14 +1423,31 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if aligned_size != downloaded:
                     f.truncate(aligned_size)  # 截断错位的尾巴,避免续传后文件尺寸偏大。
                     log.warning(
-                        f'缓存文件"{temp_path}"字节未对齐块边界,"{downloaded}" -> "{aligned_size}",已截断。')
+                        _('Cache file "{temp_path}" is not block-aligned, "{downloaded}" -> "{aligned_size}", truncated.').format(
+                            temp_path=temp_path,
+                            downloaded=downloaded,
+                            aligned_size=aligned_size
+                        ))
                     downloaded = aligned_size
                 f.seek(aligned_size)
                 if skip_chunks == 0:  # 只有发生跳块续传时才记info,全新下载降为debug避免日志文件堆积无效记录。
-                    log.debug(f'处理"{temp_path}"无需跳过块,文件指针已移动到"{downloaded}"。')
+                    log.debug(
+                        _('Processing "{temp_path}" needs to skip blocks: "{downloaded}//{chunk_size}={skip_chunks}", file pointer moved to "{downloaded_pos}".').format(
+                            temp_path=temp_path,
+                            downloaded=downloaded,
+                            chunk_size=chunk_size,
+                            skip_chunks=skip_chunks,
+                            downloaded_pos=downloaded
+                        ))
                 else:
                     log.info(
-                        f'处理"{temp_path}"需要跳过的块:"{downloaded}//{chunk_size}={skip_chunks}",文件指针已移动到"{downloaded}"。')
+                        _('Processing "{temp_path}" needs to skip blocks: "{downloaded}//{chunk_size}={skip_chunks}", file pointer moved to "{downloaded_pos}".').format(
+                            temp_path=temp_path,
+                            downloaded=downloaded,
+                            chunk_size=chunk_size,
+                            skip_chunks=skip_chunks,
+                            downloaded_pos=downloaded
+                        ))
                 while True:
                     try:
                         async for chunk in self.app.client.stream_media(
@@ -1373,43 +1463,68 @@ class TelegramRestrictedMediaDownloader(Bot):
                             progress(downloaded, *progress_args)
                         break
                     except AuthBytesInvalid as e:
-                        log.warning(f'提供的授权字节无效(可能是短暂的问题),{_t(KeyWord.REASON)}:"{e}"')
+                        log.warning(
+                            _('The provided authorization bytes are invalid (possibly a temporary issue) due to "{error}"').format(
+                                error=e
+                            ))
                         break
                     except FileReferenceExpired as e:
                         try:
                             chat_id = message.chat.id
                             message_id = message.id
                             log.warning(
-                                f'"{message_id}"文件引用已过期,正在重新获取消息以刷新引用,{_t(KeyWord.REASON)}:"{e}"')
+                                _('"{message_id}" file reference expired, re-fetching the message to refresh the reference due to "{error}"').format(
+                                    message_id=message_id,
+                                    error=e
+                                ))
                             message = await self.app.client.get_messages(chat_id=chat_id, message_ids=message_id)
-                            log.info(f'"{message_id}"已重新获取文件引用。')
+                            log.info(_('"{message_id}" file reference re-fetched.').format(message_id=message_id))
                             skip_chunks: int = downloaded // chunk_size
                             aligned_size: int = skip_chunks * chunk_size
                             if aligned_size != downloaded:
                                 f.truncate(aligned_size)
                                 log.warning(
-                                    f'缓存文件"{temp_path}"字节未对齐块边界,"{downloaded}" -> "{aligned_size}",已截断。')
+                                    _('Cache file "{temp_path}" is not block-aligned, "{downloaded}" -> "{aligned_size}", truncated.').format(
+                                        temp_path=temp_path,
+                                        downloaded=downloaded,
+                                        aligned_size=aligned_size
+                                    ))
                                 downloaded = aligned_size
                             f.seek(aligned_size)
                         except Exception as refresh_error:
-                            log.error(f'重新获取文件引用失败,{_t(KeyWord.REASON)}:"{refresh_error}"')
+                            log.error(_('Failed to re-fetch the file reference due to "{error}"').format(
+                                error=refresh_error
+                            ))
                             break
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
                         ConnectionStatus.enter_flood(
-                            f'[{self.app.client.name}]下载请求频繁,要求等待{amount}秒后继续运行。'
+                            _('[{client_name}] Too many download requests, wait {seconds} seconds before continuing.').format(
+                                client_name=self.app.client.name,
+                                seconds=amount
+                            )
                         )
                         await asyncio.sleep(amount)
                         ConnectionStatus.leave_flood()
         except PermissionError as e:
             log.error(
-                f'无法以"{mode}"模式打开临时文件"{temp_path}",{_t(KeyWord.REASON)}:"{e}"')
+                _('Unable to open temporary file "{temp_path}" in "{mode}" mode due to "{error}"').format(
+                    mode=mode,
+                    temp_path=temp_path,
+                    error=e
+                ))
             raise
         if compare_size is None or compare_file_size(a_size=downloaded, b_size=compare_size):
             __cache_temp_size: int = os.path.getsize(temp_path) if os.path.exists(temp_path) else 0
             result: str = safe_replace(origin_file=temp_path, overwrite_file=file_name).get('e_code')
             log.warning(result) if result is not None else None
-            log.debug(f'下载完成,大小:{__cache_temp_size}/{compare_size},更改文件名:"{temp_path}" -> "{file_name}"。')
+            log.debug(
+                _('Download complete, size: {local_size}/{remote_size}, renamed: "{temp_path}" -> "{file_name}".').format(
+                    local_size=__cache_temp_size,
+                    remote_size=compare_size,
+                    temp_path=temp_path,
+                    file_name=file_name
+                ))
         return file_name
 
     def get_media_meta(self, message: pyrogram.types.Message, dtype) -> Dict[str, Union[int, str]]:
@@ -1470,7 +1585,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                         DownloadTask.DOWNLOADING_KEYS.discard(dl_key)
                 raise
             except Exception as e:
-                log.exception(f'下载调度器派发任务时出错,{_t(KeyWord.REASON)}:"{e}"')
+                log.exception(_('Error dispatching tasks in the download scheduler due to "{error}"').format(
+                    error=e
+                ))
                 if item is not None:  # 出错的任务直接出队,避免调度器反复重试同一条消息。
                     task: DownloadTask = DownloadTask.get(item.get('link'))
                     task.remove_item(message_id=item.get('message').id)
@@ -1513,10 +1630,11 @@ class TelegramRestrictedMediaDownloader(Bot):
             if valid_dtype in download_type:
                 # 如果是匹配到的消息类型就创建任务。
                 console.log(
-                    f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                    f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
-                    f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
-                    f'{_t(KeyWord.LINK_TYPE)}:{_t(link_type)}。'  # 链接类型。
+                    _('「📥Download task」[Channel]:"{chat_id}",[Link]:"{link}",[Link type]:{link_type}.').format(
+                        chat_id=chat_id,
+                        link=link,
+                        link_type=_(link_type)
+                    )
                 )
                 task.set_item_status(message_id=message.id, status=DownloadStatus.DOWNLOADING)
                 # 若保存路径含 %MESSAGE_ID% 通配符,预取媒体组成员 id 列表并缓存。
@@ -1546,13 +1664,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                         _future=save_directory
                     )
                 else:
-                    console.log(
-                        f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                        f'{_t(KeyWord.FILE)}:"{file_name}",'
-                        f'{_t(KeyWord.SIZE)}:{format_file_size},'
-                        f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.DOWNLOADING))},'
-                        f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.DOWNLOADING)}。'
-                    )
+                    console.log(_(
+                        '「📥Download task」[File]:"{file}",[Size]:{size},[Type]:{type},[Status]:Downloading.'
+                    ).format(
+                        file=file_name,
+                        size=format_file_size,
+                        type=_(normalize_msgid(self.app.get_file_type(message, file_name, DownloadStatus.DOWNLOADING)))
+                    ))
                     ChatInfo.add(chat=getattr(message, 'chat', None), chat_id=chat_id)
                     task_id = self.pb.progress.add_task(
                         description='📥',
@@ -1587,7 +1705,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     self.app.increase_task_num()
                     MetaData.print_current_task_num(
-                        prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
+                        prompt=_('[Current download tasks]'),
                         num=self.app.current_task_num
                     )
                     _task.add_done_callback(
@@ -1609,22 +1727,22 @@ class TelegramRestrictedMediaDownloader(Bot):
             else:
                 task.remove_item(message_id=message.id)  # 被忽略的类型直接出队。
                 task.member_num = max(task.member_num - 1, 0)  # 不支持或被忽略的类型不计入总数,避免链接状态的剩余条数无法归零。
-                _error = '不支持或被忽略的类型(已取消)。'
-                _reason: str = _error.replace('。', '')
+                _error = _('Unsupported or ignored type (cancelled)')
                 try:
-                    _, __, sever_file_size, file_name, ____, format_file_size = self.get_media_meta(
+                    i, __, sever_file_size, file_name, ____, format_file_size = self.get_media_meta(
                         message=message,
                         dtype=valid_dtype
                     ).values()
                     if file_name:
                         console.log(
-                            f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                            f'{_t(KeyWord.FILE)}:"{file_name}",'
-                            f'{_t(KeyWord.SIZE)}:{format_file_size},'
-                            f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.SKIP))},'
-                            f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。'
+                            _('「📥Download task」[File]:"{file}",[Size]:{size},[Type]:{type},[Status]:Skipped.').format(
+                                file=file_name,
+                                size=format_file_size,
+                                type=_(
+                                    normalize_msgid(self.app.get_file_type(message, file_name, DownloadStatus.SKIP)))
+                            )
                         )
-                        task.set_error(key=file_name, value=_reason)
+                        task.set_error(key=file_name, value=_error)
                         task.update_member(
                             message_id=message.id,
                             status=DownloadStatus.SKIP,
@@ -1632,21 +1750,25 @@ class TelegramRestrictedMediaDownloader(Bot):
                             size=format_file_size,
                             size_byte=sever_file_size,
                             date=str(getattr(message, 'date', '') or '')[:10],
-                            note=_reason
+                            note=_error
                         )
                     else:
-                        raise Exception('不支持或被忽略的类型')
+                        raise Exception(_('Unsupported or ignored type'))
                 except Exception as e:
-                    task.set_error(value=_reason)
-                    task.update_member(message_id=message.id, status=DownloadStatus.SKIP, note=_reason)
+                    task.set_error(value=_error)
+                    task.update_member(message_id=message.id, status=DownloadStatus.SKIP, note=_error)
                     console.log(
-                        f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                        f'{_t(KeyWord.CHANNEL)}:"{chat_id}",'  # 频道名。
-                        f'{_t(KeyWord.LINK)}:"{link}",'  # 链接。
-                        f'{_t(KeyWord.LINK_TYPE)}:{_error}'  # 链接类型。
+                        _('「📥Download task」[Channel]:"{chat_id}",[Link]:"{link}",[Link type]:{error}').format(
+                            chat_id=chat_id,
+                            link=link,
+                            error=_error
+                        )
                     )
                     log.info(
-                        f'已跳过下载"{link}",不支持或被忽略的类型,{_t(KeyWord.REASON)}:"{e}"')
+                        _('Skipped downloading "{link}", unsupported or ignored type due to "{error}"').format(
+                            link=link,
+                            error=e
+                        ))
             self.queue.put_nowait(_task) if _task else None
 
     def __check_download_finish(
@@ -1672,20 +1794,20 @@ class TelegramRestrictedMediaDownloader(Bot):
                 ).get('e_code')
                 log.warning(result) if result is not None else None
             console.log(
-                f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                f'{_t(KeyWord.FILE)}:"{file_path}",'
-                f'{_t(KeyWord.SIZE)}:{format_local_size},'
-                f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, temp_file_path, DownloadStatus.SUCCESS))},'
-                f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SUCCESS)}。',
+                _('「📥Download task」[File]:"{file}",[Size]:{size},[Type]:{type},[Status]:Success.').format(
+                    file=file_path,
+                    size=format_local_size,
+                    type=_(normalize_msgid(self.app.get_file_type(message, temp_file_path, DownloadStatus.SUCCESS)))
+                ),
             )
             return True
         console.log(
-            f'{_t(KeyWord.DOWNLOAD_TASK)}'
-            f'{_t(KeyWord.FILE)}:"{file_path}",'
-            f'{_t(KeyWord.ERROR_SIZE)}:{format_local_size},'
-            f'{_t(KeyWord.ACTUAL_SIZE)}:{format_sever_size},'
-            f'{_t(KeyWord.TYPE)}:{_t(self.app.get_download_type(message, DownloadStatus.FAILURE))},'
-            f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}。'
+            _('「📥Download task」[File]:"{file}",[Error size]:{size},[Actual size]:{actual_size},[Type]:{type},[Status]:Failure.').format(
+                file=file_path,
+                size=format_local_size,
+                actual_size=format_sever_size,
+                type=_(normalize_msgid(self.app.get_download_type(message, DownloadStatus.FAILURE)))
+            )
         )
         return False
 
@@ -1715,16 +1837,15 @@ class TelegramRestrictedMediaDownloader(Bot):
         if task_id is None:
             if retry_count == 0:
                 console.log(
-                    f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                    f'{_t(KeyWord.ALREADY_EXIST)}:"{_future}"'
+                    _('「📥Download task」[Already exists]:"{file}"').format(file=_future)
                 )
-                console.log(
-                    f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                    f'{_t(KeyWord.FILE)}:"{file_name}",'
-                    f'{_t(KeyWord.SIZE)}:{format_file_size},'
-                    f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.SKIP))},'
-                    f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。', style='#e6db74'
-                )
+                console.log(_(
+                    '「📥Download task」[File]:"{file}",[Size]:{size},[Type]:{type},[Status]:Skipped.'
+                ).format(
+                    file=file_name,
+                    size=format_file_size,
+                    type=_(normalize_msgid(self.app.get_file_type(message, file_name, DownloadStatus.SKIP)))
+                ), style='#e6db74')
                 if download_task is not None:
                     download_task.update_member(  # 文件已存在,标记为跳过。
                         message_id=message.id,
@@ -1770,7 +1891,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         save_message_entities(
                             message, self.env_save_directory(message), self.media_group_ids_cache)
                     MetaData.print_current_task_num(
-                        prompt=_t(KeyWord.CURRENT_DOWNLOAD_TASK),
+                        prompt=_('[Current download tasks]'),
                         num=self.app.current_task_num
                     )
                     if download_task is not None:
@@ -1827,21 +1948,25 @@ class TelegramRestrictedMediaDownloader(Bot):
                     task.add_done_callback(
                         partial(
                             self.__retry_call,
-                            f'{_t(KeyWord.RE_DOWNLOAD)}:"{file_name}",'
-                            f'{_t(KeyWord.RETRY_TIMES)}:{retry_count}/{_max_retry}。'
+                            _('[Re-download]:"{file}",[Retry times]:{retry}/{max_retry}.').format(
+                                file=file_name,
+                                retry=retry_count,
+                                max_retry=_max_retry
+                            )
                         )
                     )
                 else:
-                    _error = f'(达到最大重试次数:{_max_retry}次)。'
+                    _error = _('(Maximum retries reached: {_max_retry})').format(_max_retry=_max_retry)
                     console.log(
-                        f'{_t(KeyWord.DOWNLOAD_TASK)}'
-                        f'{_t(KeyWord.FILE)}:"{file_name}",'
-                        f'{_t(KeyWord.SIZE)}:{format_file_size},'
-                        f'{_t(KeyWord.TYPE)}:{_t(self.app.get_file_type(message, file_name, DownloadStatus.FAILURE))},'
-                        f'{_t(KeyWord.STATUS)}:{_t(DownloadStatus.FAILURE)}'
-                        f'{_error}'
+                        _('「📥Download task」[File]:"{file}",[Size]:{size},[Type]:{type},[Status]:Failure{error}').format(
+                            file=file_name,
+                            size=format_file_size,
+                            type=_(
+                                normalize_msgid(self.app.get_file_type(message, file_name, DownloadStatus.FAILURE))),
+                            error=_error
+                        )
                     )
-                    download_task.set_error(key=file_name, value=_error.replace('。', ''))
+                    download_task.set_error(key=file_name, value=_error)
                     download_task.add_fail(message_id=message.id)  # 重试耗尽,记录为彻底失败,不再计入排队数量。
                     download_task.update_member(
                         message_id=message.id,
@@ -1856,7 +1981,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         file_name=file_name,
                         file_size=sever_file_size,
                         status=DownloadStatus.FAILURE,
-                        error_msg=_error.replace('。', '')
+                        error_msg=_error
                     )
                     self.bot_task_link.discard(link)
                     self.queue.task_done()
@@ -1884,17 +2009,25 @@ class TelegramRestrictedMediaDownloader(Bot):
                 except (FloodWait, FloodPremiumWait) as _e:
                     _amount = _e.value
                     ConnectionStatus.enter_flood(
-                        f'[{self.app.client.name}]编辑消息请求频繁,要求等待{_amount}秒后继续运行。'
+                        _('[{client_name}] Too many requests to edit the message, wait {seconds} seconds before continuing.').format(
+                            client_name=self.app.client.name,
+                            seconds=_amount
+                        )
                     )
                     await asyncio.sleep(_amount)
                     ConnectionStatus.leave_flood()
                 except Exception as _e:
                     log.info(
-                        f'在/download_chat命令过程中,更新进度消息时失败,已跳过本次更新,{_t(KeyWord.REASON)}:"{_e}"')
+                        _('During the /download_chat command, failed to update the progress message, skipped this update due to "{error}"').format(
+                            error=_e
+                        ))
                     return
 
         origin_callback_query_text: str = callback_query.message.text
-        _setup_text = f'{origin_callback_query_text}\n⏳需要检索该频道所有匹配的消息,请耐心等待。\n💡请忽略终端中的请求频繁提示,不会影响下载。'
+        _setup_text = _(
+            '{text}\n⏳ Scanning all matching messages in this channel, please wait.\n💡 Ignore the frequent request warnings in the terminal, they do not affect the download.').format(
+            text=origin_callback_query_text
+        )
         cq = await _progress(
             _text=_setup_text,
             _reply_markup=KeyboardButton.single_button(
@@ -1933,7 +2066,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             # 无需在 filter 配置里额外存 owner。
             owner = callback_query.from_user.id
             active_keywords = [k for k, v in keyword_filter.items() if v]
-            diy_download_type: list = [_ for _ in DownloadType()]  # 检索阶段即时创建下载任务共用,提前构造避免第三阶段重复定义。
+            diy_download_type: list = [j for j in DownloadType()]  # 检索阶段即时创建下载任务共用,提前构造避免第三阶段重复定义。
             instant_album_groups: set = set()  # 已即时创建过任务的media_group_id,避免遍历结束后的补建循环重复创建。
             links: list = []
             # 第一阶段,收集匹配的消息。
@@ -1948,8 +2081,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             downloaded_message_ids: set = set()  # 已进入下载列表的消息(chat_id, message_id),用于快速判断消息是否因类型被过滤。
             search_icon = flip_emoji(search_icon, advanced=True, emoji=Emoji.SEARCH)  # 首次展示检索进度,翻转一次放大镜图标。
             await _progress(
-                _text=f'{callback_query_text}\n'
-                      f'{search_icon}检索消息中,已匹配到0条消息。',
+                _text=_('{text}\n{icon}Searching messages, 0 messages matched.').format(
+                    text=callback_query_text,
+                    icon=search_icon
+                ),
                 _reply_markup=KeyboardButton.single_button(
                     text=BotButton.RETRIEVE_MESSAGE,
                     callback_data=BotCallbackText.NULL)
@@ -1964,7 +2099,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                 # 极少数消息(匿名发送/from_id缺失等)解析不出来源chat,与create_download_task中"部分消息的message.chat可能为None"是同一现象;直接跳过,避免整个检索崩溃。
                 if message.chat is None:
                     log.info(
-                        f'在/download_chat命令过程中,跳过一条无法解析频道的消息(ID:{getattr(message, "id", "未知")})。')
+                        _('During the /download_chat command, skipped a message whose channel could not be resolved (ID: {message_id}).').format(
+                            message_id=getattr(message, 'id', _('Unknown'))
+                        ))
                     continue
                 msg_key = (message.chat.id, message.id)
                 # 已处理过的消息(含媒体组被整体展开的成员)直接跳过,避免重复。
@@ -2018,7 +2155,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                             except (FloodWait, FloodPremiumWait) as e:
                                 amount = e.value
                                 ConnectionStatus.enter_flood(
-                                    f'[{self.app.client.name}]获取媒体组消息请求频繁,要求等待{amount}秒后继续运行。'
+                                    _('[{client_name}] Too many requests to get media group messages, wait {seconds} seconds before continuing.').format(
+                                        client_name=self.app.client.name,
+                                        seconds=amount
+                                    )
                                 )
                                 await asyncio.sleep(amount)
                                 ConnectionStatus.leave_flood()
@@ -2032,12 +2172,16 @@ class TelegramRestrictedMediaDownloader(Bot):
                         else:
                             # 获取媒体组失败(消息已失效/无评论区等),该组除已命中的首条成员外无法补齐,记日志避免静默丢失。
                             log.warning(
-                                f'在/download_chat命令过程中,获取媒体组失败(消息ID:{message.id}),该组其余成员可能无法下载。')
+                                _('While running /download_chat, failed to fetch the media group (message ID: {message_id}); other members of this group may not be downloaded.').format(
+                                    message_id=message.id
+                                ))
                         for member in group_members:
                             # 同上:媒体组成员也可能解析不出chat,跳过避免整个检索崩溃。
                             if member.chat is None:
                                 log.info(
-                                    f'在/download_chat命令过程中,跳过一条无法解析频道的媒体组成员(ID:{getattr(member, "id", "未知")})。')
+                                    _('During the /download_chat command, skipped a media group member whose channel could not be resolved (ID: {message_id}).').format(
+                                        message_id=getattr(member, 'id', _('Unknown'))
+                                    ))
                                 continue
                             member_key = (member.chat.id, member.id)
                             if member_key in matched_message_ids:
@@ -2100,8 +2244,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         emoji=Emoji.SEARCH
                     )
                     await _progress(
-                        _text=f'{callback_query_text}\n'
-                              f'{search_icon}检索消息中,已匹配到{current_count}条消息。',
+                        _text=_('{text}\n{icon}Searching messages, {count} messages matched.').format(
+                            text=callback_query_text,
+                            icon=search_icon,
+                            count=current_count
+                        ),
                         _reply_markup=KeyboardButton.single_button(
                             text=BotButton.RETRIEVE_MESSAGE,
                             callback_data=BotCallbackText.NULL)
@@ -2117,16 +2264,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                     emoji=Emoji.SEARCH
                 )
                 await _progress(
-                    _text=f'{callback_query_text}\n'
-                          f'{search_icon}检索消息中,已匹配到{final_count}条消息。',
+                    _text=_('{text}\n{icon}Searching messages, {count} messages matched.').format(
+                        text=callback_query_text,
+                        icon=search_icon,
+                        count=final_count
+                    ),
                     _reply_markup=KeyboardButton.single_button(
                         text=BotButton.RETRIEVE_MESSAGE,
                         callback_data=BotCallbackText.NULL)
                 )
             if not messages_to_download:
                 await _progress(
-                    _text=f'{callback_query.message.text}\n'
-                          '❎没有找到任何匹配的消息。',
+                    _text=_('{text}\n❎ No matching messages found.').format(text=callback_query.message.text),
                     _reply_markup=KeyboardButton.single_button(
                         text=BotButton.TASK_CANCEL,
                         callback_data=BotCallbackText.NULL
@@ -2159,8 +2308,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             if include_comment:
                 search_icon = flip_emoji(search_icon, advanced=True, emoji=Emoji.SEARCH)  # 首次展示评论区检索进度,翻转一次放大镜图标。
                 await _progress(
-                    _text=f'{callback_query_text}\n'
-                          f'{search_icon}检索评论区中,已匹配到0条消息。',
+                    _text=_('{text}\n{icon}Searching comments, 0 comments matched.').format(
+                        text=callback_query_text,
+                        icon=search_icon
+                    ),
                     _reply_markup=KeyboardButton.single_button(
                         text=BotButton.RETRIEVE_COMMENT,
                         callback_data=BotCallbackText.NULL)
@@ -2210,8 +2361,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                                     emoji=Emoji.SEARCH
                                 )
                                 await _progress(
-                                    _text=f'{callback_query_text}\n'
-                                          f'{search_icon}检索评论区中,已匹配到{current_comment_count}条消息。',
+                                    _text=_('{text}\n{icon}Searching comments, {count} comments matched.').format(
+                                        text=callback_query_text,
+                                        icon=search_icon,
+                                        count=current_comment_count
+                                    ),
                                     _reply_markup=KeyboardButton.single_button(
                                         text=BotButton.RETRIEVE_COMMENT,
                                         callback_data=BotCallbackText.NULL)
@@ -2224,7 +2378,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                     except (FloodWait, FloodPremiumWait) as e:
                         amount = e.value
                         ConnectionStatus.enter_flood(
-                            f'[{self.app.client.name}]获取评论区消息请求频繁,要求等待{amount}秒后继续运行。'
+                            _('[{client_name}] Too many requests to get comments, wait {seconds} seconds before continuing.').format(
+                                client_name=self.app.client.name,
+                                seconds=amount
+                            )
                         )
                         await asyncio.sleep(amount)
                         ConnectionStatus.leave_flood()
@@ -2258,8 +2415,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                                         emoji=Emoji.SEARCH
                                     )
                                     await _progress(
-                                        _text=f'{callback_query_text}\n'
-                                              f'{search_icon}检索评论区中,已匹配到{current_comment_count}条消息。',
+                                        _text=_('{text}\n{icon}Searching comments, {count} comments matched.').format(
+                                            text=callback_query_text,
+                                            icon=search_icon,
+                                            count=current_comment_count
+                                        ),
                                         _reply_markup=KeyboardButton.single_button(
                                             text=BotButton.RETRIEVE_COMMENT,
                                             callback_data=BotCallbackText.NULL)
@@ -2272,7 +2432,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                         except (FloodWait, FloodPremiumWait) as e:
                             amount = e.value
                             ConnectionStatus.enter_flood(
-                                f'[{self.app.client.name}]获取评论区消息请求频繁,要求等待{amount}秒后继续运行。'
+                                _('[{client_name}] Too many requests to get comments, wait {seconds} seconds before continuing.').format(
+                                    client_name=self.app.client.name,
+                                    seconds=amount
+                                )
                             )
                             await asyncio.sleep(amount)
                             ConnectionStatus.leave_flood()
@@ -2287,8 +2450,11 @@ class TelegramRestrictedMediaDownloader(Bot):
                         emoji=Emoji.SEARCH
                     )
                     await _progress(
-                        _text=f'{callback_query_text}\n'
-                              f'{search_icon}检索评论区中,已匹配到{final_comment_count}条消息。',
+                        _text=_('{text}\n{icon}Searching comments, {count} comments matched.').format(
+                            text=callback_query_text,
+                            icon=search_icon,
+                            count=final_comment_count
+                        ),
                         _reply_markup=KeyboardButton.single_button(
                             text=BotButton.RETRIEVE_COMMENT,
                             callback_data=BotCallbackText.NULL)
@@ -2328,10 +2494,16 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
                     last_assigned_count = assigned_count
                     if await _progress(
-                            _text=f'{origin_callback_query_text}\n'
-                                  f'🔎匹配消息:{message_count}条,评论区消息:{comment_count}条,共{total_count}条。\n'
-                                  f'⭐️[{assigned_count}/{total_count}]分配下载任务中。\n'
-                                  f'{sandglass}{self.pb.bot(assigned_count, total_count)}',
+                            _text=_(
+                                '{text}\n🔎 Matched messages: {messages}, comments: {comments}, total: {total}.\n⭐️[{assigned}/{total}] Assigning download tasks.\n{sandglass}{progress}').format(
+                                text=origin_callback_query_text,
+                                messages=message_count,
+                                comments=comment_count,
+                                total=total_count,
+                                assigned=assigned_count,
+                                sandglass=sandglass,
+                                progress=self.pb.bot(assigned_count, total_count)
+                            ),
                             _reply_markup=reply_markup
                     ) is not None:
                         last_progress_update_time = current_time
@@ -2361,13 +2533,18 @@ class TelegramRestrictedMediaDownloader(Bot):
             return links
         except Exception as e:
             log.error(
-                f'{_t(KeyWord.CHANNEL)}:"{chat_id}",无法进行下载,{_t(KeyWord.REASON)}:"{e}"',
+                _('[Channel]:"{chat_id}", unable to download due to "{error}"').format(
+                    chat_id=chat_id,
+                    error=e
+                ),
                 exc_info=True
             )
             # 失败提示改为发送新消息,不覆盖原菜单,保留其"执行|取消任务"按钮以便重试或取消。
             asyncio.create_task(callback_query.message.reply_text(
-                text=f'⚠️由于"{e}"无法执行频道下载任务。\n'
-                     f'可在上方菜单重试或取消该任务。'
+                text=_(
+                    '⚠️Unable to run the channel download task due to "{error}".\nRetry or cancel the task from the menu above.').format(
+                    error=e
+                )
             ))
 
     async def track_download_chat_progress(
@@ -2423,21 +2600,31 @@ class TelegramRestrictedMediaDownloader(Bot):
                 current_time = asyncio.get_event_loop().time()
                 if finished or current_time - last_update_time >= interval:
                     if total == 0:
-                        progress_text: str = '⭐️本轮下载任务已结束(任务已被清理或取消)。'
+                        progress_text: str = _('⭐️This download round has finished (tasks were cleared or cancelled).')
                     else:
                         # 仅当已完成数较上次编辑时实际增长,才翻转沙漏图标,否则保持原图标。
                         sandglass = flip_emoji(sandglass, advanced=done > last_done, emoji=Emoji.HOURGLASS)
                         last_done = done
                         progress_text: str = (
-                            f'⭐️[{done}/{total}]下载任务{"已完成" if finished else "进行中"}。\n'
-                            f'{sandglass}{self.pb.bot(done, total)}'
+                            _('⭐️[{done}/{total}] Download task {status}.\n{sandglass}{progress}').format(
+                                done=done,
+                                total=total,
+                                status=_('Completed') if finished else _('In progress'),
+                                sandglass=sandglass,
+                                progress=self.pb.bot(done, total)
+                            )
                         )
                     try:
                         await bot_message.edit_text(
-                            text=f'{base_text}\n'
-                                 f'🔎匹配消息:{message_count}条(媒体{matched_file_count}个),'
-                                 f'评论区消息:{comment_count}条,共{total_count}条。\n'
-                                 f'{progress_text}',
+                            text=_(
+                                '{text}\n🔎 Matched messages: {messages} (media: {media}), comments: {comments}, total: {total}.\n{progress}').format(
+                                text=base_text,
+                                messages=message_count,
+                                media=matched_file_count,
+                                comments=comment_count,
+                                total=total_count,
+                                progress=progress_text
+                            ),
                             reply_markup=KeyboardButton.single_button(
                                 text=BotButton.DOWNLOAD_TASK_DONE if finished else BotButton.DOWNLOAD_TASK_DOING,
                                 callback_data=BotCallbackText.NULL
@@ -2447,7 +2634,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                         last_update_time = current_time  # 文本本就相同,属良性no-op,按成功处理避免忙等。
                     except (FloodWait, FloodPremiumWait) as _e:
                         ConnectionStatus.enter_flood(
-                            f'[{self.app.client.name}]编辑消息请求频繁,要求等待{_e.value}秒后继续运行。'
+                            _('[{client_name}] Too many requests to edit the message, wait {seconds} seconds before continuing.').format(
+                                client_name=self.app.client.name,
+                                seconds=_e.value
+                            )
                         )
                         await asyncio.sleep(_e.value)
                         ConnectionStatus.leave_flood()
@@ -2456,10 +2646,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                         # 编辑失败(消息被删/无权限等)只记日志:进度展示是纯附加功能,绝不能影响下载。
                         edit_fail_count += 1
                         log.info(
-                            f'在/download_chat命令过程中,更新下载进度消息失败,已跳过本次更新,'
-                            f'{_t(KeyWord.REASON)}:"{_e}"')
+                            _('During the /download_chat command, failed to update the download progress message, skipped this update due to "{error}"').format(
+                                error=_e
+                            ))
                         if edit_fail_count >= 5:
-                            log.warning('连续多次更新/download_chat下载进度消息失败,已停止跟踪(不影响下载)。')
+                            log.warning(
+                                _('Failed to update /download_chat progress messages multiple times; tracking stopped (downloads are unaffected).'))
                             return
                     else:
                         last_update_time = current_time
@@ -2472,8 +2664,9 @@ class TelegramRestrictedMediaDownloader(Bot):
             except Exception as e:
                 # 兜底:跟踪逻辑自身出错时静默退出并记日志,绝不冒泡影响下载。
                 log.warning(
-                    f'跟踪/download_chat下载进度时出现意外错误,已停止跟踪(不影响下载),'
-                    f'{_t(KeyWord.REASON)}:"{e}"'
+                    _('Unexpected error tracking /download_chat progress, tracking stopped (does not affect download) due to "{error}"').format(
+                        error=e
+                    )
                 )
                 return
 
@@ -2490,7 +2683,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             album_chat_id: Optional[Union[int, str]] = None
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
-        diy_download_type = [_ for _ in DownloadType()] if with_upload else diy_download_type
+        diy_download_type = [i for i in DownloadType()] if with_upload else diy_download_type
         # 消息对象不可哈希(pyrogram的Object禁用了__hash__),只有链接字符串能作为登记键。
         enqueue_key: Union[str, None] = message_ids if isinstance(message_ids, str) else None
         try:
@@ -2572,7 +2765,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 'e_code': {
                     'all_member': str(e),
                     'error_msg':
-                        '频道标题存在特殊字符,请移步终端下载'
+                        _('Channel title contains special characters; download from the terminal')
                 }
             }
         except MsgIdInvalid as e:
@@ -2584,7 +2777,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 'e_code': {
                     'all_member': str(e),
                     'error_msg':
-                        '消息不存在,可能已删除'
+                        _('Message does not exist, possibly deleted')
                 }
             }
         except UsernameInvalid as e:
@@ -2596,7 +2789,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 'e_code': {
                     'all_member': str(e),
                     'error_msg':
-                        '频道用户名无效,该链接的频道用户名可能已更改或频道已解散'
+                        _('Invalid channel username; the channel username in this link may have changed or the channel may have been dissolved')
                 }
             }
         except ChannelInvalid as e:
@@ -2608,7 +2801,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 'e_code': {
                     'all_member': str(e),
                     'error_msg':
-                        '频道可能为私密频道或话题频道,请让当前账号加入该频道后再重试'
+                        _('The channel may be private or a topic channel; join it with the current account and retry')
                 }
             }
         except ChannelPrivate_400 as e:
@@ -2620,7 +2813,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 'e_code': {
                     'all_member': str(e),
                     'error_msg':
-                        '频道可能为私密频道或话题频道,当前账号可能已不在该频道,请让当前账号加入该频道后再重试'
+                        _('The channel may be private or a topic channel, and the current account may have left it; join it with the current account and retry')
                 }
             }
         except ChannelPrivate_406 as e:  # noqa.
@@ -2632,12 +2825,13 @@ class TelegramRestrictedMediaDownloader(Bot):
                 'e_code': {
                     'all_member': str(e),
                     'error_msg':
-                        '频道为私密频道,无法访问'
+                        _('The channel is private and cannot be accessed')
                 }
             }
         except BotMethodInvalid as e:
             res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
-            error_msg: str = '已删除旧会话文件' if res else '请手动删除软件目录下的sessions文件夹'
+            error_msg: str = _('Old session file deleted') if res else _(
+                'Please manually delete the sessions folder in the software directory.')
             return {
                 'chat_id': None,
                 'member_num': 0,
@@ -2645,9 +2839,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                 'status': DownloadStatus.FAILURE,
                 'e_code': {
                     'all_member': str(e),
-                    'error_msg':
-                        '检测到使用了「bot_token」方式登录了主账号的行为,'
-                        f'{error_msg},重启软件以「手机号码」方式重新登录'
+                    'error_msg': _(
+                        'Detected the main account logged in via 「bot_token」, {error}, '
+                        'restart the software and log in again via 「phone number」').format(
+                        error=error_msg)
                 }
             }
         except ValueError as e:
@@ -2658,7 +2853,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 'status': DownloadStatus.FAILURE,
                 'e_code': {
                     'all_member': str(e),
-                    'error_msg': '没有找到有效链接'
+                    'error_msg': _('No valid link found')
                 }
             }
         except UsernameNotOccupied as e:
@@ -2668,7 +2863,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 'link_type': None,
                 'status': DownloadStatus.FAILURE,
                 'e_code': {
-                    'all_member': str(e), 'error_msg': '频道不存在'
+                    'all_member': str(e), 'error_msg': _('Channel does not exist')
                 }
             }
         except Exception as e:
@@ -2680,7 +2875,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 'status': DownloadStatus.FAILURE,
                 'e_code': {
                     'all_member': str(e),
-                    'error_msg': '未收录到的错误'
+                    'error_msg': _('Unhandled error')
                 }
             }
         finally:
@@ -2694,8 +2889,8 @@ class TelegramRestrictedMediaDownloader(Bot):
         links: set = set()
         if isinstance(link, str):
             if link.endswith('.txt') and os.path.isfile(link):
-                with open(file=link, mode='r', encoding='UTF-8') as _:
-                    _links: list = [content.strip() for content in _.readlines()]
+                with open(file=link, mode='r', encoding='UTF-8') as j:
+                    _links: list = [content.strip() for content in j.readlines()]
                 for i in _links:
                     if i.startswith(start_content):
                         links.add(i)
@@ -2703,7 +2898,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                     elif i == '' or i.startswith('#'):
                         continue
                     else:
-                        log.warning(f'"{i}"是一个非法链接,{_t(KeyWord.STATUS)}:{_t(DownloadStatus.SKIP)}。')
+                        log.warning(_('"{invalid_link}" is an invalid link, [Status]:Skip.').format(
+                            invalid_link=i
+                        ))
             elif link.startswith(start_content):
                 links.add(link)
         elif isinstance(link, list):
@@ -2714,10 +2911,10 @@ class TelegramRestrictedMediaDownloader(Bot):
         if links:
             return links
         elif not self.app.bot_token:
-            console.log('🔗 没有找到有效链接,程序已退出。', style='#FF4689')
+            console.log(_('🔗 No valid link found, program exited.'), style='#FF4689')
             sys.exit(1)
         else:
-            console.log('🔗 没有找到有效链接。', style='#FF4689')
+            console.log(_('🔗 No valid link found.'), style='#FF4689')
             return None
 
     def __retry_call(self, notice, _future):
@@ -2763,9 +2960,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 self.forward_limit_call = LimitCall(max_limit_call_times=FORWARD_LIMIT)
                 if self.gc.upload_delete:
                     console.log(
-                        f'在使用转发(/forward)、监听转发(/listen_forward)、上传(/upload)、递归上传(/upload_r)时:\n'
-                        f'当检测到"受限转发"时,自动采用"下载后上传"的方式,并在完成后删除本地文件。\n'
-                        f'如需关闭,前往机器人[帮助页面]->[设置]->[上传设置]进行修改。\n',
+                        _('When using forward (/forward), listen-and-forward (/listen_forward), upload (/upload), or recursive upload (/upload_r):\nWhen "restricted forwarding" is detected, download-then-upload is used automatically, and local files are deleted afterwards.\nTo disable it, go to the bot [Help page] -> [Settings] -> [Upload settings].\n').format(),
                         style='#FF4689'
                     )
         self.is_running = True
@@ -2792,12 +2987,15 @@ class TelegramRestrictedMediaDownloader(Bot):
             try:
                 await result
             except PermissionError as e:
-                log.error(
-                    '处理下载任务时遇到文件权限错误:'
-                    '可能是临时文件/保存目录为只读、文件被其他进程占用锁定,或当前用户无写入权限,'
-                    f'{_t(KeyWord.REASON)}:"{e}"')
+                log.error(_(
+                    'File permission error while processing download task: possibly the temporary '
+                    'file/save directory is read-only, the file is locked by another process, or the '
+                    'current user has no write permission due to "{error}"').format(
+                    error=e))
             except Exception as e:
-                log.error(f'处理队列时出错,{_t(KeyWord.REASON)}:"{e}"', exc_info=True)
+                log.error(_('Error processing queue due to "{error}"').format(
+                    error=e
+                ), exc_info=True)
         # 等待所有任务完成。
         await self.queue.join()
         if self.scheduler:  # 停止下载调度器。
@@ -2817,34 +3015,45 @@ class TelegramRestrictedMediaDownloader(Bot):
         except KeyError as e:
             run_error: bool = True
             if str(e) == '0':
-                log.error('「网络」或「代理问题」,在确保当前网络连接正常情况下检查:\n「VPN」是否可用,「软件代理」是否配置正确。')
+                log.error(
+                    _('「Network」 or 「proxy issue」: with a normal network connection, check:\nwhether 「VPN」 is available and whether the 「software proxy」 is configured correctly.'))
                 console.print(Issues.PROXY_NOT_CONFIGURED)
                 raise SystemExit(1)
-            log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
+            log.exception(_('Runtime error due to "{error}"').format(error=e))
         except BadMsgNotification as e:
             run_error: bool = True
             if str(e) in (str(BadMsgNotification(16)), str(BadMsgNotification(17))):
                 console.print(Issues.SYSTEM_TIME_NOT_SYNCHRONIZED)
                 raise SystemExit(1)
-            log.exception(f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
+            log.exception(_('Runtime error due to "{error}"').format(error=e))
         except (SessionRevoked, AuthKeyUnregistered, SessionExpired, Unauthorized) as e:
-            log.error(f'登录时遇到错误,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(_('Error while logging in due to "{error}"').format(error=e))
             res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
             run_error: bool = True
             if res:
-                log.warning('账号已失效,已删除旧会话文件,请重启软件。')
+                log.warning(_('Account invalid; old session file deleted. Restart the software.'))
             else:
-                log.error('账号已失效,请手动删除软件目录下的sessions文件夹后重启软件。')
+                log.error(
+                    _('Account invalid; manually delete the sessions folder in the software directory, then restart the software.'))
         except (ConnectionError, TimeoutError) as e:
             run_error: bool = True
             if not self.app.enable_proxy:
-                log.error(f'网络连接失败,请尝试配置代理,{_t(KeyWord.REASON)}:"{e}"')
+                log.error(
+                    _('Login timed out, please reopen the software to try logging in again due to "{error}"').format(
+                        error=e
+                    ))
                 console.print(Issues.PROXY_NOT_CONFIGURED)
             else:
-                log.error(f'网络连接失败,请检查VPN是否可用,{_t(KeyWord.REASON)}:"{e}"')
+                log.error(
+                    _('Network connection failed, please check whether VPN is available due to "{error}"').format(
+                        error=e
+                    ))
         except AttributeError as e:
             run_error: bool = True
-            log.error(f'登录超时,请重新打开软件尝试登录,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(
+                _('Login timed out, please reopen the software to try logging in again due to "{error}"').format(
+                    error=e
+                ))
             package_name = 'kurigram'
             require_version = '.'.join(map(str, REQUIRE_PYROGRAM_VERSION))
             None if check_kurigram_version(warning=False) else console.print(
@@ -2856,15 +3065,17 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
             )
         except KeyboardInterrupt:
-            console.log('⌨️ 用户键盘中断。')
+            console.log(_('⌨️ Keyboard interrupt by user.'))
         except OperationalError as e:
             run_error: bool = True
             log.error(
-                f'检测到软件多开使用同一SESSION,{_t(KeyWord.REASON)}:"{e}"')
+                _('Detected multiple instances using the same SESSION due to "{error}"').format(
+                    error=e
+                ))
             console.print(Issues.MULTI_SESSION_TIP.format(exe=get_executable_path()))
         except Exception as e:
             run_error: bool = True
-            log.exception(msg=f'运行出错,{_t(KeyWord.REASON)}:"{e}"')
+            log.exception(msg=_('Runtime error due to "{error}"').format(error=e))
         finally:
             self.is_running = False
             ConnectionStatus.stop()
@@ -2878,7 +3089,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                     ) if self.pending_storage_tasks else None
                     self.loop.run_until_complete(self.storage_database.close())
                 except Exception as e:
-                    log.warning(f'关闭网页存储数据库失败,{_t(KeyWord.REASON)}:"{e}"')
+                    log.warning(_('Failed to close the web storage database due to "{error}"').format(
+                        error=e
+                    ))
             if not run_error:
                 self.app.print_link_table(
                     link_tasks=DownloadTask.TASKS,

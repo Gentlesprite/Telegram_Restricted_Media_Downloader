@@ -21,14 +21,13 @@ from module import (
     GLOBAL_CONFIG_NAME,
     GLOBAL_CONFIG_PATH
 )
-from module.language import _t
+from module.language import _
 from module.parser import PARSE_ARGS
 from module.path_tool import (
     gen_backup_config,
     safe_scan_directory_file
 )
 from module.enums import (
-    KeyWord,
     ProcessConfig,
     GetStdioParams
 )
@@ -53,7 +52,7 @@ class BaseConfig:
         for key, value in template.items():
             if key not in target:
                 target[key] = value
-                console.log(log_message.format(key))
+                console.log(log_message.format(key=key))
 
     @staticmethod
     def remove_extra_keys(target, template, log_message) -> None:
@@ -61,7 +60,7 @@ class BaseConfig:
         keys_to_remove: list = [key for key in target.keys() if key not in template]
         for key in keys_to_remove:
             target.pop(key)
-            console.log(log_message.format(key))
+            console.log(log_message.format(key=key))
 
     def process_nesting(self, param_name: Union[str, dict], config):
         param_template = self.TEMPLATE.get(param_name)
@@ -76,14 +75,18 @@ class BaseConfig:
             self.add_missing_keys(
                 target=param_config,
                 template=param_template,
-                log_message='"{}"'
-                            f'不在{param_name}配置文件中,已添加。'
+                log_message=_('"{key}" not found in the {section} config file, added.').format(
+                    key='{key}',
+                    section=param_name
+                )
             )
             self.remove_extra_keys(
                 target=param_config,
                 template=param_template,
-                log_message='"{}"'
-                            f'不在{param_name}配置文件中,已删除。'
+                log_message=_('"{key}" not in the {section} config file, removed.').format(
+                    key='{key}',
+                    section=param_name
+                )
             )
 
     def __check_params(self, config: dict) -> None:
@@ -93,9 +96,12 @@ class BaseConfig:
             config = {}
 
         # 处理父级参数。
-        self.add_missing_keys(target=config, template=self.TEMPLATE, log_message='"{}"不在全局配置文件中,已添加。')
+        self.add_missing_keys(
+            target=config,
+            template=self.TEMPLATE,
+            log_message=_('"{key}" not found in the global config file, added.'))
         # 删除父级模板中没有的字段。
-        self.remove_extra_keys(config, self.TEMPLATE, '"{}"不在模板中,已删除。')
+        self.remove_extra_keys(config, self.TEMPLATE, _('"{key}" not in the template, removed.'))
 
         if config != self.config:
             self.config = config
@@ -113,9 +119,12 @@ class BaseConfig:
                 if config:
                     self.config = config
                 else:
-                    raise ValueError('The file is empty or has invalid format.')
+                    raise ValueError(_('The file is empty or has invalid format'))
         except Exception as e:
-            log.error(f'检测到无效或损坏的全局配置文件。已生成新的模板文件. . .{_t(KeyWord.REASON)}:"{e}"')
+            log.error(
+                _('Invalid or corrupted global config file detected. A new template has been generated due to "{error}"').format(
+                    error=e
+                ))
             self.config: dict = self.TEMPLATE.copy()
             self.save_config(self.config)
 
@@ -124,9 +133,11 @@ class BaseConfig:
         try:
             with open(file=self.config_path, mode='w', encoding='UTF-8') as f:
                 yaml.dump(config, f)
-            log.info('全局配置文件已保存。')
+            log.info(_('Global config file saved.'))
         except Exception as e:
-            log.error(f'保存全局配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(_('Failed to save the global config file due to "{error}"').format(
+                error=e
+            ))
         finally:
             self.config = config
 
@@ -215,7 +226,7 @@ class UserConfig(BaseConfig):
         except FileNotFoundError:
             return
         except Exception as e:
-            log.error(f'读取历史文件时发生错误,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(_('Error reading the history file due to "{error}"').format(error=e))
             return
         file_start: str = 'history_'
         file_end: str = '_config.yaml'
@@ -275,7 +286,7 @@ class UserConfig(BaseConfig):
             if key not in target:
                 target[key] = value
                 if not history:
-                    console.log(log_message.format(key))
+                    console.log(log_message.format(key=key))
                     self.modified = True
                     self.record_flag = True
 
@@ -285,7 +296,7 @@ class UserConfig(BaseConfig):
         for key in keys_to_remove:
             target.pop(key)
             if not history:
-                console.log(log_message.format(key))
+                console.log(log_message.format(key=key))
                 self.record_flag = True
 
     def __check_params(self, config: dict, history=False) -> dict:
@@ -298,7 +309,7 @@ class UserConfig(BaseConfig):
         self.add_missing_keys(
             target=config,
             template=UserConfig.TEMPLATE,
-            log_message='"{}"不在配置文件中,已添加。',
+            log_message=_('"{key}" not found in the config file, added.'),
             history=history
         )
 
@@ -310,7 +321,7 @@ class UserConfig(BaseConfig):
         self.remove_extra_keys(
             target=config,
             template=UserConfig.TEMPLATE,
-            log_message='"{}"不在模板中,已删除。',
+            log_message=_('"{key}" not in the template, removed.'),
             history=history
         )
 
@@ -323,7 +334,7 @@ class UserConfig(BaseConfig):
             if not os.path.exists(self.config_path):
                 with open(file=self.config_path, mode='w', encoding='UTF-8') as f:
                     yaml.dump(UserConfig.TEMPLATE, f, Dumper=CustomDumper)
-                console.log('未找到配置文件,已生成新的模板文件. . .')
+                console.log(_('Config file not found, a new template has been generated. . .'))
                 self.re_config = True  # v1.3.4 修复配置文件不存在时,无法重新生成配置文件的问题。
             with open(self.config_path, 'r', encoding='UTF-8') as f:
                 config: dict = yaml.safe_load(f)  # v1.1.4 加入对每个字段的完整性检测。
@@ -335,17 +346,22 @@ class UserConfig(BaseConfig):
             # 中文路径无法被打包好的二进制文件识别,故在配置文件时无论是链接路径还是媒体保存路径都请使用英文命名。
             self.re_config = True
             log.error(
-                f'读取配置文件遇到编码错误,可能保存路径中包含中文或特殊字符的文件夹。已生成新的模板文件. . .{_t(KeyWord.REASON)}:"{e}"')
+                _('Encoding error reading the config file due to "{error}" (possibly Chinese or special characters in the save path). A new template has been generated.').format(
+                    error=e
+                ))
             self.backup_config(config, error_config=self.re_config)
         except Exception as e:
             self.re_config = True
-            console.print('「注意」链接路径和保存路径不能有引号!', style='#B1DB74')
-            log.error(f'检测到无效或损坏的配置文件。已生成新的模板文件. . .{_t(KeyWord.REASON)}:"{e}"')
+            console.print(_('「Note」Link paths and save paths cannot contain quotes!'), style='#B1DB74')
+            log.error(
+                _('Invalid or corrupted config file detected. A new template has been generated due to "{error}"').format(
+                    error=e
+                ))
             self.backup_config(config, error_config=self.re_config)
         finally:
             if config is None:
                 self.re_config = True
-                log.warning('检测到空的配置文件。已生成新的模板文件. . .')
+                log.warning(_('Empty config file detected. A new template has been generated.'))
                 config: dict = UserConfig.TEMPLATE.copy()
         return config
 
@@ -362,9 +378,11 @@ class UserConfig(BaseConfig):
                 absolute_backup_dir=UserConfig.ABSOLUTE_BACKUP_DIRECTORY,
                 error_config=error_config
             )
-            console.log(f'原来的配置文件已备份至"{backup_path}"', style='#B1DB74')
+            console.log(_('Original config file backed up to "{backup_path}"').format(
+                backup_path=backup_path
+            ), style='#B1DB74')
         else:
-            console.log('配置文件与模板文件完全一致,无需备份。')
+            console.log(_('The config is identical to the template, no backup needed.'))
 
     def config_guide(self) -> None:
         """引导用户以交互式的方式修改、保存配置文件。"""
@@ -409,7 +427,7 @@ class UserConfig(BaseConfig):
             proxy_record: dict = self.last_record.get('proxy', {})  # proxy的历史记录。
             enable_bot: bool = False  # 是否打开机器人。
             if any([not _api_id, not _api_hash, not _save_directory, not _max_download_task, not _download_type]):
-                console.print('「注意」直接回车代表使用上次的记录。',
+                console.print(_('「Note」Pressing Enter directly uses the last record.'),
                               style='#B1DB74')
             if self.is_change_account or _api_id is None or _api_hash is None or self.re_config:
                 if not _api_id:
@@ -524,19 +542,19 @@ class UserConfig(BaseConfig):
                     print('\n')
                     if gsp.get_is_ki_save_config().get('is_ki_save_config'):
                         self.save_config(pre_load_config)
-                        console.log('配置已保存!')
+                        console.log(_('Config saved!'))
                     else:
-                        console.log('不保存当前填写参数。')
+                        console.log(_('Current parameters not saved.'))
                 else:
                     raise SystemExit(0)
             except KeyboardInterrupt:
                 n: bool = False
                 print('\n')
-                console.log('不保存当前填写参数(用户手动终止配置参数)。')
+                console.log(_('Current parameters not saved (configuration manually interrupted).'))
             finally:
                 if n:
                     print('\n')
-                    console.log('用户手动终止配置参数。')
+                    console.log(_('Configuration manually interrupted.'))
                 ctrl_c()
                 exit_flag: bool = True
         if exit_flag:
@@ -579,7 +597,7 @@ class UserConfig(BaseConfig):
                     yaml.dump(config, f)
                 os.replace(temp_path, self.config_path)  # 同一目录内的替换是原子操作。
             except Exception as e:
-                log.error(f'保存配置文件失败,{_t(KeyWord.REASON)}:"{e}"')
+                log.error(_('Failed to save the config file due to "{error}"').format(error=e))
                 return False
             finally:
                 try:
@@ -587,7 +605,7 @@ class UserConfig(BaseConfig):
                         os.remove(temp_path)
                 except Exception:  # noqa.
                     pass
-        log.info('配置文件已保存。')
+        log.info(_('Config file saved.'))
         return True
 
 
@@ -659,7 +677,7 @@ class GlobalConfig(BaseConfig):
         )
         self.forward_type: dict = self.config.get('forward_type')
         self.authorized_users: list = self.config.get('authorized_users', [])
-        p = '全局配置文件已重新加载。'
+        p = _('Global config reloaded.')
         console.log(p, style='#FF4689')
         log.info(f'{p.replace("。", ":")}{self.config}')
 
@@ -671,7 +689,7 @@ class GlobalConfig(BaseConfig):
         self.add_missing_keys(
             target=config,
             template=self.TEMPLATE,
-            log_message='"{}"不在全局配置文件中,已添加。'
+            log_message=_('"{key}" not found in the global config file, added.')
         )
         # 处理嵌套参数。
         self.process_nesting(param_name='export_table', config=config)
@@ -690,7 +708,7 @@ class GlobalConfig(BaseConfig):
         self.remove_extra_keys(
             target=config,
             template=self.TEMPLATE,
-            log_message='"{}"不在模板中,已删除。'
+            log_message=_('"{key}" not in the template, removed.')
         )
 
         if config != self.config:

@@ -66,12 +66,11 @@ from module.util import (
     AdjustableSemaphore
 )
 from module.enums import (
-    KeyWord,
     WaitingKind,
     DownloadType
 )
 from module.stdio import ConnectionStatus
-from module.language import _t
+from module.language import _
 
 
 class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
@@ -99,29 +98,40 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             f'Kurigram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n'
             f'under the terms of the {pyrogram.__license__}.')
         console.print(
-            f'欢迎使用[#b4009e]{SOFTWARE_SHORT_NAME}[/#b4009e] {__version__} (Kurigram {pyrogram.__version__})')
+            _('Welcome to [#b4009e]{app_name}[/#b4009e] {version} (Kurigram {pyrogram_version})').format(
+                app_name=SOFTWARE_SHORT_NAME,
+                version=__version__,
+                pyrogram_version=pyrogram.__version__
+            ))
         while True:
             try:
                 while True:
                     value = (await ainput('请输入「电话号码」([#6a2c70]电话号码[/#6a2c70]需以[#b83b5e]「+地区」[/#b83b5e]开头!'
                                           '如:[#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):')).strip()
                     if not value.startswith('+'):
-                        log.warning(f'意外的参数:"{value}",电话号码需以「+地区」开头!')
+                        log.warning(
+                            _('Unexpected parameter "{value}", the phone number must start with 「+region」!').format(
+                                value=value
+                            ))
                         continue
                     if len(value) < 8 or len(value) > 16:
-                        log.warning(f'意外的参数:"{value}",电话号码无效!')
+                        log.warning(_('Unexpected parameter "{value}", invalid phone number!').format(value=value))
                         continue
                     if not value:
                         continue
 
                     confirm = (await ainput(
-                        f'所输入的「{value}」是否[#B1DB74]正确[/#B1DB74]? - 「y|n」(默认y):')).strip().lower()
+                        _('Is the entered 「{value}」 [#B1DB74]correct[/#B1DB74]? - 「y|n」 (default y):').format(
+                            value=value
+                        ))).strip().lower()
                     if confirm in ('y', ''):
                         break
                     elif confirm == 'n':
                         continue
                     else:
-                        log.warning(f'意外的参数:"{confirm}",支持的参数 - 「y|n」')
+                        log.warning(_('Unexpected parameter "{confirm}", supported values - 「y|n」').format(
+                            confirm=confirm
+                        ))
                 self.phone_number = value
                 sent_code = await self.send_code(self.phone_number)
             except pyrogram.errors.BadRequest as e:
@@ -129,53 +139,61 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 self.phone_number = None
             except (pyrogram.errors.PhoneNumberInvalid, AttributeError) as e:
                 self.phone_number = None
-                log.error(f'「电话号码」错误,请重新输入!{_t(KeyWord.REASON)}:"{e.MESSAGE}"')
+                log.error(_('Invalid 「phone number」 due to "{error}", please re-enter.').format(
+                    error=e.MESSAGE
+                ))
             else:
                 break
         if sent_code.type == pyrogram.enums.SentCodeType.SETUP_EMAIL_REQUIRED:
-            console.print('需要「设置邮箱」以完成授权。')
+            console.print(_('「Set up email」is required to complete authorization.'))
 
             while True:
                 try:
                     while True:
-                        email = await ainput('请输入「邮箱」:')
+                        email = await ainput(_('Enter the 「email」:'))
                         if not email:
                             continue
-                        confirm = (await ainput(f'所输入的「{email}」是否正确? - 「y|n」(默认y):')).strip().lower()
+                        confirm = (await ainput(_('Is the entered 「{email}」 correct? - 「y|n」 (default y):').format(
+                            email=email
+                        ))).strip().lower()
                         if confirm in ('y', ''):
                             break
                         elif confirm == 'n':
                             continue
                         else:
-                            log.warning(f'意外的参数:"{confirm}",支持的参数 - 「y|n」')
+                            log.warning(_('Unexpected parameter "{confirm}", supported values - 「y|n」').format(
+                                confirm=confirm
+                            ))
                     await self.invoke(
                         raw.functions.account.SendVerifyEmailCode(
                             purpose=raw.types.EmailVerifyPurposeLoginSetup(
                                 phone_number=self.phone_number,
-                                phone_code_hash=sent_code.phone_code_hash,
+                                phone_code_hash=sent_code.phone_code_hash
                             ),
-                            email=email,
+                            email=email
                         )
                     )
 
-                    email_code = await ainput('请输入「验证码」:')
+                    email_code = await ainput(_('Enter the 「verification code」:'))
 
                     email_sent_code = await self.invoke(
                         raw.functions.account.VerifyEmail(
                             purpose=raw.types.EmailVerifyPurposeLoginSetup(
                                 phone_number=self.phone_number,
-                                phone_code_hash=sent_code.phone_code_hash,
+                                phone_code_hash=sent_code.phone_code_hash
                             ),
-                            verification=raw.types.EmailVerificationCode(code=email_code),
+                            verification=raw.types.EmailVerificationCode(code=email_code)
                         )
                     )
 
                     if isinstance(email_sent_code, raw.types.account.EmailVerifiedLogin):
                         if isinstance(email_sent_code.sent_code, raw.types.auth.SentCodePaymentRequired):
-                            raise pyrogram.errors.Unauthorized(
-                                f'You need to pay {email_sent_code.sent_code.amount}{email_sent_code.sent_code.currency} or purchase premium to continue authorization '
-                                f'process, which is currently not supported by Kurigram.'
-                            )
+                            raise pyrogram.errors.Unauthorized(_(
+                                'You need to pay {amount}{currency} or purchase premium to continue authorization '
+                                'process, which is currently not supported by Kurigram.').format(
+                                amount=email_sent_code.sent_code.amount,
+                                currency=email_sent_code.sent_code.currency
+                            ))
                 except pyrogram.errors.BadRequest as e:
                     console.print(e.MESSAGE)
                 else:
@@ -192,46 +210,51 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             }
 
             console.print(
-                f'[#f08a5d]「验证码」[/#f08a5d]已通过[#f9ed69]「{sent_code_descriptions[sent_code.type]}」[/#f9ed69]发送。')
+                _('[#f08a5d]「Verification code」[/#f08a5d] sent via [#f9ed69]「{code_type}」[/#f9ed69].').format(
+                    code_type=sent_code_descriptions[sent_code.type]
+                ))
 
         while True:
             if not self.phone_code:
-                self.phone_code = (await ainput('请输入收到的[#f08a5d]「验证码」[/#f08a5d]:')).strip()
+                self.phone_code = (
+                    await ainput(_('Enter the received [#f08a5d]「verification code」[/#f08a5d]:'))).strip()
 
             try:
                 signed_in = await self.sign_in(self.phone_number, sent_code.phone_code_hash, self.phone_code)
             except pyrogram.errors.BadRequest as e:
                 console.print(e.MESSAGE)
                 self.phone_code = None
-            except pyrogram.errors.SessionPasswordNeeded as _:
+            except pyrogram.errors.SessionPasswordNeeded as _e:
                 console.print(
-                    '当前登录账号设置了[#f08a5d]「两步验证」[/#f08a5d],需要提供两步验证的[#f9ed69]「密码」[/#f9ed69]。')
+                    _('[#f08a5d]「Two-step verification」[/#f08a5d] is enabled for this account; the [#f9ed69]「password」[/#f9ed69] is required.'))
 
                 while True:
                     console.print('密码提示:{}'.format(await self.get_password_hint()))
 
                     if not self.password:
                         self.password = (await ainput(
-                            '输入[#f08a5d]「两步验证」[/#f08a5d]的[#f9ed69]「密码」[/#f9ed69](为空代表[#FF4689]忘记密码[/#FF4689]):',
-                            password=self.hide_password)).strip()
+                            _('Enter the [#f9ed69]「password」[/#f9ed69] for [#f08a5d]「two-step verification」[/#f08a5d] (empty means [#FF4689]forgot password[/#FF4689]):'))).strip()
 
                     try:
                         if not self.password:
                             confirm = (await ainput(
-                                '所输入的[#f08a5d]「恢复密码」[/#f08a5d]是否正确? - 「y|n」(默认y):')).strip().lower()
+                                _('Is the entered [#f08a5d]「recovery password」[/#f08a5d] correct? - 「y|n」(default y):'))).strip().lower()
                             if confirm in ('y', ''):
                                 email_pattern = await self.send_recovery_code()
                                 console.print(
-                                    f'[#f08a5d]「恢复代码」[/#f08a5d]已发送到邮箱[#f9ed69]「{email_pattern}」[/#f9ed69]。')
+                                    _('[#f08a5d]「Recovery code」[/#f08a5d] sent to email [#f9ed69]「{email_pattern}」[/#f9ed69].').format(
+                                        email_pattern=email_pattern
+                                    ))
 
                                 while True:
-                                    recovery_code = (await ainput('请输入[#f08a5d]「恢复代码」[/#f08a5d]:')).strip()
+                                    recovery_code = (
+                                        await ainput(_('Enter the [#f08a5d]「recovery code」[/#f08a5d]:'))).strip()
 
                                     try:
                                         return await self.recover_password(recovery_code)
                                     except pyrogram.errors.BadRequest as e:
                                         console.print(e.MESSAGE)
-                                    except Exception as _:
+                                    except Exception as _e:
                                         console.print_exception()
                                         raise
                             else:
@@ -248,8 +271,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             return signed_in
 
         while True:
-            first_name = (await ainput('输入[#f08a5d]「名字」[/#f08a5d]:')).strip()
-            last_name = (await ainput('输入[#f9ed69]「姓氏」[/#f9ed69](为空代表跳过): ')).strip()
+            first_name = (await ainput(_('Enter the [#f08a5d]「first name」[/#f08a5d]:'))).strip()
+            last_name = (await ainput(_('Enter the [#f9ed69]「last name」[/#f9ed69] (empty to skip): '))).strip()
 
             try:
                 signed_up = await self.sign_up(
@@ -295,7 +318,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 max_id=max_id + 1 if max_id else 0,
                 from_message_id=offset_id,
                 from_date=offset_date,
-                reverse=reverse,
+                reverse=reverse
             )
 
             if not messages:
@@ -342,7 +365,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
         if not temporary and is_current_dc and not is_media:
             # Only reachable on a connected client, where `session` is set.
             if self.session is None:
-                raise ConnectionError("Client is not connected")
+                raise ConnectionError(_('Client is not connected'))
 
             return self.session
 
@@ -387,7 +410,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
         await session.start()
 
         if not is_current_dc and export_authorization:
-            for _ in range(3):
+            for i in range(3):
                 exported_auth = await self.invoke(
                     raw.functions.auth.ExportAuthorization(
                         dc_id=dc_id
@@ -573,14 +596,14 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                                     cdn_chunk = decrypted_chunk[h.limit * i: h.limit * (i + 1)]
                                     CDNFileHashMismatch.check(
                                         h.hash == sha256(cdn_chunk).digest(),
-                                        "h.hash == sha256(cdn_chunk).digest()",
+                                        "h.hash == sha256(cdn_chunk).digest()"
                                     )
 
                             await asyncio.get_running_loop().run_in_executor(
                                 self.executor,
                                 _check_all_hashes,
                                 hashes,
-                                decrypted_chunk,
+                                decrypted_chunk
                             )
 
                             yield decrypted_chunk
@@ -639,9 +662,9 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 file_size: int = message.photo.file_size
             if offset < 0:  # 负偏移表示从文件末尾倒数。
                 if file_size == 0:
-                    raise ValueError(
+                    raise ValueError(_(
                         "Negative offset for live photo requires file_size"
-                    )
+                    ))
 
                 chunks = math.ceil(file_size / 1024 / 1024)
                 offset += chunks
@@ -661,7 +684,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 if media is not None:
                     break
             else:
-                raise ValueError("This message doesn't contain any downloadable media")
+                raise ValueError(_("This message doesn't contain any downloadable media"))
         else:
             media = message
 
@@ -675,9 +698,9 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
 
         if offset < 0:
             if file_size == 0:
-                raise ValueError(
+                raise ValueError(_(
                     "Negative offsets are not supported for file ids, pass a Message object instead"
-                )
+                ))
 
             chunks = math.ceil(file_size / 1024 / 1024)
             offset += chunks
@@ -710,11 +733,11 @@ async def get_chunk(
                 limit=limit,
                 max_id=max_id,
                 min_id=min_id,
-                hash=0,
+                hash=0
             ),
-            sleep_threshold=60,
+            sleep_threshold=60
         ),
-        replies=0,
+        replies=0
     )
 
     if reverse:
@@ -740,7 +763,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
     ):
         show_waiting = not self.is_started.is_set()
         if show_waiting:
-            ConnectionStatus.enter_busy('正在等待客户端连接建立。')
+            ConnectionStatus.enter_busy(_('Waiting for the client connection to be established.'))
         try:
             await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
         except asyncio.TimeoutError:
@@ -761,7 +784,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
         try:
             while True:
                 try:
-                    ConnectionStatus.enter_busy(f'正在发送"{query_name}"请求。')
+                    ConnectionStatus.enter_busy(_('Sending "{query_name}" request.').format(query_name=query_name))
                     try:
                         result = await self.send(query, timeout=timeout)
                     except BaseException:
@@ -785,9 +808,14 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                         '[%s] Waiting for %s seconds before continuing (required by "%s")',
                         self.client.name,
                         amount,
-                        query_name,
+                        query_name
                     )
-                    message = f'[{self.client.name}]请求频繁,"{query_name}"要求等待{amount}秒后继续运行。'
+                    message = _(
+                        '[{client_name}] Too many requests, "{query_name}" requires waiting {seconds} seconds before continuing.').format(
+                        client_name=self.client.name,
+                        query_name=query_name,
+                        seconds=amount
+                    )
                     if waiting_kind != WaitingKind.FLOOD:
                         if waiting_kind == WaitingKind.RECONNECT:
                             ConnectionStatus.leave()
@@ -801,7 +829,10 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                     log.info(
                         'Retrying "%s" due to: %s', query_name, str(e) or repr(e)
                     )
-                    message = f'由于"{str(e) or repr(e)}"导致无法调用"{query_name}",正在尝试重连。'
+                    message = _('Unable to call "{query_name}" due to "{error}", attempting to reconnect.').format(
+                        error=str(e) or repr(e),
+                        query_name=query_name
+                    )
                     if waiting_kind != WaitingKind.RECONNECT:
                         if waiting_kind == WaitingKind.FLOOD:
                             ConnectionStatus.leave_flood()
@@ -815,9 +846,10 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                     if not self.is_started.is_set():
                         try:
                             await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
-                            log.info('已恢复连接,重新尝试调用"%s"。', query_name)
+                            log.info(_('Connection restored, retrying call "%s".'), query_name)
                         except asyncio.TimeoutError:
-                            log.info('无法调用"%s",等待%s秒后重新发送数据。', query_name, retry_delay)
+                            log.info(_('Failed to call "%s", waiting %s seconds before resending.'), query_name,
+                                     retry_delay)
                     await asyncio.sleep(retry_delay)
         finally:
             if waiting_kind == WaitingKind.FLOOD:
@@ -874,7 +906,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             result = pending_result.value
 
             if result is None:
-                raise TimeoutError('Request timed out')
+                raise TimeoutError(_('Request timed out'))
 
             if isinstance(result, raw.types.RpcError):
                 if isinstance(

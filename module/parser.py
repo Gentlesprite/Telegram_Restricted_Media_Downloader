@@ -8,6 +8,7 @@ from argparse import (
     ArgumentParser
 )
 
+from module.language import _
 from module import (
     console,
     VERSION_SEMVER,
@@ -28,41 +29,41 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             '-h', '--help',
             action='help',
             default=SUPPRESS,
-            help='展示帮助'
+            help=_('Show help')
         )
         self.add_argument(
             '-v', '--version',
             action='version',
             version=f'{SOFTWARE_SHORT_NAME} {VERSION_SEMVER}',
             default=SUPPRESS,
-            help='展示版本信息'
+            help=_('Show version information')
         )
         self.add_argument(
             '-q', '--quiet',
             action='store_true',
             default=False,
-            help='跳过重新配置文件的确认提示'
+            help=_('Skip the confirmation prompt for reconfiguring the file')
         )
         self.add_argument(
             '-c', '--config',
             type=str,
             required=False,
             default='',
-            help='设置用户配置文件的路径'
+            help=_('Set the path to the user configuration file')
         )
         self.add_argument(
             '-s', '--session',
             type=str,
             required=False,
             default='',
-            help='设置会话文件的路径'
+            help=_('Set the path to the session file')
         )
         self.add_argument(
             '-t', '--temp',
             type=str,
             required=False,
             default='',
-            help='设置运行缓存的路径'
+            help=_('Set the path to the runtime cache')
         )
         self.add_argument(
             '-p', '--port',
@@ -71,7 +72,7 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             metavar='PORT',
             const=WebMeta.DEFAULT_PORT,
             default=WebMeta.DEFAULT_PORT,
-            help='设置网页面板的端口'
+            help=_('Set the web panel port')
         )
         self.add_argument(
             '--test',

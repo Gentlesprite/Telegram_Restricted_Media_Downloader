@@ -13,6 +13,7 @@ from logging.handlers import RotatingFileHandler
 
 import yaml
 
+from module.language import _
 from rich.console import Console
 from rich.logging import RichHandler
 
@@ -137,9 +138,9 @@ console = Console(log_path=False, log_time_format=LOG_TIME_FORMAT)
 DOWNLOAD_TIMEOUT = 120
 FORWARD_LIMIT = 33  # 每分钟允许的最大转发次数。
 AUTHOR = 'Gentlesprite'
-__version__ = '2.1.9'
+__version__ = '2.2.0'
 __license__ = 'GPL-3.0-or-later'
-__update_date__ = '2026-11-21 13:31:24'
+__update_date__ = '2026-11-22 17:23:28'
 __copyright__ = f'Copyright (C) 2024-{__update_date__[:4]} {AUTHOR} <https://github.com/{AUTHOR}>'
 REQUIRE_PYROGRAM_VERSION = (2, 2, 27)
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
@@ -258,7 +259,9 @@ log = logging.getLogger('rich')
 def get_commit_hash():
     env_commit = os.environ.get('TRMD_COMMIT_HASH')
     if env_commit:
-        log.debug(f'通过环境变量TRMD_COMMIT_HASH获取commit hash:{env_commit}。')
+        log.debug(_('Commit hash from environment variable TRMD_COMMIT_HASH: {commit_hash}.').format(
+            commit_hash=env_commit
+        ))
         return env_commit
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if os.path.isdir(os.path.join(repo_root, '.git')):
@@ -272,17 +275,19 @@ def get_commit_hash():
             )
             if completed.returncode == 0 and completed.stdout.strip():
                 commit_hash: str = completed.stdout.strip()
-                log.debug(f'通过git获取commit hash:{commit_hash}。')
+                log.debug(_('Commit hash from git: {commit_hash}.').format(commit_hash=commit_hash))
                 return commit_hash
         except Exception as e:
-            log.debug(f'无法获取commit hash,原因:"{e}"')
+            log.debug(_('Failed to get commit hash due to "{error}"').format(error=e))
     return None
 
 
 def get_build_time():
     env_build_time = os.environ.get('TRMD_BUILD_TIME')
     if env_build_time:
-        log.debug(f'通过环境变量TRMD_BUILD_TIME获取build time:{env_build_time}。')
+        log.debug(_('Build time from environment variable TRMD_BUILD_TIME: {build_time}.').format(
+            build_time=env_build_time
+        ))
         return env_build_time
     return None
 

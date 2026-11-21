@@ -20,7 +20,7 @@ from module import (
     SOFTWARE_SHORT_NAME,
     VERSION_WITH_COMMIT
 )
-from module.language import _t
+from module.language import _
 from module.config import UserConfig
 from module.stdio import StatisticalTable
 from module.client import TelegramRestrictedMediaDownloaderClient
@@ -30,7 +30,6 @@ from module.util import (
     AdjustableSemaphore
 )
 from module.enums import (
-    KeyWord,
     DownloadType,
     DownloadStatus
 )
@@ -91,10 +90,12 @@ class Application(UserConfig, StatisticalTable):
                     os.makedirs(temp_directory_with_chat_id, exist_ok=True)
                     _file: str = os.path.join(temp_directory_with_chat_id, validate_title(_file_name))
                 else:
-                    raise ValueError('chat id is empty.')
+                    raise ValueError(_('chat id is empty'))
             except Exception as e:
                 _file: str = os.path.join(self.temp_directory, validate_title(_file_name))
-                log.warning(f'拼接临时路径时,无法获取频道id,{_t(KeyWord.REASON)}:"{e}"')
+                log.warning(_('Failed to get channel id while joining temporary path due to "{error}"').format(
+                    error=e
+                ))
             return _file
 
         os.makedirs(self.temp_directory, exist_ok=True)
@@ -119,7 +120,7 @@ class Application(UserConfig, StatisticalTable):
         def wrapper(self, *args):
             res = func(self, *args)  # noqa.
             download_type = res
-            _, file_name, download_status = args
+            i, file_name, download_status = args
             self.update_download_status(download_type, download_status, file_name)
             return res
 
@@ -213,17 +214,17 @@ class Application(UserConfig, StatisticalTable):
             if dtype not in DownloadType():
                 self.download_type.remove(dtype)
                 changed = True
-                p = f'"{dtype}"不是支持的下载类型,已移除。'
+                p = _('"{dtype}" is not a supported download type, removed.').format(dtype=dtype)
                 console.log(p, style='#FF4689')
                 log.info(p)
         if self.download_type:
             if changed:
                 self.save_config(config=self.config)
             return None
-        self.download_type = [_ for _ in DownloadType()]
+        self.download_type = [i for i in DownloadType()]
         self.config['download_type'] = self.download_type
         self.save_config(config=self.config)
-        console.log('未找到任何支持的下载类型,已设置为[#f08a5d]「默认」[/#f08a5d]所有已支持的下载类型。')
+        console.log(_('No supported download type found, set to [#f08a5d]「default」[/#f08a5d] all supported types.'))
 
     def shutdown_task(self, second: int) -> None:
         """下载完成后自动关机的功能。"""
@@ -237,9 +238,11 @@ class Application(UserConfig, StatisticalTable):
                 subprocess.Popen(shutdown_command, shell=True)  # 异步执行关机。
             # 实时显示倒计时。
             for remaining in range(second, 0, -1):
-                console.print(f'即将在{remaining}秒后关机, 按「CTRL+C」可取消。', end='\r', style='#ff4805')
+                console.print(_('Shutting down in {remaining} seconds, press 「CTRL+C」 to cancel.').format(
+                    remaining=remaining
+                ), end='\r', style='#ff4805')
                 time.sleep(1)
-            console.print('\n关机即将执行!', style='#f6ad00')
+            console.print(_('\nShutting down now!'), style='#f6ad00')
         except KeyboardInterrupt:
             cancel_flag: bool = False
             # 如果用户按下 CTRL+C，取消关机。
@@ -252,10 +255,16 @@ class Application(UserConfig, StatisticalTable):
                     subprocess.Popen('shutdown -c', shell=True)
                     cancel_flag: bool = True
                 except Exception as e:
-                    log.warning(f'取消关机任务失败,可能是当前系统不支持,{_t(KeyWord.REASON)}:"{e}"')
-            console.print('\n关机已被用户取消!', style='#4bd898') if cancel_flag else 0
+                    log.warning(
+                        _('Failed to cancel shutdown task, possibly not supported on this system due to "{error}"').format(
+                            error=e
+                        ))
+            console.print(_('\nShutdown cancelled by the user!'), style='#4bd898') if cancel_flag else 0
         except Exception as e:
-            log.error(f'执行关机任务失败,可能是当前系统不支持自动关机,{_t(KeyWord.REASON)}:"{e}"')
+            log.error(
+                _('Failed to run shutdown task, possibly automatic shutdown not supported on this system due to "{error}"').format(
+                    error=e
+                ))
 
 
 class DownloadFileName:
@@ -282,7 +291,10 @@ class DownloadFileName:
                 title: str = os.path.splitext(title)[0]
         except Exception as e:
             title: str = 'None'
-            log.warning(f'获取文件名时出错,已重命名为:"{title}",{_t(KeyWord.REASON)}:"{e}"')
+            log.warning(_('Failed to get file name, renamed to "{title}" due to "{error}"').format(
+                title=title,
+                error=e
+            ))
         return '{} - {}.{}'.format(
             getattr(self.message, 'id', '0'),
             title,
@@ -332,12 +344,16 @@ class DownloadFileName:
                 origin_filename = getattr(document_obj, 'file_name', None)
                 if origin_filename and is_compressed_file(origin_filename):
                     log.warning(
-                        f'检测到压缩文件"{origin_filename}",为确保完整性(如分卷)已保留原始文件名,如遇命名冲突请手动处理。')
+                        _('Compressed file "{filename}" detected; the original filename was kept to ensure integrity (e.g. split archives). Handle name conflicts manually.').format(
+                            filename=origin_filename
+                        ))
                     return origin_filename
                 return self.get_filename()
 
         except (AttributeError, Exception) as e:
-            log.info(f'无法找到该文档文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')
+            log.info(_('Failed to find the extension of the document file due to "{error}"').format(
+                error=e
+            ))
             file_id = getattr(self.message, 'id', '0')
             time_format = '%Y-%m-%d_%H-%M-%S'
             return f'{file_id} - {datetime.datetime.now().strftime(time_format)}.unknown'
@@ -365,7 +381,10 @@ class DownloadFileName:
                 origin_extension
             )
         except Exception as e:
-            log.info(f'无法找到该{_t(self.download_type)}文件的扩展名,{_t(KeyWord.REASON)}:"{e}"')
+            log.info(_('Failed to find the extension of the {download_type} file due to "{error}"').format(
+                download_type=self.download_type,
+                error=e
+            ))
             file_id = getattr(self.message, 'id', '0')
             time_format = '%Y-%m-%d_%H-%M-%S'
             return f'{file_id} - {datetime.datetime.now().strftime(time_format)}.unknown'

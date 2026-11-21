@@ -21,6 +21,7 @@ from module import (
     APPDATA_PATH,
     SOFTWARE_SHORT_NAME
 )
+from module.language import _
 from module.parser import PARSE_ARGS
 from module.util import is_production_environment
 
@@ -67,7 +68,9 @@ class RemoteConfig(object):
             value = remote.get(name, default)
             # 字段缺失或类型不符时都退回默认值,避免单个脏字段导致整份配置失效。
             if not isinstance(value, expected_type):
-                log.info(f'Unexpected field value: "{name}={value}", using default: "{default}"')
+                log.info(_('Unexpected field value: "{name}={value}", using default: "{default}".').format(
+                    name=name, value=value, default=default
+                ))
                 value = default
             config[name] = value
         return config
@@ -76,7 +79,7 @@ class RemoteConfig(object):
         """读取配置,缓存未过期时直接使用,否则请求远程,失败时回退到缓存或内置默认值。"""
         default: dict = self.default_config()
         if getattr(PARSE_ARGS, 'test', False) and is_production_environment():
-            log.info('test mode, using default config')
+            log.info(_('test mode, using default config.'))
             return default
         # 远程配置不可用时退回本地缓存,保证离线仍能使用上次的可用配置。
         cached: dict = self.cached_config()
@@ -87,8 +90,9 @@ class RemoteConfig(object):
             except OSError:
                 remaining: float = 0
             if remaining > 0:
-                log.info(f'Using cached remote config from "{self.PATH}", '
-                         f'remaining valid time: {remaining / 3600:.1f} hours')
+                log.info(_('Using cached remote config from "{path}", remaining valid time: {hours} hours.').format(
+                    path=self.PATH, hours='{:.1f}'.format(remaining / 3600)
+                ))
                 return cached
         config: dict = await self.fetch()
         self.save(config or cached or default)  # 无论获取成功与否都写入一次,以刷新修改时间,避免远程不可用时反复重试。
@@ -99,16 +103,16 @@ class RemoteConfig(object):
         try:
             with open(file=self.PATH, mode='w', encoding='UTF-8') as f:
                 json.dump(config, f)
-            log.info(f'Remote config cached successfully: {config}')
+            log.info(_('Remote config cached successfully: {config}').format(config=config))
         except OSError as e:
-            log.info(f'Failed to write to the remote config cache due to {e}')
+            log.info(_('Failed to write to the remote config cache due to "{error}"').format(error=e))
 
     async def fetch(self) -> dict:
         """依次尝试各个远程地址获取配置,全部失败时返回空字典。"""
         loop = asyncio.get_running_loop()
         for url in self.URLS:
             try:
-                log.info(f'Getting remote config from "{url}"')
+                log.info(_('Getting remote config from "{url}".').format(url=url))
                 request = Request(url=url, headers=self.HEADERS)
                 response = await asyncio.wait_for(
                     loop.run_in_executor(None, partial(urlopen, request, timeout=self.TIMEOUT)),
@@ -117,12 +121,18 @@ class RemoteConfig(object):
                 with response:
                     remote: dict = json.loads(response.read().decode('UTF-8'))
                 config: dict = self.verify(remote)
-                log.info(f'Successfully obtained remote config from "{url}": {config}')
+                log.info(_('Successfully obtained remote config from "{url}": {config}').format(
+                    url=url, config=config
+                ))
                 return config
             except Exception as e:
                 # 单个地址失败时继续尝试下一个地址,全部失败才回退本地配置。
-                log.info(f'Failed to obtain remote config from "{url}" due to {e}')
-        log.info(f'All remote addresses are unavailable, using local default config: {self.default_config()}')
+                log.info(_('Failed to obtain remote config from "{url}" due to "{error}"').format(
+                    url=url, error=e
+                ))
+        log.info(_('All remote addresses are unavailable, using local default config: {config}').format(
+            config=self.default_config()
+        ))
         return {}
 
     def cached_config(self) -> dict:
@@ -132,7 +142,7 @@ class RemoteConfig(object):
                 with open(file=self.PATH, mode='r', encoding='UTF-8') as f:
                     return self.verify(json.load(f))
         except Exception as e:
-            log.info(f'Failed to read the remote config cache due to {e}')
+            log.info(_('Failed to read the remote config cache due to "{error}"').format(error=e))
         return {}
 
 

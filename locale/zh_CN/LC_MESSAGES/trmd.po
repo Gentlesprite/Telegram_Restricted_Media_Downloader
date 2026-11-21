@@ -1,0 +1,2689 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: TRMD\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Video"
+msgstr "视频"
+
+msgid "Photo"
+msgstr "图片"
+
+msgid "Document"
+msgstr "文档"
+
+msgid "Audio"
+msgstr "音频"
+
+msgid "Voice"
+msgstr "语音"
+
+msgid "Animation"
+msgstr "GIF"
+
+msgid "Video note"
+msgstr "视频笔记"
+
+msgid "Live photo"
+msgstr "实况图片"
+
+msgid "single"
+msgstr "单文件"
+
+msgid "group"
+msgstr "组文件"
+
+msgid "comment"
+msgstr "评论文件"
+
+msgid "topic"
+msgstr "话题文件"
+
+msgid "Pending"
+msgstr "队列中"
+
+msgid "Downloading"
+msgstr "下载中"
+
+msgid "Uploading"
+msgstr "上传中"
+
+msgid "Success"
+msgstr "成功"
+
+msgid "Failure"
+msgstr "失败"
+
+msgid "Skip"
+msgstr "跳过"
+
+msgid "Retry"
+msgstr "重试"
+
+msgid "Sent"
+msgstr "已发送"
+
+msgid "Link"
+msgstr "链接"
+
+msgid "Size"
+msgstr "大小"
+
+msgid "Status"
+msgstr "状态"
+
+msgid "File"
+msgstr "文件"
+
+msgid "Channel"
+msgstr "频道"
+
+msgid "Type"
+msgstr "类型"
+
+msgid "Retry times"
+msgstr "重试次数"
+
+msgid "[Current download tasks]"
+msgstr "[当前下载任务数]"
+
+msgid "[Current upload tasks]"
+msgstr "[当前上传任务数]"
+
+msgid "Port"
+msgstr "端口"
+
+msgid "Username"
+msgstr "账号"
+
+msgid "Password"
+msgstr "密码"
+
+msgid "Earliest"
+msgstr "最早"
+
+msgid "Latest"
+msgstr "最新"
+
+msgid "Not set"
+msgstr "未设置"
+
+msgid "On"
+msgstr "开"
+
+msgid "Off"
+msgstr "关"
+
+msgid "If download fails, try not using a Chinese path."
+msgstr "如果无法正常下载,请尝试不使用中文路径后重试。"
+
+msgid "When manually editing config.yaml, api_id must be quoted!"
+msgstr "手动编辑config.yaml时,api_id需要有引号!"
+
+msgid "Please configure the proxy!"
+msgstr "请配置代理!"
+
+msgid "Proxy username or password not entered!"
+msgstr "代理账号或密码未输入!"
+
+msgid "Unknown"
+msgstr "未知"
+
+msgid "None"
+msgstr "无"
+
+msgid "Switch account? - 「y|n」(default n):"
+msgstr "是否需要切换账号? - 「y|n」(默认n):"
+
+msgid "Enter 「the session directory」 (can be 「an empty directory」 or 「an already logged-in session directory」):"
+msgstr "请输入「会话文件目录」(可为「空目录」,也可为「已登录的会话文件目录」):"
+
+msgid "Enable 「the bot」 (requires bot_token)? - 「y|n」(default n):"
+msgstr "是否启用「机器人」(需要提供bot_token)? - 「y|n」(默认n):"
+
+msgid "Enter 「the username」:"
+msgstr "请输入「账号」:"
+
+msgid "Enter 「the password」:"
+msgstr "请输入「密码」:"
+
+msgid "No previous record, set to the default directory."
+msgstr "没有上一次的记录,已设置为默认目录。"
+
+msgid "No need to switch 「account」."
+msgstr "用户不需要切换「账号」。"
+
+msgid "Will switch 「account」."
+msgstr "用户需要切换「账号」。"
+
+msgid "Set to not enable 「the bot」."
+msgstr "已设置为不启用「机器人」。"
+
+msgid "Please configure 「bot_token」."
+msgstr "请配置「bot_token」。"
+
+msgid "Set 「is_shutdown」 to 「y」, the system will shut down after download!"
+msgstr "已设置「is_shutdown」为:「y」,下载完成后将自动关机!"
+
+msgid "Set 「is_shutdown」 to 「n」"
+msgstr "已设置「is_shutdown」为:「n」"
+
+msgid "Set to:「proxy requires authentication」"
+msgstr "已设置为:「代理需要认证」"
+
+msgid "Set to:「proxy does not require authentication」"
+msgstr "已设置为:「代理不需要认证」"
+
+msgid "(default n)"
+msgstr "(默认n)"
+
+msgid "(default 3)"
+msgstr "(默认3)"
+
+msgid "(default 5)"
+msgstr "(默认5)"
+
+msgid "(default is all supported download types)"
+msgstr "(默认为所有已支持的下载类型)"
+
+msgid "(bot configured, this step can be skipped)"
+msgstr "(检测到已配置机器人,此步骤可忽略)"
+
+msgid "Show available commands.\n`/help`"
+msgstr "展示可用命令。\n`/help`"
+
+msgid "Exit the software.\n`/exit`"
+msgstr "退出软件。\n`/exit`"
+
+msgid "Upload a local file to the specified channel.\n`/upload local_file target_channel`"
+msgstr "上传本地的文件到指定频道。\n`/upload 本地文件 目标频道`"
+
+msgid "⬇️Please send the link to download"
+msgstr "⬇️请直接发送需要下载的链接"
+
+msgid "💬Please send the channel link to download"
+msgstr "💬请直接发送需要下载的频道链接"
+
+msgid "📤Please send the local file path to upload"
+msgstr "📤请发送需要上传的本地文件路径"
+
+msgid "📤Please send the target channel link to upload to"
+msgstr "📤请发送需要上传到的目标频道链接"
+
+msgid "📁Please send the local folder path to upload"
+msgstr "📁请发送需要上传的本地文件夹路径"
+
+msgid "📁Please send the target channel link to upload to"
+msgstr "📁请发送需要上传到的目标频道链接"
+
+msgid "↗️Please send the source channel link"
+msgstr "↗️请发送源频道链接"
+
+msgid "↗️Please send the target channel link to forward to"
+msgstr "↗️请发送需要转发到的目标频道链接"
+
+msgid "↗️Please send the start message ID (number)"
+msgstr "↗️请发送起始消息ID(数字)"
+
+msgid "↗️Please send the end message ID (number)"
+msgstr "↗️请发送结束消息ID(数字)"
+
+msgid "🕵️Please send the channel link to listen and download"
+msgstr "🕵️请发送需要监听下载的频道链接"
+
+msgid "📲Please send the channel link to listen"
+msgstr "📲请发送需要监听频道的链接"
+
+msgid "📲Please send the target channel link to forward to"
+msgstr "📲请发送需要转发到的目标频道链接"
+
+msgid "🌟Task assigned."
+msgstr "🌟任务已分配。"
+
+msgid "⚠️Message too long, will not display each item this time."
+msgstr "⚠️消息过长,本次操作不再逐条展示。"
+
+msgid "📌Subscribe channel"
+msgstr "📌订阅频道"
+
+msgid "🎬Video tutorial"
+msgstr "🎬视频教程"
+
+msgid "🛒Buy proxy"
+msgstr "🛒购买代理"
+
+msgid "💰Support author"
+msgstr "💰支持作者"
+
+msgid "💬Startup notice|Disabled ❌"
+msgstr "💬启动提示|已关闭 ❌"
+
+msgid "💬Startup notice|Enabled ✅"
+msgstr "💬启动提示|已开启 ✅"
+
+msgid "🔗Link statistics"
+msgstr "🔗链接统计表"
+
+msgid "➕Count statistics"
+msgstr "➕计数统计表"
+
+msgid "📤Upload statistics"
+msgstr "📤上传统计表"
+
+msgid "🛎️Help page"
+msgstr "🛎️帮助页面"
+
+msgid "🖱Click to view"
+msgstr "🖱点击查看"
+
+msgid "🖱Click to download"
+msgstr "🖱点击下载"
+
+msgid "⬇️Download"
+msgstr "⬇️下载"
+
+msgid "↕️Download then upload"
+msgstr "↕️下载后上传"
+
+msgid "🌟Task assigned"
+msgstr "🌟任务已分配"
+
+msgid "🔎Retrieving messages"
+msgstr "🔎检索消息中"
+
+msgid "🔎Retrieving comments"
+msgstr "🔎检索评论区中"
+
+msgid "🚛Assigning tasks"
+msgstr "🚛分配任务中"
+
+msgid "⬇️Download task in progress"
+msgstr "⬇️下载任务进行中"
+
+msgid "✅Download task completed"
+msgstr "✅下载任务已完成"
+
+msgid "🗑️Task cancelled"
+msgstr "🗑️任务已取消"
+
+msgid "▶️Execute task"
+msgstr "▶️执行任务"
+
+msgid "⏹️Cancel task"
+msgstr "⏹️取消任务"
+
+msgid "✅OK"
+msgstr "✅确定"
+
+msgid "❌Cancel"
+msgstr "❌取消"
+
+msgid "🗑️Remove"
+msgstr "🗑️移除"
+
+msgid "🗑️Remove authorization"
+msgstr "🗑️移除授权"
+
+msgid "👁️‍🗨️Ignore"
+msgstr "👁️‍🗨️忽略"
+
+msgid "🔙Back"
+msgstr "🔙返回"
+
+msgid "↩️Confirm and back"
+msgstr "↩️确定并返回"
+
+msgid "🔍View listening info"
+msgstr "🔍查看监听信息"
+
+msgid "🔍View authorized users"
+msgstr "🔍查看授权用户"
+
+msgid "🔑Add/remove authorized users"
+msgstr "🔑添加/移除授权用户"
+
+msgid "👥View authorization list"
+msgstr "👥查看授权列表"
+
+msgid "📊Export table settings"
+msgstr "📊导出表格设置"
+
+msgid "🔄Reselect"
+msgstr "🔄重新选择"
+
+msgid "⚙️Settings"
+msgstr "⚙️设置"
+
+msgid "📁Download"
+msgstr "📁下载"
+
+msgid "🕵️Listen"
+msgstr "🕵️监听"
+
+msgid "📤Upload"
+msgstr "📤上传"
+
+msgid "⬇️Create 「download」 task:"
+msgstr "⬇️创建「下载」任务:"
+
+msgid "🕵️Create 「listen」 task:"
+msgstr "🕵️创建「监听」任务:"
+
+msgid "📤Create 「upload」 task:"
+msgstr "📤创建「上传」任务:"
+
+msgid "🔐Authorized users"
+msgstr "🔐授权用户"
+
+msgid "🕵️Listen & download"
+msgstr "🕵️监听下载"
+
+msgid "📲Listen & forward"
+msgstr "📲监听转发"
+
+msgid "📊Export link table|Disabled ❌"
+msgstr "📊导出链接表格|已禁用 ❌"
+
+msgid "📊Export link table|Enabled ✅"
+msgstr "📊导出链接表格|已启用 ✅"
+
+msgid "📊Export count table|Disabled ❌"
+msgstr "📊导出计数表格|已禁用 ❌"
+
+msgid "📊Export count table|Enabled ✅"
+msgstr "📊导出计数表格|已启用 ✅"
+
+msgid "📊Export upload table|Disabled ❌"
+msgstr "📊导出上传表格|已禁用 ❌"
+
+msgid "📊Export upload table|Enabled ✅"
+msgstr "📊导出上传表格|已启用 ✅"
+
+msgid "⏻Shut down on exit|Disabled ❌"
+msgstr "⏻退出后关机|已禁用 ❌"
+
+msgid "⏻Shut down on exit|Enabled ✅"
+msgstr "⏻退出后关机|已启用 ✅"
+
+msgid "✅Removed"
+msgstr "✅已移除"
+
+msgid "📤Upload behavior settings"
+msgstr "📤上传行为设置"
+
+msgid "📥Download type settings"
+msgstr "📥下载类型设置"
+
+msgid "↗️Forward type settings"
+msgstr "↗️转发类型设置"
+
+msgid "Upload after download|Disabled ❌"
+msgstr "下载后上传|已禁用 ❌"
+
+msgid "Upload after download|Enabled ✅"
+msgstr "下载后上传|已启用 ✅"
+
+msgid "Current|Keep local files 📚"
+msgstr "当前|本地文件保留 📚"
+
+msgid "Current|Delete local files 🗑"
+msgstr "当前|本地文件删除 🗑"
+
+msgid "🎬Video ✅"
+msgstr "🎬视频 ✅"
+
+msgid "🖼️Photo ✅"
+msgstr "🖼️图片 ✅"
+
+msgid "🎵Audio ✅"
+msgstr "🎵音频 ✅"
+
+msgid "🎤Voice ✅"
+msgstr "🎤语音 ✅"
+
+msgid "📄Document ✅"
+msgstr "📄文档 ✅"
+
+msgid "💬Text message ✅"
+msgstr "💬文本消息 ✅"
+
+msgid "📹Video note ✅"
+msgstr "📹视频笔记 ✅"
+
+msgid "📸Live photo ✅"
+msgstr "📸实况图片 ✅"
+
+msgid "🎬Video ❌"
+msgstr "🎬视频 ❌"
+
+msgid "🖼️Photo ❌"
+msgstr "🖼️图片 ❌"
+
+msgid "🎵Audio ❌"
+msgstr "🎵音频 ❌"
+
+msgid "🎤Voice ❌"
+msgstr "🎤语音 ❌"
+
+msgid "📄Document ❌"
+msgstr "📄文档 ❌"
+
+msgid "💬Text message ❌"
+msgstr "💬文本消息 ❌"
+
+msgid "📹Video note ❌"
+msgstr "📹视频笔记 ❌"
+
+msgid "📸Live photo ❌"
+msgstr "📸实况图片 ❌"
+
+msgid "📅Set date range"
+msgstr "📅设置日期范围"
+
+msgid "⏮️Select start date"
+msgstr "⏮️选择起始日期"
+
+msgid "⏭️Select end date"
+msgstr "⏭️选择结束日期"
+
+msgid "⌨️Please send me a keyword"
+msgstr "⌨️请向我发送关键词"
+
+msgid "📝Set download type"
+msgstr "📝设置下载类型"
+
+msgid "🔑Set matching keyword"
+msgstr "🔑设置匹配关键词"
+
+msgid "🗂️Include topic"
+msgstr "🗂️包含话题"
+
+msgid "✅Enable all"
+msgstr "✅全部打开"
+
+msgid "❌Disable all"
+msgstr "❌全部关闭"
+
+msgid "⬅️Previous page"
+msgstr "⬅️上一页"
+
+msgid "Next page➡️"
+msgstr "下一页➡️"
+
+msgid "🔝Back to top"
+msgstr "🔝返回顶层"
+
+msgid "✅Confirm keyword"
+msgstr "✅确认关键词"
+
+msgid "✅Include comments"
+msgstr "✅包含评论区"
+
+msgid "❌Include comments"
+msgstr "❌包含评论区"
+
+msgid "📁Upload recursively"
+msgstr "📁递归上传"
+
+msgid "💬Download channel"
+msgstr "💬下载频道"
+
+msgid "↗️Forward"
+msgstr "↗️转发"
+
+msgid "🐳 In a Docker environment, the IP in the link is the container IP, not the host IP. Please access it using the host IP and port."
+msgstr "🐳 Docker环境下链接中的IP为容器IP并非宿主机IP,请使用宿主机IP加端口访问。"
+
+msgid "No supported download type found, set to [#f08a5d]「default」[/#f08a5d] all supported types."
+msgstr "未找到任何支持的下载类型,已设置为[#f08a5d]「默认」[/#f08a5d]所有已支持的下载类型。"
+
+msgid "Shutting down in {remaining} seconds, press 「CTRL+C」 to cancel."
+msgstr "即将在{remaining}秒后关机,按「CTRL+C」可取消。"
+
+msgid "\nShutting down now!"
+msgstr "\n关机即将执行!"
+
+msgid "\nShutdown cancelled by the user!"
+msgstr "\n关机已被用户取消!"
+
+msgid "Compressed file \"{filename}\" detected; the original filename was kept to ensure integrity (e.g. split archives). Handle name conflicts manually."
+msgstr "检测到压缩文件\"{filename}\",为确保完整性(如分卷)已保留原始文件名,如遇命名冲突请手动处理。"
+
+msgid "Unexpected parameter \"{value}\", the phone number must start with 「+region」!"
+msgstr "意外的参数:\"{value}\",电话号码需以「+地区」开头!"
+
+msgid "「Set up email」is required to complete authorization."
+msgstr "需要「设置邮箱」以完成授权。"
+
+msgid "Enter the 「email」:"
+msgstr "请输入「邮箱」:"
+
+msgid "Enter the 「verification code」:"
+msgstr "请输入「验证码」:"
+
+msgid "Enter the received [#f08a5d]「verification code」[/#f08a5d]:"
+msgstr "请输入收到的[#f08a5d]「验证码」[/#f08a5d]:"
+
+msgid "[#f08a5d]「Two-step verification」[/#f08a5d] is enabled for this account; the [#f9ed69]「password」[/#f9ed69] is required."
+msgstr "当前登录账号设置了[#f08a5d]「两步验证」[/#f08a5d],需要提供两步验证的[#f9ed69]「密码」[/#f9ed69]。"
+
+msgid "Enter the [#f9ed69]「password」[/#f9ed69] for [#f08a5d]「two-step verification」[/#f08a5d] (empty means [#FF4689]forgot password[/#FF4689]):"
+msgstr "输入[#f08a5d]「两步验证」[/#f08a5d]的[#f9ed69]「密码」[/#f9ed69](为空代表[#FF4689]忘记密码[/#FF4689]):"
+
+msgid "Is the entered [#f08a5d]「recovery password」[/#f08a5d] correct? - 「y|n」(default y):"
+msgstr "所输入的[#f08a5d]「恢复密码」[/#f08a5d]是否正确? - 「y|n」(默认y):"
+
+msgid "Enter the [#f08a5d]「recovery code」[/#f08a5d]:"
+msgstr "请输入[#f08a5d]「恢复代码」[/#f08a5d]:"
+
+msgid "Enter the [#f08a5d]「first name」[/#f08a5d]:"
+msgstr "输入[#f08a5d]「名字」[/#f08a5d]:"
+
+msgid "Enter the [#f9ed69]「last name」[/#f9ed69] (empty to skip): "
+msgstr "输入[#f9ed69]「姓氏」[/#f9ed69](为空代表跳过): "
+
+msgid "Reconnecting"
+msgstr "正在重连"
+
+msgid "Waiting"
+msgstr "正在等待"
+
+msgid "Connection failure"
+msgstr "连接异常"
+
+msgid "Retrying reconnect."
+msgstr "正在尝试重连。"
+
+msgid "Too many requests, waiting."
+msgstr "请求频繁,等待中。"
+
+msgid "Sending data."
+msgstr "正在发送数据。"
+
+msgid "Waiting for the client connection to be established."
+msgstr "正在等待客户端连接建立。"
+
+msgid "Network/proxy connection failed, retrying reconnect."
+msgstr "由于网络/代理连接失败,正在尝试重连。"
+
+msgid "Config file not found, a new template has been generated. . ."
+msgstr "未找到配置文件,已生成新的模板文件. . ."
+
+msgid "「Note」Link paths and save paths cannot contain quotes!"
+msgstr "「注意」链接路径和保存路径不能有引号!"
+
+msgid "The config is identical to the template, no backup needed."
+msgstr "配置文件与模板文件完全一致,无需备份。"
+
+msgid "「Note」Pressing Enter directly uses the last record."
+msgstr "「注意」直接回车代表使用上次的记录。"
+
+msgid "Config saved!"
+msgstr "配置已保存!"
+
+msgid "Current parameters not saved."
+msgstr "不保存当前填写参数。"
+
+msgid "Current parameters not saved (configuration manually interrupted)."
+msgstr "不保存当前填写参数(用户手动终止配置参数)。"
+
+msgid "Configuration manually interrupted."
+msgstr "用户手动终止配置参数。"
+
+msgid "Global config reloaded."
+msgstr "全局配置文件已重新加载。"
+
+msgid "Yes"
+msgstr "是"
+
+msgid "No"
+msgstr "否"
+
+msgid "Total"
+msgstr "合计"
+
+msgid "Total size"
+msgstr "总大小"
+
+msgid "Average size"
+msgstr "平均大小"
+
+msgid "Auto-delete"
+msgstr "自动删除"
+
+msgid "Auto-delete after upload"
+msgstr "上传后自动删除"
+
+msgid "No."
+msgstr "编号"
+
+msgid "Completion rate"
+msgstr "完成率"
+
+msgid "Error info"
+msgstr "错误信息"
+
+msgid "File size"
+msgstr "文件大小"
+
+msgid "Quantity"
+msgstr "数量"
+
+msgid "Type & status"
+msgstr "类型&状态"
+
+msgid "Name"
+msgstr "名称"
+
+msgid "Value"
+msgstr "值"
+
+msgid "Platform"
+msgstr "平台"
+
+msgid "Python version"
+msgstr "Python版本"
+
+msgid "TRMD version"
+msgstr "TRMD版本"
+
+msgid "Pyrogram version"
+msgstr "Pyrogram版本"
+
+msgid "User config file"
+msgstr "用户配置文件"
+
+msgid "Save directory"
+msgstr "保存目录"
+
+msgid "Session directory"
+msgstr "会话目录"
+
+msgid "Cache directory"
+msgstr "缓存目录"
+
+msgid "Use system proxy"
+msgstr "使用系统代理"
+
+msgid "Proxy configuration"
+msgstr "代理配置"
+
+msgid "Link content"
+msgstr "链接内容"
+
+msgid "Download types"
+msgstr "下载类型"
+
+msgid "Runtime environment"
+msgstr "运行环境"
+
+msgid "Scan the QR code with WeChat to support the author. Your support keeps the project updated."
+msgstr "微信扫码支持作者,您的支持是我持续更新的动力。"
+
+msgid "Unable to read the media link file; it may have been deleted."
+msgstr "无法读取媒体链接文件,可能已被删除。"
+
+msgid "Media download statistics"
+msgstr "媒体下载统计"
+
+msgid "Download link statistics"
+msgstr "下载链接统计"
+
+msgid "Upload task statistics"
+msgstr "上传任务统计"
+
+msgid "Media upload statistics"
+msgstr "媒体上传统计"
+
+msgid "Show help"
+msgstr "展示帮助"
+
+msgid "Show version information"
+msgstr "展示版本信息"
+
+msgid "Skip the confirmation prompt for reconfiguring the file"
+msgstr "跳过重新配置文件的确认提示"
+
+msgid "Set the path to the user configuration file"
+msgstr "设置用户配置文件的路径"
+
+msgid "Set the path to the session file"
+msgstr "设置会话文件的路径"
+
+msgid "Set the path to the runtime cache"
+msgstr "设置运行缓存的路径"
+
+msgid "Set the web panel port"
+msgstr "设置网页面板的端口"
+
+msgid "Enable"
+msgstr "启用"
+
+msgid "Disable"
+msgstr "禁用"
+
+msgid "Hour"
+msgstr "时"
+
+msgid "Minute"
+msgstr "分"
+
+msgid "Second"
+msgstr "秒"
+
+msgid "Start"
+msgstr "起始"
+
+msgid "End"
+msgstr "结束"
+
+msgid "Version"
+msgstr "版本"
+
+msgid "Copyright"
+msgstr "版权"
+
+msgid "License"
+msgstr "许可"
+
+msgid "Attribute"
+msgstr "属性"
+
+msgid "Content"
+msgstr "内容"
+
+msgid "Command"
+msgstr "命令"
+
+msgid "Description"
+msgstr "说明"
+
+msgid "Syntax"
+msgstr "语法"
+
+msgid "Function"
+msgstr "功能"
+
+msgid "❌Please enter a valid link and send it again."
+msgstr "❌请输入有效的链接,请重新发送。"
+
+msgid "❌Please enter a numeric ID and send it again."
+msgstr "❌请输入数字ID,请重新发送。"
+
+msgid "🚛`{keyword}` has been added. Choose how to handle it to continue."
+msgstr "🚛`{keyword}`已被添加,选择处理方式后继续。"
+
+msgid "❌Start ID > end ID"
+msgstr "❌起始ID>结束ID"
+
+msgid "Unknown error"
+msgstr "未知错误"
+
+msgid "Start ID not specified"
+msgstr "没有指定起始ID"
+
+msgid "End ID not specified"
+msgstr "没有指定结束ID"
+
+msgid "Start ID and end ID not specified"
+msgstr "没有指定起始ID和结束ID"
+
+msgid "⬇️Use the following command to assign a download task\n`/download https://t.me/x/x`"
+msgstr "⬇️请使用以下命令分配下载任务\n`/download https://t.me/x/x`"
+
+msgid "❌Channel not found"
+msgstr "❌找不到频道"
+
+msgid "❌Unable to get channel name"
+msgstr "❌无法获取频道名"
+
+msgid "⚠️This channel is already downloading\n{link}"
+msgstr "⚠️该频道已在下载中\n{link}"
+
+msgid "Download failed"
+msgstr "下载失败"
+
+msgid "Upload failed."
+msgstr "上传失败。"
+
+msgid "dimension"
+msgstr "尺寸"
+
+msgid "Upload size exceeds the limit (2000MiB for regular users, 4000MiB for premium users)"
+msgstr "上传大小超过限制(普通用户2000MiB,会员用户4000MiB)"
+
+msgid "Upload file size is 0"
+msgstr "上传文件大小为0"
+
+msgid "Failed to send by reusing uploaded media. See the log for details."
+msgstr "复用已上传媒体发送失败,详见日志。"
+
+msgid "\"{link}\" download completed."
+msgstr "\"{link}\"下载完成。"
+
+msgid "(Waiting for all media uploads to finish before sending as a media group)"
+msgstr "(等待所有媒体上传完成以媒体组发送)"
+
+msgid "(Local file deleted)"
+msgstr "(本地文件已删除)"
+
+msgid "🌐 Web configuration"
+msgstr "🌐 Web配置"
+
+msgid "🎮️ Available commands"
+msgstr "🎮️ 可用命令"
+
+msgid "✨ Other features"
+msgstr "✨ 其他功能"
+
+msgid "📊Please select the type of 「statistics table」 to output:"
+msgstr "📊请选择输出「统计表」的类型:"
+
+msgid "📤Upload task created, please wait\n`{file_path}`"
+msgstr "📤上传任务已创建,请耐心等待\n`{file_path}`"
+
+msgid "⚠️Folder is empty\n`{file_path}`"
+msgstr "⚠️文件夹为空\n`{file_path}`"
+
+msgid "⚠️Upload file does not exist\n`{file_path}`"
+msgstr "⚠️上传文件不存在\n`{file_path}`"
+
+msgid "⚠️Upload file size is 0\n`{file_path}`"
+msgstr "⚠️上传文件大小为0\n`{file_path}`"
+
+msgid "🚧Exit command received."
+msgstr "🚧已收到退出命令。"
+
+msgid "✅Exited successfully."
+msgstr "✅退出成功。"
+
+msgid "❌No valid link found"
+msgstr "❌没有找到有效的链接"
+
+msgid "Command is missing the forward channel"
+msgstr "命令缺少转发频道"
+
+msgid "Invalid listen channel link"
+msgstr "监听频道链接错误"
+
+msgid "Invalid forward channel link"
+msgstr "转发频道链接错误"
+
+msgid "🌫️No channels are being monitored."
+msgstr "🌫️目前没有正在监听的频道。"
+
+msgid "⛔This command is only available to 「root」."
+msgstr "⛔该命令仅「root」可用。"
+
+msgid "👑This user is 「root」 and already has full permissions."
+msgstr "👑该用户为「root」,已拥有全部权限,无需授权。"
+
+msgid "👥User `{uid}` is already authorized. Remove?"
+msgstr "👥用户`{uid}`已在授权列表中,是否移除?"
+
+msgid "✅Added authorized user 「ID」:\n`{uid}`"
+msgstr "✅已添加授权用户「ID」:\n`{uid}`"
+
+msgid "🔐「Authorized users」management, please select an action:"
+msgstr "🔐「授权用户」管理,请选择操作:"
+
+msgid "🌫️No additional authorized users; only 「root」 can use the bot."
+msgstr "🌫️目前没有额外的授权用户,仅「root」可使用机器人。"
+
+msgid "👥The following 「ID」s are authorized:\n`{lines}`"
+msgstr "👥以下为已授权的用户「ID」:\n`{lines}`"
+
+msgid "done_notice has no requester and last_message is empty; this notice will have no owner."
+msgstr "done_notice未指定requester且last_message为空,该通知将没有创建者。"
+
+msgid "⛔This action is only available to 「root」."
+msgstr "⛔该操作仅「root」可用。"
+
+msgid "➕Enter the 「ID」 or 「@username」 of the user to authorize:"
+msgstr "➕请输入要授权的用户「ID」或`@用户名`:"
+
+msgid "🔐Authorized user management"
+msgstr "🔐授权用户管理"
+
+msgid "🌫️No links to count."
+msgstr "🌫️没有链接需要统计。"
+
+msgid "🌫️No downloads yet."
+msgstr "🌫️当前没有任何下载。"
+
+msgid "🌫️No uploads yet."
+msgstr "🌫️当前没有任何上传。"
+
+msgid "⚠️Select at least one download type"
+msgstr "⚠️至少需要选择一个下载类型"
+
+msgid "⚠️Select at least one forward type"
+msgstr "⚠️至少需要选择一个转发类型"
+
+msgid "User `{uid}` is no longer authorized."
+msgstr "用户`{uid}`已不在授权列表中。"
+
+msgid "✅User `{uid}` authorization removed."
+msgstr "✅用户`{uid}`已移除授权。"
+
+msgid "⚠️Select at least one topic"
+msgstr "⚠️至少需要选择一个话题"
+
+msgid "keyword(s)"
+msgstr "个关键词"
+
+msgid "topic(s)"
+msgstr "个话题"
+
+msgid "link statistics table"
+msgstr "链接统计表"
+
+msgid "count statistics table"
+msgstr "计数统计表"
+
+msgid "upload statistics table"
+msgstr "上传统计表"
+
+msgid "statistics table"
+msgstr "统计表"
+
+msgid "🔙Cancel"
+msgstr "🔙取消"
+
+msgid "Payment QR code"
+msgstr "收款码"
+
+msgid "Mon"
+msgstr "一"
+
+msgid "Listen-and-download removed, channel link: \"{link}\"."
+msgstr "已删除监听下载,频道链接:\"{link}\"。"
+
+msgid "Listen-and-forward removed, forward rule: \"{rule}\"."
+msgstr "已删除监听转发,转发规则:\"{rule}\"。"
+
+msgid "Bot"
+msgstr "机器人"
+
+msgid "Completed"
+msgstr "已完成"
+
+msgid "In progress"
+msgstr "进行中"
+
+msgid "Message does not exist, possibly deleted"
+msgstr "消息不存在,可能已删除"
+
+msgid "Invalid channel username; the channel username in this link may have changed or the channel may have been dissolved"
+msgstr "频道用户名无效,该链接的频道用户名可能已更改或频道已解散"
+
+msgid "The channel may be private or a topic channel; join it with the current account and retry"
+msgstr "频道可能为私密频道或话题频道,请让当前账号加入该频道后再重试"
+
+msgid "The channel may be private or a topic channel, and the current account may have left it; join it with the current account and retry"
+msgstr "频道可能为私密频道或话题频道,当前账号可能已不在该频道,请让当前账号加入该频道后再重试"
+
+msgid "The channel is private and cannot be accessed"
+msgstr "频道为私密频道,无法访问"
+
+msgid "Old session file deleted"
+msgstr "已删除旧会话文件"
+
+msgid "No valid link found"
+msgstr "没有找到有效链接"
+
+msgid "Channel does not exist"
+msgstr "频道不存在"
+
+msgid "Unhandled error"
+msgstr "未收录到的错误"
+
+msgid "Missing link to remove."
+msgstr "缺少要移除的链接。"
+
+msgid "The bot is not running; cannot remove the listener."
+msgstr "机器人未运行,无法移除监听。"
+
+msgid "This listen-and-download does not exist."
+msgstr "该监听下载不存在。"
+
+msgid "This listen-and-forward does not exist."
+msgstr "该监听转发不存在。"
+
+msgid "Unknown listen type."
+msgstr "未知的监听类型。"
+
+msgid "Failed to send remove command: \"{result}\""
+msgstr "发送移除命令失败:\"{result}\""
+
+msgid "Listen-and-download added, channel link: \"{link}\"."
+msgstr "已新增监听下载,频道链接:\"{link}\"。"
+
+msgid "😊Welcome! Your support keeps the project updated."
+msgstr "😊欢迎使用,您的支持是我持续更新的动力。"
+
+msgid "🚛Forwarding messages, please wait..."
+msgstr "🚛消息转发中,请稍候..."
+
+msgid "⚠️Cannot forward to this bot"
+msgstr "⚠️无法转发到此机器人"
+
+msgid "🌫️No valid messages found"
+msgstr "🌫️没有找到任何有效的消息"
+
+msgid "(For private or topic channels, the current account must join the source channel, and the target channel must allow uploads)"
+msgstr "(私密频道或话题频道必须让当前账号加入转发频道,并且目标频道需有上传文件的权限)"
+
+msgid "✅Added `listen-and-download` channel:\n"
+msgstr "✅新增`监听下载频道`频道:\n"
+
+msgid "✅Added `listen-and-forward` channel:\n{listen_link} ➡️ {target_link}"
+msgstr "✅新增`监听转发`频道:\n{listen_link} ➡️ {target_link}"
+
+msgid "⭐️This download round has finished (tasks were cleared or cancelled)."
+msgstr "⭐️本轮下载任务已结束(任务已被清理或取消)。"
+
+msgid "Unsupported or ignored type (cancelled)"
+msgstr "不支持或被忽略的类型(已取消)"
+
+msgid "Channel title contains special characters; download from the terminal"
+msgstr "频道标题存在特殊字符,请移步终端下载"
+
+msgid "Because photo or video forwarding is filtered, it will no longer be sent as a media group."
+msgstr "由于过滤了图片或视频类型的转发,将不再以媒体组方式发送。"
+
+msgid "Failed to update /download_chat progress messages multiple times; tracking stopped (downloads are unaffected)."
+msgstr "连续多次更新/download_chat下载进度消息失败,已停止跟踪(不影响下载)。"
+
+msgid "「Network」 or 「proxy issue」: with a normal network connection, check:\nwhether 「VPN」 is available and whether the 「software proxy」 is configured correctly."
+msgstr "「网络」或「代理问题」,在确保当前网络连接正常情况下检查:\n「VPN」是否可用,「软件代理」是否配置正确。"
+
+msgid "Account invalid; old session file deleted. Restart the software."
+msgstr "账号已失效,已删除旧会话文件,请重启软件。"
+
+msgid "Account invalid; manually delete the sessions folder in the software directory, then restart the software."
+msgstr "账号已失效,请手动删除软件目录下的sessions文件夹后重启软件。"
+
+msgid "🔗 No valid link found, program exited."
+msgstr "🔗 没有找到有效链接,程序已退出。"
+
+msgid "🔗 No valid link found."
+msgstr "🔗 没有找到有效链接。"
+
+msgid "When using forward (/forward), listen-and-forward (/listen_forward), upload (/upload), or recursive upload (/upload_r):\nWhen \"restricted forwarding\" is detected, download-then-upload is used automatically, and local files are deleted afterwards.\nTo disable it, go to the bot [Help page] -> [Settings] -> [Upload settings].\n"
+msgstr "在使用转发(/forward)、监听转发(/listen_forward)、上传(/upload)、递归上传(/upload_r)时:\n当检测到\"受限转发\"时,自动采用\"下载后上传\"的方式,并在完成后删除本地文件。\n如需关闭,前往机器人[帮助页面]->[设置]->[上传设置]进行修改。\n"
+
+msgid "⌨️ Keyboard interrupt by user."
+msgstr "⌨️ 用户键盘中断。"
+
+msgid "Failed to get channel id while joining temporary path due to \"{error}\""
+msgstr "拼接临时路径时,无法获取频道id,原因:\"{error}\""
+
+msgid "\"{dtype}\" is not a supported download type, removed."
+msgstr "\"{dtype}\"不是支持的下载类型,已移除。"
+
+msgid "Failed to cancel shutdown task, possibly not supported on this system due to \"{error}\""
+msgstr "取消关机任务失败,可能是当前系统不支持,原因:\"{error}\""
+
+msgid "Failed to run shutdown task, possibly automatic shutdown not supported on this system due to \"{error}\""
+msgstr "执行关机任务失败,可能是当前系统不支持自动关机,原因:\"{error}\""
+
+msgid "Failed to get file name, renamed to \"{title}\" due to \"{error}\""
+msgstr "获取文件名时出错,已重命名为:\"{title}\",原因:\"{error}\""
+
+msgid "Failed to find the extension of the document file due to \"{error}\""
+msgstr "无法找到该文档文件的扩展名,原因:\"{error}\""
+
+msgid "Failed to find the extension of the {download_type} file due to \"{error}\""
+msgstr "无法找到该{download_type}文件的扩展名,原因:\"{error}\""
+
+msgid "Enabled"
+msgstr "开启"
+
+msgid "Disabled"
+msgstr "禁用"
+
+msgid "Upload"
+msgstr "上传"
+
+msgid "Count"
+msgstr "计数"
+
+msgid "Add auth user input mode closed, handlers cleared."
+msgstr "添加授权用户输入模式已关闭,Handler已清空。"
+
+msgid "📨 Forward message"
+msgstr "📨 转发消息"
+
+msgid "Command input mode closed, handlers cleared."
+msgstr "命令输入模式已关闭,Handler已清空。"
+
+msgid "Input mode closed, handlers cleared."
+msgstr "用户输入模式已关闭,Handler已清空。"
+
+msgid "Failed to call \"%s\", waiting %s seconds before resending."
+msgstr "无法调用\"%s\",等待%s秒后重新发送数据。"
+
+msgid "Connection restored, retrying call \"%s\"."
+msgstr "已恢复连接,重新尝试调用\"%s\"。"
+
+msgid "Config file saved."
+msgstr "配置文件已保存。"
+
+msgid "Empty config file detected. A new template has been generated."
+msgstr "检测到空的配置文件。已生成新的模板文件. . ."
+
+msgid "Global config file saved."
+msgstr "全局配置文件已保存。"
+
+msgid "Please manually delete the sessions folder in the software directory."
+msgstr "请手动删除软件目录下的sessions文件夹"
+
+msgid "Unsupported or ignored type"
+msgstr "不支持或被忽略的类型"
+
+msgid "Unknown error."
+msgstr "未知错误。"
+
+msgid "Message too long, task notification cannot be shown via bot."
+msgstr "消息过长,本次任务无法通过机器人显示通知。"
+
+msgid "Successful download"
+msgstr "成功下载"
+
+msgid "Config file save failed, please retry later."
+msgstr "配置文件保存失败，请稍后重试"
+
+msgid "Save directory invalid."
+msgstr "保存目录无效"
+
+msgid "Must be greater than 0."
+msgstr "必须大于0"
+
+msgid "Concurrency"
+msgstr "并发数"
+
+msgid "Config not loaded, cannot modify."
+msgstr "配置未加载，无法修改"
+
+msgid "Save directory is not a valid directory."
+msgstr "保存目录不是一个有效的目录"
+
+msgid "Save directory cannot be empty."
+msgstr "保存目录不能为空"
+
+msgid "Downloader not running, cannot pause."
+msgstr "下载器未运行，无法暂停。"
+
+msgid "Web panel not linked to downloader."
+msgstr "网页面板未关联下载器。"
+
+msgid "Config not loaded, cannot pause."
+msgstr "配置未加载，无法暂停。"
+
+msgid "Remove listener timed out, please retry later."
+msgstr "移除监听超时，请稍后重试。"
+
+msgid "Downloader not running, cannot remove listener."
+msgstr "下载器未运行，无法移除监听。"
+
+msgid "Web config"
+msgstr "Web配置"
+
+msgid "Web panel stopped."
+msgstr "网页面板已停止。"
+
+msgid "Ungrouped"
+msgstr "未分组"
+
+msgid "Web panel not ready."
+msgstr "网页面板未就绪。"
+
+msgid "Web panel not ready"
+msgstr "网页面板未就绪"
+
+msgid "Download type settings failed.\n(See the terminal for details)"
+msgstr "下载类型设置失败\n(具体原因请前往终端查看报错信息)"
+
+msgid "Forward settings failed.\n(See the terminal for details)"
+msgstr "转发设置失败\n(具体原因请前往终端查看报错信息)"
+
+msgid "Upload settings failed.\n(See the terminal for details)"
+msgstr "上传设置失败\n(具体原因请前往终端查看报错信息)"
+
+msgid "Failed to enable or disable auto shutdown.\n(See the terminal for details)"
+msgstr "启用或禁用自动关机失败\n(具体原因请前往终端查看报错信息)"
+
+msgid "Failed to view authorized users.\n(See the terminal for details)"
+msgstr "查看授权用户失败\n(具体原因请前往终端查看报错信息)"
+
+msgid "Failed to view listen info.\n(See the terminal for details)"
+msgstr "查看监听信息失败\n(具体原因请前往终端查看报错信息)"
+
+msgid "✅\nThe QR code for payment has been sent to your terminal and chat. Thank you for your support!"
+msgstr "✅\n收款「二维码」已发送至您的「终端」与「对话框」十分感谢您的支持!"
+
+msgid "✅\nThe QR code for payment has been sent to your terminal. Thank you for your support!"
+msgstr "✅\n收款「二维码」已发送至您的「终端」十分感谢您的支持!"
+
+msgid "Failed to enable or disable bot message notifications.\n(See the terminal for details)"
+msgstr "启用或禁用机器人消息通知失败\n(具体原因请前往终端查看报错信息)"
+
+msgid "Failed to switch button state.\n(See the terminal for details)"
+msgstr "切换按钮状态失败\n(具体原因请前往终端查看报错信息)"
+
+msgid "❌Command error.\nPlease check the help and retry."
+msgstr "❌命令错误\n请查看帮助后重试。"
+
+msgid "❌Command syntax error.\nPlease check the help and retry."
+msgstr "❌命令语法错误\n请查看帮助后重试。"
+
+msgid "❌Link error.\nPlease check the help and retry."
+msgstr "❌链接错误\n请查看帮助后重试。"
+
+msgid "⚠️Unknown command.\nPlease check the help and retry."
+msgstr "⚠️未知命令\n请查看帮助后重试。"
+
+msgid "⬇️Error.\n(See the terminal for details)"
+msgstr "⬇️出错了\n(具体原因请前往终端查看报错信息)"
+
+msgid "Please re-enter the download type."
+msgstr "请重新输入下载类型"
+
+msgid "Connection abnormal"
+msgstr "连接异常"
+
+msgid "Connection normal"
+msgstr "连接正常"
+
+msgid "Download or not"
+msgstr "是否下载"
+
+msgid "Error message"
+msgstr "错误信息"
+
+msgid "File name"
+msgstr "文件名"
+
+msgid "Skipped download"
+msgstr "跳过下载"
+
+msgid "Failed download"
+msgstr "失败下载"
+
+msgid "Must be an integer between 1 and 10."
+msgstr "必须为1到10之间的整数"
+
+msgid "📲The following links are created `listen forward` channels:\n"
+msgstr "📲以下链接为已创建的`监听转发`频道:\n"
+
+msgid "🕵️The following links are created `listen download` channels:\n"
+msgstr "🕵️以下链接为已创建的`监听下载`频道:\n"
+
+msgid "❌The same channel cannot have two listeners at the same time.\n(You have created a listen-and-forward for the following link with `/listen_forward`)"
+msgstr "❌同一频道不能同时存在两个监听\n(您已使用`/listen_forward`创建了以下链接的监听转发)"
+
+msgid "❌No valid link found.\n"
+msgstr "❌没有找到有效链接\n"
+
+msgid "🚫The following links are invalid and have been removed:\n"
+msgstr "🚫以下链接不合法已被移除:\n"
+
+msgid "✅The following links have created download tasks:\n"
+msgstr "✅以下链接已创建下载任务:\n"
+
+msgid "Add/remove/view users authorized to use the bot, supporting user ID or @username.\n`/auth` or `/auth 1234567890` or `/auth @username`"
+msgstr "添加/移除/查看授权使用机器人的用户,支持用户ID或@用户名。\n`/auth`或`/auth 1234567890`或`/auth @username`"
+
+msgid "Get all content of the channel, filter by custom conditions, and finally download the content the user needs.\n`/download_chat channel_link`"
+msgstr "获取该频道全部内容,用户通过自定义条件进行内容筛选,最终下载该频道中用户所需内容。\n`/download_chat 频道链接`"
+
+msgid "Recursively upload a folder (including subfolders) to the specified channel.\n`/upload_r local_folder target_channel`"
+msgstr "递归上传文件夹(包含子文件夹)到指定频道。\n`/upload_r 本地文件夹 目标频道`"
+
+msgid "View created listen information.\n`/listen_info`"
+msgstr "查看当前已经创建的监听信息。\n`/listen_info`"
+
+msgid "Listen to the latest messages (any message) of the link for forwarding.\n`/listen_forward origin_channel target_channel`"
+msgstr "实时监听该链接的最新消息(任意消息)进行转发。\n`/listen_forward 监听频道 转发频道`"
+
+msgid "Listen to the latest messages (any message) of the link for downloading.\n`/listen_download https://t.me/A https://t.me/B https://t.me/n`"
+msgstr "实时监听该链接的最新消息(任意消息)进行下载。\n`/listen_download https://t.me/A https://t.me/B https://t.me/n`"
+
+msgid "Forward from channel A to channel B, start ID and end ID.\n`/forward https://t.me/A https://t.me/B 1 100`"
+msgstr "从频道A转发至频道B 起始ID 结束ID。\n`/forward https://t.me/A https://t.me/B 1 100`"
+
+msgid "Output current download statistics in the terminal.\n`/table`"
+msgstr "在终端输出当前下载情况的统计信息。\n`/table`"
+
+msgid "Assign a new download task (see the manual for multiple usages).\n`/download https://t.me/x/x start_id end_id`"
+msgstr "分配新的下载任务(多种使用方式见使用说明)。\n`/download https://t.me/x/x 起始ID 结束ID`"
+
+msgid "\nInput timeout, automatically set to the default value.\n"
+msgstr "\n输入超时,已自动设置为默认值。\n"
+
+msgid "# Config file description"
+msgstr "# 配置文件说明"
+
+msgid "All use of this software and its consequences are the sole responsibility of the user. The developer is not responsible for any use or its consequences."
+msgstr "所有使用本软件的行为及其后果均由使用者自行承担全部法律责任,开发者不对任何使用行为及其后果负责。"
+
+msgid "Item"
+msgstr "项"
+
+msgid "No container identifier detected, currently running in a non-\"Docker\" environment."
+msgstr "未检测到容器标识,当前运行于非\"Docker\"环境。"
+
+msgid "Detected \"/proc/1/cgroup\" container identifier, currently running in a \"Docker\" container."
+msgstr "检测到\"/proc/1/cgroup\"容器标识,当前运行于\"Docker\"容器中。"
+
+msgid "Detected \"/.dockerenv\", currently running in a \"Docker\" container."
+msgstr "检测到\"/.dockerenv\",当前运行于\"Docker\"容器中。"
+
+msgid "Currently running in the \"source code\" environment."
+msgstr "当前运行于\"源码\"环境中。"
+
+msgid "Detected \"Docker\" container identifier, currently running in a \"Docker\" container."
+msgstr "检测到\"Docker\"容器标识,当前运行于\"Docker\"容器中。"
+
+msgid "Detected \"sys.frozen\", currently running in a \"PyInstaller\" packaged build."
+msgstr "检测到\"sys.frozen\",当前运行于\"PyInstaller\"打包产物中。"
+
+msgid "Message "
+msgstr "消息 "
+
+msgid "Commit hash from environment variable TRMD_COMMIT_HASH: {commit_hash}."
+msgstr "通过环境变量TRMD_COMMIT_HASH获取commit hash:{commit_hash}。"
+
+msgid "Build time from environment variable TRMD_BUILD_TIME: {build_time}."
+msgstr "通过环境变量TRMD_BUILD_TIME获取build time:{build_time}。"
+
+msgid "Commit hash from git: {commit_hash}."
+msgstr "通过git获取commit hash:{commit_hash}。"
+
+msgid "Failed to get commit hash due to \"{error}\""
+msgstr "无法获取commit hash,原因:\"{error}\""
+
+msgid "Original config file backed up to \"{backup_path}\""
+msgstr "原来的配置文件已备份至\"{backup_path}\""
+
+msgid "Invalid or corrupted global config file detected. A new template has been generated due to \"{error}\""
+msgstr "检测到无效或损坏的全局配置文件。已生成新的模板文件. . .原因:\"{error}\""
+
+msgid "Failed to save the global config file due to \"{error}\""
+msgstr "保存全局配置文件失败,原因:\"{error}\""
+
+msgid "Error reading the history file due to \"{error}\""
+msgstr "读取历史文件时发生错误,原因:\"{error}\""
+
+msgid "Encoding error reading the config file due to \"{error}\" (possibly Chinese or special characters in the save path). A new template has been generated."
+msgstr "读取配置文件遇到编码错误,可能保存路径中包含中文或特殊字符的文件夹。已生成新的模板文件. . .原因:\"{error}\""
+
+msgid "Invalid or corrupted config file detected. A new template has been generated due to \"{error}\""
+msgstr "检测到无效或损坏的配置文件。已生成新的模板文件. . .原因:\"{error}\""
+
+msgid "Failed to save the config file due to \"{error}\""
+msgstr "保存配置文件失败,原因:\"{error}\""
+
+msgid "Total parts: {all_parts}, uploaded: {uploaded_parts}, missing: {missing_parts}."
+msgstr "总需分片:{all_parts},已上传:{uploaded_parts},缺失:{missing_parts}。"
+
+msgid "Message {key}"
+msgstr "消息 {key}"
+
+msgid "The chat of message \"{inner_message_id}\" is empty (possibly deleted or inaccessible), cannot build the dedup key, skipped concurrent dedup."
+msgstr "消息\"{inner_message_id}\"的chat为空(可能已删除或无权访问),无法构造下载去重键,已跳过并发去重。"
+
+msgid "Cleaned part indices: {valid_parts}."
+msgstr "清理后的分片索引:{valid_parts}。"
+
+msgid "Link \"{link}\" download completed."
+msgstr "链接:\"{link}\"下载完成。"
+
+msgid "Filtered invalid part index: {part} (valid range: 0-{last_part})."
+msgstr "过滤无效分片索引:{part}(有效范围:0-{last_part})。"
+
+msgid "UploadManager json may be empty, regenerating due to \"{error}\""
+msgstr "UploadManager的json内容可能为空,即将重新生成,原因:\"{error}\""
+
+msgid "\"{file_path}\" ⬆️ \"{chat_id}\" upload completed.\n{more}"
+msgstr "\"{file_path}\" ⬆️ \"{chat_id}\"上传完成。\n{more}"
+
+msgid "\"{file_path}\" ⬆️ \"{chat_id}\" upload failed."
+msgstr "\"{file_path}\" ⬆️ \"{chat_id}\"上传失败。"
+
+msgid "Database path: \"{storage_path}\"."
+msgstr "数据库路径:\"{storage_path}\"."
+
+msgid "Database record missing file path, refused to write: \"{file_name}\"."
+msgstr "数据库缺少文件路径,已拒绝写入:\"{file_name}\"."
+
+msgid "Discarded {count} records whose files no longer exist."
+msgstr "已丢弃{count}条文件已不存在的数据记录。"
+
+msgid "Failed to create session directory \"{work_directory}\" due to \"{error}\""
+msgstr "创建会话目录\"{work_directory}\"失败,原因:\"{error}\""
+
+msgid "Failed to close the database due to \"{error}\""
+msgstr "关闭数据库失败,原因:\"{error}\""
+
+msgid "Failed to write to the database due to \"{error}\""
+msgstr "写入数据库失败,原因:\"{error}\""
+
+msgid "Failed to read from the database due to \"{error}\""
+msgstr "读取数据库失败,原因:\"{error}\""
+
+msgid "Failed to fill in channel titles in the database due to \"{error}\""
+msgstr "在数据库中补全频道标题失败,原因:\"{error}\""
+
+msgid "Failed to delete database records due to \"{error}\""
+msgstr "删除数据库记录失败,原因:\"{error}\""
+
+msgid "Database \"{storage_path}\" is corrupted, will be deleted and rebuilt due to \"{error}\""
+msgstr "数据库\"{storage_path}\"损坏,即将删除重建,原因:\"{error}\""
+
+msgid "Failed to open the database due to \"{error}\""
+msgstr "打开数据库失败,原因:\"{error}\""
+
+msgid "Failed to open database \"{storage_path}\" due to \"{error}\""
+msgstr "打开数据库\"{storage_path}\"失败,原因:\"{error}\""
+
+msgid "Welcome to [#b4009e]{app_name}[/#b4009e] {version} (Kurigram {pyrogram_version})"
+msgstr "欢迎使用[#b4009e]{app_name}[/#b4009e] {version} (Kurigram {pyrogram_version})"
+
+msgid "[#f08a5d]「Verification code」[/#f08a5d] sent via [#f9ed69]「{code_type}」[/#f9ed69]."
+msgstr "[#f08a5d]「验证码」[/#f08a5d]已通过[#f9ed69]「{code_type}」[/#f9ed69]发送。"
+
+msgid "Invalid 「phone number」 due to \"{error}\", please re-enter."
+msgstr "「电话号码」错误,请重新输入!原因:\"{error}\""
+
+msgid "Sending \"{query_name}\" request."
+msgstr "正在发送\"{query_name}\"请求。"
+
+msgid "Unable to call \"{query_name}\" due to \"{error}\", attempting to reconnect."
+msgstr "由于\"{error}\"导致无法调用\"{query_name}\",正在尝试重连。"
+
+msgid "Unexpected parameter \"{value}\", invalid phone number!"
+msgstr "意外的参数:\"{value}\",电话号码无效!"
+
+msgid "Unexpected parameter \"{confirm}\", supported values - 「y|n」"
+msgstr "意外的参数:\"{confirm}\",支持的参数 - 「y|n」"
+
+msgid "[#f08a5d]「Recovery code」[/#f08a5d] sent to email [#f9ed69]「{email_pattern}」[/#f9ed69]."
+msgstr "[#f08a5d]「恢复代码」[/#f08a5d]已发送到邮箱[#f9ed69]「{email_pattern}」[/#f9ed69]。"
+
+msgid "Is the entered 「{value}」 [#B1DB74]correct[/#B1DB74]? - 「y|n」 (default y):"
+msgstr "所输入的「{value}」是否[#B1DB74]正确[/#B1DB74]? - 「y|n」(默认y):"
+
+msgid "Is the entered 「{email}」 correct? - 「y|n」 (default y):"
+msgstr "所输入的「{email}」是否正确? - 「y|n」(默认y):"
+
+msgid "\"{origin_file}\" does not exist or is not a file."
+msgstr "\"{origin_file}\"不存在或不是一个文件。"
+
+msgid "Insufficient permission to create directory \"{directory}\" due to \"{error}\""
+msgstr "权限不足,无法创建目录\"{directory}\",原因:\"{error}\""
+
+msgid "Failed to create directory \"{directory}\" due to \"{error}\""
+msgstr "无法创建目录\"{directory}\",原因:\"{error}\""
+
+msgid "Source file \"{old_path}\" does not exist due to \"{error}\""
+msgstr "源文件\"{old_path}\"不存在,原因:\"{error}\""
+
+msgid "Insufficient permission to move \"{old_path}\" -> \"{new_path}\" due to \"{error}\""
+msgstr "权限不足,无法移动\"{old_path}\"->\"{new_path}\",原因:\"{error}\""
+
+msgid "Failed to move \"{old_path}\" -> \"{new_path}\" due to \"{error}\""
+msgstr "无法移动\"{old_path}\"->\"{new_path}\",原因:\"{error}\""
+
+msgid "Insufficient permission to delete \"{path}\" due to \"{error}\""
+msgstr "权限不足,无法删除\"{path}\",原因:\"{error}\""
+
+msgid "Failed to delete \"{path}\" due to \"{error}\""
+msgstr "无法删除\"{path}\",原因:\"{error}\""
+
+msgid "Failed to overwrite the file due to \"{error}\""
+msgstr "覆盖文件失败,原因:\"{error}\""
+
+msgid "Moving file to save directory: \"{temp_path}\" -> \"{save_directory}\"."
+msgstr "移动文件至保存目录:\"{temp_path}\" -> \"{save_directory}\"."
+
+msgid "\"{save_directory}\" is not a directory, the file was downloaded to the default directory."
+msgstr "\"{save_directory}\"不是一个目录,已将文件下载到默认目录。"
+
+msgid "\"{save_directory}\" already exists, cannot save again due to \"{error}\""
+msgstr "\"{save_directory}\"已存在,不能重复保存,原因:\"{error}\""
+
+msgid "The process has no access to \"{save_directory}\", it may be read-only, locked by another process, or the current user has no write permission due to \"{error}\""
+msgstr "\"{save_directory}\"进程无权限访问,可能是文件只读、被其他进程占用锁定或当前用户无写入权限,原因:\"{error}\""
+
+msgid "Unexpected error due to \"{error}\""
+msgstr "意外的错误,原因:\"{error}\""
+
+msgid "File ID: \"{file_id}\", unknown file type: \"{file_type}\"."
+msgstr "文件ID:\"{file_id}\",未知的文件类型:\"{file_type}\"."
+
+msgid "Insufficient permission to calculate file SHA256 due to \"{error}\""
+msgstr "权限不足,无法计算文件SHA256,原因:\"{error}\""
+
+msgid "Failed to calculate file SHA256 due to \"{error}\""
+msgstr "计算文件SHA256失败,原因:\"{error}\""
+
+msgid "\"{path}\" is not a valid file or directory, cannot delete."
+msgstr "\"{path}\"不是有效的文件或目录,无法删除。"
+
+msgid "\"{file_name}\" already exists in the save path and cannot be moved, please resolve the conflict manually."
+msgstr "\"{file_name}\"已存在于保存路径无法移动,请手动解决冲突。"
+
+msgid "Failed to move the file due to \"{error}\""
+msgstr "移动文件失败,原因:\"{error}\""
+
+msgid "{preview}... {count} {unit} in total"
+msgstr "{preview}...等共{count}{unit}"
+
+msgid "Parsing link: \"{link}\", channel: \"{chat_id}\", message ID: \"{message_id}\"."
+msgstr "解析链接:\"{link}\",频道:\"{chat_id}\",消息ID:\"{message_id}\"."
+
+msgid "{app_name}:{version}, update date: {update_date}."
+msgstr "{app_name}:{version},更新日期:{update_date}。"
+
+msgid "File log level: \"{file_level}\", console log level: \"{console_level}\"."
+msgstr "文件日志等级:\"{file_level}\",终端日志等级:\"{console_level}\"."
+
+msgid "Work directory: \"{work_directory}\"."
+msgstr "工作目录:\"{work_directory}\"。"
+
+msgid "callback_data: \"{encoded}\", length: {length}, exceeds {limit} bytes, truncated callback data: \"{payload}\"."
+msgstr "callback_data:\"{encoded}\",长度:{length},已超过{limit}字节,已截断回调数据:\"{payload}\"。"
+
+msgid "Found \"{count}\" media in comments of link: \"{link}\"."
+msgstr "链接:\"{link}\"的评论中检索到媒体:\"{count}\"条。"
+
+msgid "Web panel token generated: \"{token}\"."
+msgstr "已生成网页面板令牌:\"{token}\"。"
+
+msgid "Detected \"__compiled__\", currently running in a \"Nuitka\" compiled build, version: {version}."
+msgstr "检测到\"__compiled__\",当前运行于\"Nuitka\"编译产物中,版本:{version}。"
+
+msgid "callback_data: \"{encoded}\", length: {length}, does not exceed {limit} bytes, returned as is."
+msgstr "callback_data:\"{encoded}\",长度:{length},未超过{limit}字节,原样返回。"
+
+msgid "Failed to prefetch media group member IDs due to \"{error}\""
+msgstr "预取媒体组成员id列表失败,原因:\"{error}\""
+
+msgid "Failed to save message entity JSON due to \"{error}\""
+msgstr "保存消息实体JSON失败,原因:\"{error}\""
+
+msgid "Link: \"{link}\" resolved to \"{link_type}\", media count: \"{count}\"."
+msgstr "链接:\"{link}\"解析为\"{link_type}\",媒体数量:\"{count}\"."
+
+msgid "Link: \"{link}\" resolved to \"{link_type}\", media count: \"1\"."
+msgstr "链接:\"{link}\"解析为\"{link_type}\",媒体数量:\"1\"."
+
+msgid "Failed to reset the web panel token due to \"{error}\""
+msgstr "重置网页面板令牌失败,原因:\"{error}\""
+
+msgid "Failed to save the web panel token due to \"{error}\""
+msgstr "保存网页面板令牌失败,原因:\"{error}\""
+
+msgid "Current kurigram version {current} is lower than the required version {required}. If compatibility issues occur, use {executable} -m pip install kurigram=={required} to upgrade to {required}."
+msgstr "当前kurigram版本{current}低于需求版本{required},若出现兼容问题导致运行异常,需使用{executable} -m pip install kurigram=={required}升级至{required}。"
+
+msgid "Current kurigram version {current} matches the required version {required}."
+msgstr "当前kurigram版本{current}与需求版本{required}一致。"
+
+msgid "Current kurigram version {current} is higher than the required version {required}. If compatibility issues occur, use {executable} -m pip install kurigram=={required} to downgrade to {required}."
+msgstr "当前kurigram版本{current}高于需求版本{required},若出现兼容问题导致运行异常,需使用{executable} -m pip install kurigram=={required}降级至{required}。"
+
+msgid "Request reached the per-minute limit of {limit} calls, waiting {seconds} seconds before continuing."
+msgstr "请求已达每分钟{limit}次的上限,等待{seconds}秒后继续。"
+
+msgid "Platform: \"{platform}\", Python version: \"{python_version}\", latest version: \"{latest_version}\", Pyrogram version: \"{pyrogram_version}\"."
+msgstr "平台:\"{platform}\",Python版本:\"{python_version}\",最新版本:\"{latest_version}\",Pyrogram版本:\"{pyrogram_version}\"。"
+
+msgid "User config file: \"{config_path}\", save directory: \"{save_directory}\", session directory: \"{work_directory}\", cache directory: \"{temp_directory}\"."
+msgstr "用户配置文件:\"{config_path}\",保存目录:\"{save_directory}\",会话目录:\"{work_directory}\",缓存目录:\"{temp_directory}\"。"
+
+msgid "Use system proxy: \"{enable_proxy}\"."
+msgstr "使用系统代理:\"{enable_proxy}\"。"
+
+msgid "Failed to output the count table due to \"invalid table data\""
+msgstr "无法输出计数表格,原因:\"表格数据非法\""
+
+msgid "Failed to generate the count table due to \"no downloads\""
+msgstr "无法生成计数统计表,原因:\"没有任何下载\""
+
+msgid "Failed to generate the upload table due to \"no uploads\""
+msgstr "无法生成上传统计表,原因:\"没有任何上传\""
+
+msgid "{timestamp}_upload_task_statistics.csv"
+msgstr "{timestamp}_上传任务统计表.csv"
+
+msgid "Error printing the media count table due to \"{error}\""
+msgstr "打印媒体计数统计表时出错,原因:\"{error}\""
+
+msgid "Failed to generate the download link table due to \"no downloads\""
+msgstr "无法生成下载链接统计表,原因:\"没有任何下载\""
+
+msgid "Error printing the download link table due to \"{error}\""
+msgstr "打印下载链接统计表时出错,原因:\"{error}\""
+
+msgid "Upload task statistics table exported: {path}"
+msgstr "上传任务统计表已导出:{path}"
+
+msgid "Error printing the upload task table due to \"{error}\""
+msgstr "打印上传任务统计表时出错,原因:\"{error}\""
+
+msgid "Error printing the proxy config table due to \"{error}\""
+msgstr "打印代理配置表时出错,原因:\"{error}\""
+
+msgid "\"{links}\" is a folder, not a .txt file, please re-enter the path to the media link text file."
+msgstr "\"{links}\"是一个文件夹,并非.txt文本,请重新填写媒体链接文本文件的路径。"
+
+msgid "Error reading \"{links}\" due to \"{error}\""
+msgstr "读取\"{links}\"时出错,原因:\"{error}\""
+
+msgid "Error printing the link content table due to \"{error}\""
+msgstr "打印链接内容统计表时出错,原因:\"{error}\""
+
+msgid "Error printing the download type table due to \"{error}\""
+msgstr "打印下载类型统计表时出错,原因:\"{error}\""
+
+msgid "Error exporting the media count table due to \"{error}\""
+msgstr "导出媒体计数统计表时出错,原因:\"{error}\""
+
+msgid "Error exporting the upload task table due to \"{error}\""
+msgstr "导出上传任务统计表时出错,原因:\"{error}\""
+
+msgid "Error exporting the download link table due to \"{error}\""
+msgstr "导出下载链接统计表时出错,原因:\"{error}\""
+
+msgid "{timestamp}_media_download_statistics.csv"
+msgstr "{timestamp}_媒体下载统计表.csv"
+
+msgid "{timestamp}_download_link_statistics.csv"
+msgstr "{timestamp}_下载链接统计表.csv"
+
+msgid "All parts uploaded, sending the message..."
+msgstr "所有分片已上传完成,正在发送消息..."
+
+msgid "Parts to upload: {missing}/{total}"
+msgstr "需要上传的分片:{missing}/{total}"
+
+msgid "Parts upload incomplete: {uploaded}/{total}"
+msgstr "分片上传不完整:{uploaded}/{total}"
+
+msgid "[Upload Worker] Single message sent, [Channel]: \"{chat_id}\""
+msgstr "[Upload Worker]单条消息发送完成,[频道]:\"{chat_id}\""
+
+msgid "[Reuse upload] \"{file_path}\" failed to send."
+msgstr "[复用上传]\"{file_path}\"发送失败。"
+
+msgid "[Photo]:\"{file_path}\" hit the Telegram {obj} limit, falling back to document upload due to \"{error}\""
+msgstr "[图片]:\"{file_path}\"因来自Telegram的{obj}限制,回退为文档格式进行上传,原因:\"{error}\""
+
+msgid "[Video]:\"{file_path}\" failed to get video metadata, falling back to document upload."
+msgstr "[视频]:\"{file_path}\"获取视频元数据失败,回退为文档格式进行上传。"
+
+msgid "[Upload Worker] Got upload task, chat_id={chat_id}, is_media_group={is_group}, message_id={message_id}"
+msgstr "[Upload Worker]获取到上传任务,chat_id={chat_id}, is_media_group={is_group}, message_id={message_id}"
+
+msgid "[Upload Worker] Sending media group \"{group_id}\" created {created} tasks, pending: {pending}, collected media: {collected}."
+msgstr "[Upload Worker]发送媒体组\"{group_id}\"创建的任务数:{created},当前是否有任务:{pending},媒体组收集的媒体数:{collected}。"
+
+msgid "[Upload Worker] Polling task for media group \"{group_id}\" was cancelled."
+msgstr "[Upload Worker]发送媒体组\"{group_id}\"轮询任务被取消。"
+
+msgid "[Upload Worker] Polling task for media group \"{group_id}\" failed due to \"{error}\""
+msgstr "[Upload Worker]发送媒体组\"{group_id}\"轮询任务出错,原因:\"{error}\""
+
+msgid "[Upload Worker] Failed to send a single message due to \"{error}\""
+msgstr "[Upload Worker]发送单条消息失败,原因:\"{error}\""
+
+msgid "Failed to get video metadata due to \"{error}\""
+msgstr "获取视频元数据失败,原因:\"{error}\""
+
+msgid "[Reuse upload] Failed to send due to \"{error}\""
+msgstr "[复用上传]发送失败,原因:\"{error}\""
+
+msgid "Failed to delete the upload cache manager file for \"{file_name}\"."
+msgstr "无法删除\"{file_name}\"的上传缓存管理文件。"
+
+msgid "Successfully deleted the upload cache manager file for \"{file_name}\"."
+msgstr "成功删除\"{file_name}\"的上传缓存管理文件。"
+
+msgid "Video \"{file_path}\" will be uploaded in its original format."
+msgstr "视频\"{file_path}\"将以原本格式进行上传。"
+
+msgid "[Media group]:\"{group_id}\" collected {count} media, waiting for all uploads to finish."
+msgstr "[媒体组]:\"{group_id}\"已收集{count}个媒体,等待所有媒体上传完成。"
+
+msgid "[Upload Worker] Error due to \"{error}\""
+msgstr "[Upload Worker]错误,原因:\"{error}\""
+
+msgid "[Upload Worker] Sending media group \"{group_id}\" created {created}/{total} tasks, waiting for download..."
+msgstr "[Upload Worker]发送媒体组\"{group_id}\"已创建{created}/{total}个任务，等待下载..."
+
+msgid "[Upload Worker] Warning: media_group is empty."
+msgstr "[Upload Worker]警告:media_group为空。"
+
+msgid "[Upload Worker] Warning: media_group_id is empty."
+msgstr "[Upload Worker]警告:media_group_id为空。"
+
+msgid "[Upload Worker] Started polling task for media group \"{group_id}\", expected {total} files."
+msgstr "[Upload Worker]启动媒体组\"{group_id}\"的轮询任务,预期{total}个文件。"
+
+msgid "[Upload Worker] Error processing media group, falling back to single send due to \"{error}\""
+msgstr "[Upload Worker]处理媒体组时出错,回退到单条发送,原因:\"{error}\""
+
+msgid "[Upload Worker] Sending media group \"{group_id}\", containing {count} media (expected {total} in total)."
+msgstr "[Upload Worker]发送媒体组\"{group_id}\",包含{count}个媒体（共预期{total}个）。"
+
+msgid "[Media group]:\"{group_id}\" upload completed, containing {count} media."
+msgstr "[媒体组]:\"{group_id}\"上传完成,包含{count}个媒体。"
+
+msgid "[Upload Worker] Media group \"{group_id}\" has no media to send."
+msgstr "[Upload Worker]发送媒体组\"{group_id}\"没有可发送的媒体。"
+
+msgid "[Upload Worker] Failed to send media group due to \"{error}\""
+msgstr "[Upload Worker]发送媒体组失败,原因:\"{error}\""
+
+msgid "{hours}h{minutes}m{seconds}s"
+msgstr "{hours}时{minutes}分{seconds}秒"
+
+msgid "Web template directory: \"{template_dir}\", static resource directory: \"{static_dir}\"."
+msgstr "网页模板目录:\"{template_dir}\",静态资源目录:\"{static_dir}\"。"
+
+msgid "{seconds}s"
+msgstr "{seconds}秒"
+
+msgid "{minutes}m{seconds}s"
+msgstr "{minutes}分{seconds}秒"
+
+msgid "Web panel started, link: \"{protocol}://{ip}:{port}\"."
+msgstr "网页面板已启动,链接:\"{protocol}://{ip}:{port}\"。"
+
+msgid "Runtime config modified successfully, save directory: \"{save_dir}\", download concurrency: \"{download_tasks}\", upload concurrency: \"{upload_tasks}\", download retries: \"{download_retries}\", upload retries: \"{upload_retries}\"."
+msgstr "运行时修改配置文件成功,保存目录:\"{save_dir}\",下载并发数:\"{download_tasks}\",上传并发数:\"{upload_tasks}\",下载重试次数:\"{download_retries}\",上传重试次数:\"{upload_retries}\"。"
+
+msgid "Path contains invalid characters: {chars}"
+msgstr "路径包含非法字符：{chars}"
+
+msgid "Directory \"{directory}\" does not exist, create it"
+msgstr "目录\"{directory}\"不存在，是否创建"
+
+msgid "Response write aborted by client due to \"{error}\""
+msgstr "响应写入被客户端中止,原因:\"{error}\""
+
+msgid "Failed to parse request data due to \"{error}\""
+msgstr "解析请求数据失败,原因:\"{error}\""
+
+msgid "Failed to read web file \"{file_path}\" due to \"{error}\""
+msgstr "读取网页文件\"{file_path}\"失败,原因:\"{error}\""
+
+msgid "Unable to use port {port}, a new port was automatically assigned due to \"{error}\""
+msgstr "无法使用{port}端口,已自动分配新的端口,原因:\"{error}\""
+
+msgid "Web panel failed to start, web directory not found: \"{directory}\"."
+msgstr "网页面板启动失败,未找到网页目录:\"{directory}\"."
+
+msgid "Web panel failed to start due to \"{error}\""
+msgstr "网页面板启动失败,原因:\"{error}\""
+
+msgid "Failed to close the web panel listening socket due to \"{error}\""
+msgstr "关闭网页面板监听套接字失败,原因:\"{error}\""
+
+msgid "Error getting link progress due to \"{error}\""
+msgstr "获取链接进度时出错,原因:\"{error}\""
+
+msgid "Error parsing queued messages due to \"{error}\""
+msgstr "解析排队消息时出错,原因:\"{error}\""
+
+msgid "Error getting listen info due to \"{error}\""
+msgstr "获取监听信息时出错,原因:\"{error}\""
+
+msgid "Failed to get web records due to \"{error}\""
+msgstr "获取网页记录失败,原因:\"{error}\""
+
+msgid "Failed to read disk space due to \"{error}\""
+msgstr "读取磁盘空间失败,原因:\"{error}\""
+
+msgid "Failed to write back the channel title in web records due to \"{error}\""
+msgstr "回写网页记录频道标题失败,原因:\"{error}\""
+
+msgid "Failed to remove listener due to \"{error}\""
+msgstr "移除监听失败,原因:\"{error}\""
+
+msgid "{name} must be an integer"
+msgstr "{name}必须是整数"
+
+msgid "Directory invalid or cannot be created due to \"{error}\""
+msgstr "目录无效或无法创建,原因:\"{error}\""
+
+msgid "Failed to update the concurrency semaphore at runtime due to \"{error}\""
+msgstr "实时更新并发信号量失败,原因:\"{error}\""
+
+msgid "Failed to wake up queued upload tasks due to \"{error}\""
+msgstr "唤醒排队上传任务失败,原因:\"{error}\""
+
+msgid "Error getting upload tasks due to \"{error}\""
+msgstr "获取上传任务时出错,原因:\"{error}\""
+
+msgid "Error generating progress data due to \"{error}\""
+msgstr "生成进度数据时出错,原因:\"{error}\""
+
+msgid "Unexpected parameter \"{api_id}\", not 「a pure number」, please re-enter!"
+msgstr "意外的参数:\"{api_id}\",不是「纯数字」请重新输入!"
+
+msgid "Unexpected parameter \"{api_id}\" may be 「api_hash」, please enter the correct 「api_id」!"
+msgstr "意外的参数,填写的\"{api_id}\"可能是「api_hash」,请填入正确的「api_id」!"
+
+msgid "Directory \"{save_directory}\" does not exist, create it? - 「y|n」(default y):"
+msgstr "目录:\"{save_directory}\"不存在,是否创建? - 「y|n」(默认y):"
+
+msgid "Directory \"{save_directory}\" created successfully"
+msgstr "成功创建目录:\"{save_directory}\""
+
+msgid "Unexpected parameter \"{question}\", supported values - 「y|n」"
+msgstr "意外的参数:\"{question}\",支持的参数 - 「y|n」"
+
+msgid "System proxy \"{proxy_info}\" detected, auto-fill? - 「y|n」(default y):"
+msgstr "获取到系统代理\"{proxy_info}\",是否自动填入? - 「y|n」(默认y):"
+
+msgid "「Exit tip」: save the parameters just entered? - 「{valid_format}」:"
+msgstr "「退出提示」是否需要保存当前已填写的参数? - 「{valid_format}」:"
+
+msgid "Unexpected parameter \"{is_save_config}\", supported values - 「{valid_format}」"
+msgstr "意外的参数:\"{is_save_config}\",支持的参数 - \"{valid_format}\""
+
+msgid "An existing configuration was found. Reconfigure it? (will be backed up) - 「{valid_format}」"
+msgstr "检测到已配置完成的配置文件,是否需要重新配置?(配置文件将自动备份) - 「{valid_format}」"
+
+msgid "Unexpected parameter \"{is_re_config}\", supported values - 「{valid_format}」(default n)"
+msgstr "意外的参数:\"{is_re_config}\",支持的参数 - \"{valid_format}\"(默认n)"
+
+msgid "Unexpected parameter \"{is_change_account}\", supported values - 「{valid_format}」!"
+msgstr "意外的参数:\"{is_change_account}\",支持的参数 - \"{valid_format}\"!"
+
+msgid "「The session directory」 set to:{session_directory}."
+msgstr "「会话文件夹的路径」设置为:{session_directory}。"
+
+msgid "Unexpected parameter \"{api_hash}\", not 「a {valid_length}-digit」 「value」, please re-enter!"
+msgstr "意外的参数:\"{api_hash}\",不是一个「{valid_length}位」的「值」!请重新输入!"
+
+msgid "Unexpected parameter \"{enable_bot}\", supported values - 「{valid_format}」!"
+msgstr "意外的参数:\"{enable_bot}\",支持的参数 - \"{valid_format}\"!"
+
+msgid "Enter the current account 「bot_token」 last record was:「{last_record}」:"
+msgstr "请输入当前账号的「bot_token」上一次的记录是:「{last_record}」:"
+
+msgid "Unexpected parameter \"{bot_token}\", 「bot_token」 must contain \":\", please re-enter!"
+msgstr "意外的参数:\"{bot_token}\",「bot_token」中需要包含\":\",请重新输入!"
+
+msgid "Enter the 「full path」 of the media link file. Last record:「{last_record}」format - 「{valid_format}」{bot_notice}:"
+msgstr "请输入需要下载的媒体链接的「完整路径」。上一次的记录是:「{last_record}」格式 - 「{valid_format}」{bot_notice}:"
+
+msgid "Unexpected parameter \"{links_file_path}\", the file path must end with 「{valid_format}」, please re-enter!"
+msgstr "意外的参数:\"{links_file_path}\",文件路径必须以\"{valid_format}\"结尾,请重新输入!"
+
+msgid "Unexpected parameter \"{links_file_path}\", the file 「must exist」 (case-sensitive), please re-enter!"
+msgstr "意外的参数:\"{links_file_path}\",文件「必须存在」(区分大小写),请重新输入!"
+
+msgid "Enter the media 「save path」. Last record:「{last_record}」:"
+msgstr "请输入媒体「保存路径」。上一次的记录是:「{last_record}」:"
+
+msgid "Unexpected parameter \"{save_directory}\", the path is a file not a directory, please re-enter!"
+msgstr "意外的参数:\"{save_directory}\",指定的路径是一个文件并非目录,请重新输入!"
+
+msgid "Unexpected parameter \"{save_directory}\", the path is invalid or not a directory, please re-enter!"
+msgstr "意外的参数:\"{save_directory}\",指定的路径无效或不是一个目录,请重新输入!"
+
+msgid "Enter 「the maximum download tasks」. Last record:「{last_record}」a high value may cause network issues, default recommended{default_prompt}:"
+msgstr "请输入「最大下载任务数」。上一次的记录是:「{last_record}」,值过高可能会导致网络相关问题,建议默认{default_prompt}:"
+
+msgid "Unexpected parameter \"{max_download_task}\", the task count must be 「a positive integer」, please re-enter!"
+msgstr "意外的参数:\"{max_download_task}\",任务数必须是「正整数」,请重新输入!"
+
+msgid "Enter 「the maximum retries」 on failure. Last record:「{last_record}」{default_prompt}:"
+msgstr "请输入任务失败时「最大重试次数」。上一次的记录是:「{last_record}」{default_prompt}:"
+
+msgid "Unexpected parameter \"{max_retry_count}\", the maximum retries must be 「a positive integer」, please re-enter!"
+msgstr "意外的参数:\"{max_retry_count}\",最大重试次数必须是「正整数」,请重新输入!"
+
+msgid "Enter 「the media types」 to download (space-separated, multiple allowed). Last record:「{last_record}」format - 「video photo document audio voice animation video_note live_photo」{default_prompt}:"
+msgstr "输入需要下载的「媒体类型」(以空格分隔可多选)。上一次的记录是:「{last_record}」格式 - 「video photo document audio voice animation video_note live_photo」{default_prompt}:"
+
+msgid "「Shut down automatically」 after download? Last record:「{last_record}」 - 「{valid_format}」{default_prompt}:"
+msgstr "下载完成后是否「自动关机」。上一次的记录是:「{last_record}」 - 「{valid_format}」{default_prompt}:"
+
+msgid "Unexpected parameter \"{is_shutdown}\", supported values - 「{valid_format}」"
+msgstr "意外的参数:\"{is_shutdown}\",支持的参数 - \"{valid_format}\""
+
+msgid "Use 「a proxy」? Last record:「{ep_notice}」format - 「{valid_format}」{default_prompt}:"
+msgstr "是否需要使用「代理」。上一次的记录是:「{ep_notice}」格式 - 「{valid_format}」{default_prompt}:"
+
+msgid "Unexpected parameter \"{enable_proxy}\", please enter a valid value! Supported values - 「{valid_format}」!"
+msgstr "意外的参数:\"{enable_proxy}\",请输入有效参数!支持的参数 - \"{valid_format}\"!"
+
+msgid "Enter 「the proxy scheme」. Last record:「{last_record}」format - 「{fmt_valid_format}」:"
+msgstr "请输入「代理类型」。上一次的记录是:「{last_record}」格式 - 「{fmt_valid_format}」:"
+
+msgid "Unexpected parameter \"{scheme}\", please enter a valid proxy scheme! Supported values - 「{fmt_valid_format}」!"
+msgstr "意外的参数:\"{scheme}\",请输入有效的代理类型!支持的参数 - \"{fmt_valid_format}\"!"
+
+msgid "Enter 「the IP address」 for proxy scheme \"{scheme}\". Last record:「{last_record}」format - 「{valid_format}」:"
+msgstr "请输入代理类型为:\"{scheme}\"的「ip地址」。上一次的记录是:\"{last_record}\"格式 - \"{valid_format}\":"
+
+msgid "\"{hostname}\" is not 「an IP address」, please enter a valid IPv4 address! Supported values - 「{valid_format}」!"
+msgstr "\"{hostname}\"不是一个「ip地址」,请输入有效的ipv4地址!支持的参数 - \"{valid_format}\"!"
+
+msgid "Enter 「the proxy port」 for IP \"{hostname}\" and scheme \"{scheme}\". Last record:「{last_record}」format - 「{valid_format}」:"
+msgstr "请输入ip地址为:\"{hostname}\",代理类型为:\"{scheme}\"的「代理端口」。上一次的记录是:\"{last_record}\"格式 - \"{valid_format}\":"
+
+msgid "Unexpected parameter \"{port}\", the port must be between 「{valid_format}」!"
+msgstr "意外的参数:\"{port}\",端口号必须在\"{valid_format}\"之间!"
+
+msgid "Unexpected parameter \"{port}\", please enter a valid integer! Supported values - 「{valid_format}」"
+msgstr "意外的参数:\"{port}\",请输入一个有效的整数!支持的参数 - \"{valid_format}\""
+
+msgid "Does the proxy require 「authentication」? - 「{valid_format}」(default n):"
+msgstr "代理是否需要「认证」? - 「{valid_format}」(默认n):"
+
+msgid "Unexpected parameter \"{is_proxy}\", supported values - 「{valid_format}」!"
+msgstr "意外的参数:\"{is_proxy}\",支持的参数 - \"{valid_format}\"!"
+
+msgid "🚛Loading {load_name}, please wait. . ."
+msgstr "🚛请稍后{load_name}加载中. . ."
+
+msgid "✅{load_name} loaded successfully!"
+msgstr "✅{load_name}加载成功!"
+
+msgid "⬇️Source channel does not exist\n{origin_link}"
+msgstr "⬇️源频道不存在\n{origin_link}"
+
+msgid "⬇️Target channel does not exist\n{target_link}"
+msgstr "⬇️目标频道不存在\n{target_link}"
+
+msgid "⚠️Cannot forward\n`{origin_link}`\n{channel} has content protection restrictions."
+msgstr "⚠️无法转发\n`{origin_link}`\n{channel}存在内容保护限制。"
+
+msgid "⚠️`{origin_link}`\n{channel} has content protection restrictions; forwarding has fallen back to download-then-upload\n(Messages sent via `/forward` with download-then-upload cannot be filtered by `[Forward settings]`)"
+msgstr "⚠️`{origin_link}`\n{channel}存在内容保护限制,转发任务已回退至下载后上传\n(通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型)"
+
+msgid "`{named_link}`\n🚛Already in the listening list."
+msgstr "`{named_link}`\n🚛已经在监听列表中。"
+
+msgid "🔄Processing forwarded content `{message_id}`..."
+msgstr "🔄正在处理转发内容`{message_id}`..."
+
+msgid "✅Download task `{message_id}` created."
+msgstr "✅已创建下载任务`{message_id}`。"
+
+msgid "❌Unable to create download task `{message_id}`\n{error}"
+msgstr "❌无法创建下载任务`{message_id}`\n{error}"
+
+msgid "Incomplete file, size: {get_file_size_file_name_}/{compare_size}; renaming as cache: \"{file_name}\" -> \"{temp_path}\"."
+msgstr "不完整的文件,大小:{get_file_size_file_name_}/{compare_size},更改文件名作为缓存:\"{file_name}\" -> \"{temp_path}\"。"
+
+msgid "Invalid cache file \"{temp_path}\" removed ([Error size]: {local_file_size} > [Actual size]: {compare_size})."
+msgstr "错误的缓存文件\"{temp_path}\",已清除([错误大小]:{local_file_size} > [实际大小]:{compare_size})。"
+
+msgid "Cache file \"{temp_path}\" is not block-aligned, \"{downloaded}\" -> \"{aligned_size}\", truncated."
+msgstr "缓存文件\"{temp_path}\"字节未对齐块边界,\"{downloaded}\" -> \"{aligned_size}\",已截断。"
+
+msgid "(Maximum retries reached: {_max_retry})"
+msgstr "(达到最大重试次数:{_max_retry}次)"
+
+msgid "While running /download_chat, failed to fetch the media group (message ID: {message_id}); other members of this group may not be downloaded."
+msgstr "在/download_chat命令过程中,获取媒体组失败(消息ID:{message_id}),该组其余成员可能无法下载。"
+
+msgid "⚠️Unable to run the channel download task due to \"{error}\".\nRetry or cancel the task from the menu above."
+msgstr "⚠️由于\"{error}\"无法执行频道下载任务。\n可在上方菜单重试或取消该任务。"
+
+msgid "\"{invalid_link}\" is an invalid link, [Status]:Skip."
+msgstr "\"{invalid_link}\"是一个非法链接,[状态]:跳过。"
+
+msgid "\n🗂️Included topics: {topic_prompt}"
+msgstr "\n🗂️包含话题:{topic_prompt}"
+
+msgid "💬Download channel:`{chat_id}`\n⏮️Current start date:Earliest\n⏭️Current end date:Latest\n📝Current download types:{format_dtype}\n🔑Current matching keyword:Not set\n👥Include comments:{comment}{topic_line}"
+msgstr "💬下载频道:`{chat_id}`\n⏮️当前选择的起始日期为:最早\n⏭️当前选择的结束日期为:最新\n📝当前选择的下载类型为:{format_dtype}\n🔑当前匹配的关键词为:未设置\n👥包含评论区:{comment}{topic_line}"
+
+msgid "❌Command error\n{error}\nUse `/forward https://t.me/A https://t.me/B 1 100`"
+msgstr "❌命令错误\n{error}\n请使用`/forward https://t.me/A https://t.me/B 1 100`"
+
+msgid "⚠️Upload size exceeds the limit ({format_file_size})\n`{file_path}`\n(2000MiB for regular users, 4000MiB for premium users)"
+msgstr "⚠️上传大小超过限制({format_file_size})\n`{file_path}`\n(普通用户2000MiB,会员用户4000MiB)"
+
+msgid "❌{error}\n⬇️Syntax below\n`/listen_forward listen_channel forward_channel`\n⬇️Use\n`/listen_forward https://t.me/A https://t.me/B`\n"
+msgstr "❌{error}\n⬇️语法如下\n`/listen_forward 监听频道 转发频道`\n⬇️请使用\n`/listen_forward https://t.me/A https://t.me/B`\n"
+
+msgid "🤖「Bot」started successfully ({bot_notice_state})."
+msgstr "🤖「机器人」启动成功 ({bot_notice_state})。"
+
+msgid "Step value: {adjust_step}"
+msgstr "步进值:{adjust_step}"
+
+msgid "Startup notice {n_s}."
+msgstr "启动提示已{n_s}。"
+
+msgid "Shut down on exit {s_s}."
+msgstr "退出后关机已{s_s}。"
+
+msgid "✅`{prompt_string}` has been sent to your 「terminal」 and 「exported」 as a table.\n(Check the `{folder}` folder in the software directory)"
+msgstr "✅`{prompt_string}`已发送至您的「终端」并已「导出」为表格请注意查收。\n(请查看软件目录下`{folder}`文件夹)"
+
+msgid "Export {t_t} on exit {s_t}."
+msgstr "退出后导出{t_t}已{s_t}。"
+
+msgid "For \"restricted forwarding\", uploading after download and \"deleting uploaded local files\" is {u_s}."
+msgstr "遇到\"受限转发\"时,下载后上传并\"删除上传完成的本地文件\"的行为已{u_s}。"
+
+msgid "For \"restricted forwarding\", upload after download is {u_s}."
+msgstr "遇到\"受限转发\"时,下载后上传已{u_s}。"
+
+msgid "Download for \"{f_s}\" {param}."
+msgstr "已{f_s}\"{param}\"类型的下载。"
+
+msgid "Forward for \"{f_s}\" {param}."
+msgstr "已{f_s}\"{param}\"类型的转发。"
+
+msgid "Listen-and-forward removed, forward rule: \"{joined}\"."
+msgstr "已删除监听转发,转发规则:\"{joined}\"。"
+
+msgid "📅Select {p_s_d} date:\n{filter_prompt}"
+msgstr "📅选择{p_s_d}日期:\n{filter_prompt}"
+
+msgid "📄Select page (total {total_pages} pages, current page {page})"
+msgstr "📄选择页码(共{total_pages}页,当前第{page}页)"
+
+msgid "💬Download channel:`{chat_id}`\n⏮️Current start date:{start_time}\n⏭️Current end date:{end_time}\n📝Current download types:{dtype}\n🔑Current matching keyword:{keyword}\n👥Include comments:{comment_status}{topic_line}"
+msgstr "💬下载频道:`{chat_id}`\n⏮️当前选择的起始日期为:{start_time}\n⏭️当前选择的结束日期为:{end_time}\n📝当前选择的下载类型为:{dtype}\n🔑当前匹配的关键词为:{keyword}\n👥包含评论区:{comment_status}{topic_line}"
+
+msgid "「api_id」 set to: 「{api_id}」"
+msgstr "已设置「api_id」为:「{api_id}」"
+
+msgid "「api_hash」 set to: 「{api_hash}」"
+msgstr "已设置「api_hash」为:「{api_hash}」"
+
+msgid "「bot_token」 set to: 「{bot_token}」"
+msgstr "已设置「bot_token」为:「{bot_token}」"
+
+msgid "「save_directory」 set to: 「{directory}」"
+msgstr "已设置「save_directory」为:「{directory}」"
+
+msgid "「download_type」 set to: 「{dtype}」"
+msgstr "已设置「download_type」为:「{dtype}」"
+
+msgid "Unexpected parameter: \"{download_type}\""
+msgstr "意外的参数:\"{download_type}\""
+
+msgid "{prompt}, supported values - 「video photo document」 (separate multiple with spaces)"
+msgstr "{prompt},支持的参数 - 「video photo document」(以空格分隔可多选)"
+
+msgid "「scheme」 set to: 「{scheme}」"
+msgstr "已设置「scheme」为:「{scheme}」"
+
+msgid "Unable to set automatically, please set manually due to \"{error}\""
+msgstr "无法自动设置!请手动进行设置,原因:\"{error}\""
+
+msgid "Enter 「api_id」, last record: 「{last_record}」:"
+msgstr "请输入「api_id」上一次的记录是:「{last_record}」:"
+
+msgid "「links」 set to: 「{links_file_path}」"
+msgstr "已设置「links」为:「{links_file_path}」"
+
+msgid "Unexpected parameter: \"{links_file_path}\", the file path must end with 「{valid_format}」 and 「must exist」, please re-enter due to \"{error}\""
+msgstr "意外的参数:\"{links_file_path}\",文件路径必须以\"{valid_format}\"结尾,并且「必须存在」,请重新输入!原因:\"{error}\""
+
+msgid "「max_download_task」 set to: 「{max_tasks}」"
+msgstr "已设置「max_download_task」为:「{max_tasks}」"
+
+msgid "「max_retry_count」 set to: 「{retries}」"
+msgstr "已设置「max_retry_count」为:「{retries}」"
+
+msgid "「enable_proxy」 set to: 「{enable_proxy}」"
+msgstr "已设置「enable_proxy」为:「{enable_proxy}」"
+
+msgid "「hostname」 set to: 「{hostname}」"
+msgstr "已设置「hostname」为:「{hostname}」"
+
+msgid "「port」 set to: 「{port}」"
+msgstr "已设置「port」为:「{port}」"
+
+msgid "System proxy auto-filled 「scheme」 as: 「{value}」"
+msgstr "已从系统代理自动获取「scheme」为:「{value}」"
+
+msgid "Enter 「api_hash」, last record: 「{last_record}」:"
+msgstr "请输入「api_hash」上一次的记录是:「{last_record}」:"
+
+msgid "Unable to create file: \"{links_file_path}\", check permissions due to \"{error}\""
+msgstr "无法创建文件:\"{links_file_path}\"请排查权限问题,原因:\"{error}\""
+
+msgid "System proxy auto-filled 「hostname」 as: 「{value}」"
+msgstr "已从系统代理自动获取「hostname」为:「{value}」"
+
+msgid "{prompt}(default n):"
+msgstr "{prompt}(默认n):"
+
+msgid "System proxy auto-filled 「port」 as: 「{value}」"
+msgstr "已从系统代理自动获取「port」为:「{value}」"
+
+msgid "{text}\n⏳ Scanning all matching messages in this channel, please wait.\n💡 Ignore the frequent request warnings in the terminal, they do not affect the download."
+msgstr "{text}\n⏳需要检索该频道所有匹配的消息,请耐心等待。\n💡请忽略终端中的请求频繁提示,不会影响下载。"
+
+msgid "Download complete, size: {local_size}/{remote_size}, renamed: \"{temp_path}\" -> \"{file_name}\"."
+msgstr "下载完成,大小:{local_size}/{remote_size},更改文件名:\"{temp_path}\" -> \"{file_name}\"。"
+
+msgid "Failed to register web storage due to \"{error}\""
+msgstr "登记网页存储失败,原因:\"{error}\""
+
+msgid "Error while forwarding due to \"{error}\""
+msgstr "转发时遇到错误,原因:\"{error}\""
+
+msgid "{prefix}Current listen-and-forward info: {info}"
+msgstr "{prefix}当前的监听转发信息:{info}"
+
+msgid "Added listen-and-forward, rule: \"{origin} -> {target}\"."
+msgstr "已新增监听转发,转发规则:\"{origin} -> {target}\"。"
+
+msgid "Error in listen download due to \"{error}\""
+msgstr "监听下载出现错误,原因:\"{error}\""
+
+msgid "Error in listen forward due to \"{error}\""
+msgstr "监听转发出现错误,原因:\"{error}\""
+
+msgid "Unable to open temporary file \"{temp_path}\" in \"{mode}\" mode due to \"{error}\""
+msgstr "无法以\"{mode}\"模式打开临时文件\"{temp_path}\",原因:\"{error}\""
+
+msgid "[Channel]:\"{chat_id}\", unable to download due to \"{error}\""
+msgstr "[频道]:\"{chat_id}\",无法进行下载,原因:\"{error}\""
+
+msgid "Runtime error due to \"{error}\""
+msgstr "运行出错,原因:\"{error}\""
+
+msgid "Error while logging in due to \"{error}\""
+msgstr "登录时遇到错误,原因:\"{error}\""
+
+msgid "Login timed out, please reopen the software to try logging in again due to \"{error}\""
+msgstr "登录超时,请重新打开软件尝试登录,原因:\"{error}\""
+
+msgid "Detected multiple instances using the same SESSION due to \"{error}\""
+msgstr "检测到软件多开使用同一SESSION,原因:\"{error}\""
+
+msgid "Processing \"{temp_path}\" needs to skip blocks: \"{downloaded}//{chunk_size}={skip_chunks}\", file pointer moved to \"{downloaded_pos}\"."
+msgstr "处理\"{temp_path}\"需要跳过的块:\"{downloaded}//{chunk_size}={skip_chunks}\",文件指针已移动到\"{downloaded_pos}\"。"
+
+msgid "Error dispatching tasks in the download scheduler due to \"{error}\""
+msgstr "下载调度器派发任务时出错,原因:\"{error}\""
+
+msgid "{text}\n{icon}Searching messages, 0 messages matched."
+msgstr "{text}\n{icon}检索消息中,已匹配到0条消息。"
+
+msgid "During the /download_chat command, skipped a message whose channel could not be resolved (ID: {message_id})."
+msgstr "在/download_chat命令过程中,跳过一条无法解析频道的消息(ID:{message_id})。"
+
+msgid "⭐️[{done}/{total}] Download task {status}.\n{sandglass}{progress}"
+msgstr "⭐️[{done}/{total}]下载任务{status}。\n{sandglass}{progress}"
+
+msgid "Unexpected error tracking /download_chat progress, tracking stopped (does not affect download) due to \"{error}\""
+msgstr "跟踪/download_chat下载进度时出现意外错误,已停止跟踪(不影响下载),原因:\"{error}\""
+
+msgid "Detected the main account logged in via 「bot_token」, {error}, restart the software and log in again via 「phone number」"
+msgstr "检测到使用了「bot_token」方式登录了主账号的行为,{error},重启软件以「手机号码」方式重新登录"
+
+msgid "File permission error while processing download task: possibly the temporary file/save directory is read-only, the file is locked by another process, or the current user has no write permission due to \"{error}\""
+msgstr "处理下载任务时遇到文件权限错误:可能是临时文件/保存目录为只读、文件被其他进程占用锁定,或当前用户无写入权限,原因:\"{error}\""
+
+msgid "Error processing queue due to \"{error}\""
+msgstr "处理队列时出错,原因:\"{error}\""
+
+msgid "Network connection failed, please check whether VPN is available due to \"{error}\""
+msgstr "网络连接失败,请检查VPN是否可用,原因:\"{error}\""
+
+msgid "\"{origin_chat_id}\",[Message ID]:{message_id} ➡️ \"{target_chat_id}\",Skip forward(this type is filtered)."
+msgstr "\"{origin_chat_id}\",[消息ID]:{message_id} ➡️ \"{target_chat_id}\",跳过转发(该类型已过滤)。"
+
+msgid "Error reading channel \"{link}\" due to \"{error}\""
+msgstr "读取频道\"{link}\"时遇到错误,原因:\"{error}\""
+
+msgid "Skipped downloading \"{link}\", unsupported or ignored type due to \"{error}\""
+msgstr "已跳过下载\"{link}\",不支持或被忽略的类型,原因:\"{error}\""
+
+msgid "[{client_name}] Too many requests to edit the message, wait {seconds} seconds before continuing."
+msgstr "[{client_name}]编辑消息请求频繁,要求等待{seconds}秒后继续运行。"
+
+msgid "During the /download_chat command, failed to update the progress message, skipped this update due to \"{error}\""
+msgstr "在/download_chat命令过程中,更新进度消息时失败,已跳过本次更新,原因:\"{error}\""
+
+msgid "{text}\n{icon}Searching messages, {count} messages matched."
+msgstr "{text}\n{icon}检索消息中,已匹配到{count}条消息。"
+
+msgid "{text}\n❎ No matching messages found."
+msgstr "{text}\n❎没有找到任何匹配的消息。"
+
+msgid "{text}\n{icon}Searching comments, 0 comments matched."
+msgstr "{text}\n{icon}检索评论区中,已匹配到0条消息。"
+
+msgid "Failed to close the web storage database due to \"{error}\""
+msgstr "关闭网页存储数据库失败,原因:\"{error}\""
+
+msgid "[{client_name}] Too many requests to forward messages, wait {seconds} seconds before continuing."
+msgstr "[{client_name}]转发消息请求频繁,要求等待{seconds}秒后继续运行。"
+
+msgid "⚠️Unable to forward\n`{link}`\nContent protection restriction (you can set download-then-upload on restricted forwarding in [Settings] -> [Upload Settings])."
+msgstr "⚠️无法转发\n`{link}`\n存在内容保护限制(可在[设置]->[上传设置]中设置转发时遇到受限转发进行下载后上传)。"
+
+msgid "{text}\n🌟 Forward task completed\n(If a forwarding filter rule is set, see the terminal for forwarding records, not shown here)"
+msgstr "{text}\n🌟转发任务已完成\n(若设置了转发过滤规则,请前往终端查看转发记录,此处不做展示)"
+
+msgid "The provided authorization bytes are invalid (possibly a temporary issue) due to \"{error}\""
+msgstr "提供的授权字节无效(可能是短暂的问题),原因:\"{error}\""
+
+msgid "[{client_name}] Too many download requests, wait {seconds} seconds before continuing."
+msgstr "[{client_name}]下载请求频繁,要求等待{seconds}秒后继续运行。"
+
+msgid "[{client_name}] Too many requests to get comments, wait {seconds} seconds before continuing."
+msgstr "[{client_name}]获取评论区消息请求频繁,要求等待{seconds}秒后继续运行。"
+
+msgid "{text}\n{icon}Searching comments, {count} comments matched."
+msgstr "{text}\n{icon}检索评论区中,已匹配到{count}条消息。"
+
+msgid "During the /download_chat command, failed to update the download progress message, skipped this update due to \"{error}\""
+msgstr "在/download_chat命令过程中,更新下载进度消息失败,已跳过本次更新,原因:\"{error}\""
+
+msgid "[{client_name}] Too many requests to send messages, wait {seconds} seconds before continuing."
+msgstr "[{client_name}]发送消息请求频繁,要求等待{seconds}秒后继续运行。"
+
+msgid "Unable to forward the message \"{text}\" due to \"{error}\""
+msgstr "无法转发\"{text}\"消息,原因:\"{error}\""
+
+msgid "\"{origin_chat_id}\",[Message ID]:{message_id} ➡️ \"{target_chat_id}\",Forward failure。\n(see the terminal for details)"
+msgstr "\"{origin_chat_id}\",[消息ID]:{message_id} ➡️ \"{target_chat_id}\",转发失败。\n(具体原因请前往终端查看报错信息)"
+
+msgid "Failed to resolve channel \"{link}\" due to \"{error}\""
+msgstr "频道\"{link}\"解析失败,原因:\"{error}\""
+
+msgid "⚠️Unable to read\n`{link}`\n(see the terminal for details)"
+msgstr "⚠️无法读取\n`{link}`\n(具体原因请前往终端查看报错信息)"
+
+msgid "\"{message_id}\" file reference expired, re-fetching the message to refresh the reference due to \"{error}\""
+msgstr "\"{message_id}\"文件引用已过期,正在重新获取消息以刷新引用,原因:\"{error}\""
+
+msgid "\"{message_id}\" file reference re-fetched."
+msgstr "\"{message_id}\"已重新获取文件引用。"
+
+msgid "During the /download_chat command, skipped a media group member whose channel could not be resolved (ID: {message_id})."
+msgstr "在/download_chat命令过程中,跳过一条无法解析频道的媒体组成员(ID:{message_id})。"
+
+msgid "{text}\n🔎 Matched messages: {messages}, comments: {comments}, total: {total}.\n⭐️[{assigned}/{total}] Assigning download tasks.\n{sandglass}{progress}"
+msgstr "{text}\n🔎匹配消息:{messages}条,评论区消息:{comments}条,共{total}条。\n⭐️[{assigned}/{total}]分配下载任务中。\n{sandglass}{progress}"
+
+msgid "{text}\n🔎 Matched messages: {messages} (media: {media}), comments: {comments}, total: {total}.\n{progress}"
+msgstr "{text}\n🔎匹配消息:{messages}条(媒体{media}个),评论区消息:{comments}条,共{total}条。\n{progress}"
+
+msgid "`{link}`\n⚠️{channel} has content protection restriction, the forward task has fallen back to download-then-upload\n(Messages sent via the `/forward` command as download-then-upload cannot be filtered by `[forward settings]`)"
+msgstr "`{link}`\n⚠️{channel}存在内容保护限制,转发任务已回退至下载后上传\n(通过`/forward`命令发送的下载后上传的消息,无法按照`[转发设置]`过滤类型)"
+
+msgid "Failed to re-fetch the file reference due to \"{error}\""
+msgstr "重新获取文件引用失败,原因:\"{error}\""
+
+msgid "[{client_name}] Too many requests to get media group messages, wait {seconds} seconds before continuing."
+msgstr "[{client_name}]获取媒体组消息请求频繁,要求等待{seconds}秒后继续运行。"
+
+msgid "Removed authorized user: {uid}."
+msgstr "已移除授权用户:{uid}。"
+
+msgid "Set \"{param}\" type {status} for the /download_chat command."
+msgstr "已{status}\"{param}\"类型用于/download_chat命令的下载。"
+
+msgid "Added handler to group={group}, current handler count: {count}"
+msgstr "添加handler到group={group},当前handler数量:{count}"
+
+msgid "Removed handler from group={group}, remaining handler count: {count}"
+msgstr "从group={group}移除handler,剩余handler数量:{count}"
+
+msgid "\"{chat_id}\" added to: {filter}."
+msgstr "\"{chat_id}\"已添加至:{filter}。"
+
+msgid "Added authorized user: {uid}, current authorized users: {users}."
+msgstr "已添加授权用户:{uid},当前授权用户:{users}。"
+
+msgid "Pushed notification, [Type]:\"{notice_type}\", creator:\"{owner}\", content:\"{text}\"."
+msgstr "已推送通知,[类型]:\"{notice_type}\",创建者:\"{owner}\",内容:\"{text}\"。"
+
+msgid "{invalid}{links}{newline}(see the terminal for details)"
+msgstr "{invalid}{links}{newline}(具体原因请前往终端查看报错信息)"
+
+msgid "{prefix}Current authorized users: {users}"
+msgstr "{prefix}当前授权用户:{users}"
+
+msgid "{prefix}Current /download_chat download type settings: {dtype}"
+msgstr "{prefix}当前的/download_chat下载类型设置:{dtype}"
+
+msgid "User input mode enabled, chat_id:\"{chat_id}\", task_chat_id:\"{task_chat_id}\"."
+msgstr "用户输入模式已打开,chat_id:\"{chat_id}\",task_chat_id:\"{task_chat_id}\"。"
+
+msgid "Command input mode enabled, chat_id:\"{chat_id}\", command:\"{command}\"."
+msgstr "命令输入模式已打开,chat_id:\"{chat_id}\",command:\"{command}\"。"
+
+msgid "\"{chat_id}\" is a topic channel, showing topic buttons, {count} topics in total."
+msgstr "\"{chat_id}\"是话题频道,显示话题按钮,共{count}个话题。"
+
+msgid "Uploading file: \"{file_path}\", target channel: \"{target_link}\"."
+msgstr "上传文件:\"{file_path}\",上传频道:\"{target_link}\"。"
+
+msgid "Added authorized user input mode enabled, chat_id:\"{chat_id}\"."
+msgstr "添加授权用户输入模式已打开,chat_id:\"{chat_id}\"。"
+
+msgid "🤖 「bot」 failed to start, wrong 「bot_token」 due to \"{error}\""
+msgstr "🤖「机器人」启动失败,「bot_token」错误,原因:\"{error}\""
+
+msgid "🤖 「bot」 failed to start due to \"{error}\""
+msgstr "🤖「机器人」启动失败,原因:\"{error}\""
+
+msgid "{prefix}Current listen download info: {info}"
+msgstr "{prefix}当前的监听下载信息:{info}"
+
+msgid "\"{chat_id}\" removed from {filter}."
+msgstr "\"{chat_id}\"已从{filter}中移除。"
+
+msgid "Callback answer timed out, query_id expired, skipped this answer due to \"{error}\""
+msgstr "回调应答超时,query_id已失效,跳过本次应答,原因:\"{error}\""
+
+msgid "Upload failed due to missing file: \"{file_path}\"."
+msgstr "上传出错,原因:\"{file_path}\"不存在。"
+
+msgid "Bot failed to start, wrong bot_token due to \"{error}\""
+msgstr "机器人启动失败,bot_token错误,原因:\"{error}\""
+
+msgid "Bot failed to start due to \"{error}\""
+msgstr "机器人启动失败,原因:\"{error}\""
+
+msgid "Failed to send statistics table via bot (first part) due to \"{error}\""
+msgstr "通过机器人发送统计表(首片)失败,原因:\"{error}\""
+
+msgid "Failed to switch button state due to \"{error}\""
+msgstr "切换按钮状态失败,原因:\"{error}\""
+
+msgid "Failed to enable or disable bot message notifications due to \"{error}\""
+msgstr "启用或禁用机器人消息通知失败,原因:\"{error}\""
+
+msgid "Failed to send the view-listen-info command due to \"{error}\""
+msgstr "发送查看监听信息命令失败,原因:\"{error}\""
+
+msgid "Failed to send the view-authorized-users command due to \"{error}\""
+msgstr "发送查看授权用户命令失败,原因:\"{error}\""
+
+msgid "Failed to enable or disable auto shutdown due to \"{error}\""
+msgstr "启用或禁用自动关机失败,原因:\"{error}\""
+
+msgid "Upload settings failed due to \"{error}\""
+msgstr "上传设置失败,原因:\"{error}\""
+
+msgid "Download type settings failed due to \"{error}\""
+msgstr "下载类型设置失败,原因:\"{error}\""
+
+msgid "Forward settings failed due to \"{error}\""
+msgstr "转发设置失败,原因:\"{error}\""
+
+msgid "Executing /download_chat task, current filter config: {filter}."
+msgstr "执行/download_chat任务,当前筛选配置:{filter}。"
+
+msgid "[{user_name}] Too many requests to get topic list, wait {seconds} seconds before continuing."
+msgstr "[{user_name}]获取话题列表请求频繁,要求等待{seconds}秒后继续运行。"
+
+msgid "\"{chat_id}\" no topics found, topic buttons not shown due to \"{error}\""
+msgstr "\"{chat_id}\"未获取到话题,不显示话题按钮,原因:\"{error}\""
+
+msgid "[{bot_name}] Too many requests to edit the message, wait {seconds} seconds before continuing."
+msgstr "[{bot_name}]编辑消息请求频繁,要求等待{seconds}秒后继续运行。"
+
+msgid "Failed to send statistics table via bot (part {index}) due to \"{error}\""
+msgstr "通过机器人发送统计表(第{index}片)失败,原因:\"{error}\""
+
+msgid "Failed to enable or disable exporting {prompt} statistics table due to \"{error}\""
+msgstr "设置启用或禁用导出{prompt}统计表失败,原因:\"{error}\""
+
+msgid "Failed to enable or disable exporting the statistics table due to \"{error}\""
+msgstr "设置启用或禁用导出统计表失败,原因:\"{error}\""
+
+msgid "Answer timed out, query_id expired, skipped this answer due to \"{error}\""
+msgstr "应答超时,query_id已失效,跳过本次应答,原因:\"{error}\""
+
+msgid "❌Unable to resolve user \"{target}\" due to \"{error}\""
+msgstr "❌无法解析用户\"{target}\"\n原因:\"{error}\""
+
+msgid "Failed to enable or disable exporting {prompt} statistics table\n(see the terminal for details)"
+msgstr "设置启用或禁用导出{prompt}统计表失败\n(具体原因请前往终端查看报错信息)"
+
+msgid "❌Date setting failed\n`start date ({start_time})` > `end date ({end_time})`\n"
+msgstr "❌日期设置失败\n`起始日期({start_time})`>`结束日期({end_time})`\n"
+
+msgid "❌The same channel cannot have two listeners\n(You have created a listen download for the following link with `/listen_download`)\n{link}"
+msgstr "❌同一频道不能同时存在两个监听\n(您已使用`/listen_download`创建了以下链接的监听下载)\n{link}"
+
+msgid "{disable_all} (but keep the topic with id 1)"
+msgstr "{disable_all}(但保留id为1的话题)"
+
+msgid "❌`{prompt_string}` printing failed.\n(see the terminal for details)"
+msgstr "❌`{prompt_string}`打印失败。\n(具体原因请前往终端查看报错信息)"
+
+msgid "Date switched to {year} year, {month} month."
+msgstr "日期切换为{year}年,{month}月。"
+
+msgid "Opened year selection, selected year: {year}, {month} month."
+msgstr "打开年份选择,选中年份:{year}年,{month}月。"
+
+msgid "❌`{prompt_string}` export failed.\n(see the terminal for details)"
+msgstr "❌`{prompt_string}`导出失败。\n(具体原因请前往终端查看报错信息)"
+
+msgid "Date setting, start date: {start}, end date: {end}."
+msgstr "日期设置,起始日期:{start},结束日期:{end}。"
+
+msgid "{panel_text}\n⚠️Keyword input has switched to this task, subsequent input will be written to this task."
+msgstr "{panel_text}\n⚠️关键词输入已切换到本任务,之后的输入将写入本任务。"
+
+msgid "[{client_name}] Too many requests, \"{query_name}\" requires waiting {seconds} seconds before continuing."
+msgstr "[{client_name}]请求频繁,\"{query_name}\"要求等待{seconds}秒后继续运行。"
+
+msgid "Message {message_id}"
+msgstr "消息 {message_id}"
+
+msgid "❌Date setting failed\n`start date ({start_time})` = `end date ({end_time})`\n"
+msgstr "❌日期设置失败\n`起始日期({start_time})`=`结束日期({end_time})`\n"
+
+msgid "Failed to get the original message due to \"{error}\""
+msgstr "获取原始消息失败,原因:\"{error}\""
+
+msgid "🛡️ [#79FCD4]Proxy setup guide[/#79FCD4] [#FF79D4]Visit:[/#FF79D4]\n[link=https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#问题14-error-运行出错原因0-keyerror-0]https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#问题14-error-运行出错原因0-keyerror-0[/link]\n[#FCFF79]If[/#FCFF79] [#FF4689]unable[/#FF4689] [#FF7979]to access[/#FF7979][#79FCD4],[/#79FCD4] [#FCFF79]you can[/#FCFF79] [#d4fc79]refer to[/#d4fc79] [#FC79A5]the \"User Manual\"[/#FC79A5] [#79E2FC][/#79E2FC][#79FCD4]in the software package[/#79FCD4] [#FFB579]\"常见问题及解决方案汇总.pdf\"[/#FFB579][#79FCB5], section[/#79FCB5] [#D479FC]【问题14】[/#D479FC] [#FCE679]for instructions[/#FCE679][#FC79A6].[/#FC79A6]"
+msgstr "🛡️ [#79FCD4]代理配置方法[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\n[link=https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#问题14-error-运行出错原因0-keyerror-0]https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#问题14-error-运行出错原因0-keyerror-0[/link]\n[#FCFF79]若[/#FCFF79][#FF4689]无法[/#FF4689][#FF7979]访问[/#FF7979][#79FCD4],[/#79FCD4][#FCFF79]可[/#FCFF79][#d4fc79]查阅[/#d4fc79][#FC79A5]软件压缩包所提供的[/#FC79A5][#79E2FC]\"使用手册\"[/#79E2FC][#79FCD4]文件夹下的[/#79FCD4][#FFB579]\"常见问题及解决方案汇总.pdf\"[/#FFB579][#79FCB5]中的[/#79FCB5][#D479FC]【问题14】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6]。[/#FC79A6]"
+
+msgid "🕒 [#FCFF79]Detected[/#FCFF79] [#FF7979]system time[/#FF7979] [#FC79A5]out of sync[/#FC79A5][#79E2FC],[/#79E2FC] [#79FCD4]solution[/#79FCD4] [#FF79D4]visit:[/#FF79D4]\nhttps://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/issues/5#issuecomment-2580677184\n[#FCFF79]If[/#FCFF79] [#FF4689]unable[/#FF4689] [#FF7979]to access[/#FF7979][#79FCD4],[/#79FCD4] [#FCFF79]you can[/#FCFF79] [#d4fc79]refer to[/#d4fc79] [#FC79A5]the \"User Manual\"[/#FC79A5][#79E2FC][/#79E2FC][#79FCB5], section[/#79FCB5] [#D479FC]【问题4】[/#D479FC] [#FCE679]for instructions[/#FCE679][#FC79A6],[/#FC79A6] [#79FCD4]and[/#79FCD4] [#79FCB5]restart the software[/#79FCB5]."
+msgstr "🕒 [#FCFF79]检测到[/#FCFF79][#FF7979]系统时间[/#FF7979][#FC79A5]未同步[/#FC79A5][#79E2FC],[/#79E2FC][#79FCD4]解决方法[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\nhttps://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/issues/5#issuecomment-2580677184\n[#FCFF79]若[/#FCFF79][#FF4689]无法[/#FF4689][#FF7979]访问[/#FF7979][#79FCD4],[/#79FCD4][#FCFF79]可[/#FCFF79][#d4fc79]查阅[/#d4fc79][#FC79A5]软件压缩包所提供的[/#FC79A5][#79E2FC]\"使用手册\"[/#79E2FC][#79FCB5]中的[/#79FCB5][#D479FC]【问题4】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6],[/#FC79A6][#79FCD4]并[/#79FCD4][#79FCB5]重启软件[/#79FCB5]。"
+
+msgid "❓ [#79FCD4]If you have questions about proxy configuration[/#79FCD4] [#FF79D4]visit:[/#FF79D4]\n🌐 [link=https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#配置代理时在代理在本机的情况下]https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#配置代理时在代理在本机的情况下[/link]\n🛑 [#FCFF79]If[/#FCFF79] [#FF4689]unable[/#FF4689] [#FF7979]to access:[/#FF7979] [#79FCD4]\n🔎 [/#79FCD4][#FCFF79]you can[/#FCFF79] [#d4fc79]refer to[/#d4fc79] [#FC79A5]the \"User Manual\"[/#FC79A5] [#79E2FC][/#79E2FC][#79FCD4]in the software package[/#79FCD4] [#FFB579]\"常见问题及解决方案汇总.pdf\"[/#FFB579][#79FCB5], section[/#79FCB5] [#D479FC]【问题14】 Solution[/#D479FC] [#FCE679]for instructions[/#FCE679][#FC79A6].[/#FC79A6]"
+msgstr "❓ [#79FCD4]如果对代理配置有疑问[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\n🌐 [link=https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#配置代理时在代理在本机的情况下]https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#配置代理时在代理在本机的情况下[/link]\n🛑 [#FCFF79]若[/#FCFF79][#FF4689]无法[/#FF4689][#FF7979]访问:[/#FF7979][#79FCD4]\n🔎 [/#79FCD4][#FCFF79]可[/#FCFF79][#d4fc79]查阅[/#d4fc79][#FC79A5]软件压缩包所提供的[/#FC79A5][#79E2FC]\"使用手册\"[/#79E2FC][#79FCD4]文件夹下的[/#79FCD4][#FFB579]\"常见问题及解决方案汇总.pdf\"[/#FFB579][#79FCB5]中的[/#79FCB5][#D479FC]【问题14】里的【解决方案】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6]。[/#FC79A6]"
+
+msgid "🔧 [#FF79D4]Solution[/#FF79D4] [#FCFF79](choose one):[/#FCFF79]\n[#D4FC79]1. Close redundant instances.[/#D4FC79]\n[#D4FC79]2. Use[/#D4FC79] \"[#79FCD4]{exe} --session SESSION[/#79FCD4]\" [#D4FC79]to specify a new SESSION location and retry[/#D4FC79] ([#FFB579]replace SESSION with the actual path[/#FFB579])."
+msgstr "🔧 [#FF79D4]解决方法[/#FF79D4][#FCFF79](任选其一):[/#FCFF79]\n[#D4FC79]1.关闭多余实例。[/#D4FC79]\n[#D4FC79]2.使用[/#D4FC79]\"[#79FCD4]{exe} --session SESSION[/#79FCD4]\"[#D4FC79]指定新的SESSION位置后重试[/#D4FC79]([#FFB579]将SESSION替换为实际路径[/#FFB579])。"
+
+msgid "❌ [#FF7979]Detected that ({package_name}) version {current_version} does not match the required version {require_version}[/#FF7979][#FCFF79], which may cause compatibility issues and abnormal behavior.[/#FCFF79]\n⚖️ [#D4FC79]Please use[/#D4FC79] [#79FCD4]{command}[/#79FCD4] [#D4FC79]to upgrade or downgrade to the required version {require_version} and retry[/#D4FC79][#D4FC79].[/#D4FC79]"
+msgstr "❌ [#FF7979]检测到({package_name})版本{current_version}与需求版本{require_version}不一致[/#FF7979][#FCFF79],可能已经引发兼容问题导致运行异常。[/#FCFF79]\n⚖️ [#D4FC79]需使用[/#D4FC79][#79FCD4]{command}[/#79FCD4][#D4FC79]升级或降级至需求版本{require_version}后重试[/#D4FC79][#D4FC79]。[/#D4FC79]"
+
+msgid "「📥Download task」[File]:\"{file}\",[Error size]:{size},[Actual size]:{actual_size},[Type]:{type},[Status]:Failure."
+msgstr "「📥下载任务」[文件]:\"{file}\",[错误大小]:{size},[实际大小]:{actual_size},[类型]:{type},[状态]:失败。"
+
+msgid "[Channel]:\"{origin_chat_id}\",[Message ID]:\"{message_id}\" ➡️ [Channel]:\"{target_chat_id}\",[Status]:Forward success."
+msgstr "[频道]:\"{origin_chat_id}\",[消息ID]:\"{message_id}\" ➡️ [频道]:\"{target_chat_id}\",[状态]:转发成功。"
+
+msgid "「📥Download task」[Resume]:\"{file}\",[Error size]:{size}."
+msgstr "「📥下载任务」[断点续传]:\"{file}\",[错误大小]:{size}。"
+
+msgid "「📥Download task」[File]:\"{file}\",[Size]:{size},[Type]:{type},[Status]:Success."
+msgstr "「📥下载任务」[文件]:\"{file}\",[大小]:{size},[类型]:{type},[状态]:成功。"
+
+msgid "[Channel]:\"{origin_chat_id}\",[Message ID]:\"{message_id}\" ➡️ [Channel]:\"{target_chat_id}\",[Status]:Skip forward."
+msgstr "[频道]:\"{origin_chat_id}\",[消息ID]:\"{message_id}\" ➡️ [频道]:\"{target_chat_id}\",[状态]:跳过转发。"
+
+msgid "「📥Download task」[Resume]:\"{file}\",[Status]:[Already exists]"
+msgstr "「📥下载任务」[断点续传]:\"{file}\",[状态]:[已存在]"
+
+msgid "「📥Download task」[Channel]:\"{chat_id}\",[Link]:\"{link}\",[Link type]:{link_type}."
+msgstr "「📥下载任务」[频道]:\"{chat_id}\",[链接]:\"{link}\",[链接类型]:{link_type}。"
+
+msgid "「📥Download task」[Already exists]:\"{file}\""
+msgstr "「📥下载任务」[已存在]:\"{file}\""
+
+msgid "「📥Download task」[File]:\"{file}\",[Size]:{size},[Type]:{type},[Status]:Skipped."
+msgstr "「📥下载任务」[文件]:\"{file}\",[大小]:{size},[类型]:{type},[状态]:跳过。"
+
+msgid "\"{origin_chat_id}\",[Message ID]:{message_id} ➡️ \"{target_chat_id}\",Forward success."
+msgstr "\"{origin_chat_id}\",[消息ID]:{message_id} ➡️ \"{target_chat_id}\",转发成功。"
+
+msgid "「📥Download task」[File]:\"{file}\",[Size]:{size},[Type]:{type},[Status]:Downloading."
+msgstr "「📥下载任务」[文件]:\"{file}\",[大小]:{size},[类型]:{type},[状态]:下载中。"
+
+msgid "「📥Download task」[File]:\"{file}\",[Size]:{size},[Type]:{type},[Status]:Failure{error}"
+msgstr "「📥下载任务」[文件]:\"{file}\",[大小]:{size},[类型]:{type},[状态]:失败{error}"
+
+msgid "[Channel]:\"{origin_chat_id}\",[Message ID]:\"{message_id}\" ➡️ [Channel]:\"{target_chat_id}\",[Status]:Forward failure,[Reason]:\"{error}\""
+msgstr "[频道]:\"{origin_chat_id}\",[消息ID]:\"{message_id}\" ➡️ [频道]:\"{target_chat_id}\",[状态]:转发失败,[原因]:\"{error}\""
+
+msgid "「📥Download task」[Channel]:\"{chat_id}\",[Link]:\"{link}\",[Link type]:{error}"
+msgstr "「📥下载任务」[频道]:\"{chat_id}\",[链接]:\"{link}\",[链接类型]:{error}"
+
+msgid "[Re-download]:\"{file}\",[Retry times]:{retry}/{max_retry}."
+msgstr "[重新下载]:\"{file}\",[重试次数]:{retry}/{max_retry}。"
+
+msgid "「📥Download task」[Link]:\"{link}\",[Status]:Success."
+msgstr "「📥下载任务」[链接]:\"{link}\",[状态]:成功。"
+
+msgid "「📥Download task」[Link]:\"{link}\"{error},[Reason]:\"{detail}\",[Status]:Failure."
+msgstr "「📥下载任务」[链接]:\"{link}\"{error},[原因]:\"{detail}\",[状态]:失败。"
+
+msgid "「📥Download task」[Link]:\"{link}\"{detail},[Status]:Failure."
+msgstr "「📥下载任务」[链接]:\"{link}\"{detail},[状态]:失败。"
+
+msgid "「📤Upload task」[Channel]:\"{chat_id}\",[File]:\"{file_path}\",[Size]:{size},[Status]:Uploading."
+msgstr "「📤上传任务」[频道]:\"{chat_id}\",[文件]:\"{file_path}\",[大小]:{size},[状态]:上传中。"
+
+msgid "「📤Upload task」[Channel]:\"{chat_id}\",[File]:\"{file_path}\",[Size]:{size},[Status]:Success{more}."
+msgstr "「📤上传任务」[频道]:\"{chat_id}\",[文件]:\"{file_path}\",[大小]:{size},[状态]:成功{more}。"
+
+msgid "「📤Upload task」[Channel]:\"{chat_id}\",[File]:\"{file_path}\",[Size]:{size},[Reason]:\"{error}\",[Status]:{status}."
+msgstr "「📤上传任务」[频道]:\"{chat_id}\",[文件]:\"{file_path}\",[大小]:{size},[原因]:\"{error}\",[状态]:{status}。"
+
+msgid "[Upload missing part]:{part},[Status]:Failure,[Reason]:\"{error}\""
+msgstr "[上传缺失分片]:{part},[状态]:失败,[原因]:\"{error}\""
+
+msgid "[Upload missing part]:{part},[Status]:Uploading."
+msgstr "[上传缺失分片]:{part},[状态]:上传中。"
+
+msgid "「📤Upload task」[Resume]:\"{file}\",[Retry times]:{retry}/{max_retry},[Reason]:\"{error}\""
+msgstr "「📤上传任务」[断点续传]:\"{file}\",[重试次数]:{retry}/{max_retry},[原因]:\"{error}\""
+
+msgid "「📤Upload task」[Re-upload]:\"{file}\",[Retry times]:{retry}/{max_retry},[Reason]:\"{error}\""
+msgstr "「📤上传任务」[重新上传]:\"{file}\",[重试次数]:{retry}/{max_retry},[原因]:\"{error}\""
+
+msgid "「📤Upload task」{prompt}"
+msgstr "「📤上传任务」{prompt}"
+
+msgid "「📥📤Download and upload task」[Channel]:\"{chat_id}\",[Link]:\"{link}\"."
+msgstr "「📥📤下载后上传任务」[频道]:\"{chat_id}\",[链接]:\"{link}\"。"
+
+msgid "「📤Upload task」[Resume]:\"{file}\"."
+msgstr "「📤上传任务」[断点续传]:\"{file}\"。"
+
+msgid "Error in listen forward due to \"{error}\" The channel nature may have changed, including but not limited to (channel dissolved, channel name changed, channel type changed, the account has no upload permission in the target channel, the account was removed from the current channel)."
+msgstr "监听转发出现错误,原因:{error}频道性质可能发生改变,包括但不限于(频道解散、频道名改变、频道类型改变、该账户没有在目标频道上传的权限、该账号被当前频道移除)。"
+
+msgid "Unexpected field value: \"{name}={value}\", using default: \"{default}\"."
+msgstr "字段值异常:\"{name}={value}\",使用默认值:\"{default}\"。"
+
+msgid "test mode, using default config."
+msgstr "测试模式,使用默认配置。"
+
+msgid "Using cached remote config from \"{path}\", remaining valid time: {hours} hours."
+msgstr "使用\"{path}\"中的远程配置缓存,剩余有效时间:{hours}小时。"
+
+msgid "Remote config cached successfully: {config}"
+msgstr "远程配置缓存成功:{config}"
+
+msgid "Failed to write to the remote config cache due to \"{error}\""
+msgstr "写入远程配置缓存失败,原因:\"{error}\""
+
+msgid "Getting remote config from \"{url}\"."
+msgstr "正在从\"{url}\"获取远程配置。"
+
+msgid "Successfully obtained remote config from \"{url}\": {config}"
+msgstr "成功从\"{url}\"获取远程配置:{config}"
+
+msgid "Failed to obtain remote config from \"{url}\" due to \"{error}\""
+msgstr "从\"{url}\"获取远程配置失败,原因:\"{error}\""
+
+msgid "All remote addresses are unavailable, using local default config: {config}"
+msgstr "所有远程地址均不可用,使用本地默认配置:{config}"
+
+msgid "Failed to read the remote config cache due to \"{error}\""
+msgstr "读取远程配置缓存失败,原因:\"{error}\""
+
+msgid "\"{key}\" not found in the {section} config file, added."
+msgstr "\"{key}\"不在{section}配置文件中,已添加。"
+
+msgid "\"{key}\" not in the {section} config file, removed."
+msgstr "\"{key}\"不在{section}配置文件中,已删除。"
+
+msgid "\"{key}\" not found in the global config file, added."
+msgstr "\"{key}\"不在全局配置文件中,已添加。"
+
+msgid "\"{key}\" not in the template, removed."
+msgstr "\"{key}\"不在模板中,已删除。"
+
+msgid "\"{key}\" not found in the config file, added."
+msgstr "\"{key}\"不在配置文件中,已添加。"
+
+msgid "done_notice has no requester, falling back to last_message (chat_id={chat_id}); please provide owner at the call site to avoid fallback."
+msgstr "done_notice未指定requester,回退到last_message(chat_id={chat_id}),请为该调用处补充owner以消除回退。"
+
+msgid "chat id is empty"
+msgstr "聊天ID为空"
+
+msgid "Client is not connected"
+msgstr "客户端未连接"
+
+msgid "This message doesn't contain any downloadable media"
+msgstr "此消息不包含任何可下载媒体"
+
+msgid "Negative offset for live photo requires file_size"
+msgstr "实况照片的负偏移量需要file_size"
+
+msgid "Negative offsets are not supported for file ids, pass a Message object instead"
+msgstr "文件ID不支持负偏移量,请改用Message对象"
+
+msgid "Request timed out"
+msgstr "请求超时"
+
+msgid "You need to pay {amount}{currency} or purchase premium to continue authorization process, which is currently not supported by Kurigram."
+msgstr "需要支付{amount}{currency}或开通会员才能继续授权,当前Kurigram不支持此流程。"
+
+msgid "The file is empty or has invalid format"
+msgstr "文件为空或格式无效"
+
+msgid "Invalid origin_link or target_link"
+msgstr "无效的origin_link或target_link"
+
+msgid "Invalid message link"
+msgstr "无效的消息链接"
+
+msgid "Unexpected referral link: \"{link}\""
+msgstr "无效的推荐链接:\"{link}\""
+
+msgid "The message does not exist, the channel has been disbanded or is not in the channel"
+msgstr "消息不存在,频道已解散或不在该频道中"
+
+msgid "Link parsing error"
+msgstr "链接解析错误"

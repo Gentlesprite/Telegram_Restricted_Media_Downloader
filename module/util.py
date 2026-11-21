@@ -40,6 +40,7 @@ from urllib.parse import (
 from pyrogram.types.messages_and_media import ReplyParameters
 from pyrogram.errors.exceptions.bad_request_400 import MsgIdInvalid
 
+from module.language import _
 from module import (
     log,
     console,
@@ -158,7 +159,7 @@ async def collect_message_id(
     try:
         group = await message.get_media_group()
     except Exception as e:  # noqa: BLE001 预取失败(如FloodWait/超时)不影响主流程,错误不往外抛。
-        log.warning(f'预取媒体组成员id列表失败,原因:"{e}"')
+        log.warning(_('Failed to prefetch media group member IDs due to "{error}"').format(error=e))
         group = None
     group_ids = [m.id for m in group if getattr(m, 'id', None) is not None] if group else []
     cache[media_group_id] = group_ids
@@ -200,7 +201,7 @@ def save_message_entities(
         with open(file_path, 'w', encoding='UTF-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2, default=str)
     except Exception as e:  # noqa: BLE001 实体落盘失败绝不影响下载主流程,错误不往外抛。
-        log.warning(f'保存消息实体JSON失败,原因:"{e}"')
+        log.warning(_('Failed to save message entity JSON due to "{error}"').format(error=e))
 
 
 def message_entity_to_dict(entity) -> dict:
@@ -237,7 +238,7 @@ async def parse_link(client: pyrogram.Client, link: str) -> dict:
             'topic_id': link.topic_id
         }
     except Exception:
-        raise ValueError('Invalid message link.')
+        raise ValueError(_('Invalid message link'))
 
 
 def parse_chat_id(
@@ -361,14 +362,18 @@ async def get_message_by_link(
         r'^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:c/)?)([\w]+)(?:/\d+)*/(\d+)/?$',  # noqa.
         link.lower())
     if not match:
-        raise ValueError('Invalid message link.')
+        raise ValueError(_('Invalid message link'))
 
     try:
         chat_id = utils.get_channel_id(int(match.group(1)))
     except ValueError:
         chat_id = match.group(1)
     message_id: int = int(match.group(2))
-    log.info(f'解析链接:"{link}",频道:"{chat_id}",消息ID:"{message_id}"。')
+    log.info(_('Parsing link: "{link}", channel: "{chat_id}", message ID: "{message_id}".').format(
+        link=link,
+        chat_id=chat_id,
+        message_id=message_id
+    ))
     comment_message: list = []
     if LinkType.COMMENT in record_type:
         # 如果用户需要同时下载媒体下面的评论,把评论中的所有信息放入列表一起返回。
@@ -379,7 +384,10 @@ async def get_message_by_link(
                 if '=' in origin_link and int(origin_link.split('=')[-1]) != comment.id:
                     continue
             comment_message.append(comment)
-        log.info(f'链接:"{link}"的评论中检索到媒体:"{len(comment_message)}"条。')
+        log.info(_('Found "{count}" media in comments of link: "{link}".').format(
+            link=link,
+            count=len(comment_message)
+        ))
     message = await client.get_messages(chat_id=chat_id, message_ids=message_id)
     is_group, group_message = await __is_group(message)
     if single_link:
@@ -394,7 +402,11 @@ async def get_message_by_link(
                 group_message.extend(comment_message)
         if comment_message:
             link_type: str = LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.COMMENT
-            log.info(f'链接:"{link}"解析为"{link_type}",媒体数量:"{len(group_message)}"。')
+            log.info(_('Link: "{link}" resolved to "{link_type}", media count: "{count}".').format(
+                link=link,
+                link_type=link_type,
+                count=len(group_message)
+            ))
             return {
                 'link_type': link_type,
                 'chat_id': chat_id,
@@ -403,7 +415,11 @@ async def get_message_by_link(
             }
         else:
             link_type = LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.GROUP
-            log.info(f'链接:"{link}"解析为"{link_type}",媒体数量:"{len(group_message)}"。')
+            log.info(_('Link: "{link}" resolved to "{link_type}", media count: "{count}".').format(
+                link=link,
+                link_type=link_type,
+                count=len(group_message)
+            ))
             return {
                 'link_type': link_type,
                 'chat_id': chat_id,
@@ -412,7 +428,10 @@ async def get_message_by_link(
             }
     elif is_group is False and group_message is None:  # 单文件。
         link_type = LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.SINGLE
-        log.info(f'链接:"{link}"解析为"{link_type}",媒体数量:"1"。')
+        log.info(_('Link: "{link}" resolved to "{link_type}", media count: "1".').format(
+            link=link,
+            link_type=link_type
+        ))
         return {
             'link_type': link_type,
             'chat_id': chat_id,
@@ -420,12 +439,12 @@ async def get_message_by_link(
             'member_num': 1
         }
     elif is_group is None and group_message is None:
-        raise MsgIdInvalid(
-            'The message does not exist, the channel has been disbanded or is not in the channel.')
+        raise MsgIdInvalid(_(
+            'The message does not exist, the channel has been disbanded or is not in the channel'))
     elif is_group is None and group_message == 0:
-        raise Exception('Link parsing error')
+        raise Exception(_('Link parsing error'))
     else:
-        raise Exception('Unknown error')
+        raise Exception(_('Unknown error'))
 
 
 async def __is_group(message) -> Tuple[Union[bool, None], Union[list, None]]:
@@ -583,7 +602,7 @@ def parse_referral(link: str) -> tuple:
     link: str = str(link).strip().split('://')[-1]  # 去掉协议。
     link: str = link.split('/', 1)[-1]  # 去掉域名。
     if '?start=' not in link:
-        raise ValueError(f'Unexpected referral link: "{link}"')
+        raise ValueError(_('Unexpected referral link: "{link}"').format(link=link))
     username, start_param = link.split('?start=', 1)
     return username, start_param
 
@@ -693,7 +712,7 @@ def reset_web_session() -> str:
         with open(file=TRMD_WEB_SESSION, mode='w', encoding='UTF-8') as f:
             f.write(token)
     except OSError as e:
-        log.warning(f'重置网页面板令牌失败,原因:"{e}"')
+        log.warning(_('Failed to reset the web panel token due to "{error}"').format(error=e))
     return token
 
 
@@ -710,9 +729,9 @@ def get_web_session() -> str:
     try:
         with open(file=TRMD_WEB_SESSION, mode='w', encoding='UTF-8') as f:
             f.write(token)
-        log.info(f'已生成网页面板令牌:"{TRMD_WEB_SESSION}"。')
+        log.info(_('Web panel token generated: "{token}".').format(token=TRMD_WEB_SESSION))
     except OSError as e:
-        log.warning(f'保存网页面板令牌失败,原因:"{e}"')
+        log.warning(_('Failed to save the web panel token due to "{error}"').format(error=e))
     return token
 
 
@@ -744,18 +763,28 @@ def get_nuitka_version():
 
 
 def check_environment():
-    log.info(f'{SOFTWARE_SHORT_NAME}:{VERSION_SEMVER},更新日期:{__update_date__}。')
+    log.info(_('{app_name}:{version}, update date: {update_date}.').format(
+        app_name=SOFTWARE_SHORT_NAME,
+        version=VERSION_SEMVER,
+        update_date=__update_date__
+    ))
     log.info(
-        f'文件日志等级:"{logging.getLevelName(FILE_LOG_LEVEL)}",终端日志等级:"{logging.getLevelName(CONSOLE_LOG_LEVEL)}"。')
-    log.info(f'工作目录:"{get_work_directory()}"。')
+        _('File log level: "{file_level}", console log level: "{console_level}".').format(
+            file_level=logging.getLevelName(FILE_LOG_LEVEL),
+            console_level=logging.getLevelName(CONSOLE_LOG_LEVEL)
+        ))
+    log.info(_('Work directory: "{work_directory}".').format(work_directory=get_work_directory()))
     if is_nuitka():
-        log.info(f'检测到"__compiled__",当前运行于"Nuitka"编译产物中,版本:{get_nuitka_version()}。')
+        log.info(
+            _('Detected "__compiled__", currently running in a "Nuitka" compiled build, version: {version}.').format(
+                version=get_nuitka_version()
+            ))
     elif is_pyinstaller():
-        log.info('检测到"sys.frozen",当前运行于"PyInstaller"打包产物中。')
+        log.info(_('Detected "sys.frozen", currently running in a "PyInstaller" packaged build.'))
     elif is_docker():
-        log.info('检测到"Docker"容器标识,当前运行于"Docker"容器中。')
+        log.info(_('Detected "Docker" container identifier, currently running in a "Docker" container.'))
     else:
-        log.info('当前运行于"源码"环境中。')
+        log.info(_('Currently running in the "source code" environment.'))
         check_kurigram_version(warning=True)
 
 
@@ -769,20 +798,27 @@ def check_kurigram_version(warning: Optional[bool] = False) -> bool:
     if current_pyrogram_version < require_pyrogram_version:
         if warning:
             log.warning(
-                f'当前kurigram版本{show_current_pyrogram_version}低于需求版本{show_require_pyrogram_version},'
-                f'若出现兼容问题导致运行异常,'
-                f'需使用{sys.executable} -m pip install kurigram=={show_require_pyrogram_version}升级至{show_require_pyrogram_version}。')
+                _('Current kurigram version {current} is lower than the required version {required}. If compatibility issues occur, use {executable} -m pip install kurigram=={required} to upgrade to {required}.').format(
+                    current=show_current_pyrogram_version,
+                    required=show_require_pyrogram_version,
+                    executable=sys.executable
+                ))
         return False
     elif current_pyrogram_version != require_pyrogram_version:
         if warning:
             log.warning(
-                f'当前kurigram版本{show_current_pyrogram_version}高于需求版本{show_require_pyrogram_version},'
-                f'若出现兼容问题导致运行异常,'
-                f'需使用{sys.executable} -m pip install kurigram=={show_require_pyrogram_version}降级至{show_require_pyrogram_version}。')
+                _('Current kurigram version {current} is higher than the required version {required}. If compatibility issues occur, use {executable} -m pip install kurigram=={required} to downgrade to {required}.').format(
+                    current=show_current_pyrogram_version,
+                    required=show_require_pyrogram_version,
+                    executable=sys.executable
+                ))
         return False
     else:
         log.info(
-            f'当前kurigram版本{show_current_pyrogram_version}与需求版本{show_require_pyrogram_version}一致。')
+            _('Current kurigram version {current} matches the required version {required}.').format(
+                current=show_current_pyrogram_version,
+                required=show_require_pyrogram_version
+            ))
 
     return True
 
@@ -814,7 +850,7 @@ def is_docker() -> bool:
     """检查是否在Docker容器中运行。"""
     # 检查/.dockerenv文件是否存在。 # noqa.
     if os.path.exists('/.dockerenv'):  # noqa.
-        log.debug('检测到"/.dockerenv",当前运行于"Docker"容器中。')  # noqa.
+        log.debug(_('Detected "/.dockerenv", currently running in a "Docker" container.'))  # noqa.
         return True
 
     # 检查/proc/1/cgroup中是否包含"docker"。
@@ -822,14 +858,15 @@ def is_docker() -> bool:
         with open('/proc/1/cgroup', 'r') as f:
             content: str = f.read()
             if 'docker' in content or 'kubepods' in content:  # noqa.
-                log.debug('检测到"/proc/1/cgroup"容器标识,当前运行于"Docker"容器中。')
+                log.debug(
+                    _('Detected "/proc/1/cgroup" container identifier, currently running in a "Docker" container.'))
                 return True
     except (FileNotFoundError, IOError):
         pass
     except Exception:  # noqa.
         pass
 
-    log.debug('未检测到容器标识,当前运行于非"Docker"环境。')
+    log.debug(_('No container identifier detected, currently running in a non-"Docker" environment.'))
     return False
 
 
@@ -853,6 +890,14 @@ def get_message_dtype(message, download_type: Optional[list] = None) -> Union[st
         if dtype != DownloadType.LIVE_PHOTO and getattr(message, dtype, None):
             return dtype
     return None
+
+
+def normalize_msgid(value: str) -> str:
+    """把内部key规范成可翻译的msgid:下划线转空格、首字母大写。"""
+    try:
+        return value.replace('_', ' ').capitalize()
+    except Exception:  # noqa.
+        return str(value)
 
 
 @lru_cache(maxsize=1)
@@ -919,9 +964,20 @@ def build_task_callback(callback: str, chat_id, separator: str = '|', limit: int
     encoded: bytes = data.encode('utf-8')
     encoded_length: int = len(encoded)
     if encoded_length <= limit:
-        log.debug(f'callback_data:"{encoded}",长度:{encoded_length},未超过{limit}字节,原样返回。')
+        log.debug(
+            _('callback_data: "{encoded}", length: {length}, does not exceed {limit} bytes, returned as is.').format(
+                encoded=encoded,
+                length=encoded_length,
+                limit=limit
+            ))
         return data
-    log.warning(f'callback_data:"{encoded}",长度:{encoded_length},已超过{limit}字节,已截断回调数据:"{payload}"。')
+    log.warning(
+        _('callback_data: "{encoded}", length: {length}, exceeds {limit} bytes, truncated callback data: "{payload}".').format(
+            encoded=encoded,
+            length=encoded_length,
+            limit=limit,
+            payload=payload
+        ))
     # 先按任务身份的字节数留出余量,再截回调数据,避免负切片把任务身份整段切掉。
     kept: str = encoded[:max(limit - len(suffix.encode('utf-8')), 0)].decode('utf-8', errors='ignore')
     return f'{kept}{suffix}'
@@ -969,7 +1025,7 @@ def resolve_chat_id(chat_filter: dict, task: Union[str, None]):
 def format_limited_text(
         items: Any,
         limit: int = 200,
-        unit: str = '项',
+        unit: str = _('Item'),
         separator: str = ','
 ) -> str:
     """把任意字符串序列拼接成提示文本,超长时截断并标注总数。
@@ -992,7 +1048,7 @@ def format_limited_text(
             break
         parts.append(value)
         length += cost
-    return f'{separator.join(parts)}...等共{len(values)}{unit}'
+    return _('{preview}... {count} {unit} in total').format(preview=separator.join(parts), count=len(values), unit=unit)
 
 
 class ChatInfo:
@@ -1049,7 +1105,10 @@ class LimitCall:  # https://github.com/tangyoha/telegram_media_downloader/blob/m
             if not waiting:
                 waiting = True  # 达到上限时只提示一次,避免每秒重复打印。
                 ConnectionStatus.enter_flood(
-                    f'请求已达每分钟{self.max_limit_call_times}次的上限,等待{int(self.time_window - time_span) + 1}秒后继续。'
+                    _('Request reached the per-minute limit of {limit} calls, waiting {seconds} seconds before continuing.').format(
+                        limit=self.max_limit_call_times,
+                        seconds=int(self.time_window - time_span) + 1
+                    )
                 )
 
             await asyncio.sleep(1)
