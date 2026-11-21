@@ -2536,11 +2536,11 @@ class TelegramRestrictedMediaDownloader(Bot):
             # 避免同一链接被不同用户先后下载时沿用首个用户的owner、通知发错人。
             if owner is not None:
                 task.owner = owner
-            task.link_type = link_type
             task.chat_id = chat_id
-            # 重试会按链接重新解析(媒体组会整组展开,使member_num膨胀),覆盖将导致member_num永远
-            # 大于complete_num、"下载完成"通知不再触发,故只在首次拉取(非重试)时赋值。
+            # link_type与member_num都是链接自身属性,重试时会按message重算为SINGLE,
+            # 覆盖将导致媒体组被标为单文件、member_num膨胀使完成通知不触发,故只在首次拉取(非重试)时赋值。
             if retry.get('count', 0) == 0:
+                task.link_type = link_type
                 task.member_num = member_num
             # 首次创建任务时锁定重试上限,同一link的重试复用该实例,因此运行中修改配置不会让正在重试的任务按新上限被判死;新任务仍按当时的配置值锁定。
             if not task.max_retry:
@@ -2551,7 +2551,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 link=link,
                 chat_id=chat_id,
                 message=message,
-                link_type=link_type,
+                link_type=task.link_type,
                 retry=retry,
                 with_upload=with_upload,
                 diy_download_type=diy_download_type
