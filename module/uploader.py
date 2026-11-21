@@ -212,9 +212,13 @@ class TelegramUploader:
                     obj: str = '尺寸'
                 elif isinstance(e, PhotoSaveFileInvalid):
                     obj: str = '大小'
-                p = f'[图片]:"{file_path}"因来自Telegram的{obj}限制,回退为文档格式进行上传,{_t(KeyWord.REASON)}:"{e}"'
-                log.info(p)
-                console.log(p, style='#FF4689')
+                log.info(
+                    f'[图片]:"{file_path}"因来自Telegram的{obj}限制,回退为文档格式进行上传,{_t(KeyWord.REASON)}:"{e}"')
+                console.log(_t(KeyWord.UPLOADER_PHOTO_FALLBACK).format(
+                    path=file_path,
+                    limit=_t(KeyWord.DIMENSION) if isinstance(e, PhotoInvalidDimensions) else _t(KeyWord.FILE_SIZE),
+                    reason=_t(KeyWord.REASON) + f': "{e}"'
+                ), style='#FF4689')
                 attributes = [raw.types.DocumentAttributeFilename(file_name=file_name)]
                 media = await self.get_input_media_document(
                     chat_id=chat_id,
@@ -235,9 +239,8 @@ class TelegramUploader:
                     ))
                     log.info(f'视频"{file_path}"将以原本格式进行上传。')
                 else:
-                    p = f'[视频]:"{file_path}"获取视频元数据失败,回退为文档格式进行上传。'
-                    log.info(p)
-                    console.log(p, style='#FF4689')
+                    log.info(f'[视频]:"{file_path}"获取视频元数据失败,回退为文档格式进行上传。')
+                    console.log(_t(KeyWord.UPLOADER_VIDEO_META_FALLBACK).format(path=file_path), style='#FF4689')
             media = await self.get_input_media_document(
                 chat_id=chat_id,
                 file=file,
@@ -303,7 +306,10 @@ class TelegramUploader:
                                 entities=entities
                             )
                         )
-                        prompt = f'[媒体组]:"{media_group_id}"已收集{len(media_group_cache[media_group_id])}个媒体,等待所有媒体上传完成。'
+                        prompt = _t(KeyWord.UPLOADER_MEDIA_GROUP_COLLECTING).format(
+                            id=media_group_id,
+                            count=len(media_group_cache[media_group_id])
+                        )
                         console.log(
                             f'{_t(KeyWord.UPLOAD_TASK)}{prompt}')
                         upload_task.prompt = prompt
@@ -390,7 +396,10 @@ class TelegramUploader:
                                     ),
                                     sleep_threshold=60
                                 )
-                                prompt = f'[媒体组]:"{media_group_id}"上传完成,包含{len(sorted_media_group)}个媒体。'
+                                prompt = _t(KeyWord.UPLOADER_MEDIA_GROUP_DONE).format(
+                                    id=media_group_id,
+                                    count=len(sorted_media_group)
+                                )
                                 console.log(f'{_t(KeyWord.UPLOAD_TASK)}{prompt}')
                                 # 将已发送的媒体组任务状态更新为SENT。
                                 for task in UploadTask.TASKS:
@@ -533,11 +542,11 @@ class TelegramUploader:
         file_size: int = os.path.getsize(file_path)
         upload_task.chat_id = chat_id
         if not is_allow_upload(file_size, self.is_premium):
-            upload_task.error_msg = '上传大小超过限制(普通用户2000MiB,会员用户4000MiB)'
+            upload_task.error_msg = _t(KeyWord.UPLOAD_SIZE_LIMIT_SIMPLE)
             upload_task.status = UploadStatus.FAILURE
             return None
         elif file_size == 0:
-            upload_task.error_msg = '上传文件大小为0'
+            upload_task.error_msg = _t(KeyWord.UPLOAD_FILE_ZERO_SIMPLE)
             upload_task.status = UploadStatus.FAILURE
             return None
 
@@ -682,7 +691,7 @@ class TelegramUploader:
         # send_media 内部只记录日志不抛异常,故以其是否把状态置为 SENT 判定成败。
         if upload_task.status != UploadStatus.SENT:
             upload_task.status = UploadStatus.FAILURE
-            upload_task.error_msg = '复用已上传媒体发送失败,详见日志。'
+            upload_task.error_msg = _t(KeyWord.UPLOADER_REUSE_SEND_FAILED)
             log.error(f'[复用上传]"{upload_task.file_path}"发送失败。')
             return None
         # 不做 UploadTask.TASKS.discard:与正常上传一致地保留在任务集中,供网页面板与统计表展示。
@@ -736,7 +745,7 @@ class TelegramUploader:
                 self.__storage_upload(
                     upload_task=upload_task,
                     status=UploadStatus.FAILURE,
-                    error_msg=upload_task.error_msg or str(e) or '上传失败。'
+                    error_msg=upload_task.error_msg or str(e) or _t(KeyWord.UPLOAD_FAILED)
                 )
             log.info(e)
             return
