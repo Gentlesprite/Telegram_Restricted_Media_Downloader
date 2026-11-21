@@ -1812,12 +1812,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _max_retry = getattr(download_task, 'max_retry', None) or self.app.max_download_retries
                 if retry_count < _max_retry:
                     retry_count += 1
-                    # 重试从create_task排队到函数体执行之间存在一个事件循环tick的间隙,此时该消息
-                    # 既不在DOWNLOADING_KEYS也不在items中,先登记再创建任务,由create_download_task入队后移除。
-                    DownloadTask.PENDING_ENQUEUE.add(link) if isinstance(link, str) else None
+                    # 无链接消息的link是纯数字id,无法作为链接重新解析,重试时改用message对象重新入队。
+                    retry_ids = message if link.isdigit() else link  # v2.1.9 修复无链接（纯数字）消息无法重试的问题。
+                    DownloadTask.PENDING_ENQUEUE.add(retry_ids) if isinstance(retry_ids, str) else None
                     task = self.loop.create_task(
                         self.create_download_task(
-                            message_ids=link if isinstance(link, str) else message,
+                            message_ids=retry_ids,
                             retry={'id': file_id, 'count': retry_count},
                             with_upload=with_upload,
                             diy_download_type=diy_download_type
