@@ -338,9 +338,10 @@ class DownloadTask:
         @wraps(func)  # noqa.
         async def wrapper(self, *args, **kwargs):
             message_ids = kwargs.get('message_ids')
+            retry_info = kwargs.get('retry') or {}
             link = message_ids
             if isinstance(message_ids, pyrogram.types.Message):
-                link = message_ids.link if message_ids.link else message_ids.id
+                link = retry_info.get('link') or (message_ids.link if message_ids.link else message_ids.id)
             task: DownloadTask = DownloadTask.get_or_create(link)
             res: dict = await func(self, *args, **kwargs)  # noqa.
             status: Union[str, None] = res.get('status')

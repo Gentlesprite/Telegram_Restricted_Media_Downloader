@@ -1818,7 +1818,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     task = self.loop.create_task(
                         self.create_download_task(
                             message_ids=retry_ids,
-                            retry={'id': file_id, 'count': retry_count},
+                            retry={'id': file_id, 'count': retry_count, 'link': link},
                             with_upload=with_upload,
                             diy_download_type=diy_download_type
                         )
@@ -2519,7 +2519,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     'message': message_ids,
                     'member_num': 1
                 }
-                link = message_ids.link if message_ids.link else message_ids.id
+                link = retry.get('link') or (message_ids.link if message_ids.link else message_ids.id)
             else:
                 meta: dict = await get_message_by_link(
                     client=self.app.client,
