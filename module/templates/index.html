@@ -22,44 +22,44 @@
             </span>
             <div class="status">
                 <span class="dot" id="dot"></span>
-                <span id="statusText">空闲 · 等待任务</span>
+                <span id="statusText"></span>
             </div>
         </div>
-        <button class="support-btn" id="btnPause" type="button"><span class="btn-emoji">⏸️</span><span class="btn-label">暂停</span></button>
-        <a class="support-btn" id="linkProxySeller" href="#" target="_blank" rel="noopener" hidden><span class="btn-emoji">🛒</span>购买代理</a>
-        <button class="support-btn" id="supportBtn" type="button"><span class="btn-emoji support-icon">❤️</span>支持作者</button>
+        <button class="support-btn" id="btnPause" type="button"><span class="btn-emoji">⏸️</span><span class="btn-label"></span></button>
+        <a class="support-btn" id="linkProxySeller" href="#" target="_blank" rel="noopener" hidden><span class="btn-emoji">🛒</span></a>
+        <button class="support-btn" id="supportBtn" type="button"><span class="btn-emoji support-icon">❤️</span></button>
         <div class="menu-wrap" id="menuWrap">
-            <button class="menu-btn" id="menuBtn" type="button" title="更多">☰</button>
+            <button class="menu-btn" id="menuBtn" type="button" title="">☰</button>
             <div class="menu-dropdown" id="menuDropdown" hidden>
                 <a class="menu-item" id="linkGithub" href="#" target="_blank" rel="noopener" hidden><span class="menu-emoji">📦</span>GitHub</a>
-                <a class="menu-item" id="linkChannel" href="#" target="_blank" rel="noopener" hidden><span class="menu-emoji">📌</span>订阅频道</a>
-                <a class="menu-item" id="linkVideo" href="#" target="_blank" rel="noopener" hidden><span class="menu-emoji">🎬</span>视频教程</a>
-                <button class="menu-item" id="btnSettings" type="button"><span class="menu-emoji">🔧</span>修改配置</button>
-                <button class="menu-item" id="btnLogout" type="button" hidden><span class="menu-emoji">🚪</span>退出登录</button>
+                <a class="menu-item" id="linkChannel" href="#" target="_blank" rel="noopener" hidden><span class="menu-emoji">📌</span></a>
+                <a class="menu-item" id="linkVideo" href="#" target="_blank" rel="noopener" hidden><span class="menu-emoji">🎬</span></a>
+                <button class="menu-item" id="btnSettings" type="button"><span class="menu-emoji">🔧</span></button>
+                <button class="menu-item" id="btnLogout" type="button" hidden><span class="menu-emoji">🚪</span></button>
             </div>
         </div>
     </div>
 </header>
 
-<div class="offline" id="offline">已与TRMD断开连接，请确认TRMD是否仍在运行。</div>
+<div class="offline" id="offline"></div>
 
 <div class="layout">
     <aside class="sidebar" id="sidebar">
-        <button class="side-item active" data-section="download" type="button">下载</button>
-        <button class="side-item" data-section="upload" type="button">上传</button>
-        <button class="side-item" data-section="listener" type="button">监听</button>
-        <button class="side-item" data-section="notice" type="button">通知</button>
-        <button class="side-item" data-section="storage" type="button">存储</button>
+        <button class="side-item active" data-section="download" type="button"></button>
+        <button class="side-item" data-section="upload" type="button"></button>
+        <button class="side-item" data-section="listener" type="button"></button>
+        <button class="side-item" data-section="notice" type="button"></button>
+        <button class="side-item" data-section="storage" type="button"></button>
     </aside>
 
     <main class="content">
         <div id="downloadSummary">
             <div class="panel overall">
                 <div class="overall-top">
-                    <span class="label">总进度</span>
+                    <span class="label"></span>
                     <span class="big" id="overallPercent">0%</span>
                     <span class="muted" id="overallInfo">0.00B / 0.00B</span>
-                    <span class="muted" id="overallExtra">暂无速度</span>
+                    <span class="muted" id="overallExtra"></span>
                 </div>
                 <div class="muted" id="overallStatus"></div>
                 <div class="track track-lg">
@@ -72,10 +72,10 @@
         <div id="uploadSummary" hidden>
             <div class="panel overall">
                 <div class="overall-top">
-                    <span class="label">总进度</span>
+                    <span class="label"></span>
                     <span class="big" id="uploadPercent">0%</span>
                     <span class="muted" id="uploadInfo">0.00B / 0.00B</span>
-                    <span class="muted" id="uploadExtra">暂无速度</span>
+                    <span class="muted" id="uploadExtra"></span>
                 </div>
                 <div class="muted" id="uploadStatus"></div>
                 <div class="track track-lg">
@@ -87,18 +87,18 @@
 
         <div class="page" id="page-download">
             <div class="section-head">
-                <span class="gcount">进行中 <b id="badgeDownload">0</b> 个任务</span>
-                <button class="toggle" id="toggleAll" type="button">全部折叠</button>
+                <span class="gcount"><span></span> <b id="badgeDownload">0</b> <span></span></span>
+                <button class="toggle" id="toggleAll" type="button"></button>
             </div>
             <div class="list" data-table="download">
                 <div class="list-scroll">
                     <div class="list-head">
-                        <span id="headName"><span class="htext">频道</span></span>
-                        <span class="h-progress"><span class="htext">进度</span></span>
-                        <span class="h-size" id="headSize"><span class="htext">完成 / 总数</span></span>
-                        <span class="h-speed"><span class="htext">速度</span></span>
-                        <span class="h-remain"><span class="htext">剩余时间</span></span>
-                        <span class="h-status"><span class="htext">状态</span></span>
+                        <span id="headName"><span class="htext"></span></span>
+                        <span class="h-progress"><span class="htext"></span></span>
+                        <span class="h-size" id="headSize"><span class="htext"></span></span>
+                        <span class="h-speed"><span class="htext"></span></span>
+                        <span class="h-remain"><span class="htext"></span></span>
+                        <span class="h-status"><span class="htext"></span></span>
                     </div>
                     <div id="download"></div>
                 </div>
@@ -107,18 +107,18 @@
 
         <div class="page" id="page-upload" hidden>
             <div class="section-head">
-                <span class="gcount">进行中 <b id="badgeUpload">0</b> 个任务</span>
-                <button class="toggle" id="toggleUpload" type="button">全部折叠</button>
+                <span class="gcount"><span></span> <b id="badgeUpload">0</b> <span></span></span>
+                <button class="toggle" id="toggleUpload" type="button"></button>
             </div>
             <div class="list" data-table="upload">
                 <div class="list-scroll">
                     <div class="list-head">
-                        <span class="h-name"><span class="htext">频道</span></span>
-                        <span class="h-progress"><span class="htext">进度</span></span>
-                        <span class="h-size"><span class="htext">完成 / 总数</span></span>
-                        <span class="h-speed"><span class="htext">速度</span></span>
-                        <span class="h-remain"><span class="htext">剩余时间</span></span>
-                        <span class="h-status"><span class="htext">状态</span></span>
+                        <span class="h-name"><span class="htext"></span></span>
+                        <span class="h-progress"><span class="htext"></span></span>
+                        <span class="h-size"><span class="htext"></span></span>
+                        <span class="h-speed"><span class="htext"></span></span>
+                        <span class="h-remain"><span class="htext"></span></span>
+                        <span class="h-status"><span class="htext"></span></span>
                     </div>
                     <div id="upload"></div>
                 </div>
@@ -127,15 +127,15 @@
 
         <div class="page" id="page-listener" hidden>
             <div class="tabs" id="listenTabs">
-                <button class="tab active" data-listen="forward" type="button">转发</button>
-                <button class="tab" data-listen="download" type="button">下载</button>
+                <button class="tab active" data-listen="forward" type="button"></button>
+                <button class="tab" data-listen="download" type="button"></button>
             </div>
             <div class="list listen-two" id="listenForwardBox" data-table="forward">
                 <div class="list-scroll">
                     <div class="list-head">
-                        <span><span class="htext">监听频道</span></span>
-                        <span><span class="htext">转发频道</span></span>
-                        <span class="h-action"><span class="htext">操作</span></span>
+                        <span><span class="htext"></span></span>
+                        <span><span class="htext"></span></span>
+                        <span class="h-action"><span class="htext"></span></span>
                     </div>
                     <div id="listenForward"></div>
                 </div>
@@ -143,8 +143,8 @@
             <div class="list listen-one" id="listenDownloadBox" data-table="listen_download" hidden>
                 <div class="list-scroll">
                     <div class="list-head">
-                        <span><span class="htext">监听频道</span></span>
-                        <span class="h-action"><span class="htext">操作</span></span>
+                        <span><span class="htext"></span></span>
+                        <span class="h-action"><span class="htext"></span></span>
                     </div>
                     <div id="listenDownload"></div>
                 </div>
@@ -152,16 +152,16 @@
         </div>
         <div class="page" id="page-notice" hidden>
             <div class="tabs" id="noticeTabs">
-                <button class="tab active" data-notice="download" type="button">下载</button>
-                <button class="tab" data-notice="upload" type="button">上传</button>
-                <button class="tab" data-notice="forward" type="button">转发</button>
+                <button class="tab active" data-notice="download" type="button"></button>
+                <button class="tab" data-notice="upload" type="button"></button>
+                <button class="tab" data-notice="forward" type="button"></button>
             </div>
             <div class="list notice-list" data-table="notice">
                 <div class="list-scroll">
                     <div class="list-head">
-                        <span><span class="htext">内容</span></span>
-                        <span><span class="htext">创建者</span></span>
-                        <span><span class="htext">时间</span></span>
+                        <span><span class="htext"></span></span>
+                        <span><span class="htext"></span></span>
+                        <span><span class="htext"></span></span>
                     </div>
                     <div id="notice"></div>
                 </div>
@@ -170,31 +170,31 @@
         <div class="page" id="page-storage" hidden>
             <div class="panel storage-disk">
                 <div class="disk-row disk-row-lead">
-                    <span class="disk-row-label">保存目录</span>
+                    <span class="disk-row-label"></span>
                     <span class="disk-row-path" id="storageDiskPath">—</span>
                 </div>
                 <div class="track track-lg disk-track">
                     <div class="fill" id="storageDiskFill"></div>
                 </div>
                 <div class="disk-legend">
-                    <span class="dot"></span><span>磁盘已用</span>
-                    <span class="dot dot-free"></span><span>磁盘可用</span>
+                    <span class="dot"></span><span></span>
+                    <span class="dot dot-free"></span><span></span>
                     <span class="disk-value" id="storageDiskValue">—</span>
                 </div>
                 <div class="disk-row disk-row-split">
-                    <span class="disk-row-label">缓存目录</span>
+                    <span class="disk-row-label"></span>
                     <span class="disk-row-path" id="storageCachePath">—</span>
                     <span class="disk-row-value" id="storageCacheValue">—</span>
                 </div>
             </div>
             <div class="tabs" id="storageTabs">
-                <button class="tab active" data-storage="download" type="button">下载</button>
-                <button class="tab" data-storage="upload" type="button">上传</button>
+                <button class="tab active" data-storage="download" type="button"></button>
+                <button class="tab" data-storage="upload" type="button"></button>
             </div>
             <div class="section-head">
-                <span class="gcount">共 <b id="badgeStorage">0</b> 条存储</span>
+                <span class="gcount"><span></span> <b id="badgeStorage">0</b> <span></span></span>
                 <div class="storage-pager" id="storagePager">
-                    <div class="pager-size">每页
+                    <div class="pager-size"><span></span>
                         <div class="pager-select" id="storagePageSize">
                             <button type="button" class="pager-select-btn" id="storagePageSizeBtn">
                                 <span class="pager-select-val" id="storagePageSizeVal">100</span>
@@ -206,28 +206,28 @@
                                 <button type="button" class="pager-select-opt" data-size="100">100</button>
                                 <button type="button" class="pager-select-opt" data-size="200">200</button>
                                 <button type="button" class="pager-select-opt" data-size="500">500</button>
-                                <button type="button" class="pager-select-opt" data-size="0">全部</button>
+                                <button type="button" class="pager-select-opt" data-size="0"></button>
                             </div>
                         </div>
                     </div>
-                    <button class="pager-btn" id="storagePrev" type="button" title="上一页">‹</button>
-                    <span class="pager-ind">第 <b class="pager-cur">1</b> / <b class="pager-total">1</b> 页</span>
-                    <button class="pager-btn" id="storageNext" type="button" title="下一页">›</button>
+                    <button class="pager-btn" id="storagePrev" type="button" title="">‹</button>
+                    <span class="pager-ind"><span></span><b class="pager-cur">1</b><span> / </span><b class="pager-total">1</b><span></span></span>
+                    <button class="pager-btn" id="storageNext" type="button" title="">›</button>
                     <span class="pager-meta" id="storagePagerMeta"></span>
                 </div>
-                <button class="toggle" id="toggleStorage" type="button">刷新</button>
+                <button class="toggle" id="toggleStorage" type="button"></button>
             </div>
             <div class="list list-storage" data-table="storage">
                 <div class="list-scroll">
                     <div class="list-head">
-                        <span><span class="htext">频道 / 消息</span></span>
-                        <span><span class="htext">文件</span></span>
-                        <span><span class="htext">链接</span></span>
-                        <span><span class="htext">大小</span></span>
-                        <span><span class="htext">消息ID</span></span>
-                        <span><span class="htext">类型</span></span>
-                        <span><span class="htext">状态</span></span>
-                        <span><span class="htext">时间</span></span>
+                        <span><span class="htext"></span></span>
+                        <span><span class="htext"></span></span>
+                        <span><span class="htext"></span></span>
+                        <span><span class="htext"></span></span>
+                        <span><span class="htext"></span></span>
+                        <span><span class="htext"></span></span>
+                        <span><span class="htext"></span></span>
+                        <span><span class="htext"></span></span>
                     </div>
                     <div id="storage"></div>
                 </div>
@@ -243,93 +243,94 @@
 <div class="modal-mask" id="supportModal" hidden>
     <div class="modal-card">
         <div class="modal-head">
-            <span class="modal-title">支持作者</span>
-            <button class="modal-close" id="supportClose" type="button" title="关闭">✖</button>
+            <span class="modal-title"></span>
+            <button class="modal-close" id="supportClose" type="button" title="">✖</button>
         </div>
-        <img class="modal-pay" src="img/pay.png" alt="收款码">
-        <div class="modal-tip">微信或支付宝扫码支持作者，您的支持是我持续更新的动力。</div>
+        <img class="modal-pay" src="img/pay.png" alt="">
+        <div class="modal-tip"></div>
     </div>
 </div>
 
 <div class="modal-mask" id="confirmModal" hidden>
     <div class="modal-card">
         <div class="modal-head">
-            <span class="modal-title" id="confirmTitle">确认操作</span>
-            <button class="modal-close" id="confirmClose" type="button" title="取消">✖</button>
+            <span class="modal-title" id="confirmTitle"></span>
+            <button class="modal-close" id="confirmClose" type="button" title="">✖</button>
         </div>
         <div class="modal-body" id="confirmText"></div>
         <div class="modal-foot">
-            <button class="modal-btn danger" id="confirmCancel" type="button">取消</button>
-            <button class="modal-btn" id="confirmOk" type="button">确定</button>
+            <button class="modal-btn danger" id="confirmCancel" type="button"></button>
+            <button class="modal-btn" id="confirmOk" type="button"></button>
         </div>
     </div>
 </div>
 <div class="modal-mask" id="loginModal" hidden>
     <div class="modal-card login-card">
         <div class="modal-head">
-            <span class="modal-title">需要登录</span>
+            <span class="modal-title"></span>
         </div>
         <div class="modal-body">
             <div class="login-row">
-                <label class="login-label" for="loginUser">账号：</label>
-                <input class="login-input trmd-input" id="loginUser" type="text" autocomplete="username" placeholder="请输入账号">
+                <label class="login-label" for="loginUser"></label>
+                <input class="login-input trmd-input" id="loginUser" type="text" autocomplete="username" placeholder="">
             </div>
             <div class="login-row">
-                <label class="login-label" for="loginPass">密码：</label>
-                <input class="login-input trmd-input" id="loginPass" type="password" autocomplete="current-password" placeholder="请输入密码">
+                <label class="login-label" for="loginPass"></label>
+                <input class="login-input trmd-input" id="loginPass" type="password" autocomplete="current-password" placeholder="">
             </div>
             <label class="login-remember">
                 <input id="loginRemember" type="checkbox" checked>
-                <span>30天内免登录</span>
+                <span></span>
             </label>
-            <button class="modal-btn login-submit" id="loginSubmit" type="button">登录</button>
+            <button class="modal-btn login-submit" id="loginSubmit" type="button"></button>
         </div>
     </div>
 </div>
 <div class="modal-mask" id="settingsModal" hidden>
     <div class="modal-card">
         <div class="modal-head">
-            <span class="modal-title">修改配置</span>
-            <button class="modal-close" id="settingsClose" type="button" title="关闭">✖</button>
+            <span class="modal-title"></span>
+            <button class="modal-close" id="settingsClose" type="button" title="">✖</button>
         </div>
         <div class="modal-body">
             <div class="cfg-block">
-                <div class="cfg-block-title">保存目录</div>
-                <input class="login-input trmd-input" id="saveDirInput" type="text" placeholder="支持通配符" autocomplete="off">
+                <div class="cfg-block-title"></div>
+                <input class="login-input trmd-input" id="saveDirInput" type="text" placeholder="" autocomplete="off">
             </div>
             <div class="cfg-block">
-                <div class="cfg-block-title">最大任务数</div>
+                <div class="cfg-block-title"></div>
                 <div class="cfg-grid">
                     <div class="cfg-item">
-                        <label class="login-label" for="maxDownload">下载</label>
+                        <label class="login-label" for="maxDownload"></label>
                         <input class="login-input trmd-input" id="maxDownload" type="number" min="1" max="10" step="1">
                     </div>
                     <div class="cfg-item">
-                        <label class="login-label" for="maxUpload">上传</label>
+                        <label class="login-label" for="maxUpload"></label>
                         <input class="login-input trmd-input" id="maxUpload" type="number" min="1" max="10" step="1">
                     </div>
                 </div>
             </div>
             <div class="cfg-block">
-                <div class="cfg-block-title">最大重试数</div>
+                <div class="cfg-block-title"></div>
                 <div class="cfg-grid">
                     <div class="cfg-item">
-                        <label class="login-label" for="maxRetryDownload">下载</label>
+                        <label class="login-label" for="maxRetryDownload"></label>
                         <input class="login-input trmd-input" id="maxRetryDownload" type="number" min="1" step="1">
                     </div>
                     <div class="cfg-item">
-                        <label class="login-label" for="maxRetryUpload">上传</label>
+                        <label class="login-label" for="maxRetryUpload"></label>
                         <input class="login-input trmd-input" id="maxRetryUpload" type="number" min="1" step="1">
                     </div>
                 </div>
             </div>
         </div>
         <div class="modal-foot">
-            <button class="modal-btn danger" id="saveDirCancel" type="button">取消</button>
-            <button class="modal-btn" id="saveDirApply" type="button">应用</button>
+            <button class="modal-btn danger" id="saveDirCancel" type="button"></button>
+            <button class="modal-btn" id="saveDirApply" type="button"></button>
         </div>
     </div>
 </div>
+<script src="js/jedGettextParser.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

@@ -2762,3 +2762,168 @@ msgstr "消息不存在,频道已解散或不在该频道中"
 
 msgid "Link parsing error"
 msgstr "链接解析错误"
+
+msgid "Idle · Waiting for tasks"
+msgstr "空闲 · 等待任务"
+
+msgid "Pause"
+msgstr "暂停"
+
+msgid "Disconnected from TRMD. Please check whether TRMD is still running."
+msgstr "已与TRMD断开连接，请确认TRMD是否仍在运行。"
+
+msgid "Buy proxy"
+msgstr "购买代理"
+
+msgid "Support author"
+msgstr "支持作者"
+
+msgid "More"
+msgstr "更多"
+
+msgid "Subscribe channel"
+msgstr "订阅频道"
+
+msgid "Video tutorial"
+msgstr "视频教程"
+
+msgid "Settings"
+msgstr "修改配置"
+
+msgid "Log out"
+msgstr "退出登录"
+
+msgid "Download"
+msgstr "下载"
+
+msgid "Listener"
+msgstr "监听"
+
+msgid "Notifications"
+msgstr "通知"
+
+msgid "Storage"
+msgstr "存储"
+
+msgid "Overall progress"
+msgstr "总进度"
+
+msgid "No speed"
+msgstr "暂无速度"
+
+msgid "tasks"
+msgstr "个任务"
+
+msgid "Collapse all"
+msgstr "全部折叠"
+
+msgid "Progress"
+msgstr "进度"
+
+msgid "Done / Total"
+msgstr "完成 / 总数"
+
+msgid "Speed"
+msgstr "速度"
+
+msgid "Remaining time"
+msgstr "剩余时间"
+
+msgid "Forward"
+msgstr "转发"
+
+msgid "Listening channel"
+msgstr "监听频道"
+
+msgid "Forwarding channel"
+msgstr "转发频道"
+
+msgid "Action"
+msgstr "操作"
+
+msgid "Creator"
+msgstr "创建者"
+
+msgid "Time"
+msgstr "时间"
+
+msgid "Disk used"
+msgstr "磁盘已用"
+
+msgid "Disk free"
+msgstr "磁盘可用"
+
+msgid "storage records"
+msgstr "条存储"
+
+msgid "Per page"
+msgstr "每页"
+
+msgid "All"
+msgstr "全部"
+
+msgid "Previous page"
+msgstr "上一页"
+
+msgid "Next page"
+msgstr "下一页"
+
+msgid "Page"
+msgstr "第"
+
+msgid "Refresh"
+msgstr "刷新"
+
+msgid "Channel / Message"
+msgstr "频道 / 消息"
+
+msgid "Message ID"
+msgstr "消息ID"
+
+msgid "Scan with WeChat or Alipay to support the author. Your support keeps this project going."
+msgstr "微信或支付宝扫码支持作者，您的支持是我持续更新的动力。"
+
+msgid "Confirm action"
+msgstr "确认操作"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "OK"
+msgstr "确定"
+
+msgid "Close"
+msgstr "关闭"
+
+msgid "Login required"
+msgstr "需要登录"
+
+msgid "Account:"
+msgstr "账号："
+
+msgid "Enter account"
+msgstr "请输入账号"
+
+msgid "Password:"
+msgstr "密码："
+
+msgid "Enter password"
+msgstr "请输入密码"
+
+msgid "Remember me for 30 days"
+msgstr "30天内免登录"
+
+msgid "Log in"
+msgstr "登录"
+
+msgid "Wildcards supported"
+msgstr "支持通配符"
+
+msgid "Max tasks"
+msgstr "最大任务数"
+
+msgid "Max retries"
+msgstr "最大重试数"
+
+msgid "Apply"
+msgstr "应用"

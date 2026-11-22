@@ -1,3 +1,136 @@
+var i18nCatalog = {};  // 当前语言的翻译字典,msgid -> 译文。
+
+// gettext 风格的查词函数:找不到译文时回退到 msgid 原文,保证不因翻译失败而报错。
+function _(msgid) {
+    var entry = i18nCatalog[msgid];
+    return (entry && entry[0]) || msgid;
+}
+
+// 加载并解析后端下发的 mo 二进制,完成后填充静态文案。
+function applyI18n() {
+    document.getElementById('statusText').textContent = _('Idle · Waiting for tasks');
+    document.querySelector('#btnPause .btn-label').textContent = _('Pause');
+    document.getElementById('offline').textContent = _('Disconnected from TRMD. Please check whether TRMD is still running.');
+
+    document.getElementById('linkProxySeller').innerHTML = '<span class="btn-emoji">🛒</span>' + _('Buy proxy');
+    document.getElementById('supportBtn').innerHTML = '<span class="btn-emoji support-icon">❤️</span>' + _('Support author');
+    document.getElementById('menuBtn').title = _('More');
+    document.getElementById('linkChannel').innerHTML = '<span class="menu-emoji">📌</span>' + _('Subscribe channel');
+    document.getElementById('linkVideo').innerHTML = '<span class="menu-emoji">🎬</span>' + _('Video tutorial');
+    document.getElementById('btnSettings').innerHTML = '<span class="menu-emoji">🔧</span>' + _('Settings');
+    document.getElementById('btnLogout').innerHTML = '<span class="menu-emoji">🚪</span>' + _('Log out');
+
+    document.querySelector('[data-section="download"]').textContent = _('Download');
+    document.querySelector('[data-section="upload"]').textContent = _('Upload');
+    document.querySelector('[data-section="listener"]').textContent = _('Listener');
+    document.querySelector('[data-section="notice"]').textContent = _('Notifications');
+    document.querySelector('[data-section="storage"]').textContent = _('Storage');
+
+    document.querySelector('#downloadSummary .label').textContent = _('Overall progress');
+    document.querySelector('#uploadSummary .label').textContent = _('Overall progress');
+    document.getElementById('overallExtra').textContent = _('No speed');
+    document.getElementById('uploadExtra').textContent = _('No speed');
+
+    document.querySelector('#page-download .gcount > span:first-child').textContent = _('In progress');
+    document.querySelector('#page-download .gcount > span:last-child').textContent = _('tasks');
+    document.getElementById('toggleAll').textContent = _('Collapse all');
+    document.querySelector('#headName .htext').textContent = _('Channel');
+    document.querySelector('#page-download .h-progress .htext').textContent = _('Progress');
+    document.querySelector('#headSize .htext').textContent = _('Done / Total');
+    document.querySelector('#page-download .h-speed .htext').textContent = _('Speed');
+    document.querySelector('#page-download .h-remain .htext').textContent = _('Remaining time');
+    document.querySelector('#page-download .h-status .htext').textContent = _('Status');
+
+    document.querySelector('#page-upload .gcount > span:first-child').textContent = _('In progress');
+    document.querySelector('#page-upload .gcount > span:last-child').textContent = _('tasks');
+    document.getElementById('toggleUpload').textContent = _('Collapse all');
+    document.querySelector('#page-upload .h-name .htext').textContent = _('Channel');
+    document.querySelector('#page-upload .h-progress .htext').textContent = _('Progress');
+    document.querySelector('#page-upload .h-size .htext').textContent = _('Done / Total');
+    document.querySelector('#page-upload .h-speed .htext').textContent = _('Speed');
+    document.querySelector('#page-upload .h-remain .htext').textContent = _('Remaining time');
+    document.querySelector('#page-upload .h-status .htext').textContent = _('Status');
+
+    document.querySelector('[data-listen="forward"]').textContent = _('Forward');
+    document.querySelector('[data-listen="download"]').textContent = _('Download');
+    document.querySelector('#listenForwardBox .list-head > span:nth-child(1) .htext').textContent = _('Listening channel');
+    document.querySelector('#listenForwardBox .list-head > span:nth-child(2) .htext').textContent = _('Forwarding channel');
+    document.querySelector('#listenForwardBox .list-head > span:nth-child(3) .htext').textContent = _('Action');
+    document.querySelector('#listenDownloadBox .list-head > span:nth-child(1) .htext').textContent = _('Listening channel');
+    document.querySelector('#listenDownloadBox .list-head > span:nth-child(2) .htext').textContent = _('Action');
+
+    document.querySelector('[data-notice="download"]').textContent = _('Download');
+    document.querySelector('[data-notice="upload"]').textContent = _('Upload');
+    document.querySelector('[data-notice="forward"]').textContent = _('Forward');
+    document.querySelector('#page-notice .list-head > span:nth-child(1) .htext').textContent = _('Content');
+    document.querySelector('#page-notice .list-head > span:nth-child(2) .htext').textContent = _('Creator');
+    document.querySelector('#page-notice .list-head > span:nth-child(3) .htext').textContent = _('Time');
+
+    document.querySelector('#page-storage .disk-row-lead .disk-row-label').textContent = _('Save directory');
+    document.querySelector('#page-storage .disk-legend > span:nth-child(2)').textContent = _('Disk used');
+    document.querySelector('#page-storage .disk-legend > span:nth-child(4)').textContent = _('Disk free');
+    document.querySelector('#page-storage .disk-row-split .disk-row-label').textContent = _('Cache directory');
+    document.querySelector('[data-storage="download"]').textContent = _('Download');
+    document.querySelector('[data-storage="upload"]').textContent = _('Upload');
+    document.querySelector('#page-storage .gcount > span:first-child').textContent = _('Total');
+    document.querySelector('#page-storage .gcount > span:last-child').textContent = _('storage records');
+    document.querySelector('#storagePager .pager-size > span').textContent = _('Per page');
+    document.querySelector('[data-size="0"]').textContent = _('All');
+    document.getElementById('storagePrev').title = _('Previous page');
+    document.getElementById('storageNext').title = _('Next page');
+    document.querySelector('#storagePager .pager-ind > span:first-child').textContent = _('Page') + ' ';
+    document.getElementById('toggleStorage').textContent = _('Refresh');
+    document.querySelector('#page-storage .list-head > span:nth-child(1) .htext').textContent = _('Channel / Message');
+    document.querySelector('#page-storage .list-head > span:nth-child(2) .htext').textContent = _('File');
+    document.querySelector('#page-storage .list-head > span:nth-child(3) .htext').textContent = _('Link');
+    document.querySelector('#page-storage .list-head > span:nth-child(4) .htext').textContent = _('Size');
+    document.querySelector('#page-storage .list-head > span:nth-child(5) .htext').textContent = _('Message ID');
+    document.querySelector('#page-storage .list-head > span:nth-child(6) .htext').textContent = _('Type');
+    document.querySelector('#page-storage .list-head > span:nth-child(7) .htext').textContent = _('Status');
+    document.querySelector('#page-storage .list-head > span:nth-child(8) .htext').textContent = _('Time');
+
+    document.querySelector('#supportModal .modal-title').textContent = _('Support author');
+    document.getElementById('supportClose').title = _('Close');
+    document.querySelector('#supportModal .modal-pay').alt = _('Payment QR code');
+    document.querySelector('#supportModal .modal-tip').textContent = _('Scan with WeChat or Alipay to support the author. Your support keeps this project going.');
+    document.getElementById('confirmTitle').textContent = _('Confirm action');
+    document.getElementById('confirmClose').title = _('Cancel');
+    document.getElementById('confirmCancel').textContent = _('Cancel');
+    document.getElementById('confirmOk').textContent = _('OK');
+
+    document.querySelector('#loginModal .modal-title').textContent = _('Login required');
+    document.querySelector('label[for="loginUser"]').textContent = _('Account:');
+    document.getElementById('loginUser').placeholder = _('Enter account');
+    document.querySelector('label[for="loginPass"]').textContent = _('Password:');
+    document.getElementById('loginPass').placeholder = _('Enter password');
+    document.querySelector('#loginModal .login-remember span').textContent = _('Remember me for 30 days');
+    document.getElementById('loginSubmit').textContent = _('Log in');
+
+    document.querySelector('#settingsModal .modal-title').textContent = _('Settings');
+    document.getElementById('settingsClose').title = _('Close');
+    document.querySelector('#settingsModal .cfg-block:nth-of-type(1) .cfg-block-title').textContent = _('Save directory');
+    document.getElementById('saveDirInput').placeholder = _('Wildcards supported');
+    document.querySelector('#settingsModal .cfg-block:nth-of-type(2) .cfg-block-title').textContent = _('Max tasks');
+    document.querySelector('#settingsModal .cfg-block:nth-of-type(3) .cfg-block-title').textContent = _('Max retries');
+    document.querySelector('label[for="maxDownload"]').textContent = _('Download');
+    document.querySelector('label[for="maxUpload"]').textContent = _('Upload');
+    document.querySelector('label[for="maxRetryDownload"]').textContent = _('Download');
+    document.querySelector('label[for="maxRetryUpload"]').textContent = _('Upload');
+    document.getElementById('saveDirCancel').textContent = _('Cancel');
+    document.getElementById('saveDirApply').textContent = _('Apply');
+}
+
+fetch('/trmd.mo').then(function(response) {
+    return response.arrayBuffer();
+}).then(function(buffer) {
+    if (buffer.byteLength > 0) {
+        var parsed = jedGettextParser.mo.parse(buffer, {domain: 'trmd'});
+        i18nCatalog = parsed.trmd || {};
+    }
+}).catch(function() {
+    // 加载失败时 i18nCatalog 为空,_() 自动回退 msgid。
+}).then(applyI18n);
+
 const EMPTY_SUMMARY = {percent: 0, info: '0.00B / 0.00B', speed: '', remaining: ''};
 var connectionStatus = '';  // 后端下发的连接状态文本,拼接在总进度 extra 之后。
 
@@ -680,7 +813,7 @@ function renderStatus() {
     // 这里只按真实活动判定,不把"已暂停"算作忙碌,否则空闲时按下暂停会误显示成绿色。
     document.body.classList.toggle('busy', !!(lastDownloadActive || lastUploadActive || lastListenCount));
     document.getElementById('dot').className = active ? 'dot active' : 'dot';
-    document.getElementById('statusText').textContent = active ? parts.join(' · ') : '空闲 · 等待任务';
+    document.getElementById('statusText').textContent = active ? parts.join(' · ') : _('Idle · Waiting for tasks');
 }
 
 function renderList(data) {

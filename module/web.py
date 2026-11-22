@@ -37,7 +37,11 @@ from module import (
     VERSION_WITH_COMMIT
 )
 from module.remote import rc
-from module.language import _
+from module.language import (
+    _,
+    lang,
+    Language
+)
 from module.notice import NoticeHub
 from module.parser import PARSE_ARGS
 from module.path_tool import split_path
@@ -92,6 +96,9 @@ class WebHandler(BaseHTTPRequestHandler):
     HAS_STORAGE_PLACEHOLDER: bytes = b'__HAS_STORAGE__'  # 记录数据库是否可用,前端据此展示记录侧边栏。
 
     def do_GET(self) -> None:  # noqa.
+        if self.path.startswith('/trmd.mo'):
+            self.__response_mo()
+            return
         if self.path.startswith('/api/'):
             # 接口需要认证;页面与静态资源放行,否则登录卡片自身无法加载。
             if self.__check_auth() is False:  # noqa.
@@ -253,6 +260,20 @@ class WebHandler(BaseHTTPRequestHandler):
             self.wfile.write(body)
         except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError) as e:
             log.info(_('Response write aborted by client due to "{error}"').format(error=e))
+
+    def __response_mo(self) -> None:
+        """返回当前语言的翻译二进制,前端解析后用于界面文案。文件缺失时返回空内容由前端回退。"""
+        body: bytes = b''
+        if lang.language != Language.DEFAULT:
+            mo_path: str = os.path.join(Language.LOCALE_DIRECTORY, lang.language, 'LC_MESSAGES', 'trmd.mo')
+            try:
+                with open(file=mo_path, mode='rb') as f:
+                    body = f.read()
+            except OSError as e:
+                log.warning(_('Failed to read web file "{file_path}" due to "{error}"').format(
+                    file_path=mo_path, error=e
+                ))
+        self.__response_body(body=body, content_type='application/octet-stream')
 
     def __response_progress(self) -> None:
         """返回进度数据的JSON。"""
