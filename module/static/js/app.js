@@ -308,7 +308,7 @@ function groupStatCells(stat) {
 function taskRow(task) {
     var done = task.percent >= 100;
     // 传输中的任务在全局暂停时改显"已暂停",速度栏由speedText统一显示为破折号。
-    var statusText = done ? '已完成' : (lastPaused ? '已暂停' : '下载中');
+    var statusText = done ? _('Success') : (lastPaused ? '已暂停' : '下载中');
     var statusClass = done ? 'status-done' : (lastPaused ? 'status-paused' : 'status-running');
     // data-task-id 供"列表结构未变时就地更新进度",避免每秒整表重建。
     return '<div class="task-row" data-task-id="' + escAttr(task.id) + '">' +
