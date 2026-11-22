@@ -2854,10 +2854,10 @@ function renderUpload(uploads) {
     renderOverall(uploadSummary(uploads), count.active, SUMMARY_IDS.upload);
     lastUploadFinished = count.success + count.failure;
     renderStat('uploadStat', [
-        statCell('成功', count.success, 'ok', 'success', 'upload'),
-        statCell('失败', count.failure, 'bad', 'failure', 'upload'),
-        statCell('上传中', count.uploading, 'status-running', 'uploading', 'upload'),
-        statCell('队列', count.pending, 'queue', 'pending', 'upload')
+        statCell(_('Success'), count.success, 'ok', 'success', 'upload'),
+        statCell(_('Failure'), count.failure, 'bad', 'failure', 'upload'),
+        statCell(_('Uploading'), count.uploading, 'status-running', 'uploading', 'upload'),
+        statCell(_('Pending'), count.pending, 'queue', 'pending', 'upload')
     ]);
     return count.active;
 }
@@ -3003,11 +3003,11 @@ function render(data, force) {
     if (currentSection === 'download') {
         renderOverall(data.summary, downloads, SUMMARY_IDS.download);
         renderStat('stat', [
-            statCell('成功', data.count.success, 'ok', 'success', 'download'),
-            statCell('失败', data.count.failure, 'bad', 'failure', 'download'),
-            statCell('跳过', data.count.skip, 'skip', 'skip', 'download'),
-            statCell('下载中', downloads, 'status-running', 'active', 'download'),
-            statCell('队列', countQueueMembers(data.links), 'queue', 'queue', 'download')
+            statCell(_('Success'), data.count.success, 'ok', 'success', 'download'),
+            statCell(_('Failure'), data.count.failure, 'bad', 'failure', 'download'),
+            statCell(_('Skip'), data.count.skip, 'skip', 'skip', 'download'),
+            statCell(_('Downloading'), downloads, 'status-running', 'active', 'download'),
+            statCell(_('Pending'), countQueueMembers(data.links), 'queue', 'queue', 'download')
         ]);
     }
     lastUploadActive = renderUpload(data.uploads || []);
