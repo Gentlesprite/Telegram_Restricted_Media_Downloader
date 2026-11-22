@@ -1443,7 +1443,7 @@ function goStoragePage(delta) {
 function applyPageSizeLabel(size) {
     var valEl = document.getElementById('storagePageSizeVal');
     if (valEl) {
-        valEl.textContent = size === 0 ? '全部' : String(size);
+        valEl.textContent = size === 0 ? _('All') : String(size);
     }
     var pop = document.getElementById('storagePageSizePop');
     if (pop) {
@@ -2349,7 +2349,7 @@ var confirmResolve = null;
 
 function askConfirm(text, title) {
     return new Promise(function (resolve) {
-        document.getElementById('confirmTitle').textContent = title || '确认操作';
+        document.getElementById('confirmTitle').textContent = title || _('Confirm action');
         document.getElementById('confirmText').textContent = text || '';
         confirmResolve = resolve;
         document.getElementById('confirmModal').hidden = false;
@@ -2575,7 +2575,7 @@ async function removeListener(kind, link) {
         });
         var data = await res.json();
         if (!data.status) {
-            window.alert('移除失败:' + (data.e_code || '未知错误。'));
+            window.alert('移除失败:' + (data.e_code || _('Unknown error.')));
         }
     } catch (e) {
         window.alert('移除失败:无法连接程序。');
@@ -2593,7 +2593,7 @@ async function setPause(paused) {
         });
         var data = await res.json();
         if (!data.status) {
-            window.alert('操作失败:' + (data.e_code || '未知错误。'));
+            window.alert('操作失败:' + (data.e_code || _('Unknown error.')));
         }
     } catch (e) {
         window.alert('操作失败:无法连接程序。');
