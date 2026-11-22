@@ -1270,25 +1270,25 @@ msgid "Successful download"
 msgstr "成功下载"
 
 msgid "Config file save failed, please retry later."
-msgstr "配置文件保存失败，请稍后重试"
+msgstr "配置文件保存失败,请稍后重试。"
 
 msgid "Save directory invalid."
-msgstr "保存目录无效"
+msgstr "保存目录无效。"
 
-msgid "Must be greater than 0."
-msgstr "必须大于0"
+msgid "{name} must be greater than 0."
+msgstr "{name}必须大于0。"
 
 msgid "Concurrency"
 msgstr "并发数"
 
 msgid "Config not loaded, cannot modify."
-msgstr "配置未加载，无法修改"
+msgstr "配置未加载,无法修改。"
 
 msgid "Save directory is not a valid directory."
-msgstr "保存目录不是一个有效的目录"
+msgstr "保存目录不是一个有效的目录。"
 
 msgid "Save directory cannot be empty."
-msgstr "保存目录不能为空"
+msgstr "保存目录不能为空。"
 
 msgid "Downloader not running, cannot pause."
 msgstr "下载器未运行，无法暂停。"
@@ -1316,9 +1316,6 @@ msgstr "未分组"
 
 msgid "Web panel not ready."
 msgstr "网页面板未就绪。"
-
-msgid "Web panel not ready"
-msgstr "网页面板未就绪"
 
 msgid "Download type settings failed.\n(See the terminal for details)"
 msgstr "下载类型设置失败\n(具体原因请前往终端查看报错信息)"
@@ -1389,8 +1386,8 @@ msgstr "跳过下载"
 msgid "Failed download"
 msgstr "失败下载"
 
-msgid "Must be an integer between 1 and 10."
-msgstr "必须为1到10之间的整数"
+msgid "{name} must be an integer between 1 and 10."
+msgstr "{name}必须是1到10之间的整数。"
 
 msgid "📲The following links are created `listen forward` channels:\n"
 msgstr "📲以下链接为已创建的`监听转发`频道:\n"
@@ -1884,11 +1881,11 @@ msgstr "网页面板已启动,链接:\"{protocol}://{ip}:{port}\"。"
 msgid "Runtime config modified successfully, save directory: \"{save_dir}\", download concurrency: \"{download_tasks}\", upload concurrency: \"{upload_tasks}\", download retries: \"{download_retries}\", upload retries: \"{upload_retries}\"."
 msgstr "运行时修改配置文件成功,保存目录:\"{save_dir}\",下载并发数:\"{download_tasks}\",上传并发数:\"{upload_tasks}\",下载重试次数:\"{download_retries}\",上传重试次数:\"{upload_retries}\"。"
 
-msgid "Path contains invalid characters: {chars}"
-msgstr "路径包含非法字符：{chars}"
+msgid "Path contains invalid characters: {chars}."
+msgstr "路径包含非法字符:{chars}。"
 
-msgid "Directory \"{directory}\" does not exist, create it"
-msgstr "目录\"{directory}\"不存在，是否创建"
+msgid "Directory \"{directory}\" does not exist. Create it?"
+msgstr "目录\"{directory}\"不存在,是否创建?"
 
 msgid "Response write aborted by client due to \"{error}\""
 msgstr "响应写入被客户端中止,原因:\"{error}\""
@@ -1932,8 +1929,8 @@ msgstr "回写网页记录频道标题失败,原因:\"{error}\""
 msgid "Failed to remove listener due to \"{error}\""
 msgstr "移除监听失败,原因:\"{error}\""
 
-msgid "{name} must be an integer"
-msgstr "{name}必须是整数"
+msgid "{name} must be an integer."
+msgstr "{name}必须是整数。"
 
 msgid "Directory invalid or cannot be created due to \"{error}\""
 msgstr "目录无效或无法创建,原因:\"{error}\""
@@ -3022,7 +3019,16 @@ msgid "No changes were made."
 msgstr "未做任何修改。"
 
 msgid "{fields} were modified elsewhere. Applying your changes will overwrite them. Continue?"
-msgstr "{fields}已在别处被修改,应用将覆盖该改动,是否继续？"
+msgstr "{fields}已在别处被修改,应用将覆盖该改动,是否继续?"
 
 msgid "Configuration applied."
 msgstr "配置已生效。"
+
+msgid "The directory does not exist. Create it?"
+msgstr "目录不存在,是否创建?"
+
+msgid "Configuration update failed."
+msgstr "配置更新失败。"
+
+msgid "Request failed due to \"{error}\""
+msgstr "请求失败,原因:\"{error}\""

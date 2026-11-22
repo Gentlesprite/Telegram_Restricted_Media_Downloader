@@ -3329,7 +3329,7 @@ async function applyConfig() {
         /* 保存目录不存在时后端不创建、不落盘,先回来请求二次确认:
            取消则什么都不改;确定则带confirm_directory重新提交,由后端创建目录再保存。 */
         if (data.need_confirm) {
-            var ok = await askConfirm((data.e_code || '目录不存在，是否创建') + '。', _('Settings'));
+            var ok = await askConfirm(data.e_code || _('The directory does not exist. Create it?'), _('Settings'));
             if (!ok) {
                 return;
             }
@@ -3352,7 +3352,7 @@ async function applyConfig() {
             data = await res.json();
         }
         if (!data.status) {
-            await askAlert((data.e_code || '配置更新失败') + '。', _('Settings'));
+            await askAlert(data.e_code || _('Configuration update failed.'), _('Settings'));
             return;
         }
         if (dirChanged && lastSnapshot) {
@@ -3373,7 +3373,7 @@ async function applyConfig() {
         };
         await askAlert(_('Configuration applied.'), _('Settings'));
     } catch (e) {
-        await askAlert('请求失败：' + e + '。', _('Settings'));
+        await askAlert(_('Request failed due to "{error}"').replace('{error}', e), _('Settings'));
     }
 }
 

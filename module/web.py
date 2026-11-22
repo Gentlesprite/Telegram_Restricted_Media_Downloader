@@ -347,7 +347,7 @@ class WebHandler(BaseHTTPRequestHandler):
         web: Union[Web, None] = getattr(self.server, 'web', None)
         payload: dict = self.__read_json()
         if web is None:
-            body: dict = {'status': False, 'e_code': _('Web panel not ready')}  # 末尾句号由前端统一补。
+            body: dict = {'status': False, 'e_code': _('Web panel not ready.')}
         else:
             body: dict = web.set_config(
                 directory=payload.get('save_directory'),
@@ -1014,13 +1014,13 @@ class Web:
         try:
             result: dict = {'download': int(values.get('download')), 'upload': int(values.get('upload'))}
         except (AttributeError, TypeError, ValueError):
-            error_parts.append(_('{name} must be an integer').format(name=name))
+            error_parts.append(_('{name} must be an integer.').format(name=name))
             return None
         if result['download'] < lower or result['upload'] < lower:
-            error_parts.append(f'{name}{range_text}')
+            error_parts.append(range_text.format(name=name))
             return None
         if upper is not None and (result['download'] > upper or result['upload'] > upper):
-            error_parts.append(f'{name}{range_text}')
+            error_parts.append(range_text.format(name=name))
             return None
         return result
 
@@ -1049,7 +1049,7 @@ class Web:
         drive, tail = os.path.splitdrive(clean_path)
         invalid: list = [c for c in '<>:"|?*' if c in tail]
         if invalid:
-            return {'status': False, 'e_code': _('Path contains invalid characters: {chars}').format(
+            return {'status': False, 'e_code': _('Path contains invalid characters: {chars}.').format(
                 chars='、'.join(sorted(set(invalid)))
             )}
         if os.path.isdir(clean_path):
@@ -1127,16 +1127,16 @@ class Web:
             confirm_directory: 目录不存在时是否已确认创建(False则先返回need_confirm由前端二次确认)。
 
         Returns:
-            dict: status为是否成功,失败时e_code为失败原因(多项问题时以全角分号分隔);
+            dict: status为是否成功,失败时e_code为失败原因(多项问题时以换行分隔);
                 目录待确认时额外返回need_confirm为True。
         """
         if self.app is None:
-            return {'status': False, 'e_code': _('Config not loaded, cannot modify.')}  # 末尾句号由前端统一补。
+            return {'status': False, 'e_code': _('Config not loaded, cannot modify.')}
         error_parts: list = []
         need_confirm: bool = False  # 目录不存在;待其它错误都排除后再请求前端二次确认。
-        tasks = self.__check_number_pair(max_tasks, 1, 10, _('Concurrency'), _('Must be an integer between 1 and 10.'),
+        tasks = self.__check_number_pair(max_tasks, 1, 10, _('Concurrency'), _('{name} must be an integer between 1 and 10.'),
                                          error_parts)
-        retries = self.__check_number_pair(max_retries, 1, None, _('Retry times'), _('Must be greater than 0.'),
+        retries = self.__check_number_pair(max_retries, 1, None, _('Retry times'), _('{name} must be greater than 0.'),
                                            error_parts)
         if directory is not None:
             checked: dict = self.__check_save_directory(directory, allow_create=confirm_directory)
@@ -1146,11 +1146,11 @@ class Web:
                 error_parts.append(checked.get('e_code') or _('Save directory invalid.'))
         if error_parts:
             # 存在不合法的项:先让用户改正,此时不提示创建目录(有一项不合法就一项都不改)。
-            return {'status': False, 'e_code': '；'.join(error_parts)}
+            return {'status': False, 'e_code': '\n'.join(error_parts)}
         if need_confirm:
             # 其它项均合法,仅目录不存在:此时不落盘、不创建,交回前端二次确认后再提交。
             return {'status': False, 'need_confirm': True,
-                    'e_code': _('Directory "{directory}" does not exist, create it').format(
+                    'e_code': _('Directory "{directory}" does not exist. Create it?').format(
                         directory=directory
                     )}
         save_config: dict = copy.deepcopy(self.app.config)  # 先在副本上改动:落盘失败时原配置不受影响。
@@ -1161,7 +1161,7 @@ class Web:
         if retries is not None:
             save_config['max_retries'] = retries
         if not self.app.save_config(save_config):  # 多项改动合并后,整个请求只在这里写一次配置文件。
-            return {'status': False, 'e_code': _('Config file save failed, please retry later.')}  # 末尾句号由前端统一补。
+            return {'status': False, 'e_code': _('Config file save failed, please retry later.')}
         self.app.config = save_config
         if directory is not None:
             self.app.save_directory = directory
