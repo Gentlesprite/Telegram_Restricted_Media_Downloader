@@ -3005,3 +3005,24 @@ msgstr "没有符合筛选条件的上传记录。"
 
 msgid "No matching values."
 msgstr "无匹配值。"
+
+msgid "Download concurrency must be an integer between 1 and 10."
+msgstr "下载并发数必须是1到10之间的整数。"
+
+msgid "Upload concurrency must be an integer between 1 and 10."
+msgstr "上传并发数必须是1到10之间的整数。"
+
+msgid "Download retry count must be greater than 0."
+msgstr "下载重试次数必须大于0。"
+
+msgid "Upload retry count must be greater than 0."
+msgstr "上传重试次数必须大于0。"
+
+msgid "No changes were made."
+msgstr "未做任何修改。"
+
+msgid "{fields} were modified elsewhere. Applying your changes will overwrite them. Continue?"
+msgstr "{fields}已在别处被修改,应用将覆盖该改动,是否继续？"
+
+msgid "Configuration applied."
+msgstr "配置已生效。"

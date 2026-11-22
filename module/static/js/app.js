@@ -3209,17 +3209,17 @@ function checkConfigConflict(dirChanged, tasksChanged, retriesChanged, lastSnaps
     var conflictParts = [];
     if (dirChanged && lastSnapshot && settingsOriginal
         && (lastSnapshot.save_directory || '') !== settingsOriginal.save_directory) {
-        conflictParts.push('保存目录');
+        conflictParts.push(_('Save directory'));
     }
     if (tasksChanged && lastSnapshot && lastSnapshot.max_tasks && settingsOriginal
         && (lastSnapshot.max_tasks.download !== settingsOriginal.max_tasks.download
             || lastSnapshot.max_tasks.upload !== settingsOriginal.max_tasks.upload)) {
-        conflictParts.push('并发数');
+        conflictParts.push(_('Concurrency'));
     }
     if (retriesChanged && lastSnapshot && lastSnapshot.max_retries && settingsOriginal
         && (lastSnapshot.max_retries.download !== settingsOriginal.max_retries.download
             || lastSnapshot.max_retries.upload !== settingsOriginal.max_retries.upload)) {
-        conflictParts.push('重试次数');
+        conflictParts.push(_('Retry times'));
     }
     return conflictParts;
 }
@@ -3259,7 +3259,7 @@ async function applyConfig() {
     var dirInput = document.getElementById('saveDirInput');
     var path = (dirInput.value || '').trim();
     if (!path) {
-        await askAlert('保存目录不能为空。', '修改配置');
+        await askAlert(_('Save directory cannot be empty.'), _('Settings'));
         return;
     }
     var maxTasks = {download: numVal('maxDownload'), upload: numVal('maxUpload')};
@@ -3267,19 +3267,19 @@ async function applyConfig() {
     /* 字段级校验:用户改了哪个就只提示哪个;多个都有问题时再一起提示。 */
     var _errParts = [];
     if (maxTasks.download === null || maxTasks.download < 1 || maxTasks.download > 10) {
-        _errParts.push('下载并发数必须是1到10之间的整数');
+        _errParts.push(_('Download concurrency must be an integer between 1 and 10.'));
     }
     if (maxTasks.upload === null || maxTasks.upload < 1 || maxTasks.upload > 10) {
-        _errParts.push('上传并发数必须是1到10之间的整数');
+        _errParts.push(_('Upload concurrency must be an integer between 1 and 10.'));
     }
     if (maxRetries.download === null || maxRetries.download < 1) {
-        _errParts.push('下载重试次数必须大于0');
+        _errParts.push(_('Download retry count must be greater than 0.'));
     }
     if (maxRetries.upload === null || maxRetries.upload < 1) {
-        _errParts.push('上传重试次数必须大于0');
+        _errParts.push(_('Upload retry count must be greater than 0.'));
     }
     if (_errParts.length) {
-        await askAlert(_errParts.join('，') + '。', '修改配置');
+        await askAlert(_errParts.join('\n'), _('Settings'));
         return;
     }
     /* 只提交真正改动的项:未改动的接口不再请求(后端就不会重复写配置),
@@ -3292,7 +3292,7 @@ async function applyConfig() {
         || settingsOriginal.max_retries.download !== maxRetries.download
         || settingsOriginal.max_retries.upload !== maxRetries.upload;
     if (!dirChanged && !tasksChanged && !retriesChanged) {
-        await askAlert('未做任何修改。', '修改配置');
+        await askAlert(_('No changes were made.'), _('Settings'));
         return;
     }
     try {
@@ -3301,7 +3301,7 @@ async function applyConfig() {
         var conflictParts = checkConfigConflict(dirChanged, tasksChanged, retriesChanged, lastSnapshot, settingsOriginal);
         if (conflictParts.length) {
             var goon = await askConfirm(
-                conflictParts.join('、') + '已在别处被修改，应用将覆盖该改动，是否继续？', '修改配置');
+                _('{fields} were modified elsewhere. Applying your changes will overwrite them. Continue?').replace('{fields}', conflictParts.join(', ')), _('Settings'));
             if (!goon) {
                 syncSettingsFromSnapshot();
                 return;
@@ -3329,7 +3329,7 @@ async function applyConfig() {
         /* 保存目录不存在时后端不创建、不落盘,先回来请求二次确认:
            取消则什么都不改;确定则带confirm_directory重新提交,由后端创建目录再保存。 */
         if (data.need_confirm) {
-            var ok = await askConfirm((data.e_code || '目录不存在，是否创建') + '。', '修改配置');
+            var ok = await askConfirm((data.e_code || '目录不存在，是否创建') + '。', _('Settings'));
             if (!ok) {
                 return;
             }
@@ -3337,7 +3337,7 @@ async function applyConfig() {
             conflictParts = checkConfigConflict(dirChanged, tasksChanged, retriesChanged, lastSnapshot, settingsOriginal);
             if (conflictParts.length) {
                 var goon2 = await askConfirm(
-                    conflictParts.join('、') + '已在别处被修改，应用将覆盖该改动，是否继续？', '修改配置');
+                    _('{fields} were modified elsewhere. Applying your changes will overwrite them. Continue?').replace('{fields}', conflictParts.join(', ')), _('Settings'));
                 if (!goon2) {
                     syncSettingsFromSnapshot();
                     return;
@@ -3352,7 +3352,7 @@ async function applyConfig() {
             data = await res.json();
         }
         if (!data.status) {
-            await askAlert((data.e_code || '配置更新失败') + '。', '修改配置');
+            await askAlert((data.e_code || '配置更新失败') + '。', _('Settings'));
             return;
         }
         if (dirChanged && lastSnapshot) {
@@ -3371,9 +3371,9 @@ async function applyConfig() {
             max_tasks: {download: maxTasks.download, upload: maxTasks.upload},
             max_retries: {download: maxRetries.download, upload: maxRetries.upload}
         };
-        await askAlert('配置已生效。', '修改配置');
+        await askAlert(_('Configuration applied.'), _('Settings'));
     } catch (e) {
-        await askAlert('请求失败：' + e + '。', '修改配置');
+        await askAlert('请求失败：' + e + '。', _('Settings'));
     }
 }
 
