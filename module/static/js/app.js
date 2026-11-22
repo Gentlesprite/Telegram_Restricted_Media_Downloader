@@ -160,11 +160,11 @@ var LISTEN_TABS = ['forward', 'download'];  // 监听页的选项卡:转发、�
 var NOTICE_TABS = ['download', 'upload', 'forward'];  // 通知页的选项卡:下载、上传、转发。
 
 var STATE_TEXT = {
-    pending: '队列中',  // 排队中,尚未开始处理(对应后端 DownloadStatus.PENDING)。
-    downloading: '下载中',
-    success: '已完成',
-    skip: '已跳过',
-    failure: '失败'
+    pending: 'Pending',  // 排队中,尚未开始处理(对应后端 DownloadStatus.PENDING)。
+    downloading: 'Downloading',
+    success: 'Success',
+    skip: 'Skip',
+    failure: 'Failure'
 };
 var STATE_CLASS = {
     pending: 'status-pending',
@@ -186,11 +186,11 @@ var SIZE_LABELS = ['完成 / 总数', '完成 / 总数', '数量 / 大小'];  //
 var UPLOAD_HEAD_NAME = ['频道', '频道 / 文件路径'];  // 上传页只有频道与文件两级。
 var UPLOAD_HEAD_SIZE = ['完成 / 总数', '大小'];
 var UPLOAD_TEXT = {
-    pending: '队列中',
-    uploading: '上传中',
-    success: '已完成',
-    sent: '已完成',
-    failure: '失败'
+    pending: 'Pending',
+    uploading: 'Uploading',
+    success: 'Success',
+    sent: 'Sent',
+    failure: 'Failure'
 };
 var UPLOAD_CLASS = {
     pending: 'status-pending',
@@ -324,7 +324,7 @@ function taskRow(task) {
 
 function memberRow(item) {
     var state = item.state || 'pending';
-    var text = STATE_TEXT[state] || '队列中';
+    var text = _(STATE_TEXT[state] || 'Pending');
     var cls = STATE_CLASS[state] || 'status-pending';
     var progress;
     if (state === 'success') {
@@ -959,9 +959,9 @@ var STORAGE_EMPTY_TEXT = {
 };
 var currentStorage = 'download';
 var STORAGE_TEXT = {
-    success: '成功',
-    skip: '已跳过',
-    failure: '失败'
+    success: 'Success',
+    skip: 'Skip',
+    failure: 'Failure'
 };
 var STORAGE_CLASS = {
     success: 'status-done',
@@ -1189,7 +1189,7 @@ function memberLink(rec) {
 
 function storageRowCells(item, row, position, groupStart) {
     var state = item.state || '';
-    var text = STORAGE_TEXT[state] || item.status || '—';
+    var text = STORAGE_TEXT[state] ? _(STORAGE_TEXT[state]) : (item.status || '—');
     var cls = STORAGE_CLASS[state] || 'status-done';
     var extra = (groupStart ? ' group-start' : '') + (position % 2 ? ' alt' : '');
     var cells = '';
@@ -1552,7 +1552,7 @@ function storageFilterValue(rec, key) {
         return rec.type || '';
     }
     if (key === 'state') {
-        return STORAGE_TEXT[rec.state] || rec.status || '';
+        return STORAGE_TEXT[rec.state] ? _(STORAGE_TEXT[rec.state]) : (rec.status || '');
     }
     if (key === 'time') {
         return rec.time || '';
@@ -2730,7 +2730,7 @@ function uploadCount(tasks) {
 
 function uploadRow(file) {
     var state = file.state || 'pending';
-    var text = UPLOAD_TEXT[state] || '队列中';
+    var text = _(UPLOAD_TEXT[state] || 'Pending');
     var cls = UPLOAD_CLASS[state] || 'status-pending';
     // 传输中的文件在全局暂停时改显"已暂停",其余状态保持原样。
     if (lastPaused && state === 'uploading') {
