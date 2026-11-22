@@ -2927,3 +2927,6 @@ msgstr "最大重试数"
 
 msgid "Apply"
 msgstr "应用"
+
+msgid "File path"
+msgstr "文件路径"

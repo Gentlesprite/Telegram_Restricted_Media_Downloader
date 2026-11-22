@@ -974,8 +974,8 @@ var STORAGE_ICON = {
 };
 var STORAGE_UPLOAD_LINK = '本地上传';  // 上传存储没有下载链接,链接列统一显示该文案。
 var STORAGE_HEADERS = {
-    download: ['频道 / 消息', '文件', '链接', '大小', '消息ID', '类型', '状态', '时间'],
-    upload:   ['频道', '文件路径', '大小', '类型', '状态', '时间']
+    download: ['Channel / Message', 'File', 'Link', 'Size', 'Message ID', 'Type', 'Status', 'Time'],
+    upload:   ['Channel', 'File path', 'Size', 'Type', 'Status', 'Time']
 };
 var STORAGE_COLS = {
     download: '150px minmax(200px, 1fr) 200px 100px 90px 90px 90px 150px',
@@ -1070,7 +1070,7 @@ function applyStorageLayout() {
     var html = '';
     for (var i = 0; i < headers.length; i++) {
         var active = cols[i] && storageFilters[currentStorage][cols[i].key] ? ' active' : '';
-        html += '<span><span class="htext">' + esc(headers[i]) + '</span>' +
+        html += '<span><span class="htext">' + esc(_(headers[i])) + '</span>' +
             '<button type="button" class="hfilter' + active + '" data-filter="' + cols[i].key + '" title="筛选">' +
             STORAGE_FILTER_ICONS + '</button></span>';
     }
