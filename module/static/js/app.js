@@ -709,7 +709,7 @@ function statCell(label, value, cls, filter, scope) {
     var active = statFilter[scope] === filter;
     return '<div class="' + (active ? 'active ' : '') + '"' +
         ' data-filter="' + filter + '" data-scope="' + scope + '"' +
-        ' title="点击' + (active ? '取消筛选' : '只查看' + label) + '">' +
+        ' title="' + (active ? _('Click to cancel filter') : _('Click to filter by {label}').replace('{label}', label)) + '">' +
         '<span>' + label + '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' +
         value + '</b></div>';
 }

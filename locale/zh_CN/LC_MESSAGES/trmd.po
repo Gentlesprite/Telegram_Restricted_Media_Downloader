@@ -2930,3 +2930,9 @@ msgstr "应用"
 
 msgid "File path"
 msgstr "文件路径"
+
+msgid "Click to cancel filter"
+msgstr "点击取消筛选"
+
+msgid "Click to filter by {label}"
+msgstr "点击只查看{label}"
