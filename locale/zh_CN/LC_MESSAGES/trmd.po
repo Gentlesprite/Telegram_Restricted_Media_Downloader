@@ -1881,8 +1881,8 @@ msgstr "网页面板已启动,链接:\"{protocol}://{ip}:{port}\"。"
 msgid "Runtime config modified successfully, save directory: \"{save_dir}\", download concurrency: \"{download_tasks}\", upload concurrency: \"{upload_tasks}\", download retries: \"{download_retries}\", upload retries: \"{upload_retries}\"."
 msgstr "运行时修改配置文件成功,保存目录:\"{save_dir}\",下载并发数:\"{download_tasks}\",上传并发数:\"{upload_tasks}\",下载重试次数:\"{download_retries}\",上传重试次数:\"{upload_retries}\"。"
 
-msgid "Path contains invalid characters: {chars}."
-msgstr "路径包含非法字符:{chars}。"
+msgid "Path contains invalid characters: \"{chars}\"."
+msgstr "路径包含非法字符:\"{chars}\"。"
 
 msgid "Directory \"{directory}\" does not exist. Create it?"
 msgstr "目录\"{directory}\"不存在,是否创建?"

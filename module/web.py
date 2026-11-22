@@ -1049,7 +1049,7 @@ class Web:
         drive, tail = os.path.splitdrive(clean_path)
         invalid: list = [c for c in '<>:"|?*' if c in tail]
         if invalid:
-            return {'status': False, 'e_code': _('Path contains invalid characters: {chars}.').format(
+            return {'status': False, 'e_code': _('Path contains invalid characters: "{chars}".').format(
                 chars='、'.join(sorted(set(invalid)))
             )}
         if os.path.isdir(clean_path):
