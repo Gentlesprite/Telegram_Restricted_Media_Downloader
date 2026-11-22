@@ -2936,3 +2936,72 @@ msgstr "点击取消筛选"
 
 msgid "Click to filter by {label}"
 msgstr "点击只查看{label}"
+
+msgid "No download notifications."
+msgstr "暂无下载通知。"
+
+msgid "No upload notifications."
+msgstr "暂无上传通知。"
+
+msgid "No forwarding notifications."
+msgstr "暂无转发通知。"
+
+msgid "No successful downloads."
+msgstr "暂无成功的下载任务。"
+
+msgid "No failed downloads."
+msgstr "暂无失败的下载任务。"
+
+msgid "No skipped downloads."
+msgstr "暂无跳过的下载任务。"
+
+msgid "No downloads in progress."
+msgstr "暂无下载中的任务。"
+
+msgid "No queued downloads."
+msgstr "暂无队列中的下载任务。"
+
+msgid "No successful uploads."
+msgstr "暂无上传成功的任务。"
+
+msgid "No failed uploads."
+msgstr "暂无上传失败的任务。"
+
+msgid "No uploads in progress."
+msgstr "暂无上传中的任务。"
+
+msgid "No queued uploads."
+msgstr "暂无队列中的上传任务。"
+
+msgid "No download tasks."
+msgstr "暂无下载任务。"
+
+msgid "No upload tasks."
+msgstr "暂无上传任务。"
+
+msgid "No matching files."
+msgstr "没有符合条件的文件。"
+
+msgid "No forwarding listeners."
+msgstr "暂无监听转发。"
+
+msgid "No download listeners."
+msgstr "暂无监听下载。"
+
+msgid "No messages for this link."
+msgstr "该链接暂无消息。"
+
+msgid "No download records."
+msgstr "暂无下载存储。"
+
+msgid "No upload records."
+msgstr "暂无上传存储。"
+
+msgid "No download records match the filters."
+msgstr "没有符合筛选条件的下载记录。"
+
+msgid "No upload records match the filters."
+msgstr "没有符合筛选条件的上传记录。"
+
+msgid "No matching values."
+msgstr "无匹配值。"

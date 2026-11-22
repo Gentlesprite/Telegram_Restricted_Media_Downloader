@@ -213,9 +213,9 @@ var lastLinkCollapsed = true;  // 下载页链接层最后的手动选择,缺省
 var lastUploadCollapsed = false;  // 上传页频道层最后的手动选择,缺省展开以保持原有默认。
 var UNGROUPED_NAME = '未分组';
 var NOTICE_EMPTY_TEXT = {
-    download: '暂无下载通知。',
-    upload: '暂无上传通知。',
-    forward: '暂无转发通知。'
+    download: 'No download notifications.',
+    upload: 'No upload notifications.',
+    forward: 'No forwarding notifications.'
 };
 var currentSection = 'download';
 var currentListen = 'forward';
@@ -468,7 +468,7 @@ function linkBlock(link, live) {
         html += task ? taskRow(task) : memberRow(member);  // 下载中的成员直接复用进度条任务行。
     }
     if (members.length === 0) {
-        html += '<div class="more">该链接暂无消息。</div>';
+        html += '<div class="more">' + _('No messages for this link.') + '</div>';
     }
     return html + '</div></div>';
 }
@@ -688,17 +688,17 @@ var statFilter = {download: '', upload: ''};
 
 // 筛选后无匹配项时的空态文案,与统计卡片的筛选口径保持一致。
 var DOWNLOAD_EMPTY_TEXT = {
-    success: '暂无成功的下载任务。',
-    failure: '暂无失败的下载任务。',
-    skip: '暂无跳过的下载任务。',
-    active: '暂无下载中的任务。',
-    queue: '暂无队列中的下载任务。'
+    success: 'No successful downloads.',
+    failure: 'No failed downloads.',
+    skip: 'No skipped downloads.',
+    active: 'No downloads in progress.',
+    queue: 'No queued downloads.'
 };
 var UPLOAD_EMPTY_TEXT = {
-    success: '暂无上传成功的任务。',
-    failure: '暂无上传失败的任务。',
-    uploading: '暂无上传中的任务。',
-    pending: '暂无队列中的上传任务。'
+    success: 'No successful uploads.',
+    failure: 'No failed uploads.',
+    uploading: 'No uploads in progress.',
+    pending: 'No queued uploads.'
 };
 
 function statCell(label, value, cls, filter, scope) {
@@ -831,9 +831,9 @@ function renderList(data) {
        否则全部下载完成后 data.tasks 为空,已完成的成员会被空态整块隐藏,
        需新建任务才重新出现。 */
     // 处于筛选状态时,无匹配项应提示具体的筛选条件,而非笼统的"暂无下载任务。"。
-    var emptyText = '暂无下载任务。';
+    var emptyText = _('No download tasks.');
     if (statFilter.download) {
-        emptyText = DOWNLOAD_EMPTY_TEXT[statFilter.download] || emptyText;
+        emptyText = DOWNLOAD_EMPTY_TEXT[statFilter.download] ? _(DOWNLOAD_EMPTY_TEXT[statFilter.download]) : emptyText;
     }
     document.getElementById('download').innerHTML = html ? html : '<div class="empty">' + emptyText + '</div>';
     syncToggleAll();
@@ -864,12 +864,12 @@ function renderListeners(listeners) {
     for (i = 0; i < forward.length; i++) {
         html += listenRow('forward', forward[i].source, forward[i].target);
     }
-    document.getElementById('listenForward').innerHTML = html ? html : '<div class="empty">暂无监听转发。</div>';
+    document.getElementById('listenForward').innerHTML = html ? html : '<div class="empty">' + _('No forwarding listeners.') + '</div>';
     html = '';
     for (i = 0; i < download.length; i++) {
         html += listenRow('download', download[i]);
     }
-    document.getElementById('listenDownload').innerHTML = html ? html : '<div class="empty">暂无监听下载。</div>';
+    document.getElementById('listenDownload').innerHTML = html ? html : '<div class="empty">' + _('No download listeners.') + '</div>';
     return forward.length + download.length;
 }
 
@@ -911,7 +911,7 @@ function renderNotices(notices) {
         html += noticeRow(items[i]);
     }
     document.getElementById('notice').innerHTML = html ?
-        html : '<div class="empty">' + (NOTICE_EMPTY_TEXT[currentNotice] || NOTICE_EMPTY_TEXT.download) + '</div>';
+        html : '<div class="empty">' + _(NOTICE_EMPTY_TEXT[currentNotice] || NOTICE_EMPTY_TEXT.download) + '</div>';
 }
 
 function applyNoticeTab() {
@@ -954,8 +954,8 @@ var STORAGE_KEY = 'trmd_storage';  // 记录页选项卡的本地存储键。
 var STORAGE_POLL_INTERVAL_MS = 3000;  // 记录页的轮询间隔,比进度页稀疏,避免频繁查询数据库。
 
 var STORAGE_EMPTY_TEXT = {
-    download: '暂无下载存储。',
-    upload: '暂无上传存储。'
+    download: 'No download records.',
+    upload: 'No upload records.'
 };
 var currentStorage = 'download';
 var STORAGE_TEXT = {
@@ -1036,8 +1036,8 @@ var STORAGE_FILTER_ARG_LABEL = {  // 自定义条件输入框的占位符。
     date: '输入日期(YYYY-MM-DD)'
 };
 var STORAGE_FILTER_EMPTY = {  // 筛选后无结果时的空态文案。
-    download: '没有符合筛选条件的下载记录。',
-    upload: '没有符合筛选条件的上传记录。'
+    download: 'No download records match the filters.',
+    upload: 'No upload records match the filters.'
 };
 var STORAGE_FILTER_KEY = 'trmd_storage_filters';  // 筛选条件的本地存储键,刷新后仍生效。
 var FILTER_MB = 1024 * 1024;  // 大小列自定义条件按MB输入,保存时换算为字节与size_byte比较。
@@ -1381,8 +1381,8 @@ function renderStoragePage() {
         if (emptyKey !== lastStorageKey) {
             lastStorageKey = emptyKey;
             var emptyText = hasStorageFilter() ?
-                (STORAGE_FILTER_EMPTY[currentStorage] || STORAGE_FILTER_EMPTY.download) :
-                (STORAGE_EMPTY_TEXT[currentStorage] || STORAGE_EMPTY_TEXT.download);
+                _(STORAGE_FILTER_EMPTY[currentStorage] || STORAGE_FILTER_EMPTY.download) :
+                _(STORAGE_EMPTY_TEXT[currentStorage] || STORAGE_EMPTY_TEXT.download);
             body.innerHTML = '<div class="empty">' + emptyText + '</div>';
         }
         document.getElementById('badgeStorage').textContent = storageAll.length;
@@ -1872,7 +1872,7 @@ function buildStorageFilterPop() {
     html += '<label class="hfilter-item hfilter-all-item"><input type="checkbox" class="hfilter-all-box">' +
         '<span class="hfilter-label">(全选)</span></label>';
     html += '<div class="hfilter-values"></div>';
-    html += '<div class="hfilter-none" hidden>无匹配值</div>';
+    html += '<div class="hfilter-none" hidden>' + _('No matching values.') + '</div>';
     html += '</div>';
     html += '<div class="hfilter-custom" hidden>';
     // 运算符下拉复用每页条数的自定义下拉结构(.pager-select),不用浏览器原生select。
@@ -2798,7 +2798,7 @@ function uploadBlock(group) {
 
 function uploadList(tasks) {
     if (tasks.length === 0) {
-        return '<div class="empty">暂无上传任务。</div>';
+        return '<div class="empty">' + _('No upload tasks.') + '</div>';
     }
     var html = '';
     var groups = getUploadGroups(tasks);  // 频道 > 文件完整路径,一级可折叠。
@@ -2806,7 +2806,7 @@ function uploadList(tasks) {
         html += uploadBlock(groups[i]);
     }
     if (statFilter.upload && !html) {
-        return '<div class="empty">' + (UPLOAD_EMPTY_TEXT[statFilter.upload] || '没有符合条件的文件。') + '</div>';
+        return '<div class="empty">' + (UPLOAD_EMPTY_TEXT[statFilter.upload] ? _(UPLOAD_EMPTY_TEXT[statFilter.upload]) : _('No matching files.')) + '</div>';
     }
     return html;
 }
@@ -2840,9 +2840,9 @@ function renderUpload(uploads) {
            否则全部上传结束后 count.active 为 0,已完成的文件会被空态整块隐藏,
            需新建任务才重新出现。 */
         // 处于筛选状态时,无匹配项应提示具体的筛选条件,而非笼统的"暂无上传任务。"。
-        var uploadEmpty = '暂无上传任务。';
+        var uploadEmpty = _('No upload tasks.');
         if (statFilter.upload) {
-            uploadEmpty = UPLOAD_EMPTY_TEXT[statFilter.upload] || uploadEmpty;
+            uploadEmpty = UPLOAD_EMPTY_TEXT[statFilter.upload] ? _(UPLOAD_EMPTY_TEXT[statFilter.upload]) : uploadEmpty;
         }
         document.getElementById('upload').innerHTML = uploads.length > 0 ? uploadList(uploads) : '<div class="empty">' + uploadEmpty + '</div>';
         syncToggleUpload();
