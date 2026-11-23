@@ -3062,3 +3062,36 @@ msgstr "操作失败,无法连接程序,原因:\"{error}\""
 
 msgid "The checked items below match the current criteria (read-only)."
 msgstr "以下勾选的为当前条件匹配项(只读)。"
+
+msgid "{count} left"
+msgstr "剩{count}个"
+
+msgid "{count} failed"
+msgstr "失败{count}个"
+
+msgid "{count} links"
+msgstr "{count}个链接"
+
+msgid "{pending} pending / {total} total"
+msgstr "{pending}个未完成 / 共{total}个"
+
+msgid "Paused"
+msgstr "已暂停"
+
+msgid "Testing speed"
+msgstr "正在测速"
+
+msgid "Expand all"
+msgstr "全部展开"
+
+msgid "Resume"
+msgstr "恢复"
+
+msgid "Local upload"
+msgstr "本地上传"
+
+msgid "Remaining {time}"
+msgstr "剩余{time}"
+
+msgid " • Remaining {time}"
+msgstr " • 剩余{time}"

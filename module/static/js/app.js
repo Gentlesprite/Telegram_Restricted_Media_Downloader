@@ -308,7 +308,7 @@ function groupStatCells(stat) {
 function taskRow(task) {
     var done = task.percent >= 100;
     // 传输中的任务在全局暂停时改显"已暂停",速度栏由speedText统一显示为破折号。
-    var statusText = done ? _('Success') : (lastPaused ? '已暂停' : _('Downloading'));
+    var statusText = done ? _('Success') : (lastPaused ? _('Paused') : _('Downloading'));
     var statusClass = done ? 'status-done' : (lastPaused ? 'status-paused' : 'status-running');
     // data-task-id 供"列表结构未变时就地更新进度",避免每秒整表重建。
     return '<div class="task-row" data-task-id="' + escAttr(task.id) + '">' +
@@ -353,10 +353,10 @@ function countText(complete, total, remaining, failed) {
     var text = complete + '/' + total;
     var tags = [];
     if (remaining) {
-        tags.push('剩' + remaining + '个');
+        tags.push(_('{count} left').replace('{count}', remaining));
     }
     if (failed) {
-        tags.push('失败' + failed + '个');
+        tags.push(_('{count} failed').replace('{count}', failed));
     }
     return tags.length ? text + ' (' + tags.join(' ') + ')' : text;
 }
@@ -412,7 +412,7 @@ function channelBlock(group, live) {
         '<span class="ficon">📺</span>' +
         '<span class="gname" title="' + escAttr(group.name || group.channel) + '">' +
         esc(group.name || group.channel) + '</span>' +
-        '<span class="gcount">' + group.count + ' 个链接</span></span>' +
+        '<span class="gcount">' + _('{count} links').replace('{count}', group.count) + '</span></span>' +
         progressCell(group.percent) +
         '<span class="cell-size">' + countText(group.complete, group.member, group.remaining, group.failed) + '</span>' +
         groupStatCells(stat) +
@@ -454,7 +454,7 @@ function linkBlock(link, live) {
         '<span class="cell-name"><span class="arrow"></span>' +
         '<span class="ficon">🔗</span>' +
         '<span class="fname" title="' + escAttr(link.link) + '">' + esc(link.link) + '</span>' +
-        '<span class="gcount">' + (link.queue_total || 0) + ' 个未完成 / 共 ' + (link.total || 0) + ' 个</span></span>' +
+        '<span class="gcount">' + _('{pending} pending / {total} total').replace('{pending}', link.queue_total || 0).replace('{total}', link.total || 0) + '</span></span>' +
         progressCell(link.percent) +
         '<span class="cell-size">' + countText(link.complete, link.member, link.remaining, link.failed) + '</span>' +
         groupStatCells(stat) +
@@ -522,11 +522,11 @@ function bindGroups() {
 }
 
 function syncToggleAll() {
-    document.getElementById('toggleAll').textContent = allCollapsed ? '全部展开' : _('Collapse all');
+    document.getElementById('toggleAll').textContent = allCollapsed ? _('Expand all') : _('Collapse all');
 }
 
 function syncToggleUpload() {
-    document.getElementById('toggleUpload').textContent = uploadAllCollapsed ? '全部展开' : _('Collapse all');
+    document.getElementById('toggleUpload').textContent = uploadAllCollapsed ? _('Expand all') : _('Collapse all');
 }
 
 function setAllGroups(selector, hide) {
@@ -668,7 +668,7 @@ function extraText(item) {
         extra += item.speed;
     }
     if (item.remaining) {
-        extra += (extra ? ' • 剩余' : '剩余') + item.remaining;
+        extra += _(extra ? ' • Remaining {time}' : 'Remaining {time}').replace('{time}', item.remaining);
     }
     return extra;
 }
@@ -679,7 +679,7 @@ function renderOverall(summary, taskCount, ids) {
     document.getElementById(ids.percent).textContent = data.percent + '%';
     document.getElementById(ids.info).textContent = data.info;
     document.getElementById(ids.extra).textContent =
-        lastPaused ? '已暂停' : (extraText(data) ? extraText(data) : (taskCount ? '正在测速' : _('No speed')));
+        lastPaused ? _('Paused') : (extraText(data) ? extraText(data) : (taskCount ? _('Testing speed') : _('No speed')));
     document.getElementById(ids.status).textContent = connectionStatus;
 }
 
@@ -797,7 +797,7 @@ function renderStatus() {
     // 下载、上传、监听三个板块的活跃情况统一显示在顶栏左侧,不再跟随当前板块切换。
     var parts = [];
     if (lastPaused) {
-        parts.push('已暂停');
+        parts.push(_('Paused'));
     }
     if (lastDownloadActive) {
         parts.push('下载 ' + lastDownloadActive);
@@ -972,7 +972,7 @@ var STORAGE_ICON = {
     download: '📥',
     upload: '📤'
 };
-var STORAGE_UPLOAD_LINK = '本地上传';  // 上传存储没有下载链接,链接列统一显示该文案。
+var STORAGE_UPLOAD_LINK = 'Local upload';  // 上传存储没有下载链接,链接列统一显示该文案。
 var STORAGE_HEADERS = {
     download: ['Channel / Message', 'File', 'Link', 'Size', 'Message ID', 'Type', 'Status', 'Time'],
     upload:   ['Channel', 'File path', 'Size', 'Type', 'Status', 'Time']
@@ -1151,7 +1151,7 @@ function storageGroupCell(group, startRow, len) {
     var badge = len > 1 ? '<span class="storage-msg-count">' + len + ' 个文件</span>' : '';
     var linkHtml = '';
     if (currentStorage !== 'upload') {
-        var link = first.link || STORAGE_UPLOAD_LINK;  // 下载才有真实消息链接;上传无链接,显示"本地上传"。
+        var link = first.link || _(STORAGE_UPLOAD_LINK);  // 下载才有真实消息链接;上传无链接,显示"本地上传"。
         linkHtml = '<span class="storage-msg" title="' + escAttr(link) + '">' + esc(link) + '</span>';
     }
     return '<div class="storage-cell storage-channel-cell" style="grid-column:1;grid-row:' + startRow + ' / span ' + len + '">' +
@@ -1168,7 +1168,7 @@ function storageGroupCell(group, startRow, len) {
 function memberLink(rec) {
     var link = rec.link;
     if (!link) {
-        return STORAGE_UPLOAD_LINK;  // 上传存储无链接,显示"本地上传"。
+        return _(STORAGE_UPLOAD_LINK);  // 上传存储无链接,显示"本地上传"。
     }
     var mid = rec.message_id;
     if (mid === undefined || mid === null || mid === '') {
@@ -2617,7 +2617,7 @@ function renderPauseState(isPaused) {
     // 不会造成顶栏高度抖动、下方卡片下移。
     // 分别更新图标与文案,避免整体覆盖抹掉.btn-emoji结构导致gap失效。
     btn.querySelector('.btn-emoji').textContent = isPaused ? '▶\uFE0F' : '⏸\uFE0F';
-    btn.querySelector('.btn-label').textContent = isPaused ? '恢复' : _('Pause');
+    btn.querySelector('.btn-label').textContent = isPaused ? _('Resume') : _('Pause');
     btn.classList.toggle('paused', !!isPaused);
 }
 
@@ -2734,7 +2734,7 @@ function uploadRow(file) {
     var cls = UPLOAD_CLASS[state] || 'status-pending';
     // 传输中的文件在全局暂停时改显"已暂停",其余状态保持原样。
     if (lastPaused && state === 'uploading') {
-        text = '已暂停';
+        text = _('Paused');
         cls = 'status-paused';
     }
     var progress;
