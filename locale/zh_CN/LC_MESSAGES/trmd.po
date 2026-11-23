@@ -3032,3 +3032,30 @@ msgstr "配置更新失败。"
 
 msgid "Request failed due to \"{error}\""
 msgstr "请求失败,原因:\"{error}\""
+
+msgid "Login failed"
+msgstr "登录失败"
+
+msgid "Remove listener"
+msgstr "移除监听"
+
+msgid "You will need to enter your account and password again after logging out."
+msgstr "退出后需要重新输入账号密码。"
+
+msgid "Incorrect account or password. Please try again."
+msgstr "账号或密码不正确,请重新输入。"
+
+msgid "Unable to connect to the program. Please try again later."
+msgstr "无法连接程序,请稍后重试。"
+
+msgid "Remove this listener?\n{link}"
+msgstr "确定移除该监听?\n{link}"
+
+msgid "Remove failed due to \"{error}\""
+msgstr "移除失败,无法连接程序,原因:\"{error}\""
+
+msgid "Unable to connect to the program"
+msgstr "无法连接程序"
+
+msgid "Operation failed due to \"{error}\""
+msgstr "操作失败,无法连接程序,原因:\"{error}\""

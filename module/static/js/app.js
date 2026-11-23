@@ -2445,7 +2445,7 @@ async function logout() {
     if (dropdown) {
         dropdown.hidden = true;  // 先收起菜单,避免与询问框叠加。
     }
-    var ok = await askConfirm('退出后需要重新输入账号密码。', '退出登录');
+    var ok = await askConfirm(_('You will need to enter your account and password again after logging out.'), _('Log out'));
     if (!ok) {
         return;
     }
@@ -2511,7 +2511,7 @@ async function submitLogin() {
         });
         var data = await res.json();
         if (!data.status) {
-            await askAlert('账号或密码不正确，请重新输入。', '登录失败');
+            await askAlert(_('Incorrect account or password. Please try again.'), _('Login failed'));
             return;
         }
         // 勾选"30天内免登录"时服务端已下发Cookie;未勾选则把令牌留在本标签页。
@@ -2526,7 +2526,7 @@ async function submitLogin() {
         }
         refresh();
     } catch (e) {
-        await askAlert('无法连接程序,请稍后重试。', '登录失败');
+        await askAlert(_('Unable to connect to the program. Please try again later.'), _('Login failed'));
     }
 }
 
@@ -2562,7 +2562,7 @@ async function removeListener(kind, link) {
         return;  // 同一监听已在确认或处理中,忽略重复点击。
     }
     removingListener[link] = true;
-    var ok = await askConfirm('确定移除该监听?\n' + link, '移除监听');
+    var ok = await askConfirm(_('Remove this listener?\n{link}').replace('{link}', link), _('Remove listener'));
     if (!ok) {
         delete removingListener[link];
         return;
@@ -2575,10 +2575,10 @@ async function removeListener(kind, link) {
         });
         var data = await res.json();
         if (!data.status) {
-            window.alert('移除失败:' + (data.e_code || _('Unknown error.')));
+            window.alert(_('Remove failed due to "{error}"').replace('{error}', data.e_code || _('Unknown error.')));
         }
     } catch (e) {
-        window.alert('移除失败:无法连接程序。');
+        window.alert(_('Remove failed due to "{error}"').replace('{error}', _('Unable to connect to the program')));
     }
     delete removingListener[link];
     refresh();  // 移除后立即刷新,无需等待下一次轮询。
@@ -2593,10 +2593,10 @@ async function setPause(paused) {
         });
         var data = await res.json();
         if (!data.status) {
-            window.alert('操作失败:' + (data.e_code || _('Unknown error.')));
+            window.alert(_('Operation failed due to "{error}"').replace('{error}', data.e_code || _('Unknown error.')));
         }
     } catch (e) {
-        window.alert('操作失败:无法连接程序。');
+        window.alert(_('Operation failed due to "{error}"').replace('{error}', _('Unable to connect to the program')));
     }
     // 乐观更新:服务端通过事件循环异步切换标志,立即刷新拿到的快照可能仍是旧值,
     // 会导致按钮文字与 lastPaused 滞后约一个轮询周期、期间无法反向切换。
