@@ -412,7 +412,7 @@ function channelBlock(group, live) {
         '<span class="ficon">📺</span>' +
         '<span class="gname" title="' + escAttr(group.name || group.channel) + '">' +
         esc(group.name || group.channel) + '</span>' +
-        '<span class="gcount">' + _('{count} links').replace('{count}', group.count) + '</span></span>' +
+        '<span class="gcount">' + _('{count} link(s)').replace('{count}', group.count) + '</span></span>' +
         progressCell(group.percent) +
         '<span class="cell-size">' + countText(group.complete, group.member, group.remaining, group.failed) + '</span>' +
         groupStatCells(stat) +

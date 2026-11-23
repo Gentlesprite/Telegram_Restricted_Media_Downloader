@@ -3069,7 +3069,7 @@ msgstr "剩{count}个"
 msgid "{count} failed"
 msgstr "失败{count}个"
 
-msgid "{count} links"
+msgid "{count} link(s)"
 msgstr "{count}个链接"
 
 msgid "{pending} pending / {total} total"
