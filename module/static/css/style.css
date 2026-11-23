@@ -4,14 +4,6 @@
     --panel: rgba(26, 26, 30, .6);  /* 暗色玻璃:深色半透,不是白色叠加层(白层在黑底上会变灰膜)。 */
     --panel2: rgba(34, 34, 39, .72);  /* 表头与分组条:比卡片略实一档。 */
     --glass-edge: rgba(255, 255, 255, .09);  /* 发丝级分隔线。 */
-    /* 注:原 --glass-blur / --glass-saturate / --glass-brightness / --liquid-blur
-       四个变量是为 backdrop-filter 服务的,真液态玻璃(liquid-glass.js)移除后
-       已无任何规则引用它们,故删除。如将来恢复毛玻璃,在此重新定义即可。 */
-    /* 静态磨砂噪点:128×128 灰度颗粒,用于模拟毛玻璃的漫反射质感。
-       与 backdrop-filter 的本质区别:它不采样真实背景、也不做模糊,
-       仅在首次渲染时光栅化一次,此后背景渐变每帧推进都无需重算,GPU 开销几乎为零。
-       页面背景本身是平滑渐变、没有细节需要模糊,所以观感与真毛玻璃非常接近。
-       颗粒强度由 SVG 里的 opacity 控制(默认 0.05),想更明显可调到 0.08~0.1。 */
     --frost-noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='128' height='128' filter='url(%23n)' opacity='0.01'/></svg>");
     --border: #242b39;
     --pattern-intensity: .375;  /* 涂鸦浓度,取官方 --pattern-intensity 的值(画布不透明度)。 */
@@ -325,8 +317,6 @@ body.paused .logo:hover {
     color: var(--muted);
     white-space: nowrap;
 }
-
-/* (按钮已提升为 .topbar 直接子元素,原 .top-actions 包裹已移除。) */
 
 /* 顶栏按钮复用左侧栏项的视觉样式,只保留横向图标排布与紧凑尺寸。
    顶栏四个按钮统一锁高32px,字号与内边距不能照搬左侧栏项,否则会撑破顶栏;
@@ -794,11 +784,9 @@ body.paused .dot.active {
     background: var(--panel);
 }
 
-/* 所有卡片统一为半透明磨砂:暗色半透底 + 噪点 + 上沿高光/下沿暗边,
-   不做 backdrop-filter 采样。原 liquid-glass.js(真液态玻璃)已移除、不再使用——
-   它靠 backdrop-filter 实时采样背景 + SVG 位移产生折射,背景推进时逐帧重算,
-   大面积元素因此明显卡顿。改回这套纯静态层后 GPU 开销几乎为零,
-   背景平滑渐变透出半透明底色即呈现磨砂观感,与真玻璃差异极小。
+/* 所有卡片统一为半透明磨砂:暗色半透底 + 噪点 + 上沿高光/下沿暗边。
+   不用 backdrop-filter:它实时采样背景 + SVG 位移产生折射,背景推进时逐帧重算,
+   大面积元素因此明显卡顿;纯静态层 GPU 开销几乎为零,平滑渐变透出半透明底色即呈现磨砂观感。
    .group-head 不并入:它仍维持独立的白色微亮分组条样式以区分层次。 */
 .side-item,
 .support-btn,
@@ -954,9 +942,6 @@ body.paused .dot.active {
     height: 100%;
     border-radius: 99px;
     background: linear-gradient(90deg, #43e97b, #38f9d7, #43e97b);
-    /* 原先的 background-size: 200% 100% 只为已删除的流光动画服务:
-       它让背景加宽一倍、靠滚动 background-position 露出不同段落。
-       动画移除后保留它会让渐变只显示左半段(绿→青),故去掉,使三色渐变完整呈现。 */
     box-shadow: 0 0 10px rgba(56, 249, 215, .35);
     transition: width .5s ease;
 }
@@ -985,8 +970,6 @@ body.paused .dot.active {
 .stat div[data-filter]:hover {
     border-color: var(--accent);
 }
-
-/* .panel 与 .list 已并入上方统一磨砂块,不再单独定义,避免两套样式互相覆盖。 */
 
 /* 标签继承父级卡片的字号、字重与颜色,选中时随卡片一起高亮;
    两三个字被压缩时不允许折行,避免火狐里竖排成"已跳/过"。 */
@@ -1415,8 +1398,6 @@ body.resizing {
     color: var(--text);
     font-size: 13px;
 }
-
-/* 筛选面板内输入框(.hfilter-arg/.hfilter-search-input)的样式统一收敛到 .trmd-input,此处不再重复定义。 */
 
 .hfilter-list {
     max-height: 240px;
