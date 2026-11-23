@@ -850,7 +850,7 @@ function listenRow(kind, source, target) {
         html += '<span class="cell-name"><span class="ficon">➡️</span>' +
             '<span class="fname" title="' + escAttr(target) + '">' + esc(target) + '</span></span>';
     }
-    html += '<span class="cell-action"><button class="btn-del" type="button" title="移除该监听"' +
+    html += '<span class="cell-action"><button class="btn-del" type="button" title="' + escAttr(_('Remove listener')) + '"' +
         ' data-kind="' + kind + '" data-link="' + escAttr(link) + '">✖</button></span>';
     return html + '</div>';
 }
