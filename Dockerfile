@@ -7,6 +7,7 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     XDG_CONFIG_HOME=/app \
+    LANG=zh_CN.UTF-8 \
     TERM=xterm-256color
 
 # 安装系统依赖+Python依赖，编译后清理，全部合并为一个RUN层以减小镜像体积。
