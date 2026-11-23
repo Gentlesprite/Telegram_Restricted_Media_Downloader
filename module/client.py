@@ -113,7 +113,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             try:
                 while True:
                     value = (await ainput(
-                        _('Enter your phone number (the [#6a2c70]phone number[/#6a2c70] must start with [#b83b5e]"+region"[/#b83b5e]! '
+                        _('Enter your 「phone number」 (the [#6a2c70]phone number[/#6a2c70] must start with [#b83b5e]「+region」[/#b83b5e]! '
                           'e.g.: [#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):'))).strip()
                     if not value.startswith('+'):
                         log.warning(

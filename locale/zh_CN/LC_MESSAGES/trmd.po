@@ -636,7 +636,7 @@ msgstr "检测到压缩文件\"{filename}\",为确保完整性(如分卷)已保�
 msgid "Unexpected parameter \"{value}\", the phone number must start with 「+region」!"
 msgstr "意外的参数:\"{value}\",电话号码需以「+地区」开头!"
 
-msgid "Enter your phone number (the [#6a2c70]phone number[/#6a2c70] must start with [#b83b5e]\"+region\"[/#b83b5e]! e.g.: [#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):"
+msgid "Enter your 「phone number」 (the [#6a2c70]phone number[/#6a2c70] must start with [#b83b5e]「+region」[/#b83b5e]! e.g.: [#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):"
 msgstr "请输入「电话号码」([#6a2c70]电话号码[/#6a2c70]需以[#b83b5e]「+地区」[/#b83b5e]开头!如:[#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):"
 
 msgid "「Set up email」is required to complete authorization."
