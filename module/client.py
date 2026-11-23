@@ -3,6 +3,7 @@
 # Software:PyCharm
 # Time:2025-02-25 01:26:00
 # File:client.py
+import sys
 import math
 import asyncio
 import inspect
@@ -303,20 +304,29 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
 
         qr = QRCode(version=1)
 
+        console.print(
+            'Kurigram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n'
+            f'under the terms of the {pyrogram.__license__}.\n'
+            f'欢迎使用[#b4009e]{SOFTWARE_SHORT_NAME}[/#b4009e] {__version__} (Pyrogram {pyrogram.__version__})\n'
+            '请扫描[#6a2c70]「二维码」[/#6a2c70]登录\n'
+            '[#b83b5e]Settings(设置)[/#b83b5e] -> [#f08a5d]Devices(设备)[/#f08a5d] -> [#f9ed69]Link Desktop Device(关联桌面设备)[/#f9ed69]'
+        )
+        log.info('Waiting for QR code being scanned.')
+        qr_lines = 0  # 记录二维码占用的终端行数,刷新时只清理这块区域。
+
         while True:
             try:
-                console.print(
-                    'Kurigram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n'
-                    f'under the terms of the {pyrogram.__license__}.\n'
-                    f'欢迎使用[#b4009e]{SOFTWARE_SHORT_NAME}[/#b4009e] {__version__} (Pyrogram {pyrogram.__version__})\n'
-                    '请扫描[#6a2c70]「二维码」[/#6a2c70]登录\n'
-                    '[#b83b5e]Settings(设置)[/#b83b5e] -> [#f08a5d]Devices(设备)[/#f08a5d] -> [#f9ed69]Link Desktop Device(关联桌面设备)[/#f9ed69]'
-                )
+                if qr_lines:
+                    sys.stdout.write(f'\x1b[{qr_lines}A')
+                    for _ in range(qr_lines):
+                        sys.stdout.write('\x1b[2K\n')
+                    sys.stdout.write(f'\x1b[{qr_lines}A')
+                    sys.stdout.flush()
 
                 qr.clear()
                 qr.add_data(qr_login.url)
                 qr.print_ascii(tty=True)
-                log.info('Waiting for QR code being scanned.')
+                qr_lines = len(range(-qr.border, qr.modules_count + qr.border, 2))
 
                 signed_in = await qr_login.wait()
 
@@ -324,10 +334,10 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                     log.info(f'Logged in successfully as {signed_in.full_name}')
                     return signed_in
             except asyncio.TimeoutError:
-                log.info('Recreating QR code.')
+                log.debug('Recreating QR code.')
                 await qr_login.recreate()
             except AuthTokenExpired:
-                log.info("Auth token expired. Recreating QR code.")
+                log.debug('Auth token expired. Recreating QR code.')
                 await qr_login.recreate()
             except pyrogram.errors.SessionPasswordNeeded as e:
                 console.print(e.MESSAGE)
