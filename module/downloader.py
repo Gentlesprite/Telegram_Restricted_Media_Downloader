@@ -120,6 +120,7 @@ from module.util import (
     ChatInfo,
     LimitCall,
     ctrl_c,
+    get_login_method,
     get_my_id,
     parse_link,
     parse_chat_id,
@@ -2923,7 +2924,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         console.log(notice, style='#FF4689')
 
     async def __download_media_from_links(self) -> None:
-        await self.app.client.start(use_qr=True)
+        await self.app.client.start(use_qr=await get_login_method(self.app.client.storage.database))
         # 打开网页记录数据库,保存目录使用telegram的会话目录;打开失败时放弃记录功能,不影响下载与上传。
         self.storage_database = build_storage_database(work_directory=self.app.work_directory)
         if not await self.storage_database.open():

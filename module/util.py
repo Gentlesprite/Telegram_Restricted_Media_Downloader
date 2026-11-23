@@ -11,6 +11,7 @@ import json
 import socket
 import string
 import random
+import sqlite3
 import asyncio
 import logging
 import subprocess
@@ -555,6 +556,27 @@ def get_local_ip() -> str:
 
 async def ainput(prompt: str = '', password: bool = False) -> str:  # noqa.
     return await asyncio.to_thread(console.input, prompt, password=password)
+
+
+async def get_login_method(session_path: Union[str, os.PathLike]) -> bool:
+    """根据会话状态询问登录方式,返回是否使用二维码。"""
+    need_choice = not os.path.isfile(session_path)
+    if not need_choice:  # 会话文件存在但用户ID为空或0时仍是未登录状态。
+        try:
+            connection = sqlite3.connect(str(session_path))
+            try:
+                row = connection.execute('SELECT user_id FROM sessions LIMIT 1').fetchone()  # noqa.
+            finally:
+                connection.close()
+            need_choice = row is None or not row[0]
+        except sqlite3.OperationalError:
+            need_choice = True
+    if need_choice:
+        choice = (await ainput(_('1. Phone number (default)\n2. QR code\n🔑 Choose login method:'))).strip()
+        use_qr = choice == '2'
+        log.info(_('Login method: QR code.') if use_qr else _('Login method: Phone number.'))
+        return use_qr
+    return True
 
 
 async def delete_own_message(

@@ -3329,3 +3329,12 @@ msgstr "密码已更改。"
 
 msgid "This session was created less than 24 hours ago, try again in {seconds} seconds."
 msgstr "此会话创建不足24小时,请在{seconds}秒后重试。"
+
+msgid "1. Phone number (default)\n2. QR code\n🔑 Choose login method:"
+msgstr "1. 电话号码(默认)\n2. 二维码\n🔑 选择登录方式:"
+
+msgid "Login method: QR code."
+msgstr "登录方式:二维码。"
+
+msgid "Login method: Phone number."
+msgstr "登录方式:电话号码。"
