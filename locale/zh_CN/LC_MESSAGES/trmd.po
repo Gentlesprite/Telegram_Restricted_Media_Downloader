@@ -1209,8 +1209,8 @@ msgstr "「网络」或「代理问题」,在确保当前网络连接正常情�
 msgid "Account invalid; old session file deleted. Restart the software."
 msgstr "账号已失效,已删除旧会话文件,请重启软件。"
 
-msgid "Account invalid; manually delete the sessions folder in the software directory, then restart the software."
-msgstr "账号已失效,请手动删除软件目录下的sessions文件夹后重启软件。"
+msgid "Account invalid; manually delete the session directory: \"{session_directory}\", then restart the software."
+msgstr "账号已失效,请手动删除会话目录:\"{session_directory}\"后重启软件。"
 
 msgid "🔗 No valid link found, program exited."
 msgstr "🔗 没有找到有效链接,程序已退出。"
@@ -1287,8 +1287,8 @@ msgstr "检测到空的配置文件。已生成新的模板文件. . ."
 msgid "Global config file saved."
 msgstr "全局配置文件已保存。"
 
-msgid "Please manually delete the sessions folder in the software directory."
-msgstr "请手动删除软件目录下的sessions文件夹"
+msgid "Please manually delete the session directory: \"{session_directory}\"."
+msgstr "请手动删除会话目录:\"{session_directory}\"。"
 
 msgid "Unsupported or ignored type"
 msgstr "不支持或被忽略的类型"

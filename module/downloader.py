@@ -2830,9 +2830,10 @@ class TelegramRestrictedMediaDownloader(Bot):
                 }
             }
         except BotMethodInvalid as e:
-            res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
+            res: bool = safe_delete(file_p_d=self.app.work_directory)
             error_msg: str = _('Old session file deleted') if res else _(
-                'Please manually delete the sessions folder in the software directory.')
+                'Please manually delete the session directory: "{session_directory}".').format(
+                session_directory=self.app.work_directory)
             return {
                 'chat_id': None,
                 'member_num': 0,
@@ -3029,13 +3030,15 @@ class TelegramRestrictedMediaDownloader(Bot):
             log.exception(_('Runtime error due to "{error}"').format(error=e))
         except (SessionRevoked, AuthKeyUnregistered, SessionExpired, Unauthorized) as e:
             log.error(_('Error while logging in due to "{error}"').format(error=e))
-            res: bool = safe_delete(file_p_d=os.path.join(self.app.DIRECTORY_NAME, 'sessions'))
+            res: bool = safe_delete(file_p_d=self.app.work_directory)
             run_error: bool = True
             if res:
                 log.warning(_('Account invalid; old session file deleted. Restart the software.'))
             else:
-                log.error(
-                    _('Account invalid; manually delete the sessions folder in the software directory, then restart the software.'))
+                log.error(_(
+                    'Account invalid; manually delete the session directory: "{session_directory}", '
+                    'then restart the software.').format(
+                    session_directory=self.app.work_directory))
         except (ConnectionError, TimeoutError) as e:
             run_error: bool = True
             if not self.app.enable_proxy:
