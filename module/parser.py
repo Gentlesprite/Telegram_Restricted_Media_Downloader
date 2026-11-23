@@ -75,6 +75,13 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             help=_('Set the web panel port')
         )
         self.add_argument(
+            '-l', '--language',
+            type=str,
+            required=False,
+            default='',
+            help=_('Set the interface language')
+        )
+        self.add_argument(
             '--test',
             nargs='?',
             const=TestLevel.INFO,

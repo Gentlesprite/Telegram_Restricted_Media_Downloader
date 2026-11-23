@@ -21,7 +21,10 @@ from module import (
     GLOBAL_CONFIG_NAME,
     GLOBAL_CONFIG_PATH
 )
-from module.language import _
+from module.language import (
+    _,
+    lang
+)
 from module.parser import PARSE_ARGS
 from module.path_tool import (
     gen_backup_config,
@@ -638,7 +641,8 @@ class GlobalConfig(BaseConfig):
                 'video_note': True,
                 'live_photo': True
             },
-        'authorized_users': []
+        'authorized_users': [],
+        'language': ''
     }
 
     def __init__(self):
@@ -647,6 +651,7 @@ class GlobalConfig(BaseConfig):
         self.default_forward_type_nesting = self.TEMPLATE.get('forward_type')
         self.load_config()
         self.__check_params(self.config.copy())
+        self.resolve_language()
         self.download_upload: bool = self.get_nesting_config(
             default_nesting=self.default_upload_nesting,
             param='upload',
@@ -659,6 +664,21 @@ class GlobalConfig(BaseConfig):
         )
         self.forward_type: dict = self.config.get('forward_type')
         self.authorized_users: list = self.config.get('authorized_users', [])
+        self.language: str = self.config.get('language') or ''
+
+    def resolve_language(self) -> None:
+        """解析并持久化界面语言:命令行参数优先,配置为空时写入自动检测结果。"""
+        cli_language: str = PARSE_ARGS.language if hasattr(PARSE_ARGS, 'language') else ''
+        configured_language: str = str(self.config.get('language') or '')
+        if cli_language and lang.is_supported(cli_language):
+            language: str = lang.normalize(cli_language)
+        elif configured_language and lang.is_supported(configured_language):
+            language: str = lang.normalize(configured_language)
+        else:
+            language: str = lang.language
+        self.config['language'] = language
+        if configured_language != language:
+            self.save_config(self.config)
 
     def get_nesting_config(self, default_nesting, param, nesting_param):
         return self.config.get(param, default_nesting).get(nesting_param)
@@ -677,6 +697,7 @@ class GlobalConfig(BaseConfig):
         )
         self.forward_type: dict = self.config.get('forward_type')
         self.authorized_users: list = self.config.get('authorized_users', [])
+        self.language: str = self.config.get('language') or ''
         p = _('Global config reloaded.')
         console.log(p, style='#FF4689')
         log.info(f'{p.replace("。", ":")}{self.config}')

@@ -29,8 +29,15 @@ class Language:
                 'zh_tw',
                 'zh_hk',
                 'zh_mo',
-                'zh_hant',
+                'zh_hant', # noqa.
                 'chinese'
+            ]
+        },
+        'en_US': {
+            'aliases': [
+                'en',
+                'en_us',
+                'english'
             ]
         }
     }
@@ -44,6 +51,31 @@ class Language:
         self.language: str = self.normalize(self.detected)
         self.translation = self.get_translation()
 
+    @classmethod
+    def parse_cli_language(cls) -> str:
+        for index, arg in enumerate(sys.argv[1:], start=1):
+            if arg in ('-l', '--language'):
+                next_args = sys.argv[index + 1:]
+                if next_args and not next_args[0].startswith('-'):
+                    return next_args[0]
+            if arg.startswith('--language='):
+                return arg.split('=', 1)[1]
+            if arg.startswith('-l') and len(arg) > 2:
+                return arg[2:]
+        return ''
+
+    @classmethod
+    def is_supported(cls, raw: str) -> bool:
+        if not raw:
+            return False
+        normalized: str = re.sub(r'[^a-z0-9_]', '_', raw.replace('-', '_').lower())
+        normalized: str = re.sub(r'_+', '_', normalized).strip('_')
+        for code, config in cls.SUPPORTED.items():
+            aliases: List[str] = [code.lower()] + config['aliases']
+            if any(normalized == alias or normalized.startswith(alias + '_') for alias in aliases):
+                return True
+        return False
+
     def normalize(
             self,
             raw: str
@@ -53,9 +85,9 @@ class Language:
         normalized: str = re.sub(r'[^a-z0-9_]', '_', raw.replace('-', '_').lower())
         normalized: str = re.sub(r'_+', '_', normalized).strip('_')
         for code, config in self.SUPPORTED.items():
-            for alias in config['aliases']:
-                if normalized == alias or normalized.startswith(alias + '_'):
-                    return code
+            aliases: List[str] = [code.lower()] + config['aliases']
+            if any(normalized == alias or normalized.startswith(alias + '_') for alias in aliases):
+                return code
         return self.DEFAULT
 
     @staticmethod
@@ -88,6 +120,7 @@ class Language:
         )
 
 
-lang = Language()
+cli_language: str = Language.parse_cli_language()
+lang = Language(cli_language if Language.is_supported(cli_language) else '')
 translation = lang.translation
 _ = lang.translation.gettext

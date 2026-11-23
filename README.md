@@ -1139,6 +1139,7 @@ _**设置命令行运行参数**需先在**软件目录**打开**终端**，或*
 | `-s` | `--session` |     设置会话文件的路径     |
 | `-t` |  `--temp`   |     设置运行缓存的路径     |
 | `-p` |  `--port`   |   设置网页面板的端口   |
+| `-l` | `--language` | 设置界面语言 |
 
 _**长参数与短参数最终结果一致。**_
 
@@ -1461,6 +1462,53 @@ _**长参数与短参数最终结果一致。**_
   
     ```bash
     ./TRMD --port 1024
+    ```
+
+---
+
+#### -l、--language
+
+  | 使用须知 |
+  | -------- |
+  | _1.该参数用于设置界面语言,并会写入全局配置文件的`language`参数。_ |
+  | _2.命令行参数优先于全局配置文件中的`language`参数。_ |
+  | _3.全局配置文件的`language`参数默认为空,首次加载全局配置时会自动写入检测到的系统语言。_ |
+  | _4.目前`zh_CN`支持中文,其他语言默认使用英文文案。_ |
+
+  - 对于生产环境用户（**需要先完成前置步骤**"[_“3.0.在生产环境中运行”_](https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader?tab=readme-ov-file#30%E5%9C%A8%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E8%BF%90%E8%A1%8C)）：
+
+    此处假设使用`zh_CN`语言。
+
+    ```bash
+    python3 main.py -l zh_CN
+    ```
+
+    ```bash
+    python3 main.py --language zh_CN
+    ```
+
+  - 对于Windows用户：
+
+    此处假设使用`zh_CN`语言。
+
+    ```bash
+    TRMD.exe -l zh_CN
+    ```
+
+    ```bash
+    TRMD.exe --language zh_CN
+    ```
+
+  - 对于Linux用户：
+
+    此处假设使用`zh_CN`语言。
+
+    ```bash
+    ./TRMD -l zh_CN
+    ```
+
+    ```bash
+    ./TRMD --language zh_CN
     ```
   
   </details>
