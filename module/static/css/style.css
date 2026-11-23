@@ -620,6 +620,28 @@ body.paused .logo:hover {
     font-size: 13px;
 }
 
+/* 登录弹窗用网格让两行标签共享同一列宽,列宽由最长标签自动撑开,中英文都无需额外适配。
+   必须覆盖通用的pre-line:否则源码里的换行和缩进会生成匿名网格项,把表单挤乱。 */
+#loginModal .modal-body {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 20px;  /* 网格行距统一由row-gap控制。 */
+    white-space: normal;
+}
+/* 账号与密码行不生成盒子,让标签与输入框直接作为网格项排列。 */
+#loginModal .login-row {
+    display: contents;
+}
+/* 记住我与登录按钮跨满整行,左边缘与标签文字对齐。
+   网格下取消原flex布局的负边距,避免与row-gap叠加导致行间挤压。 */
+#loginModal .login-remember,
+#loginModal .login-submit {
+    grid-column: 1 / -1;
+    margin-top: 0;
+}
+
 .trmd-input {
     box-sizing: border-box;
     flex: 1;
