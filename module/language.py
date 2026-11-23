@@ -10,6 +10,8 @@ import ctypes
 import locale
 import gettext
 
+import yaml
+
 from typing import (
     List,
     Dict,
@@ -29,7 +31,7 @@ class Language:
                 'zh_tw',
                 'zh_hk',
                 'zh_mo',
-                'zh_hant', # noqa.
+                'zh_hant',  # noqa.
                 'chinese'
             ]
         },
@@ -63,6 +65,23 @@ class Language:
             if arg.startswith('-l') and len(arg) > 2:
                 return arg[2:]
         return ''
+
+    @staticmethod
+    def read_config_language() -> str:
+        """读取全局配置文件中保存的界面语言。"""
+        appdata_path: str = os.path.join(
+            os.environ.get('APPDATA') or os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config')),
+            'TRMD'
+        )
+        config_path: str = os.path.join(appdata_path, '.CONFIG.yaml')
+        if not os.path.isfile(config_path):
+            return ''
+        try:
+            with open(file=config_path, mode='r', encoding='UTF-8') as file:
+                config: dict = yaml.safe_load(file) or {}
+            return str(config.get('language') or '')
+        except Exception:  # noqa.
+            return ''
 
     @classmethod
     def is_supported(cls, raw: str) -> bool:
@@ -121,6 +140,8 @@ class Language:
 
 
 cli_language: str = Language.parse_cli_language()
-lang = Language(cli_language if Language.is_supported(cli_language) else '')
+config_language: str = Language.read_config_language()
+raw_language: str = cli_language if Language.is_supported(cli_language) else config_language
+lang = Language(raw_language if Language.is_supported(raw_language) else '')
 translation = lang.translation
 _ = lang.translation.gettext
