@@ -1833,7 +1833,7 @@ function openStorageFilterPop(button) {
     storageFilterEntries = storageValueCounts(key);  // 算一次,供下方matched与fillStorageFilterValues共用,避免重复遍历。
     var cond = storageFilters[currentStorage][key];
     if (cond && cond.mode === 'custom') {
-        // custom 列打开时直接算好匹配值集,避免fillStorageFilterValues里再延迟判断(matchCustom冗余)。
+        // custom 列打开时直接算好匹配值集,避免fillStorageFilterValues里再延迟判断。
         var mKind = storageFilterKind(key);
         var mVals = Object.keys(storageFilterEntries);
         var mC = {op: cond.op, value: cond.value, value2: cond.value2 || ''};
@@ -2525,7 +2525,7 @@ async function submitLogin() {
         lastUploadStructKey = null;
         closeLogin();
         if (data.first_login) {
-            openSupport();  // 保持原先"首次登录展示支持作者卡片"的行为。
+            openSupport();
         }
         refresh();
     } catch (e) {
@@ -3138,7 +3138,7 @@ function initSettings() {
     if (apply) {
         apply.onclick = applyConfig;
     }
-    document.addEventListener('keydown', settingsEscape);  // ESC 关闭弹窗(不再响应遮罩点击关闭)。
+    document.addEventListener('keydown', settingsEscape);  // ESC 关闭弹窗。
     // 修改配置时每输入一个字符也推进背景涂鸦渐变,与登录框一致(复用官方推进逻辑)。
     var cfgAdvance = function () {
         if (!bgCtx) {
@@ -3901,7 +3901,7 @@ var bgDoodleTileW = 0;      // 遮罩瓦片宽(设备像素),对应官方 mask-s
 var bgDoodleTileH = 0;      // 遮罩瓦片高(设备像素),按原图宽高比推算。
 var bgDoodleOffX = 0;       // 对应官方 mask-position:center 的平铺原点横向偏移(设备像素)。
 var bgDoodleOffY = 0;       // 对应官方 mask-position:center 的平铺原点纵向偏移(设备像素)。
-var BG_PATTERN_URL = 'img/pattern.svg';     // 官方涂鸦图案,与被移除的 CSS mask-image 同一文件。
+var BG_PATTERN_URL = 'img/pattern.svg';     // 官方涂鸦图案。
 var BG_PATTERN_TILE = 430;                   // 官方 26.875rem(1rem=16px)对应的瓦片宽度(CSS px)。
 var BG_PATTERN_ASPECT = 2960 / 1440;         // 遮罩原图 viewBox 宽高比,取不到固有尺寸时兜底。
 
