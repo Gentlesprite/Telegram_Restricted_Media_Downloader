@@ -989,7 +989,7 @@ var STORAGE_FILTER_COLS = {
         {key: 'chat', kind: 'text'},
         {key: 'file', kind: 'text'},
         {key: 'link', kind: 'text'},
-        {key: 'size', kind: 'number', unit: 'MB', arg: '输入大小(MB)'},
+        {key: 'size', kind: 'number', unit: 'MB', arg: 'Size (MB)'},
         {key: 'mid', kind: 'number'},
         {key: 'type', kind: 'text'},
         {key: 'state', kind: 'text'},
@@ -998,7 +998,7 @@ var STORAGE_FILTER_COLS = {
     upload: [
         {key: 'chat', kind: 'text'},
         {key: 'path', kind: 'text'},
-        {key: 'size', kind: 'number', unit: 'MB', arg: '输入大小(MB)'},
+        {key: 'size', kind: 'number', unit: 'MB', arg: 'Size (MB)'},
         {key: 'type', kind: 'text'},
         {key: 'state', kind: 'text'},
         {key: 'time', kind: 'date'}
@@ -1006,34 +1006,34 @@ var STORAGE_FILTER_COLS = {
 };
 var STORAGE_FILTER_OPS = {  // 自定义条件的运算符,按列类型分组。
     text: [
-        {op: 'contains', label: '包含'},
-        {op: 'equals', label: '等于'},
-        {op: 'notEquals', label: '不等于'},
-        {op: 'begins', label: '开头是'},
-        {op: 'ends', label: '结尾是'}
+        {op: 'contains', label: 'Contains'},
+        {op: 'equals', label: 'Equals'},
+        {op: 'notEquals', label: 'Not equal'},
+        {op: 'begins', label: 'Starts with'},
+        {op: 'ends', label: 'Ends with'}
     ],
     number: [
-        {op: 'greater', label: '大于'},
-        {op: 'less', label: '小于'},
-        {op: 'equals', label: '等于'},
-        {op: 'between', label: '介于'}
+        {op: 'greater', label: 'Greater than'},
+        {op: 'less', label: 'Less than'},
+        {op: 'equals', label: 'Equals'},
+        {op: 'between', label: 'Between'}
     ],
     date: [
-        {op: 'equals', label: '等于'},
-        {op: 'after', label: '晚于'},
-        {op: 'before', label: '早于'},
-        {op: 'between', label: '介于'}
+        {op: 'equals', label: 'Equals'},
+        {op: 'after', label: 'After'},
+        {op: 'before', label: 'Before'},
+        {op: 'between', label: 'Between'}
     ]
 };
 var STORAGE_FILTER_CUSTOM_LABEL = {  // 面板里切换自定义条件的入口文案。
-    text: '文本筛选',
-    number: '数字筛选',
-    date: '日期筛选'
+    text: 'Text filter',
+    number: 'Number filter',
+    date: 'Date filter'
 };
 var STORAGE_FILTER_ARG_LABEL = {  // 自定义条件输入框的占位符。
-    text: '输入关键字',
-    number: '输入数值',
-    date: '输入日期(YYYY-MM-DD)'
+    text: 'Enter keyword',
+    number: 'Enter number',
+    date: 'Enter date (YYYY-MM-DD)'
 };
 var STORAGE_FILTER_EMPTY = {  // 筛选后无结果时的空态文案。
     download: 'No download records match the filters.',
@@ -1071,7 +1071,7 @@ function applyStorageLayout() {
     for (var i = 0; i < headers.length; i++) {
         var active = cols[i] && storageFilters[currentStorage][cols[i].key] ? ' active' : '';
         html += '<span><span class="htext">' + esc(_(headers[i])) + '</span>' +
-            '<button type="button" class="hfilter' + active + '" data-filter="' + cols[i].key + '" title="筛选">' +
+            '<button type="button" class="hfilter' + active + '" data-filter="' + cols[i].key + '" title="' + escAttr(_('Filter')) + '">' +
             STORAGE_FILTER_ICONS + '</button></span>';
     }
     head.innerHTML = html;
@@ -1863,14 +1863,14 @@ function buildStorageFilterPop() {
     var kind = storageFilterKind(storageFilterCol);
     var col = storageFilterColDef(storageFilterCol);
     var ops = STORAGE_FILTER_OPS[kind] || STORAGE_FILTER_OPS.text;
-    var argLabel = (col && col.arg) || STORAGE_FILTER_ARG_LABEL[kind] || STORAGE_FILTER_ARG_LABEL.text;
+    var argLabel = _((col && col.arg) || STORAGE_FILTER_ARG_LABEL[kind] || STORAGE_FILTER_ARG_LABEL.text);
     var pop = document.createElement('div');
     pop.className = 'hfilter-pop';
     var html = '';
-    html += '<div class="hfilter-search"><input type="text" class="hfilter-search-input trmd-input" placeholder="搜索"></div>';
+    html += '<div class="hfilter-search"><input type="text" class="hfilter-search-input trmd-input" placeholder="' + escAttr(_('Search')) + '"></div>';
     html += '<div class="hfilter-list">';
     html += '<label class="hfilter-item hfilter-all-item"><input type="checkbox" class="hfilter-all-box">' +
-        '<span class="hfilter-label">(全选)</span></label>';
+        '<span class="hfilter-label">' + _('(Select all)') + '</span></label>';
     html += '<div class="hfilter-values"></div>';
     html += '<div class="hfilter-none" hidden>' + _('No matching values.') + '</div>';
     html += '</div>';
@@ -1883,16 +1883,16 @@ function buildStorageFilterPop() {
         '</button>' +
         '<div class="pager-select-pop hfilter-op-pop" hidden>';
     for (var i = 0; i < ops.length; i++) {
-        html += '<button type="button" class="pager-select-opt" data-op="' + escAttr(ops[i].op) + '">' + esc(ops[i].label) + '</button>';
+        html += '<button type="button" class="pager-select-opt" data-op="' + escAttr(ops[i].op) + '">' + esc(_(ops[i].label)) + '</button>';
     }
     html += '</div></div>';
     html += '<div class="hfilter-args">' +
         '<input type="text" class="hfilter-arg trmd-input" placeholder="' + escAttr(argLabel) + '">' +
-        '<input type="text" class="hfilter-arg hfilter-arg2 trmd-input" placeholder="至" hidden>' +
+        '<input type="text" class="hfilter-arg hfilter-arg2 trmd-input" placeholder="' + escAttr(_('To')) + '" hidden>' +
         '</div>';
     html += '</div>';
     html += '<div class="hfilter-switch">' +
-        '<button type="button" class="hfilter-custom-btn">' + esc(STORAGE_FILTER_CUSTOM_LABEL[kind]) + '</button></div>';
+        '<button type="button" class="hfilter-custom-btn">' + esc(_(STORAGE_FILTER_CUSTOM_LABEL[kind])) + '</button></div>';
     html += '<div class="hfilter-foot">' +
         '<button type="button" class="hfilter-ok">' + _('OK') + '</button>' +
         '<button type="button" class="hfilter-cancel">' + _('Cancel') + '</button></div>';
@@ -2165,7 +2165,7 @@ function bindStorageFilterPop(pop) {
         if (customView.hidden) {
             // 值列表视图:进入自定义视图(保留设置自定义条件的入口)。
             customView.hidden = false;
-            customBtn.textContent = '重置';
+            customBtn.textContent = _('Reset');
             syncFilterOpDisplay(pop, panel.custom.op);
             // 大小列按MB输入,回填时把存储的字节换算回MB显示,与输入框占位符单位一致。
             argInput.value = (col && col.unit === 'MB' && panel.custom.value !== '')
@@ -2205,7 +2205,7 @@ function bindStorageFilterPop(pop) {
     var cond = storageFilters[currentStorage][storageFilterCol];
     if (cond && cond.mode === 'custom') {
         customView.hidden = false;
-        customBtn.textContent = '重置';  // 当前已在自定义视图,按钮语义为放弃自定义条件回到值列表。
+        customBtn.textContent = _('Reset');  // 当前已在自定义视图,按钮语义为放弃自定义条件回到值列表。
         syncFilterOpDisplay(pop, panel.custom.op);
         // 大小列按MB输入,回填时把存储的字节换算回MB显示,与输入框占位符单位一致。
         argInput.value = (col && col.unit === 'MB' && panel.custom.value !== '')

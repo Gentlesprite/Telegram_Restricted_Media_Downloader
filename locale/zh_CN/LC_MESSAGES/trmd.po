@@ -3095,3 +3095,69 @@ msgstr "剩余{time}"
 
 msgid " • Remaining {time}"
 msgstr " • 剩余{time}"
+
+msgid "Size (MB)"
+msgstr "输入大小(MB)"
+
+msgid "Contains"
+msgstr "包含"
+
+msgid "Equals"
+msgstr "等于"
+
+msgid "Not equal"
+msgstr "不等于"
+
+msgid "Starts with"
+msgstr "开头是"
+
+msgid "Ends with"
+msgstr "结尾是"
+
+msgid "Greater than"
+msgstr "大于"
+
+msgid "Less than"
+msgstr "小于"
+
+msgid "Between"
+msgstr "介于"
+
+msgid "After"
+msgstr "晚于"
+
+msgid "Before"
+msgstr "早于"
+
+msgid "Text filter"
+msgstr "文本筛选"
+
+msgid "Number filter"
+msgstr "数字筛选"
+
+msgid "Date filter"
+msgstr "日期筛选"
+
+msgid "Enter keyword"
+msgstr "输入关键字"
+
+msgid "Enter number"
+msgstr "输入数值"
+
+msgid "Enter date (YYYY-MM-DD)"
+msgstr "输入日期(YYYY-MM-DD)"
+
+msgid "Filter"
+msgstr "筛选"
+
+msgid "Search"
+msgstr "搜索"
+
+msgid "(Select all)"
+msgstr "(全选)"
+
+msgid "To"
+msgstr "至"
+
+msgid "Reset"
+msgstr "重置"
