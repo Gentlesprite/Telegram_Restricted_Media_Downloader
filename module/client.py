@@ -25,6 +25,7 @@ from pyrogram import (
     types,
     utils
 )
+from pyrogram.qrlogin import QRLogin
 from pyrogram.raw.core import TLObject
 from pyrogram.session.session import Result
 from pyrogram.errors.exceptions import PhoneNumberInvalid
@@ -39,6 +40,7 @@ from pyrogram.session import (
 from pyrogram.errors import (
     RPCError,
     FloodWait,
+    AuthTokenExpired,
     FloodPremiumWait,
     AuthBytesInvalid,
     VolumeLocNotFound,
@@ -106,8 +108,9 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
         while True:
             try:
                 while True:
-                    value = (await ainput(_('Enter your phone number (the [#6a2c70]phone number[/#6a2c70] must start with [#b83b5e]"+region"[/#b83b5e]! '
-                                           'e.g.: [#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):'))).strip()
+                    value = (await ainput(
+                        _('Enter your phone number (the [#6a2c70]phone number[/#6a2c70] must start with [#b83b5e]"+region"[/#b83b5e]! '
+                          'e.g.: [#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):'))).strip()
                     if not value.startswith('+'):
                         log.warning(
                             _('Unexpected parameter "{value}", the phone number must start with 「+region」!').format(
@@ -291,6 +294,82 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             await self.accept_terms_of_service(signed_in.id)
 
         return signed_up
+
+    async def authorize_qr(self, except_ids: list[int] | None = None) -> pyrogram.types.User:
+        from qrcode import QRCode
+
+        qr_login = QRLogin(self, except_ids or [])
+        await qr_login.recreate()
+
+        qr = QRCode(version=1)
+
+        while True:
+            try:
+                console.print(
+                    'Kurigram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n'
+                    f'under the terms of the {pyrogram.__license__}.\n'
+                    f'欢迎使用[#b4009e]{SOFTWARE_SHORT_NAME}[/#b4009e] {__version__} (Pyrogram {pyrogram.__version__})\n'
+                    '请扫描[#6a2c70]「二维码」[/#6a2c70]登录\n'
+                    '[#b83b5e]Settings(设置)[/#b83b5e] -> [#f08a5d]Devices(设备)[/#f08a5d] -> [#f9ed69]Link Desktop Device(关联桌面设备)[/#f9ed69]'
+                )
+
+                qr.clear()
+                qr.add_data(qr_login.url)
+                qr.print_ascii(tty=True)
+                log.info('Waiting for QR code being scanned.')
+
+                signed_in = await qr_login.wait()
+
+                if signed_in:
+                    log.info(f'Logged in successfully as {signed_in.full_name}')
+                    return signed_in
+            except asyncio.TimeoutError:
+                log.info('Recreating QR code.')
+                await qr_login.recreate()
+            except AuthTokenExpired:
+                log.info("Auth token expired. Recreating QR code.")
+                await qr_login.recreate()
+            except pyrogram.errors.SessionPasswordNeeded as e:
+                console.print(e.MESSAGE)
+
+                while True:
+                    console.print('密码提示:{}'.format(await self.get_password_hint()))
+
+                    if not self.password:
+                        self.password = await ainput(
+                            '输入[#f08a5d]「两步验证」[/#f08a5d]的[#f9ed69]「密码」[/#f9ed69](为空代表[#FF4689]忘记密码[/#FF4689]):',
+                            password=self.hide_password
+                        )
+
+                    try:
+                        if not self.password:
+                            confirm = await ainput(
+                                '所输入的[#f08a5d]「恢复密码」[/#f08a5d]是否正确? - 「y|n」(默认y):')
+
+                            if confirm in ('y', ''):
+                                email_pattern = await self.send_recovery_code()
+                                console.print(
+                                    f'[#f08a5d]「恢复代码」[/#f08a5d]已发送到邮箱[#f9ed69]「{email_pattern}」[/#f9ed69]。')
+
+                                while True:
+                                    recovery_code = await ainput('请输入[#f08a5d]「恢复代码」[/#f08a5d]:')
+
+                                    try:
+                                        return await self.recover_password(recovery_code)
+                                    except pyrogram.errors.BadRequest as e:
+                                        console.print(e.MESSAGE)
+                                    except Exception as e:
+                                        log.exception(e)
+                                        raise
+                            else:
+                                self.password = None
+                        else:
+                            return await self.check_password(self.password)
+                    except pyrogram.errors.BadRequest as e:
+                        console.print(e.MESSAGE)
+                        self.password = None
+            else:
+                break
 
     async def get_chat_history(
             self: pyrogram.Client,
