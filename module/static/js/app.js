@@ -211,7 +211,7 @@ var allCollapsed = false;
 var uploadAllCollapsed = false;
 var lastLinkCollapsed = true;  // 下载页链接层最后的手动选择,缺省折叠以保持原有默认。
 var lastUploadCollapsed = false;  // 上传页频道层最后的手动选择,缺省展开以保持原有默认。
-var UNGROUPED_NAME = '未分组';
+var UNGROUPED_NAME = 'Ungrouped';
 var NOTICE_EMPTY_TEXT = {
     download: 'No download notifications.',
     upload: 'No upload notifications.',
@@ -410,8 +410,8 @@ function channelBlock(group, live) {
         '<div class="group-head" data-channel="' + escAttr(key) + '">' +
         '<span class="cell-name"><span class="arrow"></span>' +
         '<span class="ficon">📺</span>' +
-        '<span class="gname" title="' + escAttr(group.name || group.channel) + '">' +
-        esc(group.name || group.channel) + '</span>' +
+        '<span class="gname" title="' + escAttr(_(group.name || group.channel)) + '">' +
+        esc(_(group.name || group.channel)) + '</span>' +
         '<span class="gcount">' + _('{count} link(s)').replace('{count}', group.count) + '</span></span>' +
         progressCell(group.percent) +
         '<span class="cell-size">' + countText(group.complete, group.member, group.remaining, group.failed) + '</span>' +
@@ -1155,7 +1155,7 @@ function storageGroupCell(group, startRow, len) {
         linkHtml = '<span class="storage-msg" title="' + escAttr(link) + '">' + esc(link) + '</span>';
     }
     return '<div class="storage-cell storage-channel-cell" style="grid-column:1;grid-row:' + startRow + ' / span ' + len + '">' +
-        '<span class="fname" title="' + escAttr(chat) + '">' + esc(chat) + '</span>' +
+        '<span class="fname" title="' + escAttr(_(chat)) + '">' + esc(_(chat)) + '</span>' +
         linkHtml +
         badge +
         '</div>';
@@ -2784,7 +2784,7 @@ function uploadBlock(group) {
         '<div class="group-head" data-channel="' + escAttr(key) + '">' +
         '<span class="cell-name"><span class="arrow"></span>' +
         '<span class="ficon">📺</span>' +
-        '<span class="gname" title="' + escAttr(group.name) + '">' + esc(group.name) + '</span>' +
+        '<span class="gname" title="' + escAttr(_(group.name)) + '">' + esc(_(group.name)) + '</span>' +
         '<span class="gcount">' + _('{count} file(s)').replace('{count}', group.count) + '</span></span>' +
         progressCell(group.percent) +
         '<span class="cell-size">' + countText(group.complete, group.count, group.count - group.complete - group.failed, group.failed) + '</span>' +
