@@ -1,28 +1,43 @@
-# ignore folders
+# IDE settings
 .idea/
+.vscode/
+*.swp
+*.swo
+
+# Python cache
 __pycache__/
-sessions/
-temp/
-output/
-img/
-venv/
-ConfigBackup/
-tests/
-test*
-downloads/
-DownloadRecordForm/
-# ignore files
+*.py[cod]
+
+# Python build artifacts
+/build/
+/dist/
+*.egg-info/
+
+# Runtime directories
+/img/
+/temp/
+/venv/
+/.venv/
+/test*/
+/output/
+/sessions/
+/downloads/
+/ConfigBackup/
+
+# Generated form directories
+/form/
+/DownloadRecordForm/
+/UploadRecordForm/
+
+# Runtime files
+*.db
 *.txt
 *.exe
-*.yaml
-*.template
 *.xml
+*.env
+*.yaml
 *.lock
 *.session
+*.template
+.python-version
 *.session-journal
-test*.py
-Pipfile
-# include files
-!rar.exe
-!requirements.txt
-!module/static/img/
