@@ -3242,3 +3242,24 @@ msgstr "可用{size}"
 
 msgid "Total {size}"
 msgstr "共{size}"
+
+msgid "Welcome to [#b4009e]{app_name}[/#b4009e] {version} (Pyrogram {pyrogram_version})"
+msgstr "欢迎使用[#b4009e]{app_name}[/#b4009e] {version} (Pyrogram {pyrogram_version})"
+
+msgid "Please scan the [#6a2c70]「QR code」[/#6a2c70] to login"
+msgstr "请扫描[#6a2c70]「二维码」[/#6a2c70]登录"
+
+msgid "[#b83b5e]Settings[/#b83b5e] -> [#f08a5d]Devices[/#f08a5d] -> [#f9ed69]Add Device[/#f9ed69]"
+msgstr "[#b83b5e]Settings(设置)[/#b83b5e] -> [#f08a5d]Devices(设备)[/#f08a5d] -> [#f9ed69]Add Device(添加设备)[/#f9ed69]"
+
+msgid "Waiting for QR code being scanned."
+msgstr "等待扫描二维码。"
+
+msgid "Logged in successfully as {name}"
+msgstr "登录成功,用户:{name}。"
+
+msgid "Recreating QR code."
+msgstr "正在重新生成二维码。"
+
+msgid "Auth token expired. Recreating QR code."
+msgstr "授权令牌已过期,正在重新生成二维码。"

@@ -231,7 +231,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             except pyrogram.errors.BadRequest as e:
                 console.print(e.MESSAGE)
                 self.phone_code = None
-            except pyrogram.errors.SessionPasswordNeeded as _e:
+            except pyrogram.errors.SessionPasswordNeeded:
                 console.print(
                     _('[#f08a5d]「Two-step verification」[/#f08a5d] is enabled for this account; the [#f9ed69]「password」[/#f9ed69] is required.'))
 
@@ -306,18 +306,22 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
         console.print(
             'Kurigram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n'
             f'under the terms of the {pyrogram.__license__}.\n'
-            f'欢迎使用[#b4009e]{SOFTWARE_SHORT_NAME}[/#b4009e] {__version__} (Pyrogram {pyrogram.__version__})\n'
-            '请扫描[#6a2c70]「二维码」[/#6a2c70]登录\n'
-            '[#b83b5e]Settings(设置)[/#b83b5e] -> [#f08a5d]Devices(设备)[/#f08a5d] -> [#f9ed69]Add Device(添加设备)[/#f9ed69]'
+            + _('Welcome to [#b4009e]{app_name}[/#b4009e] {version} (Pyrogram {pyrogram_version})').format(
+                app_name=SOFTWARE_SHORT_NAME,
+                version=__version__,
+                pyrogram_version=pyrogram.__version__
+            ) + '\n'
+            + _('Please scan the [#6a2c70]「QR code」[/#6a2c70] to login') + '\n'
+            + _('[#b83b5e]Settings[/#b83b5e] -> [#f08a5d]Devices[/#f08a5d] -> [#f9ed69]Add Device[/#f9ed69]')
         )
-        log.info('Waiting for QR code being scanned.')
+        log.info(_('Waiting for QR code being scanned.'))
         qr_lines = 0  # 记录二维码占用的终端行数,刷新时只清理这块区域。
 
         while True:
             try:
                 if qr_lines:
                     sys.stdout.write(f'\x1b[{qr_lines}A')
-                    for _ in range(qr_lines):
+                    for i in range(qr_lines):
                         sys.stdout.write('\x1b[2K\n')
                     sys.stdout.write(f'\x1b[{qr_lines}A')
                     sys.stdout.flush()
@@ -329,38 +333,41 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 signed_in = await qr_login.wait()
 
                 if signed_in:
-                    log.info(f'Logged in successfully as {signed_in.full_name}')
+                    log.info(_('Logged in successfully as {name}').format(name=signed_in.full_name))
                     return signed_in
             except asyncio.TimeoutError:
-                log.debug('Recreating QR code.')
+                log.debug(_('Recreating QR code.'))
                 await qr_login.recreate()
             except AuthTokenExpired:
-                log.debug('Auth token expired. Recreating QR code.')
+                log.debug(_('Auth token expired. Recreating QR code.'))
                 await qr_login.recreate()
-            except pyrogram.errors.SessionPasswordNeeded as e:
-                console.print(e.MESSAGE)
+            except pyrogram.errors.SessionPasswordNeeded:
+                console.print(
+                    _('[#f08a5d]「Two-step verification」[/#f08a5d] is enabled for this account; the [#f9ed69]「password」[/#f9ed69] is required.'))
 
                 while True:
-                    console.print('密码提示:{}'.format(await self.get_password_hint()))
+                    console.print(_('Password hint: {hint}').format(hint=await self.get_password_hint()))
 
                     if not self.password:
                         self.password = await ainput(
-                            '输入[#f08a5d]「两步验证」[/#f08a5d]的[#f9ed69]「密码」[/#f9ed69](为空代表[#FF4689]忘记密码[/#FF4689]):',
+                            _('Enter the [#f9ed69]「password」[/#f9ed69] for [#f08a5d]「two-step verification」[/#f08a5d] (empty means [#FF4689]forgot password[/#FF4689]):'),
                             password=self.hide_password
                         )
 
                     try:
                         if not self.password:
                             confirm = await ainput(
-                                '所输入的[#f08a5d]「恢复密码」[/#f08a5d]是否正确? - 「y|n」(默认y):')
+                                _('Is the entered [#f08a5d]「recovery password」[/#f08a5d] correct? - 「y|n」(default y):'))
 
                             if confirm in ('y', ''):
                                 email_pattern = await self.send_recovery_code()
                                 console.print(
-                                    f'[#f08a5d]「恢复代码」[/#f08a5d]已发送到邮箱[#f9ed69]「{email_pattern}」[/#f9ed69]。')
+                                    _('[#f08a5d]「Recovery code」[/#f08a5d] sent to email [#f9ed69]「{email_pattern}」[/#f9ed69].').format(
+                                        email_pattern=email_pattern
+                                    ))
 
                                 while True:
-                                    recovery_code = await ainput('请输入[#f08a5d]「恢复代码」[/#f08a5d]:')
+                                    recovery_code = await ainput(_('Enter the [#f08a5d]「recovery code」[/#f08a5d]:'))
 
                                     try:
                                         return await self.recover_password(recovery_code)
