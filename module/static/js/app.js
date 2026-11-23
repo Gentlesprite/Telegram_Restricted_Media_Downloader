@@ -273,12 +273,12 @@ function sizeText(bytes) {
 function secondsText(seconds) {
     var total = Math.floor(Number(seconds) || 0);
     if (total < 60) {
-        return total + '秒';
+        return _('{seconds}s').replace('{seconds}', total);
     }
     if (total < 3600) {
-        return Math.floor(total / 60) + '分' + (total % 60) + '秒';
+        return _('{minutes}m{seconds}s').replace('{minutes}', Math.floor(total / 60)).replace('{seconds}', total % 60);
     }
-    return Math.floor(total / 3600) + '时' + Math.floor(total % 3600 / 60) + '分' + (total % 60) + '秒';
+    return _('{hours}h{minutes}m{seconds}s').replace('{hours}', Math.floor(total / 3600)).replace('{minutes}', Math.floor(total % 3600 / 60)).replace('{seconds}', total % 60);
 }
 
 function groupStat(members, live) {
@@ -1894,8 +1894,8 @@ function buildStorageFilterPop() {
     html += '<div class="hfilter-switch">' +
         '<button type="button" class="hfilter-custom-btn">' + esc(STORAGE_FILTER_CUSTOM_LABEL[kind]) + '</button></div>';
     html += '<div class="hfilter-foot">' +
-        '<button type="button" class="hfilter-ok">确定</button>' +
-        '<button type="button" class="hfilter-cancel">取消</button></div>';
+        '<button type="button" class="hfilter-ok">' + _('OK') + '</button>' +
+        '<button type="button" class="hfilter-cancel">' + _('Cancel') + '</button></div>';
     pop.innerHTML = html;
     return pop;
 }
