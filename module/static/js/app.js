@@ -18,7 +18,7 @@ function applyI18n() {
     document.getElementById('linkChannel').innerHTML = '<span class="menu-emoji">📌</span>' + _('Subscribe channel');
     document.getElementById('linkVideo').innerHTML = '<span class="menu-emoji">🎬</span>' + _('Video tutorial');
     document.getElementById('btnSettings').innerHTML = '<span class="menu-emoji">🔧</span>' + _('Settings');
-    document.getElementById('btnLogout').innerHTML = '<span class="menu-emoji">🚪</span>' + _('Log out');
+    document.getElementById('btnLogout').innerHTML = '<span class="menu-emoji">➡️</span>' + _('Log out');
 
     document.querySelector('[data-section="download"]').textContent = _('Download');
     document.querySelector('[data-section="upload"]').textContent = _('Upload');
