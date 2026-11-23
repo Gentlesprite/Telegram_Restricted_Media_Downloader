@@ -2069,7 +2069,7 @@ function bindStorageFilterPop(pop) {
         }
         if (allBox) allBox.disabled = true;
         var tip = document.createElement('div');
-        tip.textContent = '以下勾选的为当前条件匹配项（只读）';
+        tip.textContent = _('The checked items below match the current criteria (read-only).');
         tip.style.cssText = 'font-size:11px;color:#999;padding:2px 0 4px;';
         valuesBox.insertBefore(tip, valuesBox.firstChild);
     }

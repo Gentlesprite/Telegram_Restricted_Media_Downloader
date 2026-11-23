@@ -3059,3 +3059,6 @@ msgstr "无法连接程序"
 
 msgid "Operation failed due to \"{error}\""
 msgstr "操作失败,无法连接程序,原因:\"{error}\""
+
+msgid "The checked items below match the current criteria (read-only)."
+msgstr "以下勾选的为当前条件匹配项(只读)。"
