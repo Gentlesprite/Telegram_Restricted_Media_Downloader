@@ -305,12 +305,10 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 app_name=SOFTWARE_SHORT_NAME,
                 version=__version__,
                 pyrogram_version=pyrogram.__version__
-            ) + '\n'
-            + _('Please scan the [#ff6b81]「QR code」[/#ff6b81] to login') + '\n'
-            + _('[#b83b5e]Settings[/#b83b5e] -> [#f08a5d]Devices[/#f08a5d] -> [#f9ed69]Add Device[/#f9ed69]')
+            )
         )
         log.info(_('Waiting for QR code being scanned.'))
-        qr_lines = 0  # 记录二维码占用的终端行数,刷新时只清理这块区域。
+        qr_lines = 0  # 记录二维码、扫码提示与操作路径提示占用的终端行数,刷新时只清理这块区域。
 
         while True:
             try:
@@ -323,7 +321,11 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
 
                 qr_text = MetaData.qr_terminal_str(qr_login.url)
                 console.print(qr_text, justify='center', soft_wrap=True)
-                qr_lines = len(qr_text.splitlines())
+                scan_notice = _('Please scan the [#ff6b81]「QR code」[/#ff6b81] to login')
+                console.print(scan_notice, justify='center', soft_wrap=True)
+                path_notice = _('[#b83b5e]Settings[/#b83b5e] -> [#f08a5d]Devices[/#f08a5d] -> [#f9ed69]Add Device[/#f9ed69]')
+                console.print(path_notice, justify='center', soft_wrap=True)
+                qr_lines = len(qr_text.splitlines()) + len(scan_notice.splitlines()) + len(path_notice.splitlines())
 
                 if getattr(qr_login.r, 'expires', None) is None:  # LoginTokenMigrateTo无expires,使用固定超时避免库报错。
                     signed_in = await qr_login.wait(timeout=35)
