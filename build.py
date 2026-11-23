@@ -39,6 +39,15 @@ def ready_web() -> list:
     return web_directories
 
 
+def ready_locale() -> list:
+    relative_directory: str = 'locale'
+    path: str = str(Path(relative_directory).resolve())
+    if not os.path.isdir(path):
+        print(f'未找到语言资源目录:"{path}"。')
+        sys.exit(1)
+    return [(path, relative_directory)]
+
+
 def ready_commit_hash() -> Union[str, None]:
     repo_root: Path = Path(__file__).resolve().parent
     try:
@@ -112,7 +121,7 @@ if __name__ == '__main__':
         build_command += '--remove-output ' if '--remove-output' in sys.argv else ''
         build_command += '--include-package-data=pyrogram --include-package=kuricrypt '  # noqa.
         build_command += '--include-module=_json --include-module=_bisect ' if PLATFORM in ('linux', 'darwin') else ''
-        build_command += ''.join(map(lambda d: f'--include-data-dir="{d[0]}"="{d[1]}" ', ready_web()))
+        build_command += ''.join(map(lambda d: f'--include-data-dir="{d[0]}"="{d[1]}" ', ready_web() + ready_locale()))
         build_command += f'--force-runtime-environment-variable=TRMD_COMMIT_HASH={commit_hash} ' if commit_hash else ''
         build_command += f'--force-runtime-environment-variable=TRMD_BUILD_TIME={datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")} '
         build_command += f'--clang --windows-icon-from-ico="{ICO_PATH}" --include-windows-runtime-dlls=yes ' if PLATFORM == 'win32' else ''
