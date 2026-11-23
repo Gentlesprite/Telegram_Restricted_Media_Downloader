@@ -3269,3 +3269,6 @@ msgstr "电话号码无效。"
 
 msgid "The provided confirmation code is invalid."
 msgstr "验证码无效。"
+
+msgid "The provided code is invalid (i.e. from email)."
+msgstr "验证码无效(来自邮箱的验证码)。"
