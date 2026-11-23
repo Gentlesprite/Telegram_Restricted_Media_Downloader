@@ -67,12 +67,15 @@
 | Telegram交流群 |          [点击加入](https://t.me/+6KKA-buFaixmNTE1)          |   群文件   |
 
 ## 1.1.推荐终端（选看）
+> [!IMPORTANT]
+> Windows 10默认终端无法正常显示二维码，若使用二维码登录，请务必按本节推荐配置终端。
+
 <details>
 <summary><strong>点击展开</strong></summary>
 
-1. _对于Windows11用户_，`Windows Terminal`默认**已经安装好**，可**跳过**下载的步骤，直接前往第3步（将`Windows Terminal`设为**默认终端**）。
+1. _对于Windows 11用户_，`Windows Terminal`默认**已经安装好**，可**跳过**下载的步骤，直接前往第3步（将`Windows Terminal`设为**默认终端**）。
 
-2. _对于Windows10用户_，推荐使用`Windows Terminal`作为**默认终端**，仅作为推荐安装，无论安装与否**不会影响本软件的使用**，`Windows Terminal`能提供更出色的显示、交互、体验效果，以及避免出现**文字显示**乱码。
+2. _对于Windows 10用户_，推荐使用`Windows Terminal`作为**默认终端**，仅作为推荐安装，无论安装与否**不会影响本软件的使用**，`Windows Terminal`能提供更出色的显示、交互、体验效果，以及避免出现**文字显示**乱码。
 
    `Windows Terminal`下载地址如下表：
 

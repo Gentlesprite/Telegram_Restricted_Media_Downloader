@@ -61,20 +61,20 @@ class DownloadType:
 
 
 class DownloadStatus:
-    PENDING = 'pending'
-    DOWNLOADING = 'downloading'
-    SUCCESS = 'success'
-    FAILURE = 'failure'
-    SKIP = 'skip'
-    RETRY = 'retry'
+    PENDING: str = 'pending'
+    DOWNLOADING: str = 'downloading'
+    SUCCESS: str = 'success'
+    FAILURE: str = 'failure'
+    SKIP: str = 'skip'
+    RETRY: str = 'retry'
 
 
 class UploadStatus:
-    PENDING = 'pending'
-    UPLOADING = 'uploading'
-    SUCCESS = 'success'
-    FAILURE = 'failure'
-    SENT = 'sent'
+    PENDING: str = 'pending'
+    UPLOADING: str = 'uploading'
+    SUCCESS: str = 'success'
+    FAILURE: str = 'failure'
+    SENT: str = 'sent'
 
 
 class NoticeType:
@@ -1732,12 +1732,12 @@ class Emoji:
 
 
 class BotStepKeyword:
-    LINK = 'link'
-    PATH = 'path'
-    TARGET = 'target'
-    ORIGIN = 'origin'
-    START_ID = 'start_id'
-    END_ID = 'end_id'
+    LINK: str = 'link'
+    PATH: str = 'path'
+    TARGET: str = 'target'
+    ORIGIN: str = 'origin'
+    START_ID: str = 'start_id'
+    END_ID: str = 'end_id'
 
 
 class BotStepText:
@@ -1761,8 +1761,10 @@ class BotMessage:
     INVALID: str = _('🚫The following links are invalid and have been removed:\n')
     TASK_ASSIGN: str = _('🌟Task assigned.')
     TOO_MANY_MESSAGE: str = _('⚠️Message too long, will not display each item this time.')
-    TOO_MANY_INVALID_DOWNLOAD_MESSAGE: str = _('⚠️{count} messages were skipped for download because they are invalid; too many to list individually.')
-    TOO_MANY_INVALID_FORWARD_MESSAGE: str = _('⚠️{count} messages were skipped for forwarding because they no longer exist; too many to list individually.')
+    TOO_MANY_INVALID_DOWNLOAD_MESSAGE: str = _(
+        '⚠️{count} messages were skipped for download because they are invalid; too many to list individually.')
+    TOO_MANY_INVALID_FORWARD_MESSAGE: str = _(
+        '⚠️{count} messages were skipped for forwarding because they no longer exist; too many to list individually.')
 
 
 class BotButton:
