@@ -3272,3 +3272,60 @@ msgstr "验证码无效。"
 
 msgid "The provided code is invalid (i.e. from email)."
 msgstr "验证码无效(来自邮箱的验证码)。"
+
+msgid "The provided code is empty."
+msgstr "提供的验证码为空。"
+
+msgid "The email code is empty."
+msgstr "邮箱验证码为空。"
+
+msgid "The email hash expired and cannot be used to verify it."
+msgstr "邮箱哈希已过期,无法用于验证。"
+
+msgid "The verification email has expired."
+msgstr "验证邮件已过期。"
+
+msgid "Email unconfirmed."
+msgstr "邮箱未确认。"
+
+msgid "The specified email is invalid."
+msgstr "指定的邮箱无效。"
+
+msgid "The specified email cannot be used to complete the operation."
+msgstr "指定的邮箱不能用于完成此操作。"
+
+msgid "The phone code is missing."
+msgstr "缺少验证码。"
+
+msgid "The provided confirmation code has expired. Make sure you haven't sent it to anyone else and use the code on the same connection."
+msgstr "提供的验证码已过期,请确保没有把它告诉别人,并在同一连接上使用该验证码。"
+
+msgid "The phone code hash is missing."
+msgstr "缺少验证码哈希。"
+
+msgid "The specified phone number is banned from Telegram and cannot be used."
+msgstr "指定电话号码已被Telegram封禁,无法使用。"
+
+msgid "This number has tried to login too many times."
+msgstr "该号码登录尝试次数过多。"
+
+msgid "The recovery code has expired."
+msgstr "恢复代码已过期。"
+
+msgid "No email was set, can't recover password via email."
+msgstr "未设置邮箱,无法通过邮箱恢复密码。"
+
+msgid "The provided password is empty."
+msgstr "提供的密码为空。"
+
+msgid "The two-step verification password is required for this method."
+msgstr "此方法需要两步验证密码。"
+
+msgid "The two-step verification password was modified less than 24 hours ago, try again in {seconds} seconds."
+msgstr "两步验证密码修改不足24小时,请在{seconds}秒后重试。"
+
+msgid "The password has changed."
+msgstr "密码已更改。"
+
+msgid "This session was created less than 24 hours ago, try again in {seconds} seconds."
+msgstr "此会话创建不足24小时,请在{seconds}秒后重试。"
