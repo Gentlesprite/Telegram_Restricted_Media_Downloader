@@ -3243,8 +3243,8 @@ msgstr "共{size}"
 msgid "Welcome to [#b4009e]{app_name}[/#b4009e] {version} (Pyrogram {pyrogram_version})"
 msgstr "欢迎使用[#b4009e]{app_name}[/#b4009e] {version} (Pyrogram {pyrogram_version})"
 
-msgid "Please scan the [#6a2c70]「QR code」[/#6a2c70] to login"
-msgstr "请扫描[#6a2c70]「二维码」[/#6a2c70]登录"
+msgid "Please scan the [#ff6b81]「QR code」[/#ff6b81] to login"
+msgstr "请扫描[#ff6b81]「二维码」[/#ff6b81]登录"
 
 msgid "[#b83b5e]Settings[/#b83b5e] -> [#f08a5d]Devices[/#f08a5d] -> [#f9ed69]Add Device[/#f9ed69]"
 msgstr "[#b83b5e]Settings(设置)[/#b83b5e] -> [#f08a5d]Devices(设备)[/#f08a5d] -> [#f9ed69]Add Device(添加设备)[/#f9ed69]"

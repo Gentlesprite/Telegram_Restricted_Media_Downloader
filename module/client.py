@@ -306,7 +306,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 version=__version__,
                 pyrogram_version=pyrogram.__version__
             ) + '\n'
-            + _('Please scan the [#6a2c70]「QR code」[/#6a2c70] to login') + '\n'
+            + _('Please scan the [#ff6b81]「QR code」[/#ff6b81] to login') + '\n'
             + _('[#b83b5e]Settings[/#b83b5e] -> [#f08a5d]Devices[/#f08a5d] -> [#f9ed69]Add Device[/#f9ed69]')
         )
         log.info(_('Waiting for QR code being scanned.'))
