@@ -136,9 +136,22 @@ fetch('/trmd.mo').then(function(response) {
     lastStructKey = null;
     lastUploadStructKey = null;
     lastNoticeKey = null;
+    lastStorageKey = null;
     if (lastSnapshot) {
         render(lastSnapshot, true);
     }
+    var storageHeaders = STORAGE_HEADERS[currentStorage] || STORAGE_HEADERS.download;
+    var storageHeadNodes = document.querySelectorAll('.list-storage .list-head .htext');
+    for (var i = 0; i < storageHeadNodes.length; i++) {
+        if (storageHeaders[i]) {
+            storageHeadNodes[i].textContent = _(storageHeaders[i]);
+        }
+    }
+    var storageFilterButtons = document.querySelectorAll('.list-storage .list-head .hfilter');
+    for (i = 0; i < storageFilterButtons.length; i++) {
+        storageFilterButtons[i].title = _('Filter');
+    }
+    applyPageSizeLabel(storagePage.size);
     renderStoragePage();
 });
 
