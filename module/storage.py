@@ -139,6 +139,7 @@ class SqliteStorageDatabase(StorageDatabase):
         'create_time',
         'finish_time'
     )  # 记录表的全部列,查询按此顺序取值,与建表语句保持一致。
+    # @formatter:off
     # language=SQLite
     STORAGE_SCHEMA: str = '''
         CREATE TABLE IF NOT EXISTS web_storages
@@ -159,6 +160,7 @@ class SqliteStorageDatabase(StorageDatabase):
             finish_time INTEGER NOT NULL DEFAULT 0
         );
     '''
+    # @formatter:on
     SWEEP_BATCH_SIZE: int = 500  # 存在性校验的单批文件数,批间通过await让出事件循环。
     SWEEP_TTL: float = 15.0  # 目录极度分散时两次校验的最小间隔,单位为秒。
     SWEEP_TTL_THRESHOLD: int = 200  # 父目录数超过该值时启用SWEEP_TTL限流。
