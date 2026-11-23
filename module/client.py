@@ -72,7 +72,10 @@ from module.enums import (
     WaitingKind,
     DownloadType
 )
-from module.stdio import ConnectionStatus
+from module.stdio import (
+    MetaData,
+    ConnectionStatus
+)
 from module.language import _
 
 
@@ -297,12 +300,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
         return signed_up
 
     async def authorize_qr(self, except_ids: list[int] | None = None) -> pyrogram.types.User:
-        from qrcode import QRCode
-
         qr_login = QRLogin(self, except_ids or [])
         await qr_login.recreate()
-
-        qr = QRCode(version=1)
 
         console.print(
             'Kurigram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n'
@@ -323,10 +322,9 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                     sys.stdout.write(f'\x1b[{qr_lines}A')
                     sys.stdout.flush()
 
-                qr.clear()
-                qr.add_data(qr_login.url)
-                qr.print_ascii(tty=True)
-                qr_lines = len(range(-qr.border, qr.modules_count + qr.border, 2))
+                qr_text = MetaData.qr_terminal_str(qr_login.url)
+                console.print(qr_text, justify='center', soft_wrap=True)
+                qr_lines = len(qr_text.splitlines())
 
                 signed_in = await qr_login.wait()
 

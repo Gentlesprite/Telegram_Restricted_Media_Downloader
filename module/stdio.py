@@ -689,7 +689,7 @@ class MetaData:
         if MetaData.check_run_env():  # 是终端才打印,生产环境会报错。
             try:
                 console.print(
-                    MetaData.__qr_terminal_str(
+                    MetaData.qr_terminal_str(
                         'wxp://f2f0g8lKGhzEsr0rwtKWTTB2gQzs9Xg9g31aBvlpbILowMTa5SAMMEwn0JH1VEf2TGbS'),  # noqa.
                     justify='center'
                 )
@@ -768,7 +768,7 @@ class MetaData:
         console.print(Markdown(README))
 
     @staticmethod
-    def __qr_terminal_str(str_obj: str, version: int = 1, render: Callable = QrcodeRender.render_2by1) -> str:
+    def qr_terminal_str(str_obj: str, version: int = 1, render: Callable = QrcodeRender.render_2by1) -> str:
         qr = qrcode.QRCode(version)
         qr.add_data(str_obj)
         qr.make()
