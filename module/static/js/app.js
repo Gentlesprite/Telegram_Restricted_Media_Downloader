@@ -129,7 +129,18 @@ fetch('/trmd.mo').then(function(response) {
     }
 }).catch(function() {
     // 加载失败时 i18nCatalog 为空,_() 自动回退 msgid。
-}).then(applyI18n);
+}).then(function() {
+    applyI18n();
+    // 语言字典加载完成后重绘动态文案,避免首屏先用msgid渲染后保留英文。
+    lastRenderKey = '';
+    lastStructKey = null;
+    lastUploadStructKey = null;
+    lastNoticeKey = null;
+    if (lastSnapshot) {
+        render(lastSnapshot, true);
+    }
+    renderStoragePage();
+});
 
 const EMPTY_SUMMARY = {percent: 0, info: '0.00B / 0.00B', speed: '', remaining: ''};
 var connectionStatus = '';  // 后端下发的连接状态文本,拼接在总进度 extra 之后。
