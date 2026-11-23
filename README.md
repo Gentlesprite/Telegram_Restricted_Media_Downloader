@@ -1627,6 +1627,7 @@ temp_directory: /app/temp
     -v ./form:/app/form \
     -p 2921:2921 \
     -e TZ=Asia/Shanghai \
+    -e LANG=zh_CN.UTF-8 \
     gentlesprite/telegram_restricted_media_downloader:latest \
     python main.py --config /app/TRMD/config.yaml --port 2921
   ```
