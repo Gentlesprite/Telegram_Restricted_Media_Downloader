@@ -3263,3 +3263,12 @@ msgstr "正在重新生成二维码。"
 
 msgid "Auth token expired. Recreating QR code."
 msgstr "授权令牌已过期,正在重新生成二维码。"
+
+msgid "The two-step verification password is invalid."
+msgstr "两步验证密码错误。"
+
+msgid "The phone number is invalid."
+msgstr "电话号码无效。"
+
+msgid "The provided confirmation code is invalid."
+msgstr "验证码无效。"

@@ -142,12 +142,12 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 self.phone_number = value
                 sent_code = await self.send_code(self.phone_number)
             except pyrogram.errors.BadRequest as e:
-                console.print(e.MESSAGE)
+                console.print(_(e.MESSAGE))
                 self.phone_number = None
             except (pyrogram.errors.PhoneNumberInvalid, AttributeError) as e:
                 self.phone_number = None
                 log.error(_('Invalid 「phone number」 due to "{error}", please re-enter.').format(
-                    error=e.MESSAGE
+                    error=_(e.MESSAGE)
                 ))
             else:
                 break
@@ -202,7 +202,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                                 currency=email_sent_code.sent_code.currency
                             ))
                 except pyrogram.errors.BadRequest as e:
-                    console.print(e.MESSAGE)
+                    console.print(_(e.MESSAGE))
                 else:
                     break
 
@@ -229,7 +229,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             try:
                 signed_in = await self.sign_in(self.phone_number, sent_code.phone_code_hash, self.phone_code)
             except pyrogram.errors.BadRequest as e:
-                console.print(e.MESSAGE)
+                console.print(_(e.MESSAGE))
                 self.phone_code = None
             except pyrogram.errors.SessionPasswordNeeded:
                 console.print(
@@ -260,7 +260,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                                     try:
                                         return await self.recover_password(recovery_code)
                                     except pyrogram.errors.BadRequest as e:
-                                        console.print(e.MESSAGE)
+                                        console.print(_(e.MESSAGE))
                                     except Exception as _e:
                                         console.print_exception()
                                         raise
@@ -269,7 +269,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                         else:
                             return await self.check_password(self.password)
                     except pyrogram.errors.BadRequest as e:
-                        console.print(e.MESSAGE)
+                        console.print(_(e.MESSAGE))
                         self.password = None
             else:
                 break
@@ -289,7 +289,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                     last_name
                 )
             except pyrogram.errors.BadRequest as e:
-                console.print(e.MESSAGE)
+                console.print(_(e.MESSAGE))
             else:
                 break
 
@@ -372,7 +372,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                                     try:
                                         return await self.recover_password(recovery_code)
                                     except pyrogram.errors.BadRequest as e:
-                                        console.print(e.MESSAGE)
+                                        console.print(_(e.MESSAGE))
                                     except Exception as e:
                                         log.exception(e)
                                         raise
@@ -381,7 +381,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                         else:
                             return await self.check_password(self.password)
                     except pyrogram.errors.BadRequest as e:
-                        console.print(e.MESSAGE)
+                        console.print(_(e.MESSAGE))
                         self.password = None
             else:
                 break
