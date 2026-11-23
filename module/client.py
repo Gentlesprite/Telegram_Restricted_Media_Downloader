@@ -239,33 +239,28 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                     console.print(_('Password hint: {hint}').format(hint=await self.get_password_hint()))
 
                     if not self.password:
-                        self.password = (await ainput(
-                            _('Enter the [#f9ed69]「password」[/#f9ed69] for [#f08a5d]「two-step verification」[/#f08a5d] (empty means [#FF4689]forgot password[/#FF4689]):'))).strip()
+                        self.password = await ainput(
+                            _('Enter the [#f9ed69]「password」[/#f9ed69] for [#f08a5d]「two-step verification」[/#f08a5d] (empty means [#FF4689]forgot password[/#FF4689]):'))
 
                     try:
                         if not self.password:
-                            confirm = (await ainput(
-                                _('Is the entered [#f08a5d]「recovery password」[/#f08a5d] correct? - 「y|n」(default y):'))).strip().lower()
-                            if confirm in ('y', ''):
-                                email_pattern = await self.send_recovery_code()
-                                console.print(
-                                    _('[#f08a5d]「Recovery code」[/#f08a5d] sent to email [#f9ed69]「{email_pattern}」[/#f9ed69].').format(
-                                        email_pattern=email_pattern
-                                    ))
+                            email_pattern = await self.send_recovery_code()
+                            console.print(
+                                _('[#f08a5d]「Recovery code」[/#f08a5d] sent to email [#f9ed69]「{email_pattern}」[/#f9ed69].').format(
+                                    email_pattern=email_pattern
+                                ))
 
-                                while True:
-                                    recovery_code = (
-                                        await ainput(_('Enter the [#f08a5d]「recovery code」[/#f08a5d]:'))).strip()
+                            while True:
+                                recovery_code = await ainput(
+                                    _('Enter the [#f08a5d]「recovery code」[/#f08a5d]:'))
 
-                                    try:
-                                        return await self.recover_password(recovery_code)
-                                    except pyrogram.errors.BadRequest as e:
-                                        console.print(_(e.MESSAGE))
-                                    except Exception as _e:
-                                        console.print_exception()
-                                        raise
-                            else:
-                                self.password = None
+                                try:
+                                    return await self.recover_password(recovery_code)
+                                except pyrogram.errors.BadRequest as e:
+                                    console.print(_(e.MESSAGE))
+                                except Exception as _e:
+                                    console.print_exception()
+                                    raise
                         else:
                             return await self.check_password(self.password)
                     except pyrogram.errors.BadRequest as e:
@@ -356,28 +351,22 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
 
                     try:
                         if not self.password:
-                            confirm = await ainput(
-                                _('Is the entered [#f08a5d]「recovery password」[/#f08a5d] correct? - 「y|n」(default y):'))
+                            email_pattern = await self.send_recovery_code()
+                            console.print(
+                                _('[#f08a5d]「Recovery code」[/#f08a5d] sent to email [#f9ed69]「{email_pattern}」[/#f9ed69].').format(
+                                    email_pattern=email_pattern
+                                ))
 
-                            if confirm in ('y', ''):
-                                email_pattern = await self.send_recovery_code()
-                                console.print(
-                                    _('[#f08a5d]「Recovery code」[/#f08a5d] sent to email [#f9ed69]「{email_pattern}」[/#f9ed69].').format(
-                                        email_pattern=email_pattern
-                                    ))
+                            while True:
+                                recovery_code = await ainput(_('Enter the [#f08a5d]「recovery code」[/#f08a5d]:'))
 
-                                while True:
-                                    recovery_code = await ainput(_('Enter the [#f08a5d]「recovery code」[/#f08a5d]:'))
-
-                                    try:
-                                        return await self.recover_password(recovery_code)
-                                    except pyrogram.errors.BadRequest as e:
-                                        console.print(_(e.MESSAGE))
-                                    except Exception as e:
-                                        log.exception(e)
-                                        raise
-                            else:
-                                self.password = None
+                                try:
+                                    return await self.recover_password(recovery_code)
+                                except pyrogram.errors.BadRequest as e:
+                                    console.print(_(e.MESSAGE))
+                                except Exception as e:
+                                    log.exception(e)
+                                    raise
                         else:
                             return await self.check_password(self.password)
                     except pyrogram.errors.BadRequest as e:

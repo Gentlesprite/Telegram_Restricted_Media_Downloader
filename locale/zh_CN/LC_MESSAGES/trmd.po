@@ -660,9 +660,6 @@ msgstr "密码提示:{hint}"
 msgid "Enter the [#f9ed69]「password」[/#f9ed69] for [#f08a5d]「two-step verification」[/#f08a5d] (empty means [#FF4689]forgot password[/#FF4689]):"
 msgstr "输入[#f08a5d]「两步验证」[/#f08a5d]的[#f9ed69]「密码」[/#f9ed69](为空代表[#FF4689]忘记密码[/#FF4689]):"
 
-msgid "Is the entered [#f08a5d]「recovery password」[/#f08a5d] correct? - 「y|n」(default y):"
-msgstr "所输入的[#f08a5d]「恢复密码」[/#f08a5d]是否正确? - 「y|n」(默认y):"
-
 msgid "Enter the [#f08a5d]「recovery code」[/#f08a5d]:"
 msgstr "请输入[#f08a5d]「恢复代码」[/#f08a5d]:"
 
