@@ -3197,3 +3197,12 @@ msgstr "{count}个消息"
 
 msgid "· Page item {count}"
 msgstr "· 本页第{count}条"
+
+msgid "Used {size}"
+msgstr "已用{size}"
+
+msgid "Free {size}"
+msgstr "可用{size}"
+
+msgid "Total {size}"
+msgstr "共{size}"

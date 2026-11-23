@@ -820,9 +820,9 @@ class Web:
                 'used': used,
                 'free': free,
                 'percent': round(used * 100 / total, 1) if total else 0.0,
-                'used_text': '已用{0}'.format(MetaData.suitable_units_display(used)),
-                'free_text': '可用{0}'.format(MetaData.suitable_units_display(free)),
-                'total_text': '共{0}'.format(MetaData.suitable_units_display(total))
+                'used_text': _('Used {size}').format(size=MetaData.suitable_units_display(used)),
+                'free_text': _('Free {size}').format(size=MetaData.suitable_units_display(free)),
+                'total_text': _('Total {size}').format(size=MetaData.suitable_units_display(total))
             })
         data.update(self.cache_size())
         return data
