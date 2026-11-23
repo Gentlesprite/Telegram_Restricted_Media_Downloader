@@ -80,14 +80,13 @@ function applyI18n() {
     document.getElementById('storageNext').title = _('Next page');
     document.querySelector('#storagePager .pager-ind > span:first-child').textContent = _('Page') + ' ';
     document.getElementById('toggleStorage').textContent = _('Refresh');
-    document.querySelector('#page-storage .list-head > span:nth-child(1) .htext').textContent = _('Channel / Message');
-    document.querySelector('#page-storage .list-head > span:nth-child(2) .htext').textContent = _('File');
-    document.querySelector('#page-storage .list-head > span:nth-child(3) .htext').textContent = _('Link');
-    document.querySelector('#page-storage .list-head > span:nth-child(4) .htext').textContent = _('Size');
-    document.querySelector('#page-storage .list-head > span:nth-child(5) .htext').textContent = _('Message ID');
-    document.querySelector('#page-storage .list-head > span:nth-child(6) .htext').textContent = _('Type');
-    document.querySelector('#page-storage .list-head > span:nth-child(7) .htext').textContent = _('Status');
-    document.querySelector('#page-storage .list-head > span:nth-child(8) .htext').textContent = _('Time');
+    var storageHeaders = STORAGE_HEADERS[currentStorage] || STORAGE_HEADERS.download;
+    var storageHeadNodes = document.querySelectorAll('#page-storage .list-head > span .htext');
+    for (var i = 0; i < storageHeadNodes.length; i++) {
+        if (storageHeaders[i]) {
+            storageHeadNodes[i].textContent = _(storageHeaders[i]);
+        }
+    }
 
     document.querySelector('#supportModal .modal-title').textContent = _('Support author');
     document.getElementById('supportClose').title = _('Close');
@@ -140,15 +139,8 @@ fetch('/trmd.mo').then(function(response) {
     if (lastSnapshot) {
         render(lastSnapshot, true);
     }
-    var storageHeaders = STORAGE_HEADERS[currentStorage] || STORAGE_HEADERS.download;
-    var storageHeadNodes = document.querySelectorAll('.list-storage .list-head .htext');
-    for (var i = 0; i < storageHeadNodes.length; i++) {
-        if (storageHeaders[i]) {
-            storageHeadNodes[i].textContent = _(storageHeaders[i]);
-        }
-    }
     var storageFilterButtons = document.querySelectorAll('.list-storage .list-head .hfilter');
-    for (i = 0; i < storageFilterButtons.length; i++) {
+    for (var i = 0; i < storageFilterButtons.length; i++) {
         storageFilterButtons[i].title = _('Filter');
     }
     applyPageSizeLabel(storagePage.size);
