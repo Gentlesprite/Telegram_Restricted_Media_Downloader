@@ -181,10 +181,10 @@ var STATE_ICON = {
     failure: '❌'
 };
 
-var HEAD_LABELS = ['频道', '频道 / 链接', '频道 / 链接 / 名称'];  // 表头首列随当前展开的层级变化。
-var SIZE_LABELS = ['完成 / 总数', '完成 / 总数', '数量 / 大小'];  // 第三列同理,分组行是数量,成员行才是字节大小。
-var UPLOAD_HEAD_NAME = ['频道', '频道 / 文件路径'];  // 上传页只有频道与文件两级。
-var UPLOAD_HEAD_SIZE = ['完成 / 总数', '大小'];
+var HEAD_LABELS = ['Channel', '频道 / 链接', '频道 / 链接 / 名称'];  // 表头首列随当前展开的层级变化。
+var SIZE_LABELS = ['Done / Total', 'Done / Total', '数量 / 大小'];  // 第三列同理,分组行是数量,成员行才是字节大小。
+var UPLOAD_HEAD_NAME = ['Channel', '频道 / 文件路径'];  // 上传页只有频道与文件两级。
+var UPLOAD_HEAD_SIZE = ['Done / Total', 'Size'];
 var UPLOAD_TEXT = {
     pending: 'Pending',
     uploading: 'Uploading',
@@ -308,7 +308,7 @@ function groupStatCells(stat) {
 function taskRow(task) {
     var done = task.percent >= 100;
     // 传输中的任务在全局暂停时改显"已暂停",速度栏由speedText统一显示为破折号。
-    var statusText = done ? _('Success') : (lastPaused ? '已暂停' : '下载中');
+    var statusText = done ? _('Success') : (lastPaused ? '已暂停' : _('Downloading'));
     var statusClass = done ? 'status-done' : (lastPaused ? 'status-paused' : 'status-running');
     // data-task-id 供"列表结构未变时就地更新进度",避免每秒整表重建。
     return '<div class="task-row" data-task-id="' + escAttr(task.id) + '">' +
@@ -491,8 +491,8 @@ function syncHeadLabel() {
             level = depth;  // 取当前可见的最深层级。
         }
     }
-    document.getElementById('headName').querySelector('.htext').textContent = HEAD_LABELS[level - 1];
-    document.getElementById('headSize').querySelector('.htext').textContent = SIZE_LABELS[level - 1];  // 分组行是条数,成员行才是字节。
+    document.getElementById('headName').querySelector('.htext').textContent = _(HEAD_LABELS[level - 1]);
+    document.getElementById('headSize').querySelector('.htext').textContent = _(SIZE_LABELS[level - 1]);  // 分组行是条数,成员行才是字节。
 }
 
 function bindGroups() {
@@ -522,11 +522,11 @@ function bindGroups() {
 }
 
 function syncToggleAll() {
-    document.getElementById('toggleAll').textContent = allCollapsed ? '全部展开' : '全部折叠';
+    document.getElementById('toggleAll').textContent = allCollapsed ? '全部展开' : _('Collapse all');
 }
 
 function syncToggleUpload() {
-    document.getElementById('toggleUpload').textContent = uploadAllCollapsed ? '全部展开' : '全部折叠';
+    document.getElementById('toggleUpload').textContent = uploadAllCollapsed ? '全部展开' : _('Collapse all');
 }
 
 function setAllGroups(selector, hide) {
@@ -679,7 +679,7 @@ function renderOverall(summary, taskCount, ids) {
     document.getElementById(ids.percent).textContent = data.percent + '%';
     document.getElementById(ids.info).textContent = data.info;
     document.getElementById(ids.extra).textContent =
-        lastPaused ? '已暂停' : (extraText(data) ? extraText(data) : (taskCount ? '正在测速' : '暂无速度'));
+        lastPaused ? '已暂停' : (extraText(data) ? extraText(data) : (taskCount ? '正在测速' : _('No speed')));
     document.getElementById(ids.status).textContent = connectionStatus;
 }
 
@@ -2617,7 +2617,7 @@ function renderPauseState(isPaused) {
     // 不会造成顶栏高度抖动、下方卡片下移。
     // 分别更新图标与文案,避免整体覆盖抹掉.btn-emoji结构导致gap失效。
     btn.querySelector('.btn-emoji').textContent = isPaused ? '▶\uFE0F' : '⏸\uFE0F';
-    btn.querySelector('.btn-label').textContent = isPaused ? '恢复' : '暂停';
+    btn.querySelector('.btn-label').textContent = isPaused ? '恢复' : _('Pause');
     btn.classList.toggle('paused', !!isPaused);
 }
 
@@ -2825,8 +2825,8 @@ function syncUploadHeads() {
             break;
         }
     }
-    head.querySelector('.h-name .htext').textContent = UPLOAD_HEAD_NAME[level - 1];
-    head.querySelector('.h-size .htext').textContent = UPLOAD_HEAD_SIZE[level - 1];
+    head.querySelector('.h-name .htext').textContent = _(UPLOAD_HEAD_NAME[level - 1]);
+    head.querySelector('.h-size .htext').textContent = _(UPLOAD_HEAD_SIZE[level - 1]);
 }
 
 function renderUpload(uploads) {
