@@ -309,7 +309,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             f'under the terms of the {pyrogram.__license__}.\n'
             f'欢迎使用[#b4009e]{SOFTWARE_SHORT_NAME}[/#b4009e] {__version__} (Pyrogram {pyrogram.__version__})\n'
             '请扫描[#6a2c70]「二维码」[/#6a2c70]登录\n'
-            '[#b83b5e]Settings(设置)[/#b83b5e] -> [#f08a5d]Devices(设备)[/#f08a5d] -> [#f9ed69]Link Desktop Device(关联桌面设备)[/#f9ed69]'
+            '[#b83b5e]Settings(设置)[/#b83b5e] -> [#f08a5d]Devices(设备)[/#f08a5d] -> [#f9ed69]Add Device(添加设备)[/#f9ed69]'
         )
         log.info('Waiting for QR code being scanned.')
         qr_lines = 0  # 记录二维码占用的终端行数,刷新时只清理这块区域。
