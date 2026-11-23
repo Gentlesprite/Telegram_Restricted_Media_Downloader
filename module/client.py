@@ -325,7 +325,10 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 console.print(qr_text, justify='center', soft_wrap=True)
                 qr_lines = len(qr_text.splitlines())
 
-                signed_in = await qr_login.wait()
+                if getattr(qr_login.r, 'expires', None) is None:  # LoginTokenMigrateTo无expires,使用固定超时避免库报错。
+                    signed_in = await qr_login.wait(timeout=35)
+                else:
+                    signed_in = await qr_login.wait()
 
                 if signed_in:
                     log.info(_('Logged in successfully as {name}').format(name=signed_in.full_name))
