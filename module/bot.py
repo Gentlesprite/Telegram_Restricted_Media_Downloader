@@ -1095,8 +1095,7 @@ class Bot:
                 data=[
                     [
                         _('📨 Forward message'),
-                        '转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`'
-                        '类型的消息给我,即可创建下载任务。'
+                        _('Forward messages of type `Video`, `Photo`, `Audio`, `Voice`, `GIF`, `Document`, `Video note`, or `Live photo` to me to create download tasks.')
                     ]
                 ]
             )
@@ -2849,7 +2848,7 @@ class KeyboardButton:
         ]
         keyboard.append(nav_row)
 
-        week_days = [_('Mon'), '二', '三', '四', '五', '六', '日']
+        week_days = [_('Mon'), _('Tue'), _('Wed'), _('Thu'), _('Fri'), _('Sat'), _('Sun')]
         week_row = [InlineKeyboardButton(day, callback_data=BotCallbackText.NULL) for day in week_days]
         keyboard.append(week_row)
 

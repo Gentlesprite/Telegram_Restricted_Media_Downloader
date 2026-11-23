@@ -1761,8 +1761,8 @@ class BotMessage:
     INVALID: str = _('🚫The following links are invalid and have been removed:\n')
     TASK_ASSIGN: str = _('🌟Task assigned.')
     TOO_MANY_MESSAGE: str = _('⚠️Message too long, will not display each item this time.')
-    TOO_MANY_INVALID_DOWNLOAD_MESSAGE: str = '⚠️{count}条消息因不合法已跳过下载,数量过多不再逐条列出。'
-    TOO_MANY_INVALID_FORWARD_MESSAGE: str = '⚠️{count}条消息因不存在已跳过转发,数量过多不再逐条列出。'
+    TOO_MANY_INVALID_DOWNLOAD_MESSAGE: str = _('⚠️{count} messages were skipped for download because they are invalid; too many to list individually.')
+    TOO_MANY_INVALID_FORWARD_MESSAGE: str = _('⚠️{count} messages were skipped for forwarding because they no longer exist; too many to list individually.')
 
 
 class BotButton:

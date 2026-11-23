@@ -106,8 +106,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
         while True:
             try:
                 while True:
-                    value = (await ainput('请输入「电话号码」([#6a2c70]电话号码[/#6a2c70]需以[#b83b5e]「+地区」[/#b83b5e]开头!'
-                                          '如:[#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):')).strip()
+                    value = (await ainput(_('Enter your phone number (the [#6a2c70]phone number[/#6a2c70] must start with [#b83b5e]"+region"[/#b83b5e]! '
+                                           'e.g.: [#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):'))).strip()
                     if not value.startswith('+'):
                         log.warning(
                             _('Unexpected parameter "{value}", the phone number must start with 「+region」!').format(
@@ -229,7 +229,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                     _('[#f08a5d]「Two-step verification」[/#f08a5d] is enabled for this account; the [#f9ed69]「password」[/#f9ed69] is required.'))
 
                 while True:
-                    console.print('密码提示:{}'.format(await self.get_password_hint()))
+                    console.print(_('Password hint: {hint}').format(hint=await self.get_password_hint()))
 
                     if not self.password:
                         self.password = (await ainput(

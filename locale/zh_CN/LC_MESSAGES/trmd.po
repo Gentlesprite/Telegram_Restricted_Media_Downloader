@@ -321,6 +321,12 @@ msgstr "🌟任务已分配。"
 msgid "⚠️Message too long, will not display each item this time."
 msgstr "⚠️消息过长,本次操作不再逐条展示。"
 
+msgid "⚠️{count} messages were skipped for download because they are invalid; too many to list individually."
+msgstr "⚠️{count}条消息因不合法已跳过下载,数量过多不再逐条列出。"
+
+msgid "⚠️{count} messages were skipped for forwarding because they no longer exist; too many to list individually."
+msgstr "⚠️{count}条消息因不存在已跳过转发,数量过多不再逐条列出。"
+
 msgid "📌Subscribe channel"
 msgstr "📌订阅频道"
 
@@ -630,6 +636,9 @@ msgstr "检测到压缩文件\"{filename}\",为确保完整性(如分卷)已保�
 msgid "Unexpected parameter \"{value}\", the phone number must start with 「+region」!"
 msgstr "意外的参数:\"{value}\",电话号码需以「+地区」开头!"
 
+msgid "Enter your phone number (the [#6a2c70]phone number[/#6a2c70] must start with [#b83b5e]\"+region\"[/#b83b5e]! e.g.: [#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):"
+msgstr "请输入「电话号码」([#6a2c70]电话号码[/#6a2c70]需以[#b83b5e]「+地区」[/#b83b5e]开头!如:[#f08a5d]+86[/#f08a5d][#f9ed69]15000000000[/#f9ed69]):"
+
 msgid "「Set up email」is required to complete authorization."
 msgstr "需要「设置邮箱」以完成授权。"
 
@@ -644,6 +653,9 @@ msgstr "请输入收到的[#f08a5d]「验证码」[/#f08a5d]:"
 
 msgid "[#f08a5d]「Two-step verification」[/#f08a5d] is enabled for this account; the [#f9ed69]「password」[/#f9ed69] is required."
 msgstr "当前登录账号设置了[#f08a5d]「两步验证」[/#f08a5d],需要提供两步验证的[#f9ed69]「密码」[/#f9ed69]。"
+
+msgid "Password hint: {hint}"
+msgstr "密码提示:{hint}"
 
 msgid "Enter the [#f9ed69]「password」[/#f9ed69] for [#f08a5d]「two-step verification」[/#f08a5d] (empty means [#FF4689]forgot password[/#FF4689]):"
 msgstr "输入[#f08a5d]「两步验证」[/#f08a5d]的[#f9ed69]「密码」[/#f9ed69](为空代表[#FF4689]忘记密码[/#FF4689]):"
@@ -1074,6 +1086,24 @@ msgstr "收款码"
 msgid "Mon"
 msgstr "一"
 
+msgid "Tue"
+msgstr "二"
+
+msgid "Wed"
+msgstr "三"
+
+msgid "Thu"
+msgstr "四"
+
+msgid "Fri"
+msgstr "五"
+
+msgid "Sat"
+msgstr "六"
+
+msgid "Sun"
+msgstr "日"
+
 msgid "Listen-and-download removed, channel link: \"{link}\"."
 msgstr "已删除监听下载,频道链接:\"{link}\"。"
 
@@ -1232,6 +1262,9 @@ msgstr "添加授权用户输入模式已关闭,Handler已清空。"
 
 msgid "📨 Forward message"
 msgstr "📨 转发消息"
+
+msgid "Forward messages of type `Video`, `Photo`, `Audio`, `Voice`, `GIF`, `Document`, `Video note`, or `Live photo` to me to create download tasks."
+msgstr "转发`视频`、`图片`、`音频`、`语音`、`GIF`、`文档`、`视频笔记`、`实况图片`类型的消息给我,即可创建下载任务。"
 
 msgid "Command input mode closed, handlers cleared."
 msgstr "命令输入模式已关闭,Handler已清空。"
