@@ -181,9 +181,9 @@ var STATE_ICON = {
     failure: '❌'
 };
 
-var HEAD_LABELS = ['Channel', '频道 / 链接', '频道 / 链接 / 名称'];  // 表头首列随当前展开的层级变化。
-var SIZE_LABELS = ['Done / Total', 'Done / Total', '数量 / 大小'];  // 第三列同理,分组行是数量,成员行才是字节大小。
-var UPLOAD_HEAD_NAME = ['Channel', '频道 / 文件路径'];  // 上传页只有频道与文件两级。
+var HEAD_LABELS = ['Channel', 'Channel / Link', 'Channel / Link / Name'];  // 表头首列随当前展开的层级变化。
+var SIZE_LABELS = ['Done / Total', 'Done / Total', 'Count / Size'];  // 第三列同理,分组行是数量,成员行才是字节大小。
+var UPLOAD_HEAD_NAME = ['Channel', 'Channel / File path'];  // 上传页只有频道与文件两级。
 var UPLOAD_HEAD_SIZE = ['Done / Total', 'Size'];
 var UPLOAD_TEXT = {
     pending: 'Pending',
@@ -800,13 +800,13 @@ function renderStatus() {
         parts.push(_('Paused'));
     }
     if (lastDownloadActive) {
-        parts.push('下载 ' + lastDownloadActive);
+        parts.push(_('Downloading {count}').replace('{count}', lastDownloadActive));
     }
     if (lastUploadActive) {
-        parts.push('上传 ' + lastUploadActive);
+        parts.push(_('Uploading {count}').replace('{count}', lastUploadActive));
     }
     if (lastListenCount) {
-        parts.push('监听 ' + lastListenCount);
+        parts.push(_('Listening {count}').replace('{count}', lastListenCount));
     }
     var active = parts.length > 0;
     // 忙碌标志挂在 body 上,供徽标等纯 CSS 元素取色(空闲为灰、有任务为绿、暂停为橙)。
@@ -1148,7 +1148,7 @@ function storageCell(column, row, cls, inner, title) {
 function storageGroupCell(group, startRow, len) {
     var first = group[0];
     var chat = first.chat || UNGROUPED_NAME;
-    var badge = len > 1 ? '<span class="storage-msg-count">' + len + ' 个文件</span>' : '';
+    var badge = len > 1 ? '<span class="storage-msg-count">' + _('{count} file(s)').replace('{count}', len) + '</span>' : '';
     var linkHtml = '';
     if (currentStorage !== 'upload') {
         var link = first.link || _(STORAGE_UPLOAD_LINK);  // 下载才有真实消息链接;上传无链接,显示"本地上传"。
@@ -1429,8 +1429,11 @@ function updateStoragePager(count, index, shown, messages, start, end, total) {
         next.disabled = (index >= count - 1);
     }
     if (meta) {
-        meta.textContent = (hasStorageFilter() ? '筛选后 ' + shown + ' 条 · 共 ' + total + ' 条' : '共 ' + total + ' 条') +
-            ' · ' + messages + ' 个消息' + (count ? (' · 本页第 ' + start + '-' + end + ' 条') : '');
+        meta.textContent = (hasStorageFilter() ?
+            _('{shown} filtered / {total} total').replace('{shown}', shown).replace('{total}', total) :
+            _('{total} total').replace('{total}', total)) +
+            ' · ' + _('{count} message(s)').replace('{count}', messages) +
+            (count ? (' ' + _('· Page item {count}').replace('{count}', start + '-' + end)) : '');
     }
 }
 
@@ -2782,7 +2785,7 @@ function uploadBlock(group) {
         '<span class="cell-name"><span class="arrow"></span>' +
         '<span class="ficon">📺</span>' +
         '<span class="gname" title="' + escAttr(group.name) + '">' + esc(group.name) + '</span>' +
-        '<span class="gcount">' + group.count + ' 个文件</span></span>' +
+        '<span class="gcount">' + _('{count} file(s)').replace('{count}', group.count) + '</span></span>' +
         progressCell(group.percent) +
         '<span class="cell-size">' + countText(group.complete, group.count, group.count - group.complete - group.failed, group.failed) + '</span>' +
         groupStatCells(group.stat) +

@@ -3161,3 +3161,39 @@ msgstr "至"
 
 msgid "Reset"
 msgstr "重置"
+
+msgid "Channel / Link"
+msgstr "频道 / 链接"
+
+msgid "Channel / Link / Name"
+msgstr "频道 / 链接 / 名称"
+
+msgid "Count / Size"
+msgstr "数量 / 大小"
+
+msgid "Channel / File path"
+msgstr "频道 / 文件路径"
+
+msgid "Downloading {count}"
+msgstr "下载 {count}"
+
+msgid "Uploading {count}"
+msgstr "上传 {count}"
+
+msgid "Listening {count}"
+msgstr "监听 {count}"
+
+msgid "{count} file(s)"
+msgstr "{count}个文件"
+
+msgid "{shown} filtered / {total} total"
+msgstr "筛选后{shown}条 · 共{total}条"
+
+msgid "{total} total"
+msgstr "共{total}条"
+
+msgid "{count} message(s)"
+msgstr "{count}个消息"
+
+msgid "· Page item {count}"
+msgstr "· 本页第{count}条"
