@@ -572,10 +572,20 @@ async def get_login_method(session_path: Union[str, os.PathLike]) -> bool:
         except sqlite3.OperationalError:
             need_choice = True
     if need_choice:
-        choice = (await ainput(_('1. Phone number (default)\n2. QR code\n🔑 Choose login method:'))).strip()
-        use_qr = choice == '2'
-        log.info(_('Login method: QR code.') if use_qr else _('Login method: Phone number.'))
-        return use_qr
+        while True:
+            choice = (await ainput(_('1. Phone number (default)\n2. QR code\n🔑 Choose login method:'))).strip()
+            if choice in ('1', ''):
+                use_qr = False
+            elif choice == '2':
+                use_qr = True
+            else:
+                log.warning(_('Unexpected parameter "{choice}", supported values - 「{valid_format}」!').format(
+                    choice=choice,
+                    valid_format='1|2'
+                ))
+                continue
+            log.info(_('Login method: QR code.') if use_qr else _('Login method: Phone number.'))
+            return use_qr
     return True
 
 

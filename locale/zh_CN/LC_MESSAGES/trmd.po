@@ -2013,6 +2013,9 @@ msgstr "意外的参数:\"{is_re_config}\",支持的参数 - \"{valid_format}\"(
 msgid "Unexpected parameter \"{is_change_account}\", supported values - 「{valid_format}」!"
 msgstr "意外的参数:\"{is_change_account}\",支持的参数 - \"{valid_format}\"!"
 
+msgid "Unexpected parameter \"{choice}\", supported values - 「{valid_format}」!"
+msgstr "意外的参数:\"{choice}\",支持的参数 - \"{valid_format}\"!"
+
 msgid "「The session directory」 set to:{session_directory}."
 msgstr "「会话文件夹的路径」设置为:{session_directory}。"
 
