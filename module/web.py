@@ -1134,10 +1134,22 @@ class Web:
             return {'status': False, 'e_code': _('Config not loaded, cannot modify.')}
         error_parts: list = []
         need_confirm: bool = False  # 目录不存在;待其它错误都排除后再请求前端二次确认。
-        tasks = self.__check_number_pair(max_tasks, 1, 10, _('Concurrency'), _('{name} must be an integer between 1 and 10.'),
-                                         error_parts)
-        retries = self.__check_number_pair(max_retries, 1, None, _('Retry times'), _('{name} must be greater than 0.'),
-                                           error_parts)
+        tasks = self.__check_number_pair(
+            max_tasks,
+            1,
+            10,
+            _('Concurrency'),
+            _('{name} must be an integer between 1 and 10.'),
+            error_parts
+        )
+        retries = self.__check_number_pair(
+            max_retries,
+            1,
+            None,
+            _('Retry times'),
+            _('{name} must be greater than 0.'),
+            error_parts
+        )
         if directory is not None:
             checked: dict = self.__check_save_directory(directory, allow_create=confirm_directory)
             if checked.get('need_confirm'):

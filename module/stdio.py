@@ -20,10 +20,10 @@ from typing import (
 
 import qrcode
 
-from rich.style import Style
 from rich.live import Live
 from rich.text import Text
 from rich.table import Table
+from rich.style import Style
 from rich.markdown import Markdown
 from rich.progress import (
     Progress,

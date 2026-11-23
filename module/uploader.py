@@ -532,7 +532,7 @@ class TelegramUploader:
             chat_id: Union[int, str],
             file: Union[raw.types.InputFile, raw.types.InputFileBig],
             attributes: List[raw.types.DocumentAttributeFilename],
-            mime_type: str,
+            mime_type: str
     ) -> raw.types.InputMediaDocument:
         media = raw.types.InputMediaUploadedDocument(
             mime_type=mime_type,

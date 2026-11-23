@@ -389,7 +389,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             offset: int = 0,
             offset_id: int = 0,
             offset_date: datetime = utils.zero_datetime(),
-            reverse: bool = False,
+            reverse: bool = False
     ) -> Optional[AsyncGenerator["types.Message", None]]:
         # https://github.com/tangyoha/telegram_media_downloader/blob/master/module/get_chat_history_v2.py
         current = 0
@@ -529,7 +529,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             limit: int = 0,
             offset: int = 0,
             progress: Callable | None = None,
-            progress_args: tuple = (),
+            progress_args: tuple = ()
     ) -> AsyncGenerator[bytes, None]:
         async with self.get_file_semaphore:
             file_type = file_id.file_type
@@ -678,7 +678,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                             # https://core.telegram.org/cdn#verifying-files
                             def _check_all_hashes(
                                     hashes: list[raw.base.FileHash],
-                                    decrypted_chunk: bytes,
+                                    decrypted_chunk: bytes
                             ) -> None:
                                 for i, h in enumerate(hashes):
                                     cdn_chunk = decrypted_chunk[h.limit * i: h.limit * (i + 1)]
@@ -735,7 +735,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             message: Union["types.Message", str],
             limit: int = 0,
             offset: int = 0,
-            download_type: str = None,
+            download_type: str = None
     ) -> AsyncIterator[bytes]:
 
         if isinstance(message, types.Message) and message.live_photo is not None:

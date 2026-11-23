@@ -675,7 +675,7 @@ class Bot:
     async def get_download_chat_link_from_bot(
             self,
             client: pyrogram.Client,
-            message: pyrogram.types.Message,
+            message: pyrogram.types.Message
     ):
         text: str = message.text
         if text == '/download_chat':
@@ -1851,7 +1851,7 @@ class Bot:
             self,
             application,
             user_client_obj: pyrogram.Client,
-            bot_client_obj: pyrogram.Client,
+            bot_client_obj: pyrogram.Client
     ) -> str:
         """启动机器人。"""
         try:
