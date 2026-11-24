@@ -700,7 +700,7 @@ class GlobalConfig(BaseConfig):
         self.language: str = self.config.get('language') or ''
         p = _('Global config reloaded.')
         console.log(p, style='#FF4689')
-        log.info(f'{p.replace("。", ":")}{self.config}')
+        log.info(_('Global config reloaded: {config}').format(config=self.config))
 
     def __check_params(self, config: dict) -> None:
         if config is None:

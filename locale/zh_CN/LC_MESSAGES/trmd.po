@@ -720,6 +720,9 @@ msgstr "用户手动终止配置参数。"
 msgid "Global config reloaded."
 msgstr "全局配置文件已重新加载。"
 
+msgid "Global config reloaded: {config}"
+msgstr "全局配置文件已重新加载:{config}"
+
 msgid "Yes"
 msgstr "是"
 
