@@ -3097,7 +3097,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 _('Detected multiple instances using the same SESSION due to "{error}"').format(
                     error=e
                 ))
-            console.print(Issues.MULTI_SESSION_TIP.format(exe=get_executable_path()))
+            console.print(Issues.MULTI_SESSION_TIP.format(executable=get_executable_path()))
         except Exception as e:
             run_error: bool = True
             log.exception(msg=_('Runtime error due to "{error}"').format(error=e))

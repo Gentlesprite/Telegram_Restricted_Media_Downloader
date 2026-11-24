@@ -1571,8 +1571,8 @@ msgstr "读取历史文件时发生错误,原因:\"{error}\""
 msgid "Encoding error reading the config file due to \"{error}\" (possibly Chinese or special characters in the save_directory). A new template has been generated."
 msgstr "读取配置文件遇到编码错误,可能保存路径中包含中文或特殊字符的文件夹。已生成新的模板文件. . .原因:\"{error}\""
 
-msgid "The configuration file path \"{config_path}\" was expected to be a file, but a directory was found, please remove the directory and restart the application to reconfigure. During configuration, specify a valid directory for the 「save_directory」 setting."
-msgstr "配置文件路径\"{config_path}\"预期应为文件,但填写了一个文件夹,请删除该文件夹并重启程序以重新配置。配置时请为「保存路径」指定一个有效的目录。"
+msgid "The configuration file path \"{config_path}\" is a directory, but a file was expected. Remove the directory or specify another file path with {executable} --config, then restart the application."
+msgstr "配置文件路径\"{config_path}\"预期应为文件,但实际上为目录。请删除该目录,或使用{executable} --config指定其他文件路径,然后重启软件。"
 
 msgid "Invalid or corrupted config file detected. A new template has been generated due to \"{error}\""
 msgstr "检测到无效或损坏的配置文件。已生成新的模板文件. . .原因:\"{error}\""
@@ -2675,8 +2675,8 @@ msgstr "🕒 [#FCFF79]检测到[/#FCFF79][#FF7979]系统时间[/#FF7979][#FC79A5
 msgid "❓ [#79FCD4]If you have questions about proxy configuration[/#79FCD4] [#FF79D4]visit:[/#FF79D4]\n🌐 [link=https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#配置代理时在代理在本机的情况下]https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#配置代理时在代理在本机的情况下[/link]\n🛑 [#FCFF79]If[/#FCFF79] [#FF4689]unable[/#FF4689] [#FF7979]to access:[/#FF7979] [#79FCD4]\n🔎 [/#79FCD4][#FCFF79]you can[/#FCFF79] [#d4fc79]refer to[/#d4fc79] [#FC79A5]the \"User Manual\"[/#FC79A5] [#79E2FC][/#79E2FC][#79FCD4]in the software package[/#79FCD4] [#FFB579]\"常见问题及解决方案汇总.pdf\"[/#FFB579][#79FCB5], section[/#79FCB5] [#D479FC]【问题14】 Solution[/#D479FC] [#FCE679]for instructions[/#FCE679][#FC79A6].[/#FC79A6]"
 msgstr "❓ [#79FCD4]如果对代理配置有疑问[/#79FCD4][#FF79D4]请访问:[/#FF79D4]\n🌐 [link=https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#配置代理时在代理在本机的情况下]https://github.com/Gentlesprite/Telegram_Restricted_Media_Downloader/wiki#配置代理时在代理在本机的情况下[/link]\n🛑 [#FCFF79]若[/#FCFF79][#FF4689]无法[/#FF4689][#FF7979]访问:[/#FF7979][#79FCD4]\n🔎 [/#79FCD4][#FCFF79]可[/#FCFF79][#d4fc79]查阅[/#d4fc79][#FC79A5]软件压缩包所提供的[/#FC79A5][#79E2FC]\"使用手册\"[/#79E2FC][#79FCD4]文件夹下的[/#79FCD4][#FFB579]\"常见问题及解决方案汇总.pdf\"[/#FFB579][#79FCB5]中的[/#79FCB5][#D479FC]【问题14】里的【解决方案】[/#D479FC][#FCE679]进行操作[/#FCE679][#FC79A6]。[/#FC79A6]"
 
-msgid "🔧 [#FF79D4]Solution[/#FF79D4] [#FCFF79](choose one):[/#FCFF79]\n[#D4FC79]1. Close redundant instances.[/#D4FC79]\n[#D4FC79]2. Use[/#D4FC79] \"[#79FCD4]{exe} --session SESSION[/#79FCD4]\" [#D4FC79]to specify a new SESSION location and retry[/#D4FC79] ([#FFB579]replace SESSION with the actual path[/#FFB579])."
-msgstr "🔧 [#FF79D4]解决方法[/#FF79D4][#FCFF79](任选其一):[/#FCFF79]\n[#D4FC79]1.关闭多余实例。[/#D4FC79]\n[#D4FC79]2.使用[/#D4FC79]\"[#79FCD4]{exe} --session SESSION[/#79FCD4]\"[#D4FC79]指定新的SESSION位置后重试[/#D4FC79]([#FFB579]将SESSION替换为实际路径[/#FFB579])。"
+msgid "🔧 [#FF79D4]Solution[/#FF79D4] [#FCFF79](choose one):[/#FCFF79]\n[#D4FC79]1. Close redundant instances.[/#D4FC79]\n[#D4FC79]2. Use[/#D4FC79] \"[#79FCD4]{executable} --session SESSION[/#79FCD4]\" [#D4FC79]to specify a new SESSION location and retry[/#D4FC79] ([#FFB579]replace SESSION with the actual path[/#FFB579])."
+msgstr "🔧 [#FF79D4]解决方法[/#FF79D4][#FCFF79](任选其一):[/#FCFF79]\n[#D4FC79]1.关闭多余实例。[/#D4FC79]\n[#D4FC79]2.使用[/#D4FC79]\"[#79FCD4]{executable} --session SESSION[/#79FCD4]\"[#D4FC79]指定新的SESSION位置后重试[/#D4FC79]([#FFB579]将SESSION替换为实际路径[/#FFB579])。"
 
 msgid "❌ [#FF7979]Detected that ({package_name}) version {current_version} does not match the required version {require_version}[/#FF7979][#FCFF79], which may cause compatibility issues and abnormal behavior.[/#FCFF79]\n⚖️ [#D4FC79]Please use[/#D4FC79] [#79FCD4]{command}[/#79FCD4] [#D4FC79]to upgrade or downgrade to the required version {require_version} and retry[/#D4FC79][#D4FC79].[/#D4FC79]"
 msgstr "❌ [#FF7979]检测到({package_name})版本{current_version}与需求版本{require_version}不一致[/#FF7979][#FCFF79],可能已经引发兼容问题导致运行异常。[/#FCFF79]\n⚖️ [#D4FC79]需使用[/#D4FC79][#79FCD4]{command}[/#79FCD4][#D4FC79]升级或降级至需求版本{require_version}后重试[/#D4FC79][#D4FC79]。[/#D4FC79]"

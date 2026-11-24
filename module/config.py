@@ -36,6 +36,7 @@ from module.enums import (
 )
 from module.util import (
     ctrl_c,
+    get_executable_path,
     get_work_directory
 )
 
@@ -357,8 +358,9 @@ class UserConfig(BaseConfig):
             self.re_config = True
             if os.path.isdir(self.config_path):
                 log.error(
-                    _('The configuration file path "{config_path}" was expected to be a file, but a directory was found, please remove the directory and restart the application to reconfigure. During configuration, specify a valid directory for the 「save_directory」 setting.').format(
-                        config_path=self.config_path
+                    _('The configuration file path "{config_path}" is a directory, but a file was expected. Remove the directory or specify another file path with {executable} --config, then restart the application.').format(
+                        config_path=self.config_path,
+                        executable=get_executable_path()
                     ))
                 raise SystemExit(1)
             else:
