@@ -14,6 +14,7 @@ import random
 import sqlite3
 import asyncio
 import logging
+import threading
 import subprocess
 
 from collections import deque
@@ -555,7 +556,47 @@ def get_local_ip() -> str:
 
 
 async def ainput(prompt: str = '', password: bool = False) -> str:  # noqa.
-    return await asyncio.to_thread(console.input, prompt, password=password)
+    def __set_result(
+            _future: asyncio.Future,
+            _value: Optional[str],
+            _error: Optional[BaseException]
+    ) -> None:
+        if _future.done():
+            return
+        try:
+            if _error is None:
+                _future.set_result(_value)
+            else:
+                _future.set_exception(_error)
+        except BaseException as e:
+            if not _future.done():
+                _future.set_exception(e)
+
+    def __ainput_worker(  # noqa.
+            _future: asyncio.Future,
+            _prompt: str,
+            _password: bool,
+            _loop: asyncio.AbstractEventLoop
+    ) -> None:
+        value = None
+        error = None
+        try:
+            value = console.input(_prompt, password=_password)
+        except BaseException as e:
+            error = e
+        try:
+            _loop.call_soon_threadsafe(__set_result, _future, value, error)
+        except BaseException:  # noqa.
+            pass
+
+    loop = asyncio.get_running_loop()
+    future = loop.create_future()
+    threading.Thread(
+        target=__ainput_worker,
+        args=(future, prompt, password, loop),
+        daemon=True
+    ).start()
+    return await future
 
 
 async def get_login_method(session_path: Union[str, os.PathLike]) -> bool:
@@ -929,8 +970,8 @@ def get_message_dtype(message, download_type: Optional[list] = None) -> Union[st
     return None
 
 
-def normalize_msgid(value: str) -> str:
-    """把内部key规范成可翻译的msgid:下划线转空格、首字母大写。"""
+def normalize_msgid(value: str) -> str:  # noqa.
+    """把内部key规范成可翻译的msgid:下划线转空格、首字母大写。"""  # noqa.
     try:
         return value.replace('_', ' ').capitalize()
     except Exception:  # noqa.
