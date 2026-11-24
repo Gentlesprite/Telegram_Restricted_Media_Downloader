@@ -69,7 +69,7 @@ function applyI18n() {
     document.querySelector('#page-storage .disk-row-lead .disk-row-label').textContent = _('Save directory');
     document.querySelector('#page-storage .disk-legend > span:nth-child(2)').textContent = _('Disk used');
     document.querySelector('#page-storage .disk-legend > span:nth-child(4)').textContent = _('Disk free');
-    document.querySelector('#page-storage .disk-row-split .disk-row-label').textContent = _('Cache directory');
+    document.querySelector('#page-storage .disk-row-split .disk-row-label').textContent = _('Temp directory');
     document.querySelector('[data-storage="download"]').textContent = _('Download');
     document.querySelector('[data-storage="upload"]').textContent = _('Upload');
     document.querySelector('#page-storage .gcount > span:first-child').textContent = _('Total');
