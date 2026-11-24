@@ -2429,6 +2429,9 @@ msgstr "关闭网页存储数据库失败,原因:\"{error}\""
 msgid "Failed to stop the pyrogram client due to \"{error}\""
 msgstr "停止pyrogram客户端失败,原因:\"{error}\""
 
+msgid "Failed to stop the connection status due to \"{error}\""
+msgstr "关闭连接状态提示失败,原因:\"{error}\""
+
 msgid "[{client_name}] Too many requests to forward messages, wait {seconds} seconds before continuing."
 msgstr "[{client_name}]转发消息请求频繁,要求等待{seconds}秒后继续运行。"
 

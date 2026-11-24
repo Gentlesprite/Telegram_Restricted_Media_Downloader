@@ -1107,7 +1107,12 @@ class ConnectionStatus:
         """关闭常驻连接状态提示。"""
         with cls._lock:
             if cls._live is not None:
-                cls._live.stop()
+                try:
+                    cls._live.stop()
+                except Exception as e:
+                    log.warning(_('Failed to stop the connection status due to "{error}"').format(
+                        error=e
+                    ))
                 cls._live = None
                 cls._connecting = 0
                 cls._flood_waiting = 0
