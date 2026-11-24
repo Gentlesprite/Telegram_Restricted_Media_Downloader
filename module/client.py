@@ -101,14 +101,15 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             return await self.sign_in_bot(self.bot_token)
 
         console.print(
-            f'Kurigram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n'
-            f'under the terms of the {pyrogram.__license__}.')
-        console.print(
             _('Welcome to [#b4009e]{app_name}[/#b4009e] {version} (Kurigram {pyrogram_version})').format(
                 app_name=SOFTWARE_SHORT_NAME,
                 version=__version__,
                 pyrogram_version=pyrogram.__version__
             ))
+        console.print(
+            _(
+                'Kurigram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed under the terms of the {license}.'
+            ).format(license=pyrogram.__license__))
         while True:
             try:
                 while True:
@@ -299,14 +300,15 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
         await qr_login.recreate()
 
         console.print(
-            'Kurigram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n'
-            f'under the terms of the {pyrogram.__license__}.\n'
-            + _('Welcome to [#b4009e]{app_name}[/#b4009e] {version} (Pyrogram {pyrogram_version})').format(
+            _('Welcome to [#b4009e]{app_name}[/#b4009e] {version} (Kurigram {pyrogram_version})').format(
                 app_name=SOFTWARE_SHORT_NAME,
                 version=__version__,
                 pyrogram_version=pyrogram.__version__
-            )
-        )
+            ))
+        console.print(
+            _(
+                'Kurigram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed under the terms of the {license}.'
+            ).format(license=pyrogram.__license__))
         log.info(_('Waiting for QR code being scanned.'))
         qr_lines = 0  # 记录二维码、扫码提示与操作路径提示占用的终端行数,刷新时只清理这块区域。
 

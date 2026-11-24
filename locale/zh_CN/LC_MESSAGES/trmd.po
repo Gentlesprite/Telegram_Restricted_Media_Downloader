@@ -1646,6 +1646,9 @@ msgstr "打开数据库\"{storage_path}\"失败,原因:\"{error}\""
 msgid "Welcome to [#b4009e]{app_name}[/#b4009e] {version} (Kurigram {pyrogram_version})"
 msgstr "欢迎使用[#b4009e]{app_name}[/#b4009e] {version} (Kurigram {pyrogram_version})"
 
+msgid "Kurigram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed under the terms of the {license}."
+msgstr "Kurigram是自由软件,不提供任何担保。遵循{license}条款授权。"
+
 msgid "[#f08a5d]「Verification code」[/#f08a5d] sent via [#f9ed69]「{code_type}」[/#f9ed69]."
 msgstr "[#f08a5d]「验证码」[/#f08a5d]已通过[#f9ed69]「{code_type}」[/#f9ed69]发送。"
 
