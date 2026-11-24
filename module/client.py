@@ -892,12 +892,11 @@ class TelegramRestrictedMediaDownloaderSession(Session):
 
                     if amount > sleep_threshold >= 0:
                         raise
-                    log.info(
-                        '[%s] Waiting for %s seconds before continuing (required by "%s")',
-                        self.client.name,
-                        amount,
-                        query_name
-                    )
+                    log.info(_('[{client_name}] Waiting for {seconds} seconds before continuing (required by "{query_name}").').format(
+                        client_name=self.client.name,
+                        seconds=amount,
+                        query_name=query_name
+                    ))
                     message = _(
                         '[{client_name}] Too many requests, "{query_name}" requires waiting {seconds} seconds before continuing.').format(
                         client_name=self.client.name,
@@ -914,9 +913,10 @@ class TelegramRestrictedMediaDownloaderSession(Session):
 
                     await asyncio.sleep(amount)
                 except (OSError, InternalServerError, ServiceUnavailable) as e:
-                    log.info(
-                        'Retrying "%s" due to: %s', query_name, str(e) or repr(e)
-                    )
+                    log.info(_('Retrying "{query_name}" due to: {error}.').format(
+                        query_name=query_name,
+                        error=str(e) or repr(e)
+                    ))
                     message = _('Unable to call "{query_name}" due to "{error}", attempting to reconnect.').format(
                         error=str(e) or repr(e),
                         query_name=query_name

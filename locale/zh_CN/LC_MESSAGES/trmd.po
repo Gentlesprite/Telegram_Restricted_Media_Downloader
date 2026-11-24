@@ -2598,6 +2598,12 @@ msgstr "{panel_text}\n⚠️关键词输入已切换到本任务,之后的输入
 msgid "[{client_name}] Too many requests, \"{query_name}\" requires waiting {seconds} seconds before continuing."
 msgstr "[{client_name}]请求频繁,\"{query_name}\"要求等待{seconds}秒后继续运行。"
 
+msgid "[{client_name}] Waiting for {seconds} seconds before continuing (required by \"{query_name}\")."
+msgstr "[{client_name}]\"{query_name}\"要求等待{seconds}秒后继续运行。"
+
+msgid "Retrying \"{query_name}\" due to: {error}."
+msgstr "由于\"{error}\"导致无法调用\"{query_name}\",正在尝试重连。"
+
 msgid "Message {message_id}"
 msgstr "消息 {message_id}"
 
