@@ -25,6 +25,7 @@ from module.enums import (
 class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._optionals.title = _('options')
         self.add_argument(
             '-h', '--help',
             action='help',
@@ -88,6 +89,12 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             default=False,
             help=SUPPRESS
         )
+
+    def format_usage(self):
+        return super().format_usage().replace('usage: ', _('usage: '), 1)
+
+    def format_help(self):
+        return super().format_help().replace('usage: ', _('usage: '), 1)
 
     def print_help(self, file=None):
         console.print(

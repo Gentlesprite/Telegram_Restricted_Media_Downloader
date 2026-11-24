@@ -851,6 +851,12 @@ msgstr "设置网页面板的端口"
 msgid "Set the interface language"
 msgstr "设置界面语言"
 
+msgid "usage: "
+msgstr "用法: "
+
+msgid "options"
+msgstr "选项"
+
 msgid "Enable"
 msgstr "启用"
 
