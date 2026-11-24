@@ -213,7 +213,7 @@ msgstr "无"
 msgid "Switch account? - 「y|n」(default n):"
 msgstr "是否需要切换账号? - 「y|n」(默认n):"
 
-msgid "Enter 「the session directory」 (can be 「an empty directory」 or 「an already logged-in session directory」):"
+msgid "Enter 「session_directory」, the directory for sessions (can be 「an empty directory」 or 「an already logged-in session directory」):"
 msgstr "请输入「会话文件目录」(可为「空目录」,也可为「已登录的会话文件目录」):"
 
 msgid "Enable 「the bot」 (requires bot_token)? - 「y|n」(default n):"
@@ -783,13 +783,13 @@ msgstr "Pyrogram版本"
 msgid "User config file"
 msgstr "用户配置文件"
 
-msgid "Save directory"
+msgid "save_directory"
 msgstr "保存目录"
 
-msgid "Session directory"
+msgid "session_directory"
 msgstr "会话目录"
 
-msgid "Cache directory"
+msgid "temp_directory"
 msgstr "缓存目录"
 
 msgid "Use system proxy"
@@ -2022,7 +2022,7 @@ msgstr "意外的参数:\"{is_change_account}\",支持的参数 - \"{valid_forma
 msgid "Unexpected parameter \"{choice}\", supported values - 「{valid_format}」!"
 msgstr "意外的参数:\"{choice}\",支持的参数 - \"{valid_format}\"!"
 
-msgid "「The session directory」 set to:{session_directory}."
+msgid "「session_directory」 set to:{session_directory}."
 msgstr "「会话文件夹的路径」设置为:{session_directory}。"
 
 msgid "Unexpected parameter \"{api_hash}\", not 「a {valid_length}-digit」 「value」, please re-enter!"
@@ -2037,8 +2037,8 @@ msgstr "请输入当前账号的「bot_token」上一次的记录是:「{last_re
 msgid "Unexpected parameter \"{bot_token}\", 「bot_token」 must contain \":\", please re-enter!"
 msgstr "意外的参数:\"{bot_token}\",「bot_token」中需要包含\":\",请重新输入!"
 
-msgid "Enter the 「full path」 of the media link file. Last record:「{last_record}」format - 「{valid_format}」{bot_notice}:"
-msgstr "请输入需要下载的媒体链接的「完整路径」。上一次的记录是:「{last_record}」格式 - 「{valid_format}」{bot_notice}:"
+msgid "Enter the 「full path」 of the media link file 「links」. Last record:「{last_record}」format - 「{valid_format}」{bot_notice}:"
+msgstr "请输入需要下载的媒体「链接」的「完整路径」。上一次的记录是:「{last_record}」格式 - 「{valid_format}」{bot_notice}:"
 
 msgid "Unexpected parameter \"{links_file_path}\", the file path must end with 「{valid_format}」, please re-enter!"
 msgstr "意外的参数:\"{links_file_path}\",文件路径必须以\"{valid_format}\"结尾,请重新输入!"
@@ -2046,7 +2046,7 @@ msgstr "意外的参数:\"{links_file_path}\",文件路径必须以\"{valid_form
 msgid "Unexpected parameter \"{links_file_path}\", the file 「must exist」 (case-sensitive), please re-enter!"
 msgstr "意外的参数:\"{links_file_path}\",文件「必须存在」(区分大小写),请重新输入!"
 
-msgid "Enter the media 「save_directory」. Last record:「{last_record}」:"
+msgid "Enter 「save_directory」, the directory for saving downloaded media. Last record:「{last_record}」:"
 msgstr "请输入媒体「保存路径」。上一次的记录是:「{last_record}」:"
 
 msgid "Unexpected parameter \"{save_directory}\", the path is a file not a directory, please re-enter!"
@@ -2055,46 +2055,46 @@ msgstr "意外的参数:\"{save_directory}\",指定的路径是一个文件并�
 msgid "Unexpected parameter \"{save_directory}\", the path is invalid or not a directory, please re-enter!"
 msgstr "意外的参数:\"{save_directory}\",指定的路径无效或不是一个目录,请重新输入!"
 
-msgid "Enter 「the maximum download tasks」. Last record:「{last_record}」a high value may cause network issues, default recommended{default_prompt}:"
+msgid "Enter 「max_tasks」, the maximum number of download tasks. Last record:「{last_record}」a high value may cause network issues, default recommended{default_prompt}:"
 msgstr "请输入「最大下载任务数」。上一次的记录是:「{last_record}」,值过高可能会导致网络相关问题,建议默认{default_prompt}:"
 
 msgid "Unexpected parameter \"{max_download_task}\", the task count must be 「a positive integer」, please re-enter!"
 msgstr "意外的参数:\"{max_download_task}\",任务数必须是「正整数」,请重新输入!"
 
-msgid "Enter 「the maximum retries」 on failure. Last record:「{last_record}」{default_prompt}:"
+msgid "Enter 「max_retries」, the maximum number of retries on failure. Last record:「{last_record}」{default_prompt}:"
 msgstr "请输入任务失败时「最大重试次数」。上一次的记录是:「{last_record}」{default_prompt}:"
 
 msgid "Unexpected parameter \"{max_retry_count}\", the maximum retries must be 「a positive integer」, please re-enter!"
 msgstr "意外的参数:\"{max_retry_count}\",最大重试次数必须是「正整数」,请重新输入!"
 
-msgid "Enter 「the media types」 to download (space-separated, multiple allowed). Last record:「{last_record}」format - 「video photo document audio voice animation video_note live_photo」{default_prompt}:"
+msgid "Enter 「download_type」 to download (space-separated, multiple allowed). Last record:「{last_record}」format - 「video photo document audio voice animation video_note live_photo」{default_prompt}:"
 msgstr "输入需要下载的「媒体类型」(以空格分隔可多选)。上一次的记录是:「{last_record}」格式 - 「video photo document audio voice animation video_note live_photo」{default_prompt}:"
 
-msgid "「Shut down automatically」 after download? Last record:「{last_record}」 - 「{valid_format}」{default_prompt}:"
+msgid "Use 「is_shutdown」 to shut down automatically after download? Last record:「{last_record}」 - 「{valid_format}」{default_prompt}:"
 msgstr "下载完成后是否「自动关机」。上一次的记录是:「{last_record}」 - 「{valid_format}」{default_prompt}:"
 
 msgid "Unexpected parameter \"{is_shutdown}\", supported values - 「{valid_format}」"
 msgstr "意外的参数:\"{is_shutdown}\",支持的参数 - \"{valid_format}\""
 
-msgid "Use 「a proxy」? Last record:「{ep_notice}」format - 「{valid_format}」{default_prompt}:"
+msgid "Use 「enable_proxy」 to enable the proxy? Last record:「{ep_notice}」format - 「{valid_format}」{default_prompt}:"
 msgstr "是否需要使用「代理」。上一次的记录是:「{ep_notice}」格式 - 「{valid_format}」{default_prompt}:"
 
 msgid "Unexpected parameter \"{enable_proxy}\", please enter a valid value! Supported values - 「{valid_format}」!"
 msgstr "意外的参数:\"{enable_proxy}\",请输入有效参数!支持的参数 - \"{valid_format}\"!"
 
-msgid "Enter 「the proxy scheme」. Last record:「{last_record}」format - 「{fmt_valid_format}」:"
+msgid "Enter 「scheme」, the proxy protocol. Last record:「{last_record}」format - 「{fmt_valid_format}」:"
 msgstr "请输入「代理类型」。上一次的记录是:「{last_record}」格式 - 「{fmt_valid_format}」:"
 
 msgid "Unexpected parameter \"{scheme}\", please enter a valid proxy scheme! Supported values - 「{fmt_valid_format}」!"
 msgstr "意外的参数:\"{scheme}\",请输入有效的代理类型!支持的参数 - \"{fmt_valid_format}\"!"
 
-msgid "Enter 「the IP address」 for proxy scheme \"{scheme}\". Last record:「{last_record}」format - 「{valid_format}」:"
+msgid "Enter 「hostname」, the IP address for the proxy with scheme \"{scheme}\". Last record:「{last_record}」format - 「{valid_format}」:"
 msgstr "请输入代理类型为:\"{scheme}\"的「ip地址」。上一次的记录是:\"{last_record}\"格式 - \"{valid_format}\":"
 
 msgid "\"{hostname}\" is not 「an IP address」, please enter a valid IPv4 address! Supported values - 「{valid_format}」!"
 msgstr "\"{hostname}\"不是一个「ip地址」,请输入有效的ipv4地址!支持的参数 - \"{valid_format}\"!"
 
-msgid "Enter 「the proxy port」 for IP \"{hostname}\" and scheme \"{scheme}\". Last record:「{last_record}」format - 「{valid_format}」:"
+msgid "Enter 「port」, the proxy port for IP \"{hostname}\" with scheme \"{scheme}\". Last record:「{last_record}」format - 「{valid_format}」:"
 msgstr "请输入ip地址为:\"{hostname}\",代理类型为:\"{scheme}\"的「代理端口」。上一次的记录是:\"{last_record}\"格式 - \"{valid_format}\":"
 
 msgid "Unexpected parameter \"{port}\", the port must be between 「{valid_format}」!"

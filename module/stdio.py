@@ -529,9 +529,9 @@ class StatisticalTable:
                  f'{VERSION_WITH_COMMIT}({update_version}⬆)' if update_version else VERSION_WITH_COMMIT],
                 [_('Pyrogram version'), pyrogram_version],
                 [_('User config file'), app.config_path],
-                [_('Save directory'), app.save_directory],
-                [_('Session directory'), app.work_directory],
-                [_('Cache directory'), app.temp_directory],
+                [_('save_directory'), app.save_directory],
+                [_('session_directory'), app.work_directory],
+                [_('temp_directory'), app.temp_directory],
                 [_('Use system proxy'), app.enable_proxy]
             ],
             show_lines=True

@@ -1081,9 +1081,9 @@ class GetStdioParams:
         style: str = '#FF4689'
         while True:
             session_directory = console.input(
-                _('Enter 「the session directory」 (can be 「an empty directory」 or 「an already logged-in session directory」):')).strip().strip(
+                _('Enter 「session_directory」, the directory for sessions (can be 「an empty directory」 or 「an already logged-in session directory」):')).strip().strip(
                 '"')
-            console.print(_('「The session directory」 set to:{session_directory}.').format(
+            console.print(_('「session_directory」 set to:{session_directory}.').format(
                 session_directory=session_directory
             ), style=style)
             return {'session_directory': session_directory}
@@ -1177,7 +1177,7 @@ class GetStdioParams:
             try:
                 bot_notice = _('(bot configured, this step can be skipped)') if enable_bot else ''
                 links_file_path = console.input(
-                    _('Enter the 「full path」 of the media link file. Last record:「{last_record}」format - 「{valid_format}」{bot_notice}:').format(
+                    _('Enter the 「full path」 of the media link file 「links」. Last record:「{last_record}」format - 「{valid_format}」{bot_notice}:').format(
                         last_record=last_record if last_record else GetStdioParams.UNDEFINED,
                         valid_format=valid_format,
                         bot_notice=bot_notice
@@ -1230,7 +1230,7 @@ class GetStdioParams:
         # 输入媒体保存路径,确保是一个有效的目录路径。
         while True:
             save_directory = console.input(
-                _('Enter the media 「save_directory」. Last record:「{last_record}」:').format(
+                _('Enter 「save_directory」, the directory for saving downloaded media. Last record:「{last_record}」:').format(
                     last_record=last_record if last_record else GetStdioParams.UNDEFINED
                 )).strip().strip(
                 '"')
@@ -1266,7 +1266,7 @@ class GetStdioParams:
         while True:
             try:
                 max_download_task = console.input(
-                    _('Enter 「the maximum download tasks」. Last record:「{last_record}」a high value may cause network issues, default recommended{default_prompt}:').format(
+                    _('Enter 「max_tasks」, the maximum number of download tasks. Last record:「{last_record}」a high value may cause network issues, default recommended{default_prompt}:').format(
                         last_record=last_record if last_record else GetStdioParams.UNDEFINED,
                         default_prompt=default_prompt
                     )).strip()
@@ -1295,7 +1295,7 @@ class GetStdioParams:
         while True:
             try:
                 max_retry_count = console.input(
-                    _('Enter 「the maximum retries」 on failure. Last record:「{last_record}」{default_prompt}:').format(
+                    _('Enter 「max_retries」, the maximum number of retries on failure. Last record:「{last_record}」{default_prompt}:').format(
                         last_record=last_record if last_record else GetStdioParams.UNDEFINED,
                         default_prompt=default_prompt
                     )).strip()
@@ -1331,7 +1331,7 @@ class GetStdioParams:
         default_prompt: str = _('(default is all supported download types)') if last_record is None else ''
         while True:
             download_type: Union[str, list] = console.input(
-                _('Enter 「the media types」 to download (space-separated, multiple allowed). Last record:「{last_record}」format - 「video photo document audio voice animation video_note live_photo」{default_prompt}:').format(
+                _('Enter 「download_type」 to download (space-separated, multiple allowed). Last record:「{last_record}」format - 「video photo document audio voice animation video_note live_photo」{default_prompt}:').format(
                     last_record=last_record if last_record else GetStdioParams.UNDEFINED,
                     default_prompt=default_prompt
                 )).strip()
@@ -1375,7 +1375,7 @@ class GetStdioParams:
         while True:
             try:
                 is_shutdown = console.input(
-                    _('「Shut down automatically」 after download? Last record:「{last_record}」 - 「{valid_format}」{default_prompt}:').format(
+                    _('Use 「is_shutdown」 to shut down automatically after download? Last record:「{last_record}」 - 「{valid_format}」{default_prompt}:').format(
                         last_record=last_record,
                         valid_format=valid_format,
                         default_prompt=default_prompt
@@ -1413,7 +1413,7 @@ class GetStdioParams:
         default_prompt: str = _('(default n)') if ep_notice == GetStdioParams.UNDEFINED else ''
         while True:  # 询问是否开启代理。
             enable_proxy = console.input(
-                _('Use 「a proxy」? Last record:「{ep_notice}」format - 「{valid_format}」{default_prompt}:').format(
+                _('Use 「enable_proxy」 to enable the proxy? Last record:「{ep_notice}」format - 「{valid_format}」{default_prompt}:').format(
                     ep_notice=ep_notice,
                     valid_format=valid_format,
                     default_prompt=default_prompt
@@ -1449,7 +1449,7 @@ class GetStdioParams:
         fmt_valid_format = '|'.join(valid_format)
         while True:  # v1.3.0 修复代理配置scheme参数配置抛出AttributeError。
             scheme = console.input(
-                _('Enter 「the proxy scheme」. Last record:「{last_record}」format - 「{fmt_valid_format}」:').format(
+                _('Enter 「scheme」, the proxy protocol. Last record:「{last_record}」format - 「{fmt_valid_format}」:').format(
                     last_record=last_record if last_record else GetStdioParams.UNDEFINED,
                     fmt_valid_format=fmt_valid_format
                 )).strip().lower()
@@ -1479,7 +1479,7 @@ class GetStdioParams:
             # 输入代理IP地址。
             try:
                 hostname = console.input(
-                    _('Enter 「the IP address」 for proxy scheme "{scheme}". Last record:「{last_record}」format - 「{valid_format}」:').format(
+                    _('Enter 「hostname」, the IP address for the proxy with scheme "{scheme}". Last record:「{last_record}」format - 「{valid_format}」:').format(
                         scheme=scheme,
                         last_record=last_record if last_record else GetStdioParams.UNDEFINED,
                         valid_format=valid_format
@@ -1510,7 +1510,7 @@ class GetStdioParams:
             try:  # hostname,scheme可能出现None。
                 scheme, hostname, __ = ProcessConfig.get_proxy_info(proxy_config).values()
                 port = console.input(
-                    _('Enter 「the proxy port」 for IP "{hostname}" and scheme "{scheme}". Last record:「{last_record}」format - 「{valid_format}」:').format(
+                    _('Enter 「port」, the proxy port for IP "{hostname}" with scheme "{scheme}". Last record:「{last_record}」format - 「{valid_format}」:').format(
                         hostname=hostname,
                         scheme=scheme,
                         last_record=last_record if last_record else GetStdioParams.UNDEFINED,
