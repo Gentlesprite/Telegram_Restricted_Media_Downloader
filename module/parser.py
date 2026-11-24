@@ -4,10 +4,6 @@
 # Time:2026-01-23 17:47:00
 # File:parser.py
 import argparse
-from argparse import (
-    SUPPRESS,
-    ArgumentParser
-)
 
 from module.language import _
 from module import (
@@ -25,20 +21,20 @@ from module.enums import (
 argparse._ = _
 
 
-class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
+class TelegramRestrictedMediaDownloaderArgumentParser(argparse.ArgumentParser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.add_argument(
             '-h', '--help',
             action='help',
-            default=SUPPRESS,
+            default=argparse.SUPPRESS,
             help=_('Show help')
         )
         self.add_argument(
             '-v', '--version',
             action='version',
             version=f'{SOFTWARE_SHORT_NAME} {VERSION_SEMVER}',
-            default=SUPPRESS,
+            default=argparse.SUPPRESS,
             help=_('Show version information')
         )
         self.add_argument(
@@ -89,7 +85,7 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             nargs='?',
             const=TestLevel.INFO,
             default=False,
-            help=SUPPRESS
+            help=argparse.SUPPRESS
         )
 
     def print_help(self, file=None):
