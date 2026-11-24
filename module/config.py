@@ -349,7 +349,7 @@ class UserConfig(BaseConfig):
             # 中文路径无法被打包好的二进制文件识别,故在配置文件时无论是链接路径还是媒体保存路径都请使用英文命名。
             self.re_config = True
             log.error(
-                _('Encoding error reading the config file due to "{error}" (possibly Chinese or special characters in the save path). A new template has been generated.').format(
+                _('Encoding error reading the config file due to "{error}" (possibly Chinese or special characters in the save_directory). A new template has been generated.').format(
                     error=e
                 ))
             self.backup_config(config, error_config=self.re_config)
@@ -357,12 +357,12 @@ class UserConfig(BaseConfig):
             self.re_config = True
             if os.path.isdir(self.config_path):
                 log.error(
-                    _('The configuration file path "{config_path}" was expected to be a file, but a directory was found, please remove the directory and restart the application to reconfigure. During configuration, specify a valid directory for the "save path" (namely the "save_directory" setting).').format(
+                    _('The configuration file path "{config_path}" was expected to be a file, but a directory was found, please remove the directory and restart the application to reconfigure. During configuration, specify a valid directory for the 「save_directory」 setting.').format(
                         config_path=self.config_path
                     ))
                 raise SystemExit(1)
             else:
-                console.print(_('「Note」Link paths and save paths cannot contain quotes!'), style='#B1DB74')
+                console.print(_('「Note」Link paths and save_directory cannot contain quotes!'), style='#B1DB74')
                 log.error(
                     _('Invalid or corrupted config file detected. A new template has been generated due to "{error}"').format(
                         error=e

@@ -1230,7 +1230,7 @@ class GetStdioParams:
         # 输入媒体保存路径,确保是一个有效的目录路径。
         while True:
             save_directory = console.input(
-                _('Enter the media 「save path」. Last record:「{last_record}」:').format(
+                _('Enter the media 「save_directory」. Last record:「{last_record}」:').format(
                     last_record=last_record if last_record else GetStdioParams.UNDEFINED
                 )).strip().strip(
                 '"')
