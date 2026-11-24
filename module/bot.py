@@ -1578,11 +1578,15 @@ class Bot:
                 )
         else:
             if self.listen_download_chat:
-                await __listen_info(self.listen_download_chat,
-                                    _('🕵️The following links are created `listen download` channels:\n'))
+                await __listen_info(
+                    self.listen_download_chat,
+                    _('🕵️The following links are created `listen download` channels:\n')
+                )
             if self.listen_forward_chat:
-                await __listen_info(self.listen_forward_chat,
-                                    _('📲The following links are created `listen forward` channels:\n'))
+                await __listen_info(
+                    self.listen_forward_chat,
+                    _('📲The following links are created `listen forward` channels:\n')
+                )
             if edit_message is not None:
                 try:
                     await edit_message.edit_reply_markup(self.menu_keyboard('listen'))
@@ -3885,8 +3889,13 @@ class DownloadChatHandler(CallbackHandler):
                 ))
             except MessageNotModified:
                 pass
-            await kb.calendar_keyboard(dtype=dtype, year=year, month=month, selected_date=selected_date,
-                                       chat_id=chat_id)
+            await kb.calendar_keyboard(
+                dtype=dtype,
+                year=year,
+                month=month,
+                selected_date=selected_date,
+                chat_id=chat_id
+            )
         elif data.startswith('adjust_step_'):
             parts = data.split('_')
             dtype = parts[-2]
@@ -3921,8 +3930,10 @@ class DownloadChatHandler(CallbackHandler):
                 month = int(parts[-1])
                 start_time, end_time = self.__get_update_time(downloader, chat_id)
                 selected_time = start_time if dtype == CalenderKeyboard.START_TIME_BUTTON else end_time
-                selected_date = selected_time.strftime('%Y-%m-%d %H:%M:%S') if isinstance(selected_time,
-                                                                                          datetime.datetime) else None
+                selected_date = selected_time.strftime('%Y-%m-%d %H:%M:%S') if isinstance(
+                    selected_time,
+                    datetime.datetime
+                ) else None
                 await kb.calendar_keyboard(year=year, month=month, dtype=dtype, selected_date=selected_date,
                                            chat_id=chat_id)
                 log.info(_('Date switched to {year} year, {month} month.').format(year=year, month=month))
@@ -3960,10 +3971,17 @@ class DownloadChatHandler(CallbackHandler):
             month = int(parts[-1])
             start_time, end_time = self.__get_update_time(downloader, chat_id)
             selected_time = start_time if dtype == CalenderKeyboard.START_TIME_BUTTON else end_time
-            selected_date = selected_time.strftime('%Y-%m-%d %H:%M:%S') if isinstance(selected_time,
-                                                                                      datetime.datetime) else None
-            await kb.calendar_keyboard(year=year, month=month, dtype=dtype, selected_date=selected_date,
-                                       chat_id=chat_id)
+            selected_date = selected_time.strftime('%Y-%m-%d %H:%M:%S') if isinstance(
+                selected_time,
+                datetime.datetime
+            ) else None
+            await kb.calendar_keyboard(
+                year=year,
+                month=month,
+                dtype=dtype,
+                selected_date=selected_date,
+                chat_id=chat_id
+            )
             log.info(_('Date switched to {year} year, {month} month.').format(year=year, month=month))
         elif data.startswith(('set_time_', 'set_specific_time_')):
             parts = data.split('_')

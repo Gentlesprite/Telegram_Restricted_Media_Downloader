@@ -778,7 +778,7 @@ class TelegramUploader:
             _future
     ):
         try:
-            i = _future.result()
+            __ = _future.result()
         except (asyncio.CancelledError, Exception) as e:
             self.current_task_num -= 1
             self.pb.progress.remove_task(task_id=task_id)

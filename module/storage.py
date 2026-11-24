@@ -381,7 +381,7 @@ class SqliteStorageDatabase(StorageDatabase):
                     self._dir_missing.pop(parent, None)
                     self._dir_mtime.pop(parent, None)
                     self._dir_checked_at.pop(parent, None)
-                    missing_ids.extend(storage_id for storage_id, i in items)
+                    missing_ids.extend(storage_id for storage_id, __ in items)
                 else:
                     self._dir_missing[parent] = confirmed
                 continue
@@ -440,7 +440,7 @@ class SqliteStorageDatabase(StorageDatabase):
         try:
             for start in range(0, len(storage_ids), self.DELETE_CHUNK_SIZE):
                 chunk: List[int] = storage_ids[start:start + self.DELETE_CHUNK_SIZE]
-                placeholders: str = ', '.join('?' for i in chunk)
+                placeholders: str = ', '.join('?' for __ in chunk)
                 with self.conn:
                     self.conn.execute(
                         f'DELETE FROM {self.TABLE_NAME} WHERE storage_id IN ({placeholders})',

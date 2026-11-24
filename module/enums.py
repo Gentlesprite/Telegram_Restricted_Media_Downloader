@@ -654,11 +654,11 @@ class ProcessConfig:
                     winreg.HKEY_CURRENT_USER,
                     r'Software\Microsoft\Windows\CurrentVersion\Internet Settings'
             ) as key:
-                proxy_enable, i = winreg.QueryValueEx(key, 'ProxyEnable')
+                proxy_enable, __ = winreg.QueryValueEx(key, 'ProxyEnable')
                 if not proxy_enable:
                     return None
 
-                proxy_server, i = winreg.QueryValueEx(key, 'ProxyServer')
+                proxy_server, __ = winreg.QueryValueEx(key, 'ProxyServer')
                 if not proxy_server:
                     return None
 
@@ -914,7 +914,7 @@ class GetStdioParams:
                                 input_buffer.pop()
                                 print('\b \b', end='', flush=True)  # 删除控制台上的最后一个字符。
                         elif char in ('\x00', '\xe0'):  # 上下左右键。
-                            i = msvcrt.getwch()
+                            __ = msvcrt.getwch()
                         else:
                             input_buffer.append(char)
                             console.print(char, end='')
@@ -966,7 +966,7 @@ class GetStdioParams:
                         last_second = remaining
 
                     # 使用select检测输入,超时0.1秒以便更新倒计时。
-                    ready, i, i = select.select([sys.stdin], [], [], 0.1)
+                    ready, __, ___ = select.select([sys.stdin], [], [], 0.1)
 
                     if ready:
                         # 清除倒计时显示。
@@ -991,7 +991,7 @@ class GetStdioParams:
                                 sys.stdout.flush()
                         elif char == '\x1b':  # 转义序列（上下左右键等）。
                             # 读取接下来的两个字符。
-                            i = sys.stdin.read(2)
+                            __ = sys.stdin.read(2)
                         elif ord(char) >= 32:  # 可打印字符。
                             input_buffer.append(char)
                             sys.stdout.write(char)
@@ -1241,8 +1241,10 @@ class GetStdioParams:
                     save_directory = os.path.join(os.getcwd(), 'downloads')
                     log.warning(_('No previous record, set to the default directory.'))
             if Validator.is_valid_save_directory(save_directory):
-                console.print(_('「save_directory」 set to: 「{directory}」').format(directory=save_directory),
-                              style=ProcessConfig.stdio_style('save_directory'))
+                console.print(
+                    _('「save_directory」 set to: 「{directory}」').format(directory=save_directory),
+                    style=ProcessConfig.stdio_style('save_directory')
+                )
                 Validator.is_contain_chinese(save_directory)
                 return {
                     'save_directory': save_directory,
@@ -1275,8 +1277,10 @@ class GetStdioParams:
                 if max_download_task == '':
                     max_download_task = 3
                 if Validator.is_valid_number(max_download_task):
-                    console.print(_('「max_download_task」 set to: 「{max_tasks}」').format(max_tasks=max_download_task),
-                                  style=ProcessConfig.stdio_style('max_download_task'))
+                    console.print(
+                        _('「max_download_task」 set to: 「{max_tasks}」').format(max_tasks=max_download_task),
+                        style=ProcessConfig.stdio_style('max_download_task')
+                    )
                     return {
                         'max_download_task': int(max_download_task),
                         'record_flag': True
@@ -1304,8 +1308,10 @@ class GetStdioParams:
                 if max_retry_count == '':
                     max_retry_count = 5
                 if Validator.is_valid_number(max_retry_count):
-                    console.print(_('「max_retry_count」 set to: 「{retries}」').format(retries=max_retry_count),
-                                  style=ProcessConfig.stdio_style('max_retry_count'))
+                    console.print(
+                        _('「max_retry_count」 set to: 「{retries}」').format(retries=max_retry_count),
+                        style=ProcessConfig.stdio_style('max_retry_count')
+                    )
                     return {
                         'max_retry_count': int(max_retry_count),
                         'record_flag': True
@@ -1324,7 +1330,7 @@ class GetStdioParams:
             meta: dict = ProcessConfig.get_dtype(download_dtype=last_record)
             record: list = []
             for i in meta.items():
-                dtype, j = i
+                dtype, __ = i
                 if meta.get(dtype) is True:  # noqa.
                     record.append(dtype)
             last_record: str = ' '.join(record)
@@ -1427,12 +1433,16 @@ class GetStdioParams:
                 enable_proxy = 'n'
             if Validator.is_valid_enable_proxy(enable_proxy):
                 if enable_proxy == 'y':
-                    console.print(_('「enable_proxy」 set to: 「{enable_proxy}」').format(enable_proxy=enable_proxy),
-                                  style=ProcessConfig.stdio_style('enable_proxy'))
+                    console.print(
+                        _('「enable_proxy」 set to: 「{enable_proxy}」').format(enable_proxy=enable_proxy),
+                        style=ProcessConfig.stdio_style('enable_proxy')
+                    )
                     return {'enable_proxy': True, 'record_flag': True}
                 elif enable_proxy == 'n':
-                    console.print(_('「enable_proxy」 set to: 「{enable_proxy}」').format(enable_proxy=enable_proxy),
-                                  style=ProcessConfig.stdio_style('enable_proxy'))
+                    console.print(
+                        _('「enable_proxy」 set to: 「{enable_proxy}」').format(enable_proxy=enable_proxy),
+                        style=ProcessConfig.stdio_style('enable_proxy')
+                    )
                     return {'enable_proxy': False, 'record_flag': True}
             else:
                 log.error(
@@ -1475,7 +1485,7 @@ class GetStdioParams:
     def get_hostname(proxy_config: dict, last_record: str, valid_format: str = 'x.x.x.x'):
         hostname = None
         while True:
-            scheme, i, __ = ProcessConfig.get_proxy_info(proxy_config).values()
+            scheme, __, ___ = ProcessConfig.get_proxy_info(proxy_config).values()
             # 输入代理IP地址。
             try:
                 hostname = console.input(

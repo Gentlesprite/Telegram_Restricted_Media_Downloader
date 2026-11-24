@@ -259,8 +259,12 @@ class TelegramRestrictedMediaDownloader(Bot):
             with_upload: Union[dict, None] = None,
             owner: Union[int, None] = None
     ):
-        link_meta: Union[dict, None] = await super().get_download_link_from_bot(client, message, owner=owner,
-                                                                                with_upload=with_upload)
+        link_meta: Union[dict, None] = await super().get_download_link_from_bot(
+            client=client,
+            message=message,
+            with_upload=with_upload,
+            owner=owner
+        )
         if link_meta is None:
             return None
         right_link: set = link_meta.get('right_link')
@@ -1730,7 +1734,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 task.member_num = max(task.member_num - 1, 0)  # 不支持或被忽略的类型不计入总数,避免链接状态的剩余条数无法归零。
                 _error = _('Unsupported or ignored type (cancelled)')
                 try:
-                    i, __, sever_file_size, file_name, ____, format_file_size = self.get_media_meta(
+                    __, ___, sever_file_size, file_name, ____, format_file_size = self.get_media_meta(
                         message=message,
                         dtype=valid_dtype
                     ).values()

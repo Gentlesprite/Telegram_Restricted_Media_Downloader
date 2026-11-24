@@ -298,7 +298,7 @@ def __get_file_type(file_id: str) -> FileType:
     else:
         buffer = BytesIO(decoded[:-2])
 
-    file_type, i = struct.unpack('<ii', buffer.read(8))
+    file_type, __ = struct.unpack('<ii', buffer.read(8))
 
     file_type &= ~WEB_LOCATION_FLAG
     file_type &= ~FILE_REFERENCE_FLAG

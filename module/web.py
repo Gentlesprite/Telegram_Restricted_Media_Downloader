@@ -790,12 +790,12 @@ class Web:
         if directory:
             if sys.platform == 'win32':
                 # Windows:盘符根即目标文件系统,无需解析%CHAT_NAME%等占位符。
-                drive, i = os.path.splitdrive(os.path.abspath(directory))
+                drive, __ = os.path.splitdrive(os.path.abspath(directory))
                 root = drive + os.sep if drive else os.sep
             else:
                 # 类UNIX:根目录可能跨挂载点,改裁到最近的真实目录再查。
                 root = os.path.abspath(directory)
-                drive, i = os.path.splitdrive(root)
+                drive, __ = os.path.splitdrive(root)
                 volume: str = drive + os.sep if drive else os.sep
                 while root and not os.path.isdir(root):
                     parent = os.path.dirname(root.rstrip(os.sep))
@@ -850,7 +850,7 @@ class Web:
             self.cache_size_stamp = now
             total: int = 0
             real: str = os.path.abspath(directory)
-            drive, i = os.path.splitdrive(real)
+            drive, __ = os.path.splitdrive(real)
             volume: str = drive + os.sep if drive else os.sep
             while real and not os.path.isdir(real):
                 parent: str = os.path.dirname(real.rstrip(os.sep))
@@ -862,7 +862,7 @@ class Web:
                 # 缓存目录整条路径都不存在:不能把整个卷当成缓存统计,否则数字失去意义且遍历极慢。
                 real = ''
             if real:
-                for walk_root, i, files in os.walk(real):
+                for walk_root, __, files in os.walk(real):
                     for name in files:
                         try:
                             total += os.path.getsize(os.path.join(walk_root, name))

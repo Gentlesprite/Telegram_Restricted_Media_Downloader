@@ -437,8 +437,10 @@ class UserConfig(BaseConfig):
             proxy_record: dict = self.last_record.get('proxy', {})  # proxy的历史记录。
             enable_bot: bool = False  # 是否打开机器人。
             if any([not _api_id, not _api_hash, not _save_directory, not _max_download_task, not _download_type]):
-                console.print(_('「Note」Pressing Enter directly uses the last record.'),
-                              style='#B1DB74')
+                console.print(
+                    _('「Note」Pressing Enter directly uses the last record.'),
+                    style='#B1DB74'
+                )
             if self.is_change_account or _api_id is None or _api_hash is None or self.re_config:
                 if not _api_id:
                     api_id, record_flag = gsp.get_api_id(

@@ -314,7 +314,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             try:
                 if qr_lines:
                     sys.stdout.write(f'\x1b[{qr_lines}A')
-                    for i in range(qr_lines):
+                    for __ in range(qr_lines):
                         sys.stdout.write('\x1b[2K\n')
                     sys.stdout.write(f'\x1b[{qr_lines}A')
                     sys.stdout.flush()
@@ -323,7 +323,8 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 console.print(qr_text, justify='center', soft_wrap=True)
                 scan_notice = _('Please scan the [#ff6b81]「QR code」[/#ff6b81] to login')
                 console.print(scan_notice, justify='center', soft_wrap=True)
-                path_notice = _('[#b83b5e]Settings[/#b83b5e] -> [#f08a5d]Devices[/#f08a5d] -> [#f9ed69]Add Device[/#f9ed69]')
+                path_notice = _(
+                    '[#b83b5e]Settings[/#b83b5e] -> [#f08a5d]Devices[/#f08a5d] -> [#f9ed69]Add Device[/#f9ed69]')
                 console.print(path_notice, justify='center', soft_wrap=True)
                 qr_lines = len(qr_text.splitlines()) + len(scan_notice.splitlines()) + len(path_notice.splitlines())
 
@@ -498,7 +499,7 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
         await session.start()
 
         if not is_current_dc and export_authorization:
-            for i in range(3):
+            for __ in range(3):
                 exported_auth = await self.invoke(
                     raw.functions.auth.ExportAuthorization(
                         dc_id=dc_id
@@ -892,11 +893,12 @@ class TelegramRestrictedMediaDownloaderSession(Session):
 
                     if amount > sleep_threshold >= 0:
                         raise
-                    log.info(_('[{client_name}] Waiting for {seconds} seconds before continuing (required by "{query_name}").').format(
-                        client_name=self.client.name,
-                        seconds=amount,
-                        query_name=query_name
-                    ))
+                    log.info(
+                        _('[{client_name}] Waiting for {seconds} seconds before continuing (required by "{query_name}").').format(
+                            client_name=self.client.name,
+                            seconds=amount,
+                            query_name=query_name
+                        ))
                     message = _(
                         '[{client_name}] Too many requests, "{query_name}" requires waiting {seconds} seconds before continuing.').format(
                         client_name=self.client.name,
@@ -936,8 +938,11 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                             await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
                             log.info(_('Connection restored, retrying call "%s".'), query_name)
                         except asyncio.TimeoutError:
-                            log.info(_('Failed to call "%s", waiting %s seconds before resending.'), query_name,
-                                     retry_delay)
+                            log.info(
+                                _('Failed to call "%s", waiting %s seconds before resending.'),
+                                query_name,
+                                retry_delay
+                            )
                     await asyncio.sleep(retry_delay)
         finally:
             if waiting_kind == WaitingKind.FLOOD:

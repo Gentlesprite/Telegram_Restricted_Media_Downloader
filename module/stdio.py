@@ -546,7 +546,7 @@ class PanelTable:
         self.table = Table(title=title, highlight=True, show_lines=show_lines)
         self.table.title_style = Style(color='white', bold=True)
         # 添加列。
-        for i, col in enumerate(header):
+        for __, col in enumerate(header):
             style = styles.get(col, {}) if styles else {}
             self.table.add_column(col, **style)
 
@@ -774,7 +774,7 @@ class MetaData:
         qr.make()
         qr_row: int = len(qr.modules) + 2
         qr_col: int = len(qr.modules[0]) + 2
-        qr_map: list = [[False for i in range(qr_col)] for i in range(qr_row)]
+        qr_map: list = [[False for __ in range(qr_col)] for __ in range(qr_row)]
         for row_id, row in enumerate(qr.modules):
             for col_id, pixel in enumerate(row):
                 qr_map[row_id + 1][col_id + 1] = pixel
@@ -857,10 +857,10 @@ class ConnectionStatus:
     _displayed_message: str = ''
     _render_token: int = 0
     _logger_installed: bool = False
-    HEALTH_OK: tuple = ('✓', '#B1DB74', _('Connection normal'))
-    HEALTH_RECONNECT: tuple = ('↻', '#FFB579', _('Reconnecting'))
-    HEALTH_FLOOD: tuple = ('◉', '#FF4689', _('Waiting'))
-    HEALTH_FAILURE: tuple = ('✕', '#FF7979', _('Connection abnormal'))
+    NORMAL: tuple = ('✓', '#B1DB74', _('Connection normal'))
+    RECONNECT: tuple = ('↻', '#FFB579', _('Reconnecting'))
+    FLOOD: tuple = ('◉', '#FF4689', _('Waiting'))
+    FAILURE: tuple = ('✕', '#FF7979', _('Connection abnormal'))
     BUSY_DELAY: float = 1
     CONNECTED_GRACE: float = 1
 
@@ -891,13 +891,13 @@ class ConnectionStatus:
     def _health_prefix(cls) -> Text:
         """根据当前连接健康状态生成常驻前缀(纯符号+颜色),配色对齐程序 console.log。"""
         if cls._log_failure:
-            glyph, style, text = cls.HEALTH_FAILURE
+            glyph, style, text = cls.FAILURE
         elif cls._connecting > 0:
-            glyph, style, text = cls.HEALTH_RECONNECT
+            glyph, style, text = cls.RECONNECT
         elif cls._flood_waiting > 0:
-            glyph, style, text = cls.HEALTH_FLOOD
+            glyph, style, text = cls.FLOOD
         else:
-            glyph, style, text = cls.HEALTH_OK
+            glyph, style, text = cls.NORMAL
         return Text.assemble((glyph, style), (f' {text}', style))
 
     @classmethod
@@ -905,19 +905,19 @@ class ConnectionStatus:
         """返回当前连接状态的纯文本(供网页等非终端展示复用),不改变终端 Live 显示。"""
         with cls._lock:
             if cls._log_failure:
-                glyph, style, text = cls.HEALTH_FAILURE
+                glyph, style, text = cls.FAILURE
                 msg = cls._current_message or _('Connection failure')
             elif cls._connecting > 0:
-                glyph, style, text = cls.HEALTH_RECONNECT
+                glyph, style, text = cls.RECONNECT
                 msg = cls._current_message or _('Retrying reconnect.')
             elif cls._flood_waiting > 0:
-                glyph, style, text = cls.HEALTH_FLOOD
+                glyph, style, text = cls.FLOOD
                 msg = cls._flood_message or _('Too many requests, waiting.')
             elif cls._active > 0:
-                glyph, style, text = cls.HEALTH_OK
+                glyph, style, text = cls.NORMAL
                 msg = cls._busy_message or _('Sending data.')
             else:
-                glyph, style, text = cls.HEALTH_OK
+                glyph, style, text = cls.NORMAL
                 msg = ''
         if msg:
             return f'{glyph} {text} • {msg}'
