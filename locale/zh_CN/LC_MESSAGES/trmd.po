@@ -1571,8 +1571,8 @@ msgstr "读取历史文件时发生错误,原因:\"{error}\""
 msgid "Encoding error reading the config file due to \"{error}\" (possibly Chinese or special characters in the save_directory). A new template has been generated."
 msgstr "读取配置文件遇到编码错误,可能保存路径中包含中文或特殊字符的文件夹。已生成新的模板文件. . .原因:\"{error}\""
 
-msgid "The configuration file path \"{config_path}\" is a directory, but a file was expected. Remove the directory or specify another file path with {executable} --config, then restart the application."
-msgstr "配置文件路径\"{config_path}\"预期应为文件,但实际上为目录。请删除该目录,或使用{executable} --config指定其他文件路径,然后重启软件。"
+msgid "The configuration file path \"{config_path}\" is a directory, but a file was expected. Remove the directory or specify another file path with -c/--config, then restart the application."
+msgstr "配置文件路径\"{config_path}\"预期应为文件,但实际上为目录。请删除该目录,或使用-c/--config选项指定其他文件路径,然后重启程序。"
 
 msgid "Invalid or corrupted config file detected. A new template has been generated due to \"{error}\""
 msgstr "检测到无效或损坏的配置文件。已生成新的模板文件. . .原因:\"{error}\""
