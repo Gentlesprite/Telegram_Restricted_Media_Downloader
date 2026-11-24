@@ -3006,10 +3006,13 @@ class TelegramRestrictedMediaDownloader(Bot):
 
     def stop(self) -> None:
         for client in (self.app.client, self.bot):
-            if client is None or not (client.is_initialized or client.is_connected):
+            if client is None:
                 continue
             try:
-                client.stop()
+                if client.is_initialized:
+                    client.stop()
+                elif client.is_connected:
+                    client.disconnect()
             except Exception as e:
                 log.warning(_('Failed to stop the pyrogram client due to "{error}"').format(
                     error=e
