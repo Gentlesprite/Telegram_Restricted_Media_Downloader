@@ -2998,12 +2998,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 log.error(_('Error processing queue due to "{error}"').format(
                     error=e
                 ), exc_info=True)
-        # 等待所有任务完成。
-        await self.queue.join()
-        if self.scheduler:  # 停止下载调度器。
-            self.scheduler.cancel()
-            self.scheduler = None
-        await self.app.client.stop() if self.app.client.is_connected else None
+        await self.queue.join()  # 等待所有任务完成。
 
     def stop(self) -> None:
         for client in (self.app.client, self.bot):
