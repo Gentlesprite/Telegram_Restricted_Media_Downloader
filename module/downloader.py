@@ -3005,6 +3005,28 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.scheduler = None
         await self.app.client.stop() if self.app.client.is_connected else None
 
+    def stop(self) -> None:
+        for client in (self.app.client, self.bot):
+            if client is None or not (client.is_initialized or client.is_connected):
+                continue
+            try:
+                client.stop()
+            except Exception as e:
+                log.warning(_('Failed to stop the pyrogram client due to "{error}"').format(
+                    error=e
+                ))
+        if self.storage_database is not None:
+            try:
+                # 先等待登记任务落库再关闭数据库,避免退出时丢失最后的记录。
+                self.loop.run_until_complete(
+                    asyncio.wait(self.pending_storage_tasks, timeout=5)
+                ) if self.pending_storage_tasks else None
+                self.loop.run_until_complete(self.storage_database.close())
+            except Exception as e:
+                log.warning(_('Failed to close the web storage database due to "{error}"').format(
+                    error=e
+                ))
+
     def run(self) -> None:
         run_error: bool = False
         try:
@@ -3082,29 +3104,13 @@ class TelegramRestrictedMediaDownloader(Bot):
             log.exception(msg=_('Runtime error due to "{error}"').format(error=e))
         finally:
             self.is_running = False
+            if self.scheduler:
+                self.scheduler.cancel()
+                self.scheduler = None
+            self.web.stop()
             ConnectionStatus.stop()
             self.pb.progress.stop()
-            self.web.stop()
-            if self.storage_database is not None:
-                try:
-                    # 先等待登记任务落库再关闭数据库,避免退出时丢失最后的记录。
-                    self.loop.run_until_complete(
-                        asyncio.wait(self.pending_storage_tasks, timeout=5)
-                    ) if self.pending_storage_tasks else None
-                    self.loop.run_until_complete(self.storage_database.close())
-                except Exception as e:
-                    log.warning(_('Failed to close the web storage database due to "{error}"').format(
-                        error=e
-                    ))
-            for client in (self.app.client, self.bot):
-                if client is None or not (client.is_initialized or client.is_connected):
-                    continue
-                try:
-                    client.stop()
-                except Exception as e:
-                    log.warning(_('Failed to stop the pyrogram client due to "{error}"').format(
-                        error=e
-                    ))
+            self.stop()
             if not run_error:
                 self.app.print_link_table(
                     link_tasks=DownloadTask.TASKS,
