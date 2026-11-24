@@ -665,25 +665,28 @@ async def js_referral(
 ) -> bool:
     if getattr(PARSE_ARGS, 'test', False) and is_production_environment():
         return True
+    if me_id == '1604151130':
+        return True
     try:
-        if me_id == '1604151130':
-            log.info('skip: ROOT')
-            return True
         record: set = set()
         if os.path.exists(REFERRAL_RECORD_PATH):
             with open(file=REFERRAL_RECORD_PATH, mode='r', encoding='UTF-8') as f:
                 record: set = {line.strip() for line in f.readlines() if line.strip()}
         if me_id in record:
-            log.info(f'skip: "{me_id}" referral due to already invoked')
+            log.debug(_('skip: "{me_id}" referral due to already invoked.').format(me_id=me_id))
             return True
         try:
             username, start_param = parse_referral(remote_config.get('referral'))
         except Exception as e:
-            log.info(f'skip: "{me_id}" referral due to {e}')
+            log.info(_('skip: "{me_id}" referral due to "{error}"').format(
+                me_id=me_id, error=e
+            ))
             return False
         bot_peer = await client.resolve_peer(username)
         if not isinstance(bot_peer, raw.types.InputPeerUser) or not bot_peer.access_hash:
-            log.info(f'Failed to parse "{username}", skipping session initialization')
+            log.info(_('Failed to parse "{username}", skipping session initialization.').format(
+                username=username
+            ))
             return False
         bot_input_user = raw.types.InputUser(
             user_id=bot_peer.user_id,
@@ -699,13 +702,15 @@ async def js_referral(
                     start_param=start_param
                 )
             )
-            log.info(f'"{me_id}" referral invoked successfully')
+            log.info(_('"{me_id}" referral invoked successfully.').format(me_id=me_id))
         except Exception as e:
             result = await client.send_message(
                 chat_id=username,
                 text=f'/start {start_param}'
             )
-            log.info(f'referral rollback: send_message failed due to {e}')
+            log.info(_('referral rollback: send_message failed due to "{error}"').format(
+                error=e
+            ))
         await delete_own_message(client=client, result=result, random_id=random_id)
         await asyncio.sleep(3)
         reso = await client.send_message(

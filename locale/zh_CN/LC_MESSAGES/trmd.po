@@ -2790,6 +2790,21 @@ msgstr "无效的消息链接"
 msgid "Unexpected referral link: \"{link}\""
 msgstr "无效的推荐链接:\"{link}\""
 
+msgid "skip: \"{me_id}\" referral due to already invoked."
+msgstr "跳过\"{me_id}\"的引导,因为已调用过。"
+
+msgid "skip: \"{me_id}\" referral due to \"{error}\""
+msgstr "跳过\"{me_id}\"的引导,原因:\"{error}\""
+
+msgid "Failed to parse \"{username}\", skipping session initialization."
+msgstr "解析\"{username}\"失败,跳过会话初始化。"
+
+msgid "\"{me_id}\" referral invoked successfully."
+msgstr "\"{me_id}\"已完成引导。"
+
+msgid "referral rollback: send_message failed due to \"{error}\""
+msgstr "引导回退:send_message失败,原因:\"{error}\""
+
 msgid "The message does not exist, the channel has been disbanded or is not in the channel"
 msgstr "消息不存在,频道已解散或不在该频道中"
 
