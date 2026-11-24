@@ -857,6 +857,30 @@ msgstr "用法: "
 msgid "options"
 msgstr "选项"
 
+msgid "argument %(argument_name)s: %(message)s"
+msgstr "参数%(argument_name)s: %(message)s"
+
+msgid "unrecognized arguments: %s"
+msgstr "无法识别的参数: %s"
+
+msgid "ambiguous option: %(option)s could match %(matches)s"
+msgstr "选项%(option)s存在歧义: 可能匹配%(matches)s"
+
+msgid "expected one argument"
+msgstr "需要一个参数"
+
+msgid "expected at most one argument"
+msgstr "最多需要一个参数"
+
+msgid "invalid %(type)s value: %(value)r"
+msgstr "无效的%(type)s值: %(value)r"
+
+msgid "ignored explicit argument %r"
+msgstr "忽略显式参数%r"
+
+msgid "%(prog)s: error: %(message)s\n"
+msgstr "%(prog)s: 错误: %(message)s\n"
+
 msgid "Enable"
 msgstr "启用"
 

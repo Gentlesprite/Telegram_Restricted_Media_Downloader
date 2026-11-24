@@ -3,6 +3,7 @@
 # Software:PyCharm
 # Time:2026-01-23 17:47:00
 # File:parser.py
+import argparse
 from argparse import (
     SUPPRESS,
     ArgumentParser
@@ -21,11 +22,12 @@ from module.enums import (
     GradientColor
 )
 
+argparse._ = _
+
 
 class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._optionals.title = _('options')
         self.add_argument(
             '-h', '--help',
             action='help',
@@ -89,12 +91,6 @@ class TelegramRestrictedMediaDownloaderArgumentParser(ArgumentParser):
             default=False,
             help=SUPPRESS
         )
-
-    def format_usage(self):
-        return super().format_usage().replace('usage: ', _('usage: '), 1)
-
-    def format_help(self):
-        return super().format_help().replace('usage: ', _('usage: '), 1)
 
     def print_help(self, file=None):
         console.print(
