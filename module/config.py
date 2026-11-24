@@ -355,11 +355,18 @@ class UserConfig(BaseConfig):
             self.backup_config(config, error_config=self.re_config)
         except Exception as e:
             self.re_config = True
-            console.print(_('「Note」Link paths and save paths cannot contain quotes!'), style='#B1DB74')
-            log.error(
-                _('Invalid or corrupted config file detected. A new template has been generated due to "{error}"').format(
-                    error=e
-                ))
+            if os.path.isdir(self.config_path):
+                log.error(
+                    _('The configuration file path "{config_path}" was expected to be a file, but a directory was found, please remove the directory and restart the application to reconfigure. During configuration, specify a valid directory for the "save path" (namely the "save_directory" setting).').format(
+                        config_path=self.config_path
+                    ))
+                raise SystemExit(1)
+            else:
+                console.print(_('「Note」Link paths and save paths cannot contain quotes!'), style='#B1DB74')
+                log.error(
+                    _('Invalid or corrupted config file detected. A new template has been generated due to "{error}"').format(
+                        error=e
+                    ))
             self.backup_config(config, error_config=self.re_config)
         finally:
             if config is None:

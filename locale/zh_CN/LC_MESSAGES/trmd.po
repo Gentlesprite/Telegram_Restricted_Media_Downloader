@@ -1530,6 +1530,9 @@ msgstr "读取历史文件时发生错误,原因:\"{error}\""
 msgid "Encoding error reading the config file due to \"{error}\" (possibly Chinese or special characters in the save path). A new template has been generated."
 msgstr "读取配置文件遇到编码错误,可能保存路径中包含中文或特殊字符的文件夹。已生成新的模板文件. . .原因:\"{error}\""
 
+msgid "The configuration file path \"{config_path}\" was expected to be a file, but a directory was found, please remove the directory and restart the application to reconfigure. During configuration, specify a valid directory for the \"save path\" (namely the \"save_directory\" setting)."
+msgstr "配置文件路径\"{config_path}\"预期应为文件,但填写了一个文件夹,请删除该文件夹并重启程序以重新配置。配置时请为「保存路径」即\"save_directory\"指定一个有效的目录。"
+
 msgid "Invalid or corrupted config file detected. A new template has been generated due to \"{error}\""
 msgstr "检测到无效或损坏的配置文件。已生成新的模板文件. . .原因:\"{error}\""
 
