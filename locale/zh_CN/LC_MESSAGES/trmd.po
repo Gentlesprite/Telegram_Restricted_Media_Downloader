@@ -783,13 +783,13 @@ msgstr "Pyrogram版本"
 msgid "User config file"
 msgstr "用户配置文件"
 
-msgid "save_directory"
+msgid "Save directory"
 msgstr "保存目录"
 
-msgid "session_directory"
+msgid "Session directory"
 msgstr "会话目录"
 
-msgid "temp_directory"
+msgid "Temp directory"
 msgstr "缓存目录"
 
 msgid "Use system proxy"
