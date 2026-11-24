@@ -1064,23 +1064,23 @@ class Bot:
             _desc = _parts[0]
             _syntax = _parts[1] if len(_parts) > 1 else '&ndash;'
             command_rows.append([f'/{item[0]}', _desc, _syntax])
-        # 复用PanelTable渲染与/table同款的GitHub风格富文本表格,说明与语法分列。
-        panel = PanelTable(title=_('🎮️ Available commands'), header=(_('Command'), _('Description'), _('Syntax')),
-                           data=command_rows)
-        table_markdown: str = panel.to_markdown_chunks()[0]
-        # 复用PanelTable渲染与/table同款的GitHub风格富文本表格,版本/版权/许可分列。
-        info_rows = [
-            [_('Version'), f'`{version}`'],
-            [_('Copyright'), f'`{__copyright__.replace(" <https://github.com/Gentlesprite>", ".")}`'],
-            [_('License'), f'`Licensed under the terms of the {__license__}.`']
+        parts = [
+            PanelTable(
+                title=f'💎 {SOFTWARE_SHORT_NAME}',
+                header=(_('Attribute'), _('Content')),
+                data=[
+                    [_('Version'), f'`{version}`'],
+                    [_('Copyright'), f'`{__copyright__.replace(" <https://github.com/Gentlesprite>", "")}`'],
+                    [_('License'), f'`{_("Licensed under the terms of the {license}.").format(license=__license__)}`']
+                ]
+            ).to_markdown_chunks()[0],
+            '',
+            PanelTable(
+                title=_('🎮️ Available commands'),
+                header=(_('Command'), _('Description'), _('Syntax')),
+                data=command_rows
+            ).to_markdown_chunks()[0]
         ]
-        info_panel = PanelTable(
-            title=f'💎 {SOFTWARE_SHORT_NAME}',
-            header=(_('Attribute'), _('Content')),
-            data=info_rows
-        )
-        header_md: str = info_panel.to_markdown_chunks()[0]
-        parts = [header_md, '', table_markdown]
         if web_auth:
             parts.append('')
             parts.append(web_auth.rstrip('\n'))

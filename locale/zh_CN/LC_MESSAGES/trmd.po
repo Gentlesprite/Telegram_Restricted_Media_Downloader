@@ -857,6 +857,9 @@ msgstr "用法: "
 msgid "options"
 msgstr "选项"
 
+msgid "optional arguments"
+msgstr "选项"
+
 msgid "argument %(argument_name)s: %(message)s"
 msgstr "参数%(argument_name)s: %(message)s"
 
@@ -880,6 +883,9 @@ msgstr "忽略显式参数%r"
 
 msgid "%(prog)s: error: %(message)s\n"
 msgstr "%(prog)s: 错误: %(message)s\n"
+
+msgid "Licensed under the terms of the {license}."
+msgstr "遵循{license}条款授权。"
 
 msgid "Enable"
 msgstr "启用"
@@ -907,6 +913,9 @@ msgstr "版本"
 
 msgid "Copyright"
 msgstr "版权"
+
+msgid "Copyright (C) {year} {author} <https://github.com/{author}>"
+msgstr "版权所有 © {year} {author} <https://github.com/{author}>"
 
 msgid "License"
 msgstr "许可"

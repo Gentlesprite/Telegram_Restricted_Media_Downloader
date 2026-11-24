@@ -722,7 +722,7 @@ class MetaData:
     @staticmethod
     def print_about():
         console.print(f'[i]{__copyright__}[/i]')
-        console.print(f'Licensed under the terms of the {__license__}.', end='\n')
+        console.print(_('Licensed under the terms of the {license}.').format(license=__license__), end='\n')
 
     @staticmethod
     def print_disclaimer():
