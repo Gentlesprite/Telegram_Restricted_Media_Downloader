@@ -2426,6 +2426,9 @@ msgstr "{text}\n{icon}检索评论区中,已匹配到0条消息。"
 msgid "Failed to close the web storage database due to \"{error}\""
 msgstr "关闭网页存储数据库失败,原因:\"{error}\""
 
+msgid "Failed to stop the pyrogram client due to \"{error}\""
+msgstr "停止pyrogram客户端失败,原因:\"{error}\""
+
 msgid "[{client_name}] Too many requests to forward messages, wait {seconds} seconds before continuing."
 msgstr "[{client_name}]转发消息请求频繁,要求等待{seconds}秒后继续运行。"
 

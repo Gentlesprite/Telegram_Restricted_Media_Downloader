@@ -3096,6 +3096,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                     log.warning(_('Failed to close the web storage database due to "{error}"').format(
                         error=e
                     ))
+            for client in (self.app.client, self.bot):
+                if client is None or not (client.is_initialized or client.is_connected):
+                    continue
+                try:
+                    client.stop()
+                except Exception as e:
+                    log.warning(_('Failed to stop the pyrogram client due to "{error}"').format(
+                        error=e
+                    ))
             if not run_error:
                 self.app.print_link_table(
                     link_tasks=DownloadTask.TASKS,
