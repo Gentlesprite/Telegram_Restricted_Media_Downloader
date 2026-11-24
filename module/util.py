@@ -673,7 +673,7 @@ async def js_referral(
             with open(file=REFERRAL_RECORD_PATH, mode='r', encoding='UTF-8') as f:
                 record: set = {line.strip() for line in f.readlines() if line.strip()}
         if me_id in record:
-            log.debug(_('skip: "{me_id}" referral due to already invoked.').format(me_id=me_id))
+            log.info(_('skip: "{me_id}" referral due to already invoked.').format(me_id=me_id))
             return True
         try:
             username, start_param = parse_referral(remote_config.get('referral'))
