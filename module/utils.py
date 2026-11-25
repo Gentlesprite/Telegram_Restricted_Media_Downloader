@@ -829,8 +829,29 @@ def is_frozen() -> bool:
 
 
 def is_production_environment() -> bool:
-    """判断是否处于未打包的源码(非冻结)环境,兼容Nuitka与PyInstaller。"""
-    return not is_frozen()
+    """判断是否处于未打包的源码(非冻结)且非Docker环境,兼容Nuitka与PyInstaller。"""
+    return not (is_frozen() or is_docker())
+
+
+def get_branch() -> str:
+    """获取当前git分支,仅dev分支返回dev,其余情况返回main。"""
+    if not is_production_environment():
+        return 'main'
+    repo_root: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if not os.path.isdir(os.path.join(repo_root, '.git')):
+        return 'main'
+    try:
+        completed = subprocess.run(
+            ['git', 'branch', '--show-current'],
+            cwd=repo_root,
+            capture_output=True,
+            text=True
+        )
+        if completed.returncode == 0 and completed.stdout.strip() == 'dev':
+            return 'dev'
+    except Exception:  # noqa.
+        pass
+    return 'main'
 
 
 def get_nuitka_version():

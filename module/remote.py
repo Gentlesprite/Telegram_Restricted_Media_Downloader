@@ -23,13 +23,16 @@ from module import (
 )
 from module.language import _
 from module.parser import PARSE_ARGS
-from module.utils import is_production_environment
+from module.utils import (
+    get_branch,
+    is_production_environment
+)
 
 
 class RemoteConfig(object):
     """远程配置,负责远程配置的获取、校验、缓存与解析。"""
 
-    BRANCH: str = 'main'
+    BRANCH: str = get_branch()
     URLS: tuple = (
         f'https://cdn.jsdelivr.net/gh/{AUTHOR}/{SOFTWARE_SHORT_NAME}_CONFIG@{BRANCH}/config.json',
         f'https://fastly.jsdelivr.net/gh/{AUTHOR}/{SOFTWARE_SHORT_NAME}_CONFIG@{BRANCH}/config.json',
