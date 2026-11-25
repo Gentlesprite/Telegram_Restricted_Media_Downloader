@@ -1345,7 +1345,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         try:
             task = await self.create_download_task(
                 message_ids=user_message,
-                diy_download_type=[i for i in DownloadType()],
+                diy_download_type=[__ for __ in DownloadType()],
                 single_link=True,
                 owner=user_message.from_user.id
             )
@@ -2071,7 +2071,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             # 无需在 filter 配置里额外存 owner。
             owner = callback_query.from_user.id
             active_keywords = [k for k, v in keyword_filter.items() if v]
-            diy_download_type: list = [j for j in DownloadType()]  # 检索阶段即时创建下载任务共用,提前构造避免第三阶段重复定义。
+            diy_download_type: list = [__ for __ in DownloadType()]  # 检索阶段即时创建下载任务共用,提前构造避免第三阶段重复定义。
             instant_album_groups: set = set()  # 已即时创建过任务的media_group_id,避免遍历结束后的补建循环重复创建。
             links: list = []
             # 第一阶段,收集匹配的消息。
@@ -2688,7 +2688,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             album_chat_id: Optional[Union[int, str]] = None
     ) -> dict:
         retry = retry if retry else {'id': -1, 'count': 0}
-        diy_download_type = [i for i in DownloadType()] if with_upload else diy_download_type
+        diy_download_type = [__ for __ in DownloadType()] if with_upload else diy_download_type
         # 消息对象不可哈希(pyrogram的Object禁用了__hash__),只有链接字符串能作为登记键。
         enqueue_key: Union[str, None] = message_ids if isinstance(message_ids, str) else None
         try:

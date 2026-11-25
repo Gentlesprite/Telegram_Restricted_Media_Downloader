@@ -561,7 +561,7 @@ class Validator:
     def is_valid_download_type(dtype: list) -> bool:
         try:
             if isinstance(dtype, list):
-                support_dtype: list = [j for j in DownloadType()]
+                support_dtype: list = [__ for __ in DownloadType()]
                 valid_dtype = []
                 for i in dtype:
                     if i in support_dtype:
@@ -789,7 +789,7 @@ class ProcessConfig:
     @staticmethod
     def set_dtype(_dtype: list) -> list:
         record_dtype: list = []
-        support_dtype: list = [j for j in DownloadType()]
+        support_dtype: list = [__ for __ in DownloadType()]
         for i in _dtype:
             if i in support_dtype:
                 record_dtype.append(i)
@@ -799,7 +799,7 @@ class ProcessConfig:
     def get_dtype(download_dtype: list) -> dict:
         """获取所需下载文件的类型。"""
         meta: dict = {}
-        support_dtype: list = [i for i in DownloadType()]
+        support_dtype: list = [__ for __ in DownloadType()]
         for dtype in download_dtype:
             meta[dtype] = True if dtype in support_dtype else False
         return meta
@@ -1346,10 +1346,10 @@ class GetStdioParams:
             if download_type == '' and last_record is not None:
                 download_type = last_record
             if download_type == '':
-                download_type = [j for j in DownloadType()]
+                download_type = [__ for __ in DownloadType()]
             download_type: list = list(set(download_type.split())) if isinstance(download_type, str) else download_type
             if Validator.is_valid_download_type(download_type):
-                dtype = ' '.join(download_type) if download_type else [j for j in DownloadType()]
+                dtype = ' '.join(download_type) if download_type else [__ for __ in DownloadType()]
                 console.print(
                     _('「download_type」 set to: 「{dtype}」').format(dtype=dtype),
                     style=ProcessConfig.stdio_style('download_type')
