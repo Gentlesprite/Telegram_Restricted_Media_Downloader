@@ -77,10 +77,11 @@ from module.utils import (
     is_docker,
     parse_link,
     safe_index,
+    attach_task,
     check_update,
     safe_message,
-    attach_task,
     resolve_chat_id,
+    normalize_msgid,
     is_allow_upload,
     get_valid_chat_id,
     parse_task_callback,
@@ -783,7 +784,7 @@ class Bot:
         }
         self.download_chat_active[message.from_user.id] = chat_id
         log.info(_('"{chat_id}" added to: {filter}.').format(chat_id=chat_id, filter=self.download_chat_filter))
-        format_dtype = ','.join([str(i) for i in DownloadType()])
+        format_dtype = ','.join([_(normalize_msgid(str(i))) for i in DownloadType()])
         include_comment = self.download_chat_filter[chat_id]['comment']
         comment: str = _('On') if include_comment else _('Off')
         topic_prompt: str = format_limited_text(
@@ -4256,7 +4257,7 @@ class DownloadChatHandler(CallbackHandler):
         for dtype, status in downloader.download_chat_filter[chat_id]['download_type'].items():
             if status:
                 download_type.append(dtype)
-        return ','.join(download_type)
+        return ','.join([_(normalize_msgid(str(i))) for i in download_type])
 
     @staticmethod
     def __get_format_keywords(downloader, chat_id):
