@@ -2540,6 +2540,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 links=links,
                 bot_message=callback_query.message,
                 base_text=origin_callback_query_text,
+                entities=callback_query.message.entities,
                 message_count=message_count,
                 comment_count=comment_count,
                 matched_file_count=matched_file_count,
@@ -2569,6 +2570,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             links: list,
             bot_message: pyrogram.types.Message,
             base_text: str,
+            entities: Union[list, None],
             message_count: int,
             comment_count: int,
             matched_file_count: int,
@@ -2642,6 +2644,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 total=total_count,
                                 progress=progress_text
                             ),
+                            entities=entities,
                             reply_markup=KeyboardButton.single_button(
                                 text=BotButton.DOWNLOAD_TASK_DONE if finished else BotButton.DOWNLOAD_TASK_DOING,
                                 callback_data=BotCallbackText.NULL
