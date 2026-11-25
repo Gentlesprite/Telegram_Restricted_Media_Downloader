@@ -86,6 +86,7 @@ class RemoteConfig(object):
             return default
         # 远程配置不可用时退回本地缓存,保证离线仍能使用上次的可用配置。
         cached: dict = self.cached_config()
+        head_newer: bool = False
         if cached:
             try:
                 # 缓存文件在读取后被删除时视为已过期,直接请求远程。
@@ -97,6 +98,7 @@ class RemoteConfig(object):
                 )
                 if os.path.exists(head_path) and cache_mtime < os.path.getmtime(head_path):
                     remaining = 0
+                    head_newer = True
             except Exception:  # noqa.
                 remaining: float = 0
             if remaining > 0:
@@ -105,7 +107,9 @@ class RemoteConfig(object):
                 ))
                 return cached
         config: dict = await self.fetch()
-        self.save(config or cached or default)  # 无论获取成功与否都写入一次,以刷新修改时间,避免远程不可用时反复重试。
+        # 分支已切换但远程失败时不写回旧缓存,保留修改时间让下次启动继续重试。
+        if not (head_newer and not config):
+            self.save(config or cached or default)  # 写入配置以刷新修改时间,避免远程不可用时反复重试。
         return config or cached or default
 
     def save(self, config: dict) -> None:
