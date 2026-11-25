@@ -3842,6 +3842,7 @@ class DownloadChatHandler(CallbackHandler):
                     downloader.download_chat_active.pop(user_id, None)
                 await query.message.edit_text(
                     text=query.message.text,
+                    entities=query.message.entities,
                     reply_markup=kb.single_button(
                         text=BotButton.TASK_CANCEL,
                         callback_data=BotCallbackText.NULL

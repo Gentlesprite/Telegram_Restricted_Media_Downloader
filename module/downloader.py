@@ -2001,12 +2001,14 @@ class TelegramRestrictedMediaDownloader(Bot):
     ) -> Union[list, None]:
         async def _progress(
                 _text: str,
+                _entities: Union[list, None],
                 _reply_markup: InlineKeyboardMarkup
         ) -> Union[pyrogram.types.Message, None]:
             while True:
                 try:
                     return await callback_query.message.edit_text(
                         text=_text,
+                        entities=_entities,
                         reply_markup=_reply_markup
                     )
                 except MessageNotModified:
@@ -2035,6 +2037,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         )
         cq = await _progress(
             _text=_setup_text,
+            _entities=callback_query.message.entities,
             _reply_markup=KeyboardButton.single_button(
                 text=BotButton.RETRIEVE_MESSAGE,
                 callback_data=BotCallbackText.NULL
@@ -2090,6 +2093,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     text=callback_query_text,
                     icon=search_icon
                 ),
+                _entities=callback_query.message.entities,
                 _reply_markup=KeyboardButton.single_button(
                     text=BotButton.RETRIEVE_MESSAGE,
                     callback_data=BotCallbackText.NULL)
@@ -2254,6 +2258,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             icon=search_icon,
                             count=current_count
                         ),
+                        _entities=callback_query.message.entities,
                         _reply_markup=KeyboardButton.single_button(
                             text=BotButton.RETRIEVE_MESSAGE,
                             callback_data=BotCallbackText.NULL)
@@ -2274,6 +2279,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         icon=search_icon,
                         count=final_count
                     ),
+                    _entities=callback_query.message.entities,
                     _reply_markup=KeyboardButton.single_button(
                         text=BotButton.RETRIEVE_MESSAGE,
                         callback_data=BotCallbackText.NULL)
@@ -2281,6 +2287,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             if not messages_to_download:
                 await _progress(
                     _text=_('{text}\n❎ No matching messages found.').format(text=callback_query.message.text),
+                    _entities=callback_query.message.entities,
                     _reply_markup=KeyboardButton.single_button(
                         text=BotButton.TASK_CANCEL,
                         callback_data=BotCallbackText.NULL
@@ -2317,6 +2324,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         text=callback_query_text,
                         icon=search_icon
                     ),
+                    _entities=callback_query.message.entities,
                     _reply_markup=KeyboardButton.single_button(
                         text=BotButton.RETRIEVE_COMMENT,
                         callback_data=BotCallbackText.NULL)
@@ -2371,6 +2379,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                                         icon=search_icon,
                                         count=current_comment_count
                                     ),
+                                    _entities=callback_query.message.entities,
                                     _reply_markup=KeyboardButton.single_button(
                                         text=BotButton.RETRIEVE_COMMENT,
                                         callback_data=BotCallbackText.NULL)
@@ -2425,6 +2434,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                                             icon=search_icon,
                                             count=current_comment_count
                                         ),
+                                        _entities=callback_query.message.entities,
                                         _reply_markup=KeyboardButton.single_button(
                                             text=BotButton.RETRIEVE_COMMENT,
                                             callback_data=BotCallbackText.NULL)
@@ -2460,6 +2470,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             icon=search_icon,
                             count=final_comment_count
                         ),
+                        _entities=callback_query.message.entities,
                         _reply_markup=KeyboardButton.single_button(
                             text=BotButton.RETRIEVE_COMMENT,
                             callback_data=BotCallbackText.NULL)
@@ -2509,6 +2520,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 sandglass=sandglass,
                                 progress=self.pb.bot(assigned_count, total_count)
                             ),
+                            _entities=callback_query.message.entities,
                             _reply_markup=reply_markup
                     ) is not None:
                         last_progress_update_time = current_time
