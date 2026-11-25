@@ -1316,11 +1316,53 @@ msgstr "命令输入模式已关闭,Handler已清空。"
 msgid "Input mode closed, handlers cleared."
 msgstr "用户输入模式已关闭,Handler已清空。"
 
-msgid "Failed to call \"%s\", waiting %s seconds before resending."
-msgstr "无法调用\"%s\",等待%s秒后重新发送数据。"
+msgid "Failed to call \"{query_name}\", waiting {retry_delay} seconds before resending."
+msgstr "无法调用\"{query_name}\",等待{retry_delay}秒后重新发送数据。"
 
-msgid "Connection restored, retrying call \"%s\"."
-msgstr "已恢复连接,重新尝试调用\"%s\"。"
+msgid "Connection restored, retrying call \"{query_name}\"."
+msgstr "已恢复连接,重新尝试调用\"{query_name}\"。"
+
+msgid "Sent: {message}"
+msgstr "已发送:{message}"
+
+msgid "{error_name}: [{error_code}] {error_detail}"
+msgstr "{error_name}: [{error_code}] {error_detail}"
+
+msgid "The msg_id is too low, the client time has to be synchronized."
+msgstr "msg_id过低,客户端时间必须同步。"
+
+msgid "The msg_id is too high, the client time has to be synchronized."
+msgstr "msg_id过高,客户端时间必须同步。"
+
+msgid "Incorrect two lower order of the msg_id bits, the server expects the client message msg_id to be divisible by 4."
+msgstr "msg_id低2位不正确,服务器期望客户端消息的msg_id能被4整除。"
+
+msgid "The container msg_id is the same as the msg_id of a previously received message."
+msgstr "容器msg_id与之前接收的消息的msg_id相同。"
+
+msgid "The message is too old, it cannot be verified by the server."
+msgstr "消息过旧,服务器无法验证。"
+
+msgid "The msg_seqno is too low."
+msgstr "msg_seqno过低。"
+
+msgid "The msg_seqno is too high."
+msgstr "msg_seqno过高。"
+
+msgid "An even msg_seqno was expected, but an odd one was received."
+msgstr "期望偶数msg_seqno,但收到的是奇数。"
+
+msgid "An odd msg_seqno was expected, but an even one was received."
+msgstr "期望奇数msg_seqno,但收到的是偶数。"
+
+msgid "Incorrect server salt."
+msgstr "服务器salt不正确。"
+
+msgid "Invalid container."
+msgstr "无效容器。"
+
+msgid "Unknown error code."
+msgstr "未知错误码。"
 
 msgid "Config file saved."
 msgstr "配置文件已保存。"

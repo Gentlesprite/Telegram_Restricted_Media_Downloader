@@ -938,12 +938,17 @@ class TelegramRestrictedMediaDownloaderSession(Session):
                     if not self.is_started.is_set():
                         try:
                             await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
-                            log.info(_('Connection restored, retrying call "%s".'), query_name)
+                            log.info(
+                                _('Connection restored, retrying call "{query_name}".').format(
+                                    query_name=query_name
+                                )
+                            )
                         except asyncio.TimeoutError:
                             log.info(
-                                _('Failed to call "%s", waiting %s seconds before resending.'),
-                                query_name,
-                                retry_delay
+                                _('Failed to call "{query_name}", waiting {retry_delay} seconds before resending.').format(
+                                    query_name=query_name,
+                                    retry_delay=retry_delay
+                                )
                             )
                     await asyncio.sleep(retry_delay)
         finally:
@@ -969,7 +974,7 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             pending_result = Result()
             self.results[msg_id] = pending_result
 
-        log.debug('Sent: %s', message)
+        log.debug(_('Sent: {message}').format(message=message))
 
         payload = await asyncio.get_running_loop().run_in_executor(
             self.connection.protocol.crypto_executor,
@@ -1016,12 +1021,24 @@ class TelegramRestrictedMediaDownloaderSession(Session):
 
                 if e_code in (16, 17):
                     log.error(
-                        '%s: %s', BadMsgNotification.__name__, BadMsgNotification(e_code)
+                        _('{error_name}: [{error_code}] {error_detail}').format(
+                            error_name=BadMsgNotification.__name__,
+                            error_code=e_code,
+                            error_detail=_(BadMsgNotification.descriptions.get(
+                                e_code, 'Unknown error code.'
+                            ))
+                        )
                     )
                     raise BadMsgNotification(e_code)
 
                 log.warning(
-                    '%s: %s', BadMsgNotification.__name__, BadMsgNotification(e_code)
+                    _('{error_name}: [{error_code}] {error_detail}').format(
+                        error_name=BadMsgNotification.__name__,
+                        error_code=e_code,
+                        error_detail=_(BadMsgNotification.descriptions.get(
+                            e_code, 'Unknown error code.'
+                        ))
+                    )
                 )
             # handle_packet已接收新salt,此处只需按新salt重发(不再自行赋值self.salt)。
             if isinstance(result, raw.types.BadServerSalt):
