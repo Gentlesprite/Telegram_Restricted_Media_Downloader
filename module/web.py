@@ -45,7 +45,10 @@ from module.language import (
 from module.notice import NoticeHub
 from module.parser import PARSE_ARGS
 from module.path_tool import split_path
-from module.storage import TRMDStorage
+from module.storage import (
+    StorageType,
+    TRMDStorage
+)
 from module.stdio import (
     MetaData,
     PanelTable,
@@ -889,7 +892,8 @@ class Web:
             'path': storage.file_path,
             'size': MetaData.suitable_units_display(storage.file_size),
             'size_byte': storage.file_size,
-            'type': storage.file_type,
+            'type': _(normalize_msgid(
+                storage.file_type)) if storage.storage_type == StorageType.DOWNLOAD else storage.file_type,
             'status': _(normalize_msgid(storage.status)),
             'state': storage.status,
             'error': storage.error_msg,
