@@ -242,11 +242,10 @@ class Application(UserConfig, StatisticalTable):
                 ), end='\r', style='#ff4805')
                 time.sleep(1)
             console.print(_('\nShutting down now!'), style='#f6ad00')
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # 按下CTRL+C取消关机。
             cancel_flag: bool = False
-            # 如果用户按下 CTRL+C，取消关机。
             if self.platform == 'Windows':
-                subprocess.Popen('shutdown -a', shell=True)  # 取消关机。
+                subprocess.Popen('shutdown -a', shell=True)
                 cancel_flag: bool = True
             else:
                 try:
