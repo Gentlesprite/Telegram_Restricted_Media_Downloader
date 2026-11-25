@@ -221,7 +221,7 @@ class Application(UserConfig, StatisticalTable):
             if changed:
                 self.save_config(config=self.config)
             return None
-        self.download_type = [i for i in DownloadType()]
+        self.download_type = [__ for __ in DownloadType()]
         self.config['download_type'] = self.download_type
         self.save_config(config=self.config)
         console.log(_('No supported download type found, set to [#f08a5d]「default」[/#f08a5d] all supported types.'))
