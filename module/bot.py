@@ -816,7 +816,8 @@ class Bot:
             message: pyrogram.types.Message,
             text: list, last_message_id: int = -1,
             reply_markup: Union[pyrogram.types.InlineKeyboardMarkup, None] = None,
-            requester: Union[int, None] = None
+            requester: Union[int, None] = None,
+            entities: Union[list, None] = None
     ) -> pyrogram.types.Message:
         chat_id = requester if requester is not None else message.from_user.id
         if len(text) == 1 and last_message_id != -1:
@@ -824,6 +825,7 @@ class Bot:
                 chat_id=chat_id,
                 message_id=last_message_id,
                 text=text[0],
+                entities=entities,
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
                 reply_markup=reply_markup
             )
@@ -1410,7 +1412,8 @@ class Bot:
                         client=client,
                         message=message,
                         last_message_id=last_message.id,
-                        text=safe_message(f'{last_message.text}\n{link}')
+                        text=safe_message(f'{last_message.text}\n{link}'),
+                        entities=last_message.entities
                     )
                 for meta in self.listen_forward_chat:
                     listen_link, target_link = meta.split()
@@ -1427,7 +1430,8 @@ class Bot:
                             client=client,
                             message=message,
                             last_message_id=last_message.id,
-                            text=safe_message(f'{last_message.text}\n{listen_link}')
+                            text=safe_message(f'{last_message.text}\n{listen_link}'),
+                            entities=last_message.entities
                         )
 
             if invalid_links:
@@ -1534,7 +1538,8 @@ class Bot:
                     client=client,
                     message=edit_message,
                     last_message_id=edit_message.id,
-                    text=safe_message(text)
+                    text=safe_message(text),
+                    entities=edit_message.entities
                 )
                 return
             last_message = await client.send_message(
@@ -1551,7 +1556,8 @@ class Bot:
                         client=client,
                         message=message,
                         last_message_id=last_message.id,
-                        text=safe_message(f'{last_message.text}\n{link}')
+                        text=safe_message(f'{last_message.text}\n{link}'),
+                        entities=last_message.entities
                     )
                 elif len_args == 2:
                     forward_emoji = ' ➡️ '
@@ -1559,7 +1565,8 @@ class Bot:
                         client=client,
                         message=message,
                         last_message_id=last_message.id,
-                        text=safe_message(f'{last_message.text}\n{args[0]}{forward_emoji}{args[1]}')
+                        text=safe_message(f'{last_message.text}\n{args[0]}{forward_emoji}{args[1]}'),
+                        entities=last_message.entities
                     )
 
         if not self.listen_forward_chat and not self.listen_download_chat:
@@ -2053,7 +2060,8 @@ class Bot:
             message: pyrogram.types.Message,
             last_message_id: int,
             text: Union[str, List[str]],
-            reply_markup: Union[pyrogram.types.InlineKeyboardMarkup, None] = None
+            reply_markup: Union[pyrogram.types.InlineKeyboardMarkup, None] = None,
+            entities: Union[list, None] = None
     ) -> Union[pyrogram.types.Message, None]:
         while True:
             try:
@@ -2063,7 +2071,8 @@ class Bot:
                         message=message,
                         last_message_id=last_message_id,
                         text=text,
-                        reply_markup=reply_markup
+                        reply_markup=reply_markup,
+                        entities=entities
                     )
                     return last_message
                 elif isinstance(text, str):
@@ -2071,6 +2080,7 @@ class Bot:
                         chat_id=message.from_user.id,
                         message_id=last_message_id,
                         text=text,
+                        entities=entities,
                         link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
                         reply_markup=reply_markup
                     )

@@ -913,7 +913,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                             client=client,
                             message=message,
                             last_message_id=last_message.id,
-                            text=safe_message(f'{last_message.text}\n{invalid_text}')
+                            text=safe_message(f'{last_message.text}\n{invalid_text}'),
+                            entities=last_message.entities
                         )
                 direct_url: str = await format_chat_link(
                     link=target_link,
@@ -1168,6 +1169,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         message=message,
                         last_message_id=last_message.id,
                         text=safe_message(f'{last_message.text}\n{link}'),
+                        entities=last_message.entities,
                         reply_markup=InlineKeyboardMarkup([[
                             InlineKeyboardButton(
                                 BotButton.LOOKUP_LISTEN_INFO,
