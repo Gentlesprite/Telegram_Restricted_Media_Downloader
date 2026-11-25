@@ -230,7 +230,6 @@ class Application(UserConfig, StatisticalTable):
         """下载完成后自动关机的功能。"""
         try:
             if self.platform == 'Windows':
-                # 启动关机命令 目前只支持对 Windows 系统的关机。
                 shutdown_command: str = f'shutdown -s -t {second}'
                 subprocess.Popen(shutdown_command, shell=True)  # 异步执行关机。
             else:
