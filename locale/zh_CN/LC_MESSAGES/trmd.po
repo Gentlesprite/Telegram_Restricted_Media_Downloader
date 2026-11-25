@@ -161,6 +161,9 @@ msgstr "频道"
 msgid "Type"
 msgstr "类型"
 
+msgid "Extension"
+msgstr "扩展名"
+
 msgid "Retry times"
 msgstr "重试次数"
 

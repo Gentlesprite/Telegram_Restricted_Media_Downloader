@@ -991,7 +991,7 @@ var STORAGE_ICON = {
 var STORAGE_UPLOAD_LINK = 'Local upload';  // 上传存储没有下载链接,链接列统一显示该文案。
 var STORAGE_HEADERS = {
     download: ['Channel / Message', 'File', 'Link', 'Size', 'Message ID', 'Type', 'Status', 'Time'],
-    upload:   ['Channel', 'File path', 'Size', 'Type', 'Status', 'Time']
+    upload:   ['Channel', 'File path', 'Size', 'Extension', 'Status', 'Time']
 };
 var STORAGE_COLS = {
     download: '150px minmax(200px, 1fr) 200px 100px 90px 90px 90px 150px',
