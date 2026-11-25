@@ -34,7 +34,7 @@ from module.enums import (
     ProcessConfig,
     GetStdioParams
 )
-from module.util import (
+from module.utils import (
     ctrl_c,
     get_work_directory
 )

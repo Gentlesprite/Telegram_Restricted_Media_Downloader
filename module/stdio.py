@@ -47,7 +47,7 @@ from module import (
 )
 from module.remote import rc
 from module.language import _
-from module.util import (
+from module.utils import (
     is_docker,
     check_update,
     normalize_msgid,

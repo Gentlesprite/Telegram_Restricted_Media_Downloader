@@ -25,7 +25,7 @@ from module.config import UserConfig
 from module.stdio import StatisticalTable
 from module.client import TelegramRestrictedMediaDownloaderClient
 
-from module.util import (
+from module.utils import (
     get_message_dtype,
     AdjustableSemaphore
 )

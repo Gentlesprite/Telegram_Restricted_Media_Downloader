@@ -25,7 +25,7 @@ from module import (
 from module.language import _
 from module.stdio import MetaData
 from module.parser import PARSE_ARGS
-from module.util import (
+from module.utils import (
     get_work_directory,
     normalize_msgid
 )

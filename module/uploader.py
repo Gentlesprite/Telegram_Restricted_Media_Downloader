@@ -53,7 +53,7 @@ from module.path_tool import (
     split_path,
     safe_delete
 )
-from module.util import (
+from module.utils import (
     ChatInfo,
     parse_link,
     is_allow_upload,

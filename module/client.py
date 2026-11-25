@@ -64,7 +64,7 @@ from module import (
     DOWNLOAD_TIMEOUT,
     SOFTWARE_SHORT_NAME
 )
-from module.util import (
+from module.utils import (
     ainput,
     AdjustableSemaphore
 )

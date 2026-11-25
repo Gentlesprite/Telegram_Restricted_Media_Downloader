@@ -23,7 +23,7 @@ from module import (
 )
 from module.language import _
 from module.parser import PARSE_ARGS
-from module.util import is_production_environment
+from module.utils import is_production_environment
 
 
 class RemoteConfig(object):

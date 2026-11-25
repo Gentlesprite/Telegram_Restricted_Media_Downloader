@@ -2,7 +2,7 @@
 # Author:Gentlesprite
 # Software:PyCharm
 # Time:2025-03/10 00:45:00
-# File:util.py
+# File:utils.py
 import os
 import re
 import sys

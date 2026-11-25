@@ -73,7 +73,7 @@ from module.task import (
     DownloadTask,
     UploadTask
 )
-from module.util import (
+from module.utils import (
     is_docker,
     parse_link,
     safe_index,

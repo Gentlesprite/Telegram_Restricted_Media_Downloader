@@ -55,7 +55,7 @@ from module.task import (
     UploadTask,
     DownloadTask
 )
-from module.util import (
+from module.utils import (
     ChatInfo,
     is_frozen,
     is_docker,
