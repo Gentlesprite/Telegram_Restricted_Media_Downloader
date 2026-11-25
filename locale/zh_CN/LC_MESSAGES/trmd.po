@@ -2153,8 +2153,8 @@ msgstr "请输入任务失败时「最大重试次数」。上一次的记录是
 msgid "Unexpected parameter \"{max_retry_count}\", the maximum retries must be 「a positive integer」, please re-enter!"
 msgstr "意外的参数:\"{max_retry_count}\",最大重试次数必须是「正整数」,请重新输入!"
 
-msgid "Enter 「download_type」 to download (space-separated, multiple allowed). Last record:「{last_record}」format - 「video photo document audio voice animation video_note live_photo」{default_prompt}:"
-msgstr "输入需要下载的「媒体类型」(以空格分隔可多选)。上一次的记录是:「{last_record}」格式 - 「video photo document audio voice animation video_note live_photo」{default_prompt}:"
+msgid "Enter 「download_type」 to download (space-separated, multiple allowed). Last record:「{last_record}」format - 「{support_dtype}」{default_prompt}:"
+msgstr "输入需要下载的「媒体类型」(以空格分隔可多选)。上一次的记录是:「{last_record}」格式 - 「{support_dtype}」{default_prompt}:"
 
 msgid "Use 「is_shutdown」 to shut down automatically after download? Last record:「{last_record}」 - 「{valid_format}」{default_prompt}:"
 msgstr "下载完成后是否「自动关机」。上一次的记录是:「{last_record}」 - 「{valid_format}」{default_prompt}:"
@@ -2321,8 +2321,8 @@ msgstr "已设置「download_type」为:「{dtype}」"
 msgid "Unexpected parameter: \"{download_type}\""
 msgstr "意外的参数:\"{download_type}\""
 
-msgid "{prompt}, supported values - 「video photo document」 (separate multiple with spaces)"
-msgstr "{prompt},支持的参数 - 「video photo document」(以空格分隔可多选)"
+msgid "{prompt}, supported values - 「{support_dtype}」 (separate multiple with spaces)"
+msgstr "{prompt},支持的参数 - 「{support_dtype}」(以空格分隔可多选)"
 
 msgid "「scheme」 set to: 「{scheme}」"
 msgstr "已设置「scheme」为:「{scheme}」"

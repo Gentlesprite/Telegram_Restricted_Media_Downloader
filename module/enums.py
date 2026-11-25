@@ -1335,10 +1335,12 @@ class GetStdioParams:
                     record.append(dtype)
             last_record: str = ' '.join(record)
         default_prompt: str = _('(default is all supported download types)') if last_record is None else ''
+        support_dtype: str = ' '.join([str(i) for i in DownloadType()])
         while True:
             download_type: Union[str, list] = console.input(
-                _('Enter 「download_type」 to download (space-separated, multiple allowed). Last record:「{last_record}」format - 「video photo document audio voice animation video_note live_photo」{default_prompt}:').format(
+                _('Enter 「download_type」 to download (space-separated, multiple allowed). Last record:「{last_record}」format - 「{support_dtype}」{default_prompt}:').format(
                     last_record=last_record if last_record else GetStdioParams.UNDEFINED,
+                    support_dtype=support_dtype,
                     default_prompt=default_prompt
                 )).strip()
             if download_type == '' and last_record is not None:
@@ -1361,8 +1363,9 @@ class GetStdioParams:
                     download_type=download_type
                 ) if download_type else _('Please re-enter the download type.')
                 log.warning(
-                    _('{prompt}, supported values - 「video photo document」 (separate multiple with spaces)').format(
-                        prompt=prompt
+                    _('{prompt}, supported values - 「{support_dtype}」 (separate multiple with spaces)').format(
+                        prompt=prompt,
+                        support_dtype=support_dtype
                     ))
 
     @staticmethod
