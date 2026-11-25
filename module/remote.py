@@ -89,8 +89,15 @@ class RemoteConfig(object):
         if cached:
             try:
                 # 缓存文件在读取后被删除时视为已过期,直接请求远程。
-                remaining: float = self.TTL - (time.time() - os.path.getmtime(self.PATH))
-            except OSError:
+                cache_mtime: float = os.path.getmtime(self.PATH)
+                remaining: float = self.TTL - (time.time() - cache_mtime)
+                # 切分支会重写HEAD,HEAD比缓存新时视为过期。
+                head_path: str = os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.git', 'HEAD'
+                )
+                if os.path.exists(head_path) and cache_mtime < os.path.getmtime(head_path):
+                    remaining = 0
+            except Exception:  # noqa.
                 remaining: float = 0
             if remaining > 0:
                 log.info(_('Using cached remote config from "{path}", remaining valid time: {hours} hours.').format(
