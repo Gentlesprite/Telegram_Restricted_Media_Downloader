@@ -798,11 +798,11 @@ class ProgressBar:
             TextColumn('[progress.description]{task.description} [bold blue]{task.fields[filename]}', justify='right'),
             BarColumn(bar_width=max(int(get_terminal_width() * 0.2), 1)),
             '[progress.percentage]{task.percentage:>3.1f}%',
-            '•',
+            TextColumn('•', style='dim'),
             '[bold green]{task.fields[info]}',
-            '•',
+            TextColumn('•', style='dim'),
             TransferSpeedColumn(),
-            '•',
+            TextColumn('•', style='dim'),
             TimeRemainingColumn(),
             console=console
         )
