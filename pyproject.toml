@@ -18,4 +18,4 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-kurigram = { url = "https://github.com/kurigram-org/kurigram/archive/f91549563f2ffef10adc600a675ec84a16515153.zip" }
+kurigram = { url = "https://github.com/kurigram-org/kurigram/archive/553229e65f2abea69ebdaf3975e39fca202d9207.zip" }
