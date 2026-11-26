@@ -430,9 +430,10 @@ async def get_message_by_link(
             }
     elif is_group is False and group_message is None:  # 单文件。
         link_type = LinkType.TOPIC if LinkType.TOPIC in record_type else LinkType.SINGLE
-        log.info(_('Link: "{link}" resolved to "{link_type}", media count: "1".').format(
+        log.info(_('Link: "{link}" resolved to "{link_type}", media count: "{count}".').format(
             link=link,
-            link_type=link_type
+            link_type=link_type,
+            count=1
         ))
         return {
             'link_type': link_type,

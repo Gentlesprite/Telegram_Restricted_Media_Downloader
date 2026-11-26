@@ -1653,10 +1653,10 @@ msgid "\"{file_path}\" ⬆️ \"{chat_id}\" upload failed."
 msgstr "\"{file_path}\" ⬆️ \"{chat_id}\"上传失败。"
 
 msgid "Database path: \"{storage_path}\"."
-msgstr "数据库路径:\"{storage_path}\"."
+msgstr "数据库路径:\"{storage_path}\"。"
 
 msgid "Database record missing file path, refused to write: \"{file_name}\"."
-msgstr "数据库缺少文件路径,已拒绝写入:\"{file_name}\"."
+msgstr "数据库缺少文件路径,已拒绝写入:\"{file_name}\"。"
 
 msgid "Discarded {count} records whose files no longer exist."
 msgstr "已丢弃{count}条文件已不存在的数据记录。"
@@ -1749,7 +1749,7 @@ msgid "Failed to overwrite the file due to \"{error}\""
 msgstr "覆盖文件失败,原因:\"{error}\""
 
 msgid "Moving file to save directory: \"{temp_path}\" -> \"{save_directory}\"."
-msgstr "移动文件至保存目录:\"{temp_path}\" -> \"{save_directory}\"."
+msgstr "移动文件至保存目录:\"{temp_path}\" -> \"{save_directory}\"。"
 
 msgid "\"{save_directory}\" is not a directory, the file was downloaded to the default directory."
 msgstr "\"{save_directory}\"不是一个目录,已将文件下载到默认目录。"
@@ -1764,7 +1764,7 @@ msgid "Unexpected error due to \"{error}\""
 msgstr "意外的错误,原因:\"{error}\""
 
 msgid "File ID: \"{file_id}\", unknown file type: \"{file_type}\"."
-msgstr "文件ID:\"{file_id}\",未知的文件类型:\"{file_type}\"."
+msgstr "文件ID:\"{file_id}\",未知的文件类型:\"{file_type}\"。"
 
 msgid "Insufficient permission to calculate file SHA256 due to \"{error}\""
 msgstr "权限不足,无法计算文件SHA256,原因:\"{error}\""
@@ -1785,13 +1785,13 @@ msgid "{preview}... {count} {unit} in total"
 msgstr "{preview}...等共{count}{unit}"
 
 msgid "Parsing link: \"{link}\", channel: \"{chat_id}\", message ID: \"{message_id}\"."
-msgstr "解析链接:\"{link}\",频道:\"{chat_id}\",消息ID:\"{message_id}\"."
+msgstr "解析链接:\"{link}\",频道:\"{chat_id}\",消息ID:\"{message_id}\"。"
 
 msgid "{app_name}:{version}, update date: {update_date}."
 msgstr "{app_name}:{version},更新日期:{update_date}。"
 
 msgid "File log level: \"{file_level}\", console log level: \"{console_level}\"."
-msgstr "文件日志等级:\"{file_level}\",终端日志等级:\"{console_level}\"."
+msgstr "文件日志等级:\"{file_level}\",终端日志等级:\"{console_level}\"。"
 
 msgid "Work directory: \"{work_directory}\"."
 msgstr "工作目录:\"{work_directory}\"。"
@@ -1818,10 +1818,7 @@ msgid "Failed to save message entity JSON due to \"{error}\""
 msgstr "保存消息实体JSON失败,原因:\"{error}\""
 
 msgid "Link: \"{link}\" resolved to \"{link_type}\", media count: \"{count}\"."
-msgstr "链接:\"{link}\"解析为\"{link_type}\",媒体数量:\"{count}\"."
-
-msgid "Link: \"{link}\" resolved to \"{link_type}\", media count: \"1\"."
-msgstr "链接:\"{link}\"解析为\"{link_type}\",媒体数量:\"1\"."
+msgstr "链接:\"{link}\"解析为\"{link_type}\",媒体数量:\"{count}\"。"
 
 msgid "Failed to reset the web panel token due to \"{error}\""
 msgstr "重置网页面板令牌失败,原因:\"{error}\""
@@ -2028,7 +2025,7 @@ msgid "Unable to use port {port}, a new port was automatically assigned due to \
 msgstr "无法使用{port}端口,已自动分配新的端口,原因:\"{error}\""
 
 msgid "Web panel failed to start, web directory not found: \"{directory}\"."
-msgstr "网页面板启动失败,未找到网页目录:\"{directory}\"."
+msgstr "网页面板启动失败,未找到网页目录:\"{directory}\"。"
 
 msgid "Web panel failed to start due to \"{error}\""
 msgstr "网页面板启动失败,原因:\"{error}\""
