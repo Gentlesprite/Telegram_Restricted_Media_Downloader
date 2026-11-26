@@ -2420,9 +2420,6 @@ msgstr "处理\"{temp_path}\"需要跳过的块:\"{downloaded}//{chunk_size}={sk
 msgid "Error dispatching tasks in the download scheduler due to \"{error}\""
 msgstr "下载调度器派发任务时出错,原因:\"{error}\""
 
-msgid "{text}\n{icon}Searching messages, 0 messages matched."
-msgstr "{text}\n{icon}检索消息中,已匹配到0条消息。"
-
 msgid "During the /download_chat command, skipped a message whose channel could not be resolved (ID: {message_id})."
 msgstr "在/download_chat命令过程中,跳过一条无法解析频道的消息(ID:{message_id})。"
 
@@ -2464,9 +2461,6 @@ msgstr "{text}\n{icon}检索消息中,已匹配到{count}条消息。"
 
 msgid "{text}\n❎ No matching messages found."
 msgstr "{text}\n❎没有找到任何匹配的消息。"
-
-msgid "{text}\n{icon}Searching comments, 0 comments matched."
-msgstr "{text}\n{icon}检索评论区中,已匹配到0条消息。"
 
 msgid "Failed to close the web storage database due to \"{error}\""
 msgstr "关闭网页存储数据库失败,原因:\"{error}\""

@@ -2091,9 +2091,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             downloaded_message_ids: set = set()  # 已进入下载列表的消息(chat_id, message_id),用于快速判断消息是否因类型被过滤。
             search_icon = flip_emoji(search_icon, advanced=True, emoji=Emoji.SEARCH)  # 首次展示检索进度,翻转一次放大镜图标。
             await _progress(
-                _text=_('{text}\n{icon}Searching messages, 0 messages matched.').format(
+                _text=_('{text}\n{icon}Searching messages, {count} messages matched.').format(
                     text=callback_query_text,
-                    icon=search_icon
+                    icon=search_icon,
+                    count=0
                 ),
                 _entities=callback_query.message.entities,
                 _reply_markup=KeyboardButton.single_button(
@@ -2322,9 +2323,10 @@ class TelegramRestrictedMediaDownloader(Bot):
             if include_comment:
                 search_icon = flip_emoji(search_icon, advanced=True, emoji=Emoji.SEARCH)  # 首次展示评论区检索进度,翻转一次放大镜图标。
                 await _progress(
-                    _text=_('{text}\n{icon}Searching comments, 0 comments matched.').format(
+                    _text=_('{text}\n{icon}Searching comments, {count} comments matched.').format(
                         text=callback_query_text,
-                        icon=search_icon
+                        icon=search_icon,
+                        count=0
                     ),
                     _entities=callback_query.message.entities,
                     _reply_markup=KeyboardButton.single_button(
