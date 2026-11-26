@@ -8,6 +8,7 @@ import sys
 import asyncio
 
 from functools import partial
+from contextlib import aclosing
 from sqlite3 import OperationalError
 from typing import (
     Set,
@@ -1466,17 +1467,18 @@ class TelegramRestrictedMediaDownloader(Bot):
                         ))
                 while True:
                     try:
-                        async for chunk in self.app.client.stream_media(
+                        async with aclosing(self.app.client.stream_media(
                                 message=message,
                                 offset=skip_chunks,
                                 download_type=download_type
-                        ):
-                            # 全局暂停时挂起当前传输,恢复后从中断处继续。
-                            if self.app.is_paused:
-                                await self.pause_event.wait()
-                            f.write(chunk)
-                            downloaded += len(chunk)
-                            progress(downloaded, *progress_args)
+                        )) as chunks:
+                            async for chunk in chunks:
+                                # 全局暂停时挂起当前传输,恢复后从中断处继续。
+                                if self.app.is_paused:
+                                    await self.pause_event.wait()
+                                f.write(chunk)
+                                downloaded += len(chunk)
+                                progress(downloaded, *progress_args)
                         break
                     except AuthBytesInvalid as e:
                         log.warning(

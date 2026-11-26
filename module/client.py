@@ -11,6 +11,8 @@ import functools
 
 from hashlib import sha256
 from datetime import datetime
+from collections import deque
+from contextlib import aclosing
 from typing import (
     AsyncIterator,
     AsyncGenerator,
@@ -584,53 +586,72 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             try:
                 session = await self.get_session(dc_id, is_media=True)
 
-                r = await session.invoke(
-                    raw.functions.upload.GetFile(
-                        location=location,
-                        offset=offset_bytes,
-                        limit=chunk_size
-                    ),
-                    timeout=DOWNLOAD_TIMEOUT,
-                    sleep_threshold=30
-                )
+                async def fetch_part(part_offset: int):
+                    return await session.invoke(
+                        raw.functions.upload.GetFile(
+                            location=location,
+                            offset=part_offset,
+                            limit=chunk_size
+                        ),
+                        timeout=DOWNLOAD_TIMEOUT,
+                        sleep_threshold=30
+                    )
+
+                r = await fetch_part(offset_bytes)
 
                 if isinstance(r, raw.types.upload.File):
-                    while True:
-                        chunk = r.bytes
+                    # 最多保留八个请求,并按offset顺序交付结果。
+                    prefetch_end = offset_bytes + total * chunk_size
+                    if file_size:
+                        prefetch_end = min(prefetch_end, file_size)
+                    next_offset = offset_bytes + chunk_size
+                    pending = deque()
 
-                        yield chunk
+                    try:
+                        while True:
+                            chunk = r.bytes
+                            finished = len(chunk) < chunk_size or current + 1 >= total
 
-                        current += 1
-                        offset_bytes += chunk_size
+                            if not finished:
+                                while len(pending) < 8 and next_offset < prefetch_end:
+                                    pending.append(asyncio.create_task(fetch_part(next_offset)))
+                                    next_offset += chunk_size
 
-                        if progress:
-                            func = functools.partial(
-                                progress,
-                                min(offset_bytes, file_size)
-                                if file_size != 0
-                                else offset_bytes,
-                                file_size,
-                                *progress_args
+                            yield chunk
+
+                            current += 1
+                            offset_bytes += chunk_size
+
+                            if progress:
+                                func = functools.partial(
+                                    progress,
+                                    min(offset_bytes, file_size)
+                                    if file_size != 0
+                                    else offset_bytes,
+                                    file_size,
+                                    *progress_args
+                                )
+
+                                if inspect.iscoroutinefunction(progress):
+                                    await func()
+                                else:
+                                    loop = asyncio.get_running_loop()
+                                    await loop.run_in_executor(self.executor, func)
+
+                            if finished:
+                                break
+
+                            # 若报告的文件尺寸偏小,或最后一个完整块需额外请求确认结束,则继续按顺序探测。
+                            r = (
+                                await pending.popleft()
+                                if pending
+                                else await fetch_part(offset_bytes)
                             )
-
-                            if inspect.iscoroutinefunction(progress):
-                                await func()
-                            else:
-                                loop = asyncio.get_running_loop()
-                                await loop.run_in_executor(self.executor, func)
-
-                        if len(chunk) < chunk_size or current >= total:
-                            break
-
-                        r = await session.invoke(
-                            raw.functions.upload.GetFile(
-                                location=location,
-                                offset=offset_bytes,
-                                limit=chunk_size
-                            ),
-                            timeout=DOWNLOAD_TIMEOUT,
-                            sleep_threshold=30
-                        )
+                    finally:
+                        if pending:
+                            for task in pending:
+                                task.cancel()
+                            await asyncio.gather(*pending, return_exceptions=True)
 
                 elif isinstance(r, raw.types.upload.FileCdnRedirect):
 
@@ -760,8 +781,9 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
                 chunks = math.ceil(file_size / 1024 / 1024)
                 offset += chunks
 
-            async for chunk in self.get_file(file_id_obj, file_size, limit, offset):
-                yield chunk
+            async with aclosing(self.get_file(file_id_obj, file_size, limit, offset)) as chunks:
+                async for chunk in chunks:
+                    yield chunk
             return
 
         available_media = (
@@ -796,8 +818,9 @@ class TelegramRestrictedMediaDownloaderClient(pyrogram.Client):
             chunks = math.ceil(file_size / 1024 / 1024)
             offset += chunks
 
-        async for chunk in self.get_file(file_id_obj, file_size, limit, offset):
-            yield chunk
+        async with aclosing(self.get_file(file_id_obj, file_size, limit, offset)) as chunks:
+            async for chunk in chunks:
+                yield chunk
 
 
 async def get_chunk(
@@ -852,17 +875,6 @@ class TelegramRestrictedMediaDownloaderSession(Session):
             sleep_threshold: float = SLEEP_THRESHOLD,
             retry_delay: float = RETRY_DELAY
     ):
-        show_waiting = not self.is_started.is_set()
-        if show_waiting:
-            ConnectionStatus.enter_busy(_('Waiting for the client connection to be established.'))
-        try:
-            await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
-        except asyncio.TimeoutError:
-            pass
-        finally:
-            if show_waiting:
-                ConnectionStatus.leave_busy()
-
         if isinstance(
                 query, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)
         ):
@@ -874,6 +886,18 @@ class TelegramRestrictedMediaDownloaderSession(Session):
         waiting_kind = WaitingKind.NONE
         try:
             while True:
+                # 请求失败时底层可能正在重连,每次重试前都等待连接就绪。
+                show_waiting = not self.is_started.is_set()
+                if show_waiting:
+                    ConnectionStatus.enter_busy(_('Waiting for the client connection to be established.'))
+                try:
+                    await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
+                except asyncio.TimeoutError:
+                    pass
+                finally:
+                    if show_waiting:
+                        ConnectionStatus.leave_busy()
+
                 try:
                     ConnectionStatus.enter_busy(_('Sending "{query_name}" request.').format(query_name=query_name))
                     try:
@@ -976,30 +1000,27 @@ class TelegramRestrictedMediaDownloaderSession(Session):
 
         log.debug(_('Sent: {message}').format(message=message))
 
-        payload = await asyncio.get_running_loop().run_in_executor(
-            self.connection.protocol.crypto_executor,
-            mtproto.pack,
-            message,
-            self._current_salt(self.client.server_time),
-            self.session_id,
-            self.auth_key,
-            self.auth_key_id
-        )
-
         try:
+            payload = await asyncio.get_running_loop().run_in_executor(
+                self.connection.protocol.crypto_executor,
+                mtproto.pack,
+                message,
+                self._current_salt(self.client.server_time),
+                self.session_id,
+                self.auth_key,
+                self.auth_key_id
+            )
             await self.connection.send(payload)
-        except OSError as e:
+
+            if pending_result is not None:
+                try:
+                    await asyncio.wait_for(pending_result.event.wait(), timeout)
+                except asyncio.TimeoutError:
+                    pass
+        finally:
             self.results.pop(msg_id, None)
-            raise e
 
         if pending_result is not None:
-            try:
-                await asyncio.wait_for(pending_result.event.wait(), timeout)
-            except asyncio.TimeoutError:
-                pass
-
-            self.results.pop(msg_id, None)
-
             if pending_result.exception is not None:
                 raise pending_result.exception
 

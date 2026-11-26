@@ -16,3 +16,6 @@ dependencies = [
     "qrcode>=8.2",
     "rich==15.0.0",
 ]
+
+[tool.uv.sources]
+kurigram = { url = "https://github.com/kurigram-org/kurigram/archive/refs/heads/improved_download_upload_speed.zip" }

@@ -1,4 +1,4 @@
-kurigram==2.2.27
+kurigram@https://github.com/kurigram-org/kurigram/archive/refs/heads/improved_download_upload_speed.zip
 kuricrypt>=0.1.0
 rich==15.0.0
 PyYAML
