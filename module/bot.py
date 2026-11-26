@@ -3153,10 +3153,8 @@ class PayHandler(CallbackHandler):
         )
         MetaData.pay()
         if res:
-            msg = _('✅\nThe QR code for payment has been sent to your terminal. Thank you for your support!')
-        else:
-            msg = _('✅\nThe QR code for payment has been sent to your terminal and chat. Thank you for your support!')
-        await query.message.reply_text(msg)
+            msg = _('✅The 「QR code」 for payment has been sent to your 「terminal」. Thank you for your support!')
+            await query.message.reply_text(msg)
 
 
 class BackHandler(CallbackHandler):

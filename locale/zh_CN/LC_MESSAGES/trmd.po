@@ -1457,11 +1457,11 @@ msgstr "查看授权用户失败\n(具体原因请前往终端查看报错信息
 msgid "Failed to view listen info.\n(See the terminal for details)"
 msgstr "查看监听信息失败\n(具体原因请前往终端查看报错信息)"
 
-msgid "✅\nThe QR code for payment has been sent to your terminal and chat. Thank you for your support!"
-msgstr "✅\n收款「二维码」已发送至您的「终端」与「对话框」十分感谢您的支持!"
+msgid "✅The 「QR code」 for payment has been sent to your 「terminal」 and 「chat」. Thank you for your support!"
+msgstr "✅收款「二维码」已发送至您的「终端」与「对话框」十分感谢您的支持!"
 
-msgid "✅\nThe QR code for payment has been sent to your terminal. Thank you for your support!"
-msgstr "✅\n收款「二维码」已发送至您的「终端」十分感谢您的支持!"
+msgid "✅The 「QR code」 for payment has been sent to your 「terminal」. Thank you for your support!"
+msgstr "✅收款「二维码」已发送至您的「终端」十分感谢您的支持!"
 
 msgid "Failed to enable or disable bot message notifications.\n(See the terminal for details)"
 msgstr "启用或禁用机器人消息通知失败\n(具体原因请前往终端查看报错信息)"

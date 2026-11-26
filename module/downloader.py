@@ -361,17 +361,19 @@ class TelegramRestrictedMediaDownloader(Bot):
                 text=_('🚛Loading {load_name}, please wait. . .').format(load_name=load_name),
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS
             )
-            tasks = [client.send_photo(
+            photo_msg = await client.send_photo(
                 chat_id=chat_id,
                 photo=Base64Image.base64_to_binary_io(Base64Image.pay),
+                caption=_('✅{load_name} loaded successfully!').format(load_name=load_name),
                 disable_notification=True
-            ),
-                client.edit_message_text(
-                    chat_id=chat_id,
-                    message_id=last_msg.id,
-                    text=_('✅{load_name} loaded successfully!').format(load_name=load_name)
-                )]
-            await asyncio.gather(*tasks)
+            )
+            await safe_delete_message(last_msg)
+            await asyncio.sleep(2)
+            await client.edit_message_caption(
+                chat_id=chat_id,
+                message_id=photo_msg.id,
+                caption=_('✅The 「QR code」 for payment has been sent to your 「terminal」 and 「chat」. Thank you for your support!')
+            )
         except Exception as e:
             return str(e)
 
@@ -386,17 +388,24 @@ class TelegramRestrictedMediaDownloader(Bot):
             return None
         if self.gc.config.get(BotCallbackText.NOTICE):
             chat_id = message.from_user.id
-            await asyncio.gather(
-                self.send_pay_qr(
-                    client=client,
-                    chat_id=chat_id,
-                    load_name=_('Bot')
-                ),
-                super().start(client, message),
-                client.send_message(
-                    chat_id=chat_id,
-                    text=_('😊Welcome! Your support keeps the project updated.'),
-                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS)
+            load_msg = await client.send_message(
+                chat_id=chat_id,
+                text=_('🚛Loading {load_name}, please wait. . .').format(load_name=_('Bot')),
+                link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+            )
+            await super().start(client, message)
+            await safe_delete_message(load_msg)
+            photo_msg = await client.send_photo(
+                chat_id=chat_id,
+                photo=Base64Image.base64_to_binary_io(Base64Image.pay),
+                caption=_('✅{load_name} loaded successfully!').format(load_name=_('Bot')),
+                disable_notification=True
+            )
+            await asyncio.sleep(2)
+            await client.edit_message_caption(
+                chat_id=chat_id,
+                message_id=photo_msg.id,
+                caption=_('😊Welcome! Your support keeps the project updated.')
             )
         else:
             await super().start(client, message)
