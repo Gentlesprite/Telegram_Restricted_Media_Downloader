@@ -881,7 +881,12 @@ class ConnectionStatus:
         cls.install_logger()
         with cls._lock:
             if cls._live is None:
-                cls._live = Live(console=console, auto_refresh=True, refresh_per_second=12.5)
+                cls._live = Live(
+                    console=console,
+                    auto_refresh=True,
+                    refresh_per_second=12.5,
+                    transient=True  # 退出时清除常驻提示,避免残留显示。
+                )
                 cls._live.start()
             cls._state = ConnectionState.CONNECTED
             cls._displayed_message = ''
