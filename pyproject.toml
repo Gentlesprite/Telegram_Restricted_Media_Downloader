@@ -18,4 +18,4 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-kurigram = { url = "https://github.com/kurigram-org/kurigram/archive/refs/heads/improved_download_upload_speed.zip" }
+kurigram = { url = "https://github.com/kurigram-org/kurigram/archive/f91549563f2ffef10adc600a675ec84a16515153.zip" }
