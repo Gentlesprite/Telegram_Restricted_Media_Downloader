@@ -2227,28 +2227,6 @@ class Bot:
             except Exception:
                 raise
 
-    async def send_rich_table(self, message: pyrogram.types.Message, chunks: list) -> None:
-        """通过机器人将统计表的Markdown分片以富文本消息发送给用户。
-
-        chunks为Markdown字符串列表,全部作为新消息发送,避免覆盖原菜单消息:
-        调用方随后会把原菜单编辑成导出设置面板,若首片编辑原消息会导致表格被覆盖。
-        """
-        if self.bot is None or not chunks:
-            return None
-        chat_id: int = message.chat.id
-        for index, chunk in enumerate(chunks, start=1):
-            try:
-                await self.bot.send_rich_message(
-                    chat_id=chat_id,
-                    reply_parameters=ReplyParameters(message_id=message.id),
-                    rich_message=pyrogram.types.InputRichMessage(markdown=chunk)
-                )
-            except Exception as e:
-                log.error(_('Failed to send statistics table via bot (part {index}) due to "{error}"').format(
-                    index=index,
-                    error=e
-                ))
-
 
 class KeyboardButton:
     def __init__(self, callback_query: pyrogram.types.CallbackQuery):
@@ -2256,8 +2234,10 @@ class KeyboardButton:
 
     async def choice_export_table_button(
             self,
-            choice: Union[BotCallbackText, str]
+            choice: Union[BotCallbackText, str],
+            table_blocks: Union[list, None] = None
     ) -> None:
+        """重建导出表格面板,table_blocks为表格块时置于正文上方与按钮同条消息。"""
         export_callback_data: str = ''
         if choice == BotCallbackText.EXPORT_LINK_TABLE:
             export_callback_data = BotCallbackText.EXPORT_LINK_TABLE
@@ -2266,12 +2246,15 @@ class KeyboardButton:
         elif choice == BotCallbackText.EXPORT_UPLOAD_TABLE:
             export_callback_data = BotCallbackText.EXPORT_UPLOAD_TABLE
         try:
+            content_blocks = table_blocks if table_blocks is not None else [
+                pyrogram.types.InputRichBlockParagraph(
+                    text=rich_text(extract_message_text(self.callback_query.message))
+                )
+            ]
             await self.callback_query.message.edit_text(
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
-                        pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(extract_message_text(self.callback_query.message))
-                        ),
+                        *content_blocks,
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
                                 text=BotButton.EXPORT_TABLE,
@@ -3591,28 +3574,29 @@ class TableHandler(CallbackHandler):
                 prompt_string = _('link statistics table')
                 false_text = _('🌫️No links to count.')
                 choice = BotCallbackText.EXPORT_LINK_TABLE
-                res = downloader.app.print_link_table(DownloadTask.TASKS)
+                res = downloader.app.print_link_table(DownloadTask.TASKS, as_panels=True)
             elif data == BotCallbackText.COUNT_TABLE:
                 prompt_string = _('count statistics table')
                 false_text = _('🌫️No downloads yet.')
                 choice = BotCallbackText.EXPORT_COUNT_TABLE
-                res = downloader.app.print_count_table()
+                res = downloader.app.print_count_table(as_panels=True)
             elif data == BotCallbackText.UPLOAD_TABLE:
                 prompt_string = _('upload statistics table')
                 false_text = _('🌫️No uploads yet.')
                 choice = BotCallbackText.EXPORT_UPLOAD_TABLE
-                res = downloader.app.print_upload_table(UploadTask.TASKS)
+                res = downloader.app.print_upload_table(UploadTask.TASKS, as_panels=True)
             if res:
-                await downloader.send_rich_table(message=query.message, chunks=res)
-                await kb.choice_export_table_button(choice=choice)
+                table_blocks = [panel.to_rich_table() for panel in res]
+                await kb.choice_export_table_button(choice=choice, table_blocks=table_blocks)
                 return None
             elif res is False:
                 await kb.back_table_button(text=false_text)
                 return None
             else:
-                await kb.back_table_button(text=_('❌`{prompt_string}` printing failed.\n(see the terminal for details)').format(
-                    prompt_string=prompt_string
-                ))
+                await kb.back_table_button(
+                    text=_('❌`{prompt_string}` printing failed.\n(see the terminal for details)').format(
+                        prompt_string=prompt_string
+                    ))
                 return None
         elif data in (
                 BotCallbackText.TOGGLE_LINK_TABLE,
@@ -3647,7 +3631,8 @@ class TableHandler(CallbackHandler):
                 res = downloader.app.print_upload_table(upload_tasks=UploadTask.TASKS, export=True, only_export=True)
             if res:
                 folder = 'form' if is_docker() else folder
-                await kb.back_table_button(text=_('✅`{prompt_string}` has been sent to your 「terminal」 and 「exported」 as a table.\n(Check the `{folder}` folder in the software directory)').format(
+                await kb.back_table_button(text=_(
+                    '✅`{prompt_string}` has been sent to your 「terminal」 and 「exported」 as a table.\n(Check the `{folder}` folder in the software directory)').format(
                     prompt_string=prompt_string,
                     folder=folder
                 ))
@@ -3656,9 +3641,10 @@ class TableHandler(CallbackHandler):
                 await kb.back_table_button(text=_('🌫️No links to count.'))
                 return None
             else:
-                await kb.back_table_button(text=_('❌`{prompt_string}` export failed.\n(see the terminal for details)').format(
-                    prompt_string=prompt_string
-                ))
+                await kb.back_table_button(
+                    text=_('❌`{prompt_string}` export failed.\n(see the terminal for details)').format(
+                        prompt_string=prompt_string
+                    ))
                 return None
 
     @staticmethod

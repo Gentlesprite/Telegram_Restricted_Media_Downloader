@@ -34,6 +34,7 @@ from rich.progress import (
     TransferSpeedColumn
 )
 from enum import Enum
+import pyrogram
 from pyrogram import __version__ as pyrogram_version  # noqa.
 
 from module import (
@@ -72,6 +73,7 @@ class StatisticalTable:
             self,
             export: bool = False,
             only_export: bool = False,
+            as_panels: bool = False,
             export_directory: str = os.path.join(
                 os.path.dirname(os.path.abspath(sys.argv[0])),
                 'DownloadRecordForm',
@@ -178,7 +180,7 @@ class StatisticalTable:
                     data=table_data
                 )
                 panel.print_meta()
-                result = panel.to_markdown_chunks()
+                result = [panel] if as_panels else panel.to_markdown_chunks()
             return result
         except Exception as e:
             log.error(_('Error printing the media count table due to "{error}"').format(
@@ -191,6 +193,7 @@ class StatisticalTable:
             link_tasks: dict,
             export: bool = False,
             only_export: bool = False,
+            as_panels: bool = False,
             export_directory: str = os.path.join(
                 os.path.dirname(os.path.abspath(sys.argv[0])),
                 'DownloadRecordForm',
@@ -259,7 +262,7 @@ class StatisticalTable:
                     show_lines=True
                 )
                 panel.print_meta()
-                result = panel.to_markdown_chunks()
+                result = [panel] if as_panels else panel.to_markdown_chunks()
             return result
         except Exception as e:
             log.error(_('Error printing the download link table due to "{error}"').format(
@@ -272,6 +275,7 @@ class StatisticalTable:
             upload_tasks: set,
             export: bool = False,
             only_export: bool = False,
+            as_panels: bool = False,
             export_directory: str = os.path.join(
                 os.path.dirname(os.path.abspath(sys.argv[0])),
                 'UploadRecordForm',
@@ -398,11 +402,14 @@ class StatisticalTable:
                 # 终端与消息均按"媒体上传统计在上、上传任务统计在下"的顺序展示。
                 count_panel.print_meta()
                 meta_panel.print_meta()
-                # 两张表合并为一条消息发送:计数表很短,直接拼在元信息表首个分片之前,
-                # 这样首片即含两表,不会再多出一条无键盘的消息(元信息表超长时后续分片仍逐条追加)。
-                meta_chunks = meta_panel.to_markdown_chunks()
-                meta_chunks[0] = f'{count_panel.to_markdown()}\n\n{meta_chunks[0]}'
-                result = meta_chunks
+                if as_panels:
+                    result = [count_panel, meta_panel]
+                else:
+                    # 两张表合并为一条消息发送:计数表很短,直接拼在元信息表首个分片之前,
+                    # 这样首片即含两表,不会再多出一条无键盘的消息(元信息表超长时后续分片仍逐条追加)。
+                    meta_chunks = meta_panel.to_markdown_chunks()
+                    meta_chunks[0] = f'{count_panel.to_markdown()}\n\n{meta_chunks[0]}'
+                    result = meta_chunks
             return result
 
         except Exception as e:
@@ -556,6 +563,23 @@ class PanelTable:
 
     def print_meta(self):
         console.print(self.table, justify='center')
+
+    def to_rich_table(self) -> pyrogram.types.InputRichBlockTable:
+        """将表格转换为富文本表格块,供InputRichMessage的blocks使用。"""
+        cells = [[
+            pyrogram.types.RichBlockTableCell(text=str(header_cell), is_header=True)
+            for header_cell in self.header
+        ]]
+        cells.extend([
+            [pyrogram.types.RichBlockTableCell(text=str(cell)) for cell in row]
+            for row in self.data
+        ])
+        return pyrogram.types.InputRichBlockTable(
+            cells=cells,
+            caption=self.title,
+            is_bordered=True,
+            is_striped=True
+        )
 
     def to_markdown(self) -> str:
         """将表格转换为 GitHub 风格的 Markdown 表格字符串(不分片)。"""
