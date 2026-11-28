@@ -83,7 +83,8 @@ from module.utils import (
     is_allow_upload,
     get_valid_chat_id,
     format_limited_text,
-    parse_task_callback
+    parse_task_callback,
+    extract_message_text
 )
 from module.enums import (
     Issues,
@@ -2281,7 +2282,7 @@ class KeyboardButton:
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
                         pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(self.callback_query.message.text or '')
+                            text=rich_text(extract_message_text(self.callback_query.message))
                         ),
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
@@ -2316,7 +2317,7 @@ class KeyboardButton:
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
                         pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(self.callback_query.message.text or '')
+                            text=rich_text(extract_message_text(self.callback_query.message))
                         ),
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
@@ -2376,7 +2377,7 @@ class KeyboardButton:
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
                         pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(self.callback_query.message.text or '')
+                            text=rich_text(extract_message_text(self.callback_query.message))
                         ),
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
@@ -2412,7 +2413,7 @@ class KeyboardButton:
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
                         pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(self.callback_query.message.text or '')
+                            text=rich_text(extract_message_text(self.callback_query.message))
                         ),
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
@@ -2484,7 +2485,7 @@ class KeyboardButton:
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
                         pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(self.callback_query.message.text or '')
+                            text=rich_text(extract_message_text(self.callback_query.message))
                         ),
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
@@ -2633,7 +2634,7 @@ class KeyboardButton:
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
                         pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(self.callback_query.message.text or '')
+                            text=rich_text(extract_message_text(self.callback_query.message))
                         ),
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
@@ -2697,7 +2698,7 @@ class KeyboardButton:
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
                         pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(self.callback_query.message.text or '')
+                            text=rich_text(extract_message_text(self.callback_query.message))
                         ),
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
@@ -2724,7 +2725,7 @@ class KeyboardButton:
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
                         pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(self.callback_query.message.text or '')
+                            text=rich_text(extract_message_text(self.callback_query.message))
                         ),
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
@@ -3059,7 +3060,7 @@ class KeyboardButton:
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
                         pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(self.callback_query.message.text or '')
+                            text=rich_text(extract_message_text(self.callback_query.message))
                         ),
                         *keyboard
                     ],
@@ -3130,7 +3131,7 @@ class KeyboardButton:
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
                         pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(self.callback_query.message.text or '')
+                            text=rich_text(extract_message_text(self.callback_query.message))
                         ),
                         *keyboard
                     ],
@@ -4064,7 +4065,7 @@ class DownloadChatHandler(CallbackHandler):
                     rich_message=pyrogram.types.InputRichMessage(
                         blocks=[
                             pyrogram.types.InputRichBlockParagraph(
-                                text=rich_text(query.message.text or '')
+                                text=rich_text(extract_message_text(query.message))
                             ),
                             *kb.single_button(
                                 text=BotButton.TASK_CANCEL,
@@ -4147,7 +4148,7 @@ class DownloadChatHandler(CallbackHandler):
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
                         pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(query.message.text or '')
+                            text=rich_text(extract_message_text(query.message))
                         ),
                         *attach_task(
                             kb.time_keyboard(

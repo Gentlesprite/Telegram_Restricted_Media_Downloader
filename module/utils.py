@@ -141,6 +141,37 @@ def rich_text(text: str) -> Union[str, list]:
     return parts
 
 
+def extract_message_text(message: pyrogram.types.Message) -> str:
+    """从消息提取纯文本,兼容普通消息与富文本消息。"""
+    if message is None:
+        return ''
+    if message.text:
+        return message.text
+    rich_message = getattr(message, 'rich_message', None)
+    if rich_message is None:
+        return ''
+    parts = []
+    for block in rich_message.blocks:
+        chunks = []
+        stack = [(block, False)]
+        while stack:
+            _value, wrap_backtick = stack.pop()
+            if _value is None:
+                continue
+            if isinstance(_value, str):
+                chunks.append(f'`{_value}`' if wrap_backtick else _value)
+            elif isinstance(_value, list):
+                stack.extend((item, wrap_backtick) for item in reversed(_value))
+            elif isinstance(_value, pyrogram.types.RichTextCode):
+                stack.append((_value.text, True))
+            else:
+                text = getattr(_value, 'text', None)
+                if text is not None:
+                    stack.append((text, wrap_backtick))
+        parts.append(''.join(chunks))
+    return '\n'.join(part for part in parts if part).strip()
+
+
 async def safe_delete_message(message: pyrogram.types.Message) -> bool:
     try:
         await message.delete()

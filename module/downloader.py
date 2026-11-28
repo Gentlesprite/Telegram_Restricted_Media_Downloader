@@ -128,6 +128,7 @@ from module.utils import (
     get_login_method,
     check_environment,
     get_message_dtype,
+    extract_message_text,
     collect_message_id,
     safe_delete_message,
     get_message_by_link,
@@ -2071,7 +2072,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         ))
                     return
 
-        origin_callback_query_text: str = callback_query.message.text
+        origin_callback_query_text: str = extract_message_text(callback_query.message)
         _setup_text = _(
             '{text}\n⏳ Scanning all matching messages in this channel, please wait.\n💡 Ignore the frequent request warnings in the terminal, they do not affect the download.').format(
             text=origin_callback_query_text
@@ -2085,7 +2086,7 @@ class TelegramRestrictedMediaDownloader(Bot):
             )
         )
         # _progress通用异常时返回None,此处回退到意图发出的setup文案(而非消息对象),避免callback_query_text退化成编辑前的原始文案,保证后续进度消息拼接一致。
-        callback_query_text: str = cq.text if cq is not None else _setup_text
+        callback_query_text: str = extract_message_text(cq) if cq is not None else _setup_text
         last_displayed_count: int = -1  # 记录上次显示的数量,初始化为-1确保第一次一定更新。
         search_icon: str = '🔎'  # 检索阶段的放大镜图标,仅在匹配数实际增长时于🔎/🔍间翻转。
         last_update_time: float = 0  # 记录上次更新的时间戳。
@@ -2328,7 +2329,9 @@ class TelegramRestrictedMediaDownloader(Bot):
                 )
             if not messages_to_download:
                 await _progress(
-                    _text=_('{text}\n❎ No matching messages found.').format(text=callback_query.message.text),
+                    _text=_('{text}\n❎ No matching messages found.').format(
+                        text=extract_message_text(callback_query.message)
+                    ),
                     _entities=callback_query.message.entities,
                     _button_blocks=KeyboardButton.single_button(
                         text=BotButton.TASK_CANCEL,
