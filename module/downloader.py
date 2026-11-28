@@ -560,13 +560,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                     reply_parameters=ReplyParameters(message_id=message_id),
                     rich_message=pyrogram.types.InputRichMessage(
                         blocks=[
-                            pyrogram.types.InputRichBlockParagraph(
+                            pyrogram.types.InputRichBlockSectionHeading(
                                 text=rich_text(
                                     _(
                                         '⚠️Unable to forward\n`{link}`\nContent protection restriction (you can set download-then-upload on restricted forwarding in [Settings] -> [Upload Settings]).').format(
                                         link=link
                                     )
-                                )
+                                ),
+                                size=3
                             ),
                             pyrogram.types.InputRichBlockButtons(buttons=[
                                 pyrogram.types.RichMessageButton(
@@ -777,12 +778,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                             reply_parameters=ReplyParameters(message_id=message.id),
                             rich_message=pyrogram.types.InputRichMessage(
                                 blocks=[
-                                    pyrogram.types.InputRichBlockParagraph(text=rich_text(_(
-                                        '⚠️Cannot forward\n`{origin_link}`\n{channel} has content protection restrictions.').format(
-                                        origin_link=origin_link,
-                                        channel=channel
-                                    )
-                                    )),
+                                    pyrogram.types.InputRichBlockSectionHeading(
+                                        text=rich_text(_(
+                                            '⚠️Cannot forward\n`{origin_link}`\n{channel} has content protection restrictions.').format(
+                                            origin_link=origin_link,
+                                            channel=channel
+                                        )
+                                        ),
+                                        size=3
+                                    ),
                                     *KeyboardButton.restrict_forward_button()
                                 ],
                                 skip_entity_detection=True
@@ -867,12 +871,15 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 reply_parameters=ReplyParameters(message_id=message.id),
                                 rich_message=pyrogram.types.InputRichMessage(
                                     blocks=[
-                                        pyrogram.types.InputRichBlockParagraph(text=rich_text(_(
-                                            '⚠️Cannot forward\n`{origin_link}`\n{channel} has content protection restrictions.').format(
-                                            origin_link=origin_link,
-                                            channel=channel
-                                        )
-                                        )),
+                                        pyrogram.types.InputRichBlockSectionHeading(
+                                            text=rich_text(_(
+                                                '⚠️Cannot forward\n`{origin_link}`\n{channel} has content protection restrictions.').format(
+                                                origin_link=origin_link,
+                                                channel=channel
+                                            )
+                                            ),
+                                            size=3
+                                        ),
                                         *KeyboardButton.restrict_forward_button()
                                     ],
                                     skip_entity_detection=True

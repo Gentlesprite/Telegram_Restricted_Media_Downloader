@@ -504,11 +504,14 @@ class Bot:
                     await callback_query.message.edit_text(
                         rich_message=pyrogram.types.InputRichMessage(
                             blocks=[
-                                pyrogram.types.InputRichBlockParagraph(text=rich_text(
-                                    _('🚛`{keyword}` has been added. Choose how to handle it to continue.').format(
-                                        keyword=keyword
-                                    )
-                                )),
+                                pyrogram.types.InputRichBlockSectionHeading(
+                                    text=rich_text(
+                                        _('🚛`{keyword}` has been added. Choose how to handle it to continue.').format(
+                                            keyword=keyword
+                                        )
+                                    ),
+                                    size=3
+                                ),
                                 *attach_task([
                                     pyrogram.types.InputRichBlockButtons(buttons=[
                                         pyrogram.types.RichMessageButton(
@@ -1166,7 +1169,10 @@ class Bot:
                 is_striped=True
             ))
             if is_docker():
-                blocks.append(pyrogram.types.InputRichBlockParagraph(text=Issues.DOCKER_HOST_IP_TIP))
+                blocks.append(pyrogram.types.InputRichBlockSectionHeading(
+                    text=Issues.DOCKER_HOST_IP_TIP,
+                    size=3
+                ))
         if more_feature:
             blocks.append(pyrogram.types.InputRichBlockSectionHeading(
                 text=_('✨ Other features'),
