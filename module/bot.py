@@ -2227,6 +2227,23 @@ class Bot:
             except Exception:
                 raise
 
+    async def send_rich_table(self, message: pyrogram.types.Message, chunks: list) -> None:
+        """通过机器人将统计表的Markdown分片逐条发送,规避富文本长度上限。"""
+        if self.bot is None or not chunks:
+            return None
+        chat_id: int = message.chat.id
+        for index, chunk in enumerate(chunks, start=1):
+            try:
+                await self.bot.send_rich_message(
+                    chat_id=chat_id,
+                    rich_message=pyrogram.types.InputRichMessage(markdown=chunk)
+                )
+            except Exception as e:
+                log.error(_('Failed to send statistics table via bot (part {index}) due to "{error}"').format(
+                    index=index,
+                    error=e
+                ))
+
 
 class KeyboardButton:
     def __init__(self, callback_query: pyrogram.types.CallbackQuery):
@@ -2237,7 +2254,7 @@ class KeyboardButton:
             choice: Union[BotCallbackText, str],
             table_blocks: Union[list, None] = None
     ) -> None:
-        """重建导出表格面板,table_blocks为表格块时置于正文上方与按钮同条消息。"""
+        """table_blocks非空时表格与按钮同条消息;否则表格已分片发送,单独发按钮消息。"""
         export_callback_data: str = ''
         if choice == BotCallbackText.EXPORT_LINK_TABLE:
             export_callback_data = BotCallbackText.EXPORT_LINK_TABLE
@@ -2245,33 +2262,38 @@ class KeyboardButton:
             export_callback_data = BotCallbackText.EXPORT_COUNT_TABLE
         elif choice == BotCallbackText.EXPORT_UPLOAD_TABLE:
             export_callback_data = BotCallbackText.EXPORT_UPLOAD_TABLE
-        try:
-            content_blocks = table_blocks if table_blocks is not None else [
-                pyrogram.types.InputRichBlockParagraph(
-                    text=rich_text(extract_message_text(self.callback_query.message))
+        buttons = [
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.EXPORT_TABLE,
+                    callback_data=export_callback_data
+                ),
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.RESELECT,
+                    callback_data=BotCallbackText.BACK_TABLE
                 )
-            ]
-            await self.callback_query.message.edit_text(
+            ]),
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.HELP_PAGE,
+                    callback_data=BotCallbackText.BACK_HELP
+                )
+            ])
+        ]
+        try:
+            if table_blocks:
+                await self.callback_query.message.edit_text(
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[*table_blocks, *buttons],
+                        skip_entity_detection=True
+                    )
+                )
+                return None
+            message = self.callback_query.message
+            await message._client.send_rich_message(
+                chat_id=message.chat.id,
                 rich_message=pyrogram.types.InputRichMessage(
-                    blocks=[
-                        *content_blocks,
-                        pyrogram.types.InputRichBlockButtons(buttons=[
-                            pyrogram.types.RichMessageButton(
-                                text=BotButton.EXPORT_TABLE,
-                                callback_data=export_callback_data
-                            ),
-                            pyrogram.types.RichMessageButton(
-                                text=BotButton.RESELECT,
-                                callback_data=BotCallbackText.BACK_TABLE
-                            )
-                        ]),
-                        pyrogram.types.InputRichBlockButtons(buttons=[
-                            pyrogram.types.RichMessageButton(
-                                text=BotButton.HELP_PAGE,
-                                callback_data=BotCallbackText.BACK_HELP
-                            )
-                        ])
-                    ],
+                    blocks=buttons,
                     skip_entity_detection=True
                 )
             )
@@ -3587,7 +3609,23 @@ class TableHandler(CallbackHandler):
                 res = downloader.app.print_upload_table(UploadTask.TASKS, as_panels=True)
             if res:
                 table_blocks = [panel.to_rich_table() for panel in res]
-                await kb.choice_export_table_button(choice=choice, table_blocks=table_blocks)
+                table_chars = sum(
+                    len(str(cell.text)) for block in table_blocks
+                    for row in block.cells for cell in row
+                )
+                if table_chars <= 30000:
+                    # 未超限:表格块与按钮同一条消息编辑原菜单。
+                    await kb.choice_export_table_button(choice=choice, table_blocks=table_blocks)
+                else:
+                    # 超限:降级为markdown分片发送,按钮单独一条rich消息。
+                    if data == BotCallbackText.LINK_TABLE:
+                        chunks = downloader.app.print_link_table(DownloadTask.TASKS)
+                    elif data == BotCallbackText.COUNT_TABLE:
+                        chunks = downloader.app.print_count_table()
+                    else:
+                        chunks = downloader.app.print_upload_table(UploadTask.TASKS)
+                    await downloader.send_rich_table(message=query.message, chunks=chunks)
+                    await kb.choice_export_table_button(choice=choice)
                 return None
             elif res is False:
                 await kb.back_table_button(text=false_text)
