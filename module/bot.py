@@ -1236,7 +1236,7 @@ class Bot:
                 )
             ])
         ]
-        text: str = _('📊Please select the type of 「statistics table」 to output:')
+        text: str = _('📊Output 「statistics table」')
         if not all([client, message]):
             return {
                 'button_blocks': button_blocks,
@@ -1246,7 +1246,10 @@ class Bot:
             chat_id=message.from_user.id,
             rich_message=pyrogram.types.InputRichMessage(
                 blocks=[
-                    pyrogram.types.InputRichBlockParagraph(text=rich_text(text)),
+                    pyrogram.types.InputRichBlockSectionHeading(
+                        text=rich_text(text),
+                        size=2
+                    ),
                     *button_blocks
                 ],
                 skip_entity_detection=True
@@ -3346,8 +3349,9 @@ class BackHandler(CallbackHandler):
                 await query.message.edit_text(
                     rich_message=pyrogram.types.InputRichMessage(
                         blocks=[
-                            pyrogram.types.InputRichBlockParagraph(
-                                text=rich_text(meta.get('text', ''))
+                            pyrogram.types.InputRichBlockSectionHeading(
+                                text=rich_text(meta.get('text', '')),
+                                size=2
                             ),
                             *meta.get('button_blocks', [])
                         ],

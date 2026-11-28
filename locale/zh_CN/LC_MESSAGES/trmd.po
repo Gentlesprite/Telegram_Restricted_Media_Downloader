@@ -1016,8 +1016,8 @@ msgstr "🎮️ 可用命令"
 msgid "✨ Other features"
 msgstr "✨ 其他功能"
 
-msgid "📊Please select the type of 「statistics table」 to output:"
-msgstr "📊请选择输出「统计表」的类型:"
+msgid "📊Output 「statistics table」"
+msgstr "📊输出「统计表」"
 
 msgid "📤Upload task created, please wait\n`{file_path}`"
 msgstr "📤上传任务已创建,请耐心等待\n`{file_path}`"
