@@ -813,6 +813,7 @@ forward_type:
   voice: true
   video_note: true
   live_photo: true
+language: en_US
 notice: false
 upload:
   delete: false
@@ -828,7 +829,8 @@ upload:
 | `export_table` | 运行结束时是否导出统计表，含`count`（控制运行结束时是否导出下载计数统计表）、`link`（控制运行结束时是否导出下载链接统计表）、`upload`（控制运行结束时是否导出上传统计表）。             |
 | `file_log_level` | `TRMD_LOG.log`文件中记录的最低日志级别（如`INFO`）。                                                                         |
 | `forward_type` | 控制`/listen_forward`与`/forward`命令可转发的文件类型，详见`forward_type`参数支持转发的媒体类型。                                        |
-| `notice` | 控制机器人启动时是否向用户发送启动提示（欢迎语）。                                                                               |
+| `language` | 控制界面语言，目前支持`en_US`、`zh_CN`，不指定时检测当前系统语言自动设置，其他系统语言默认使用`en_US`，可通过`-l`、`--language`参数设置。                   |
+| `notice` | 控制机器人启动时是否向用户发送启动提示（欢迎语）。                                                                                    |
 | `upload` | 控制转发时，频道中受保护内容的处理方式，含`delete`（控制频道中受保护内容在下载上传完成后是否删除本地文件，默认关闭）与`download_upload`（控制频道中受保护内容是否回退至下载后上传，默认开启）。 |
 
 ##### `forward_type`参数支持转发的媒体类型
