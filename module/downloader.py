@@ -21,7 +21,6 @@ from typing import (
 import pyrogram
 
 from pyrogram.handlers import MessageHandler
-from pyrogram.enums.parse_mode import ParseMode
 from pyrogram.types.messages_and_media import ReplyParameters
 from pyrogram.errors.exceptions.forbidden_403 import ChatWriteForbidden
 from pyrogram.errors import (
@@ -52,11 +51,6 @@ from pyrogram.errors.exceptions.unauthorized_401 import (
     SessionRevoked,
     AuthKeyUnregistered
 )
-from pyrogram.types.bots_and_keyboards import (
-    InlineKeyboardButton,
-    InlineKeyboardMarkup
-)
-
 from module import (
     log,
     console,
@@ -122,6 +116,7 @@ from module.utils import (
     LimitCall,
     ctrl_c,
     get_my_id,
+    rich_text,
     parse_link,
     flip_emoji,
     js_referral,
@@ -373,7 +368,8 @@ class TelegramRestrictedMediaDownloader(Bot):
             await client.edit_message_caption(
                 chat_id=chat_id,
                 message_id=photo_msg.id,
-                caption=_('✅The 「QR code」 for payment has been sent to your 「terminal」 and 「chat」. Thank you for your support!')
+                caption=_(
+                    '✅The 「QR code」 for payment has been sent to your 「terminal」 and 「chat」. Thank you for your support!')
             )
         except Exception as e:
             return str(e)
@@ -557,18 +553,30 @@ class TelegramRestrictedMediaDownloader(Bot):
                 raise
             link = message.link
             if not self.gc.download_upload:
-                await self.bot.send_message(
+                await self.bot.send_rich_message(
                     # 谁创建的转发任务就通知谁;未记录创建者时回退到登录账号自己。
                     chat_id=owner if owner is not None else client.me.id,
-                    text=_(
-                        '⚠️Unable to forward\n`{link}`\nContent protection restriction (you can set download-then-upload on restricted forwarding in [Settings] -> [Upload Settings]).').format(
-                        link=link
-                    ),
                     reply_parameters=ReplyParameters(message_id=message_id),
-                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
-                        BotButton.SETTING,
-                        callback_data=BotCallbackText.SETTING
-                    )]]))
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(
+                                text=rich_text(
+                                    _(
+                                        '⚠️Unable to forward\n`{link}`\nContent protection restriction (you can set download-then-upload on restricted forwarding in [Settings] -> [Upload Settings]).').format(
+                                        link=link
+                                    )
+                                )
+                            ),
+                            pyrogram.types.InputRichBlockButtons(buttons=[
+                                pyrogram.types.RichMessageButton(
+                                    BotButton.SETTING,
+                                    callback_data=BotCallbackText.SETTING
+                                )
+                            ])
+                        ],
+                        skip_entity_detection=True
+                    )
+                )
                 return None
             original_text = self.last_message.text
             try:
@@ -763,16 +771,21 @@ class TelegramRestrictedMediaDownloader(Bot):
                         getattr(origin_chat, 'username'),
                         str) else ''
                     if not self.gc.download_upload:
-                        await client.send_message(
+                        await client.send_rich_message(
                             chat_id=message.from_user.id,
-                            text=_(
-                                '⚠️Cannot forward\n`{origin_link}`\n{channel} has content protection restrictions.').format(
-                                origin_link=origin_link,
-                                channel=channel
-                            ),
-                            parse_mode=ParseMode.MARKDOWN,
                             reply_parameters=ReplyParameters(message_id=message.id),
-                            reply_markup=KeyboardButton.restrict_forward_button()
+                            rich_message=pyrogram.types.InputRichMessage(
+                                blocks=[
+                                    pyrogram.types.InputRichBlockParagraph(text=rich_text(_(
+                                        '⚠️Cannot forward\n`{origin_link}`\n{channel} has content protection restrictions.').format(
+                                        origin_link=origin_link,
+                                        channel=channel
+                                    )
+                                    )),
+                                    *KeyboardButton.restrict_forward_button()
+                                ],
+                                skip_entity_detection=True
+                            )
                         )
                         return None
                     original_text = self.last_message.text
@@ -848,16 +861,21 @@ class TelegramRestrictedMediaDownloader(Bot):
                         channel = '@' + origin_chat.username if isinstance(
                             getattr(origin_chat, 'username'), str) else ''
                         if not self.gc.download_upload:
-                            await client.send_message(
+                            await client.send_rich_message(
                                 chat_id=message.from_user.id,
-                                text=_(
-                                    '⚠️Cannot forward\n`{origin_link}`\n{channel} has content protection restrictions.').format(
-                                    origin_link=origin_link,
-                                    channel=channel
-                                ),
-                                parse_mode=ParseMode.MARKDOWN,
                                 reply_parameters=ReplyParameters(message_id=message.id),
-                                reply_markup=KeyboardButton.restrict_forward_button()
+                                rich_message=pyrogram.types.InputRichMessage(
+                                    blocks=[
+                                        pyrogram.types.InputRichBlockParagraph(text=rich_text(_(
+                                            '⚠️Cannot forward\n`{origin_link}`\n{channel} has content protection restrictions.').format(
+                                            origin_link=origin_link,
+                                            channel=channel
+                                        )
+                                        )),
+                                        *KeyboardButton.restrict_forward_button()
+                                    ],
+                                    skip_entity_detection=True
+                                )
                             )
                             return None
                         self.last_message.text = f'/download {origin_link} {start_id} {end_id}'
@@ -939,16 +957,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                         _('{text}\n🌟 Forward task completed\n(If a forwarding filter rule is set, see the terminal for forwarding records, not shown here)').format(
                             text=last_message.text.strip(loading)
                         )),
-                    reply_markup=InlineKeyboardMarkup(
-                        [
-                            [
-                                InlineKeyboardButton(
-                                    BotButton.CLICK_VIEW,
-                                    url=direct_url
-                                )
-                            ]
-                        ]
-                    ) if direct_url else None
+                    button_blocks=[
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
+                                BotButton.CLICK_VIEW,
+                                url=direct_url
+                            )
+                        ])
+                    ] if direct_url else None
                 )
         except AttributeError as e:
             log.exception(_('Error while forwarding due to "{error}"').format(error=e))
@@ -1006,19 +1022,20 @@ class TelegramRestrictedMediaDownloader(Bot):
                     info=list(self.listen_forward_chat)
                 ))
             console.log(p, style='#FF4689')
-            await client.send_message(
+            await client.send_rich_message(
                 chat_id=message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
-                text=f'{named_link}',
-                link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                reply_markup=InlineKeyboardMarkup([
-                    [
-                        InlineKeyboardButton(
-                            BotButton.ALREADY_REMOVE,
-                            callback_data=BotCallbackText.NULL
-                        )
-                    ]
-                ]
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(text=rich_text(f'{named_link}')),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
+                                BotButton.ALREADY_REMOVE,
+                                callback_data=BotCallbackText.NULL
+                            )
+                        ])
+                    ],
+                    skip_entity_detection=True
                 )
             )
             return None
@@ -1026,19 +1043,22 @@ class TelegramRestrictedMediaDownloader(Bot):
             self.cd.data = {
                 'link': link
             }
-        await client.send_message(
+        await client.send_rich_message(
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
-            text=_('`{named_link}`\n🚛Already in the listening list.').format(named_link=named_link),
-            link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-            reply_markup=InlineKeyboardMarkup([
-                [
-                    InlineKeyboardButton(
-                        BotButton.DROP,
-                        callback_data=f'{BotCallbackText.REMOVE_LISTEN_DOWNLOAD} {link}' if command == '/listen_download' else BotCallbackText.REMOVE_LISTEN_FORWARD
-                    )
-                ]
-            ]
+            rich_message=pyrogram.types.InputRichMessage(
+                blocks=[
+                    pyrogram.types.InputRichBlockParagraph(text=rich_text(_(
+                        '`{named_link}`\n🚛Already in the listening list.'
+                    ).format(named_link=named_link))),
+                    pyrogram.types.InputRichBlockButtons(buttons=[
+                        pyrogram.types.RichMessageButton(
+                            BotButton.DROP,
+                            callback_data=f'{BotCallbackText.REMOVE_LISTEN_DOWNLOAD} {link}' if command == '/listen_download' else BotCallbackText.REMOVE_LISTEN_FORWARD
+                        )
+                    ])
+                ],
+                skip_entity_detection=True
             )
         )
 
@@ -1180,12 +1200,14 @@ class TelegramRestrictedMediaDownloader(Bot):
                         last_message_id=last_message.id,
                         text=safe_message(f'{last_message.text}\n{link}'),
                         entities=last_message.entities,
-                        reply_markup=InlineKeyboardMarkup([[
-                            InlineKeyboardButton(
-                                BotButton.LOOKUP_LISTEN_INFO,
-                                callback_data=BotCallbackText.LOOKUP_LISTEN_INFO
-                            )
-                        ]])
+                        button_blocks=[
+                            pyrogram.types.InputRichBlockButtons(buttons=[
+                                pyrogram.types.RichMessageButton(
+                                    BotButton.LOOKUP_LISTEN_INFO,
+                                    callback_data=BotCallbackText.LOOKUP_LISTEN_INFO
+                                )
+                            ])
+                        ]
                     )
                     p = _('Listen-and-download added, channel link: "{link}".').format(link=link)
                     console.log(p, style='#FF4689')
@@ -1198,23 +1220,25 @@ class TelegramRestrictedMediaDownloader(Bot):
                 self.listen_forward_owner[f'{listen_link} {target_link}'] = message.from_user.id
                 # 登记创建者显示名,网页面板的「通知」板块据此展示"谁创建的任务"。
                 NoticeHub.add_owner(owner=message.from_user.id, user=message.from_user)
-                await client.send_message(
+                await client.send_rich_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                    text=_('✅Added `listen-and-forward` channel:\n{listen_link} ➡️ {target_link}').format(
-                        listen_link=listen_link,
-                        target_link=target_link
-                    ),
-                    reply_markup=InlineKeyboardMarkup(
-                        [
-                            [
-                                InlineKeyboardButton(
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(text=rich_text(_(
+                                '✅Added `listen-and-forward` channel:\n{listen_link} ➡️ {target_link}'
+                            ).format(
+                                listen_link=listen_link,
+                                target_link=target_link
+                            ))),
+                            pyrogram.types.InputRichBlockButtons(buttons=[
+                                pyrogram.types.RichMessageButton(
                                     BotButton.LOOKUP_LISTEN_INFO,
                                     callback_data=BotCallbackText.LOOKUP_LISTEN_INFO
                                 )
-                            ]
-                        ]
+                            ])
+                        ],
+                        skip_entity_detection=True
                     )
                 )
                 p = _('Added listen-and-forward, rule: "{origin} -> {target}".').format(
@@ -2015,14 +2039,18 @@ class TelegramRestrictedMediaDownloader(Bot):
         async def _progress(
                 _text: str,
                 _entities: Union[list, None],
-                _reply_markup: InlineKeyboardMarkup
+                _button_blocks: list
         ) -> Union[pyrogram.types.Message, None]:
             while True:
                 try:
                     return await callback_query.message.edit_text(
-                        text=_text,
-                        entities=_entities,
-                        reply_markup=_reply_markup
+                        rich_message=pyrogram.types.InputRichMessage(
+                            blocks=[
+                                pyrogram.types.InputRichBlockParagraph(text=rich_text(_text)),
+                                *_button_blocks
+                            ],
+                            skip_entity_detection=True
+                        )
                     )
                 except MessageNotModified:
                     return callback_query.message  # 文本本就相同,属良性no-op,按成功处理使外层照常更新时间戳,避免忙等重试。
@@ -2051,7 +2079,7 @@ class TelegramRestrictedMediaDownloader(Bot):
         cq = await _progress(
             _text=_setup_text,
             _entities=callback_query.message.entities,
-            _reply_markup=KeyboardButton.single_button(
+            _button_blocks=KeyboardButton.single_button(
                 text=BotButton.RETRIEVE_MESSAGE,
                 callback_data=BotCallbackText.NULL
             )
@@ -2108,7 +2136,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     count=0
                 ),
                 _entities=callback_query.message.entities,
-                _reply_markup=KeyboardButton.single_button(
+                _button_blocks=KeyboardButton.single_button(
                     text=BotButton.RETRIEVE_MESSAGE,
                     callback_data=BotCallbackText.NULL)
             )
@@ -2273,7 +2301,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             count=current_count
                         ),
                         _entities=callback_query.message.entities,
-                        _reply_markup=KeyboardButton.single_button(
+                        _button_blocks=KeyboardButton.single_button(
                             text=BotButton.RETRIEVE_MESSAGE,
                             callback_data=BotCallbackText.NULL)
                     )
@@ -2294,7 +2322,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         count=final_count
                     ),
                     _entities=callback_query.message.entities,
-                    _reply_markup=KeyboardButton.single_button(
+                    _button_blocks=KeyboardButton.single_button(
                         text=BotButton.RETRIEVE_MESSAGE,
                         callback_data=BotCallbackText.NULL)
                 )
@@ -2302,7 +2330,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                 await _progress(
                     _text=_('{text}\n❎ No matching messages found.').format(text=callback_query.message.text),
                     _entities=callback_query.message.entities,
-                    _reply_markup=KeyboardButton.single_button(
+                    _button_blocks=KeyboardButton.single_button(
                         text=BotButton.TASK_CANCEL,
                         callback_data=BotCallbackText.NULL
                     )
@@ -2340,7 +2368,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         count=0
                     ),
                     _entities=callback_query.message.entities,
-                    _reply_markup=KeyboardButton.single_button(
+                    _button_blocks=KeyboardButton.single_button(
                         text=BotButton.RETRIEVE_COMMENT,
                         callback_data=BotCallbackText.NULL)
                 )
@@ -2395,7 +2423,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                                         count=current_comment_count
                                     ),
                                     _entities=callback_query.message.entities,
-                                    _reply_markup=KeyboardButton.single_button(
+                                    _button_blocks=KeyboardButton.single_button(
                                         text=BotButton.RETRIEVE_COMMENT,
                                         callback_data=BotCallbackText.NULL)
                                 )
@@ -2450,7 +2478,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                                             count=current_comment_count
                                         ),
                                         _entities=callback_query.message.entities,
-                                        _reply_markup=KeyboardButton.single_button(
+                                        _button_blocks=KeyboardButton.single_button(
                                             text=BotButton.RETRIEVE_COMMENT,
                                             callback_data=BotCallbackText.NULL)
                                     )
@@ -2486,7 +2514,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                             count=final_comment_count
                         ),
                         _entities=callback_query.message.entities,
-                        _reply_markup=KeyboardButton.single_button(
+                        _button_blocks=KeyboardButton.single_button(
                             text=BotButton.RETRIEVE_COMMENT,
                             callback_data=BotCallbackText.NULL)
                     )
@@ -2502,12 +2530,12 @@ class TelegramRestrictedMediaDownloader(Bot):
                 if index < message_count:
                     continue
                 if assigned_count == total_count:
-                    reply_markup = KeyboardButton.single_button(
+                    button_blocks = KeyboardButton.single_button(
                         text=BotButton.TASK_ASSIGN,
                         callback_data=BotCallbackText.NULL
                     )
                 else:
-                    reply_markup = KeyboardButton.single_button(
+                    button_blocks = KeyboardButton.single_button(
                         text=BotButton.ASSIGNING_TASK,
                         callback_data=BotCallbackText.NULL
                     )
@@ -2536,7 +2564,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                                 progress=self.pb.bot(assigned_count, total_count)
                             ),
                             _entities=callback_query.message.entities,
-                            _reply_markup=reply_markup
+                            _button_blocks=button_blocks
                     ) is not None:
                         last_progress_update_time = current_time
                 await self.create_download_task(
@@ -2650,19 +2678,24 @@ class TelegramRestrictedMediaDownloader(Bot):
                         )
                     try:
                         await bot_message.edit_text(
-                            text=_(
-                                '{text}\n🔎 Matched messages: {messages} (media: {media}), comments: {comments}, total: {total}.\n{progress}').format(
-                                text=base_text,
-                                messages=message_count,
-                                media=matched_file_count,
-                                comments=comment_count,
-                                total=total_count,
-                                progress=progress_text
-                            ),
-                            entities=entities,
-                            reply_markup=KeyboardButton.single_button(
-                                text=BotButton.DOWNLOAD_TASK_DONE if finished else BotButton.DOWNLOAD_TASK_DOING,
-                                callback_data=BotCallbackText.NULL
+                            rich_message=pyrogram.types.InputRichMessage(
+                                blocks=[
+                                    pyrogram.types.InputRichBlockParagraph(text=rich_text(_(
+                                        '{text}\n🔎 Matched messages: {messages} (media: {media}), comments: {comments}, total: {total}.\n{progress}'
+                                    ).format(
+                                        text=base_text,
+                                        messages=message_count,
+                                        media=matched_file_count,
+                                        comments=comment_count,
+                                        total=total_count,
+                                        progress=progress_text
+                                    ))),
+                                    *KeyboardButton.single_button(
+                                        text=BotButton.DOWNLOAD_TASK_DONE if finished else BotButton.DOWNLOAD_TASK_DOING,
+                                        callback_data=BotCallbackText.NULL
+                                    )
+                                ],
+                                skip_entity_detection=True
                             )
                         )
                     except MessageNotModified:

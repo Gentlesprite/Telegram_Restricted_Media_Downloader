@@ -45,9 +45,7 @@ from pyrogram.errors.exceptions.bad_request_400 import (
 )
 from pyrogram.types.bots_and_keyboards import (
     BotCommand,
-    CallbackQuery,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup
+    CallbackQuery
 )
 
 from module import (
@@ -503,24 +501,27 @@ class Bot:
                 keyword_index: int = self.adding_keywords[chat_id].index(keyword)
                 try:
                     await callback_query.message.edit_text(
-                        text=_('🚛`{keyword}` has been added. Choose how to handle it to continue.').format(
-                            keyword=keyword
-                        ),
-                        reply_markup=attach_task(
-                            InlineKeyboardMarkup([
-                                [
-                                    InlineKeyboardButton(
-                                        text=BotButton.DROP,
-                                        callback_data=f'{BotCallbackText.DROP_KEYWORD}_{keyword_index}'
-                                    ),
-                                    InlineKeyboardButton(
-                                        text=BotButton.IGNORE,
-                                        callback_data=f'{BotCallbackText.IGNORE_KEYWORD}_{keyword_index}'
+                        rich_message=pyrogram.types.InputRichMessage(
+                            blocks=[
+                                pyrogram.types.InputRichBlockParagraph(text=rich_text(
+                                    _('🚛`{keyword}` has been added. Choose how to handle it to continue.').format(
+                                        keyword=keyword
                                     )
-                                ]
-                            ]
-                            ),
-                            chat_id
+                                )),
+                                *attach_task([
+                                    pyrogram.types.InputRichBlockButtons(buttons=[
+                                        pyrogram.types.RichMessageButton(
+                                            text=BotButton.DROP,
+                                            callback_data=f'{BotCallbackText.DROP_KEYWORD}_{keyword_index}'
+                                        ),
+                                        pyrogram.types.RichMessageButton(
+                                            text=BotButton.IGNORE,
+                                            callback_data=f'{BotCallbackText.IGNORE_KEYWORD}_{keyword_index}'
+                                        )
+                                    ])
+                                ], chat_id)
+                            ],
+                            skip_entity_detection=True
                         )
                     )
                     return None
@@ -531,10 +532,19 @@ class Bot:
                 self.adding_keywords.setdefault(chat_id, []).append(keyword)  # 添加到正在添加的关键词列表。
                 try:
                     await callback_query.message.edit_text(
-                        text=callback_prompt(),
-                        reply_markup=attach_task(
-                            KeyboardButton.keyword_filter_button(self.adding_keywords.get(chat_id, [])),
-                            chat_id
+                        rich_message=pyrogram.types.InputRichMessage(
+                            blocks=[
+                                pyrogram.types.InputRichBlockParagraph(
+                                    text=rich_text(callback_prompt())
+                                ),
+                                *attach_task(
+                                    KeyboardButton.keyword_filter_button(
+                                        self.adding_keywords.get(chat_id, [])
+                                    ),
+                                    chat_id
+                                )
+                            ],
+                            skip_entity_detection=True
                         )
                     )
                 except MessageNotModified:
@@ -794,20 +804,25 @@ class Bot:
         topic_line: str = _('\n🗂️Included topics: {topic_prompt}').format(
             topic_prompt=topic_prompt
         ) if topic_prompt else ''
-        await client.send_message(
+        await client.send_rich_message(
             chat_id=message.from_user.id,
             reply_parameters=ReplyParameters(message_id=message.id),
-            text=_(
-                '💬Download channel:`{chat_id}`\n⏮️Current start date:Earliest\n⏭️Current end date:Latest\n📝Current download types:{format_dtype}\n🔑Current matching keyword:Not set\n👥Include comments:{comment}{topic_line}').format(
-                chat_id=chat_id,
-                format_dtype=format_dtype,
-                comment=comment,
-                topic_line=topic_line
-            ),
-            reply_markup=attach_task(
-                KeyboardButton.download_chat_filter_button(include_comment, bool(topic)), chat_id
-            ),
-            link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+            rich_message=pyrogram.types.InputRichMessage(
+                blocks=[
+                    pyrogram.types.InputRichBlockParagraph(text=rich_text(_(
+                        '💬Download channel:`{chat_id}`\n⏮️Current start date:Earliest\n⏭️Current end date:Latest\n📝Current download types:{format_dtype}\n🔑Current matching keyword:Not set\n👥Include comments:{comment}{topic_line}').format(
+                        chat_id=chat_id,
+                        format_dtype=format_dtype,
+                        comment=comment,
+                        topic_line=topic_line
+                    )
+                    )),
+                    *attach_task(
+                        KeyboardButton.download_chat_filter_button(include_comment, bool(topic)), chat_id
+                    )
+                ],
+                skip_entity_detection=True
+            )
         )
 
     @staticmethod
@@ -815,20 +830,30 @@ class Bot:
             client: pyrogram.Client,
             message: pyrogram.types.Message,
             text: list, last_message_id: int = -1,
-            reply_markup: Union[pyrogram.types.InlineKeyboardMarkup, None] = None,
+            button_blocks: Union[list, None] = None,
             requester: Union[int, None] = None,
             entities: Union[list, None] = None
     ) -> pyrogram.types.Message:
         chat_id = requester if requester is not None else message.from_user.id
         if len(text) == 1 and last_message_id != -1:
-            last_bot_message = await client.edit_message_text(
-                chat_id=chat_id,
-                message_id=last_message_id,
-                text=text[0],
-                entities=entities,
-                link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                reply_markup=reply_markup
-            )
+            if button_blocks:
+                blocks = [pyrogram.types.InputRichBlockParagraph(text=rich_text(text[0])), *button_blocks]
+                last_bot_message = await client.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=last_message_id,
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=blocks,
+                        skip_entity_detection=True
+                    )
+                )
+            else:
+                last_bot_message = await client.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=last_message_id,
+                    text=text[0],
+                    entities=entities,
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+                )
             return last_bot_message
 
         last_bot_messages: list = []
@@ -1186,43 +1211,45 @@ class Bot:
             client: Union[pyrogram.Client, None] = None,
             message: Union[pyrogram.types.Message, None] = None
     ) -> Union[None, dict]:
-        keyboard = InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        BotButton.LINK_TABLE,
-                        callback_data=BotCallbackText.LINK_TABLE
-                    ),
-                    InlineKeyboardButton(
-                        BotButton.COUNT_TABLE,
-                        callback_data=BotCallbackText.COUNT_TABLE
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        BotButton.UPLOAD_TABLE,
-                        callback_data=BotCallbackText.UPLOAD_TABLE
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        BotButton.HELP_PAGE,
-                        callback_data=BotCallbackText.BACK_HELP
-                    )
-                ]
-            ]
-        )
+        button_blocks = [
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    BotButton.LINK_TABLE,
+                    callback_data=BotCallbackText.LINK_TABLE
+                ),
+                pyrogram.types.RichMessageButton(
+                    BotButton.COUNT_TABLE,
+                    callback_data=BotCallbackText.COUNT_TABLE
+                )
+            ]),
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    BotButton.UPLOAD_TABLE,
+                    callback_data=BotCallbackText.UPLOAD_TABLE
+                )
+            ]),
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    BotButton.HELP_PAGE,
+                    callback_data=BotCallbackText.BACK_HELP
+                )
+            ])
+        ]
         text: str = _('📊Please select the type of 「statistics table」 to output:')
         if not all([client, message]):
             return {
-                'keyboard': keyboard,
+                'button_blocks': button_blocks,
                 'text': text
             }
-        await client.send_message(
+        await client.send_rich_message(
             chat_id=message.from_user.id,
-            text=text,
-            link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-            reply_markup=keyboard
+            rich_message=pyrogram.types.InputRichMessage(
+                blocks=[
+                    pyrogram.types.InputRichBlockParagraph(text=rich_text(text)),
+                    *button_blocks
+                ],
+                skip_entity_detection=True
+            )
         )
 
     async def get_forward_link_from_bot(
@@ -1828,35 +1855,48 @@ class Bot:
             edit_message: Union[pyrogram.types.Message, None] = None
     ) -> None:
         """/auth 入口选项面板:先给一排按钮,点'查看授权列表'才展示用户列表。"""
-        auth_menu_kb = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton(
+        auth_button_blocks = [
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
                     text=BotButton.AUTH,
                     callback_data=BotCallbackText.AUTH
                 ),
-                InlineKeyboardButton(
+                pyrogram.types.RichMessageButton(
                     text=BotButton.VIEW_AUTH_LIST,
                     callback_data=BotCallbackText.VIEW_AUTH_LIST
                 )
-            ],
-            [
-                InlineKeyboardButton(
+            ]),
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
                     text=BotButton.HELP_PAGE,
                     callback_data=BotCallbackText.MENU_BACK
                 )
-            ]
-        ])
+            ])
+        ]
         text = _('🔐「Authorized users」management, please select an action:')
         if edit_message is not None:
             try:
-                await edit_message.edit_text(text=text, reply_markup=auth_menu_kb)
+                await edit_message.edit_text(
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(text=rich_text(text)),
+                            *auth_button_blocks
+                        ],
+                        skip_entity_detection=True
+                    )
+                )
             except MessageNotModified:
                 pass
         else:
-            await client.send_message(
+            await client.send_rich_message(
                 chat_id=message.from_user.id,
-                text=text,
-                reply_markup=auth_menu_kb
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(text=rich_text(text)),
+                        *auth_button_blocks
+                    ],
+                    skip_entity_detection=True
+                )
             )
 
     async def show_authorized_users(
@@ -2134,7 +2174,7 @@ class Bot:
             message: pyrogram.types.Message,
             last_message_id: int,
             text: Union[str, List[str]],
-            reply_markup: Union[pyrogram.types.InlineKeyboardMarkup, None] = None,
+            button_blocks: Union[list, None] = None,
             entities: Union[list, None] = None
     ) -> Union[pyrogram.types.Message, None]:
         while True:
@@ -2145,19 +2185,31 @@ class Bot:
                         message=message,
                         last_message_id=last_message_id,
                         text=text,
-                        reply_markup=reply_markup,
+                        button_blocks=button_blocks,
                         entities=entities
                     )
                     return last_message
                 elif isinstance(text, str):
-                    await client.edit_message_text(
-                        chat_id=message.from_user.id,
-                        message_id=last_message_id,
-                        text=text,
-                        entities=entities,
-                        link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                        reply_markup=reply_markup
-                    )
+                    if button_blocks:
+                        await client.edit_message_text(
+                            chat_id=message.from_user.id,
+                            message_id=last_message_id,
+                            rich_message=pyrogram.types.InputRichMessage(
+                                blocks=[
+                                    pyrogram.types.InputRichBlockParagraph(text=rich_text(text)),
+                                    *button_blocks
+                                ],
+                                skip_entity_detection=True
+                            )
+                        )
+                    else:
+                        await client.edit_message_text(
+                            chat_id=message.from_user.id,
+                            message_id=last_message_id,
+                            text=text,
+                            entities=entities,
+                            link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+                        )
                     return None
             except MessageNotModified:
                 return None
@@ -2225,26 +2277,31 @@ class KeyboardButton:
         elif choice == BotCallbackText.EXPORT_UPLOAD_TABLE:
             export_callback_data = BotCallbackText.EXPORT_UPLOAD_TABLE
         try:
-            await self.callback_query.message.edit_reply_markup(InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.EXPORT_TABLE,
-                            callback_data=export_callback_data
+            await self.callback_query.message.edit_text(
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(
+                            text=rich_text(self.callback_query.message.text or '')
                         ),
-                        InlineKeyboardButton(
-                            text=BotButton.RESELECT,
-                            callback_data=BotCallbackText.BACK_TABLE
-                        )
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
+                                text=BotButton.EXPORT_TABLE,
+                                callback_data=export_callback_data
+                            ),
+                            pyrogram.types.RichMessageButton(
+                                text=BotButton.RESELECT,
+                                callback_data=BotCallbackText.BACK_TABLE
+                            )
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
+                                text=BotButton.HELP_PAGE,
+                                callback_data=BotCallbackText.BACK_HELP
+                            )
+                        ])
                     ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.HELP_PAGE,
-                            callback_data=BotCallbackText.BACK_HELP
-                        )
-                    ]
-                ]
-            )
+                    skip_entity_detection=True
+                )
             )
         except MessageNotModified:
             pass
@@ -2255,47 +2312,53 @@ class KeyboardButton:
             user_config: dict
     ) -> None:
         try:
-            await self.callback_query.message.edit_reply_markup(
-                InlineKeyboardMarkup([
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.CLOSE_NOTICE if global_config.get(
-                                BotCallbackText.NOTICE) else BotButton.OPEN_NOTICE,
-                            callback_data=BotCallbackText.NOTICE
+            await self.callback_query.message.edit_text(
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(
+                            text=rich_text(self.callback_query.message.text or '')
                         ),
-                        InlineKeyboardButton(
-                            text=BotButton.EXPORT_TABLE,
-                            callback_data=BotCallbackText.EXPORT_TABLE
-                        )
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
+                                text=BotButton.CLOSE_NOTICE if global_config.get(
+                                    BotCallbackText.NOTICE) else BotButton.OPEN_NOTICE,
+                                callback_data=BotCallbackText.NOTICE
+                            ),
+                            pyrogram.types.RichMessageButton(
+                                text=BotButton.EXPORT_TABLE,
+                                callback_data=BotCallbackText.EXPORT_TABLE
+                            )
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
+                                text=BotButton.CLOSE_EXIT_SHUTDOWN if user_config.get(
+                                    'is_shutdown') else BotButton.OPEN_EXIT_SHUTDOWN,
+                                callback_data=BotCallbackText.SHUTDOWN
+                            ),
+                            pyrogram.types.RichMessageButton(
+                                text=BotButton.FORWARD_SETTING,
+                                callback_data=BotCallbackText.FORWARD_SETTING
+                            )
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
+                                text=BotButton.DOWNLOAD_SETTING,
+                                callback_data=BotCallbackText.DOWNLOAD_SETTING
+                            ),
+                            pyrogram.types.RichMessageButton(
+                                text=BotButton.UPLOAD_SETTING,
+                                callback_data=BotCallbackText.UPLOAD_SETTING
+                            )
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
+                                text=BotButton.HELP_PAGE,
+                                callback_data=BotCallbackText.BACK_HELP
+                            )
+                        ])
                     ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.CLOSE_EXIT_SHUTDOWN if user_config.get(
-                                'is_shutdown') else BotButton.OPEN_EXIT_SHUTDOWN,
-                            callback_data=BotCallbackText.SHUTDOWN
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.FORWARD_SETTING,
-                            callback_data=BotCallbackText.FORWARD_SETTING
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.DOWNLOAD_SETTING,
-                            callback_data=BotCallbackText.DOWNLOAD_SETTING
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.UPLOAD_SETTING,
-                            callback_data=BotCallbackText.UPLOAD_SETTING
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.HELP_PAGE,
-                            callback_data=BotCallbackText.BACK_HELP
-                        )
-                    ]
-                ])
+                    skip_entity_detection=True
+                )
             )
         except MessageNotModified:
             pass
@@ -2309,28 +2372,32 @@ class KeyboardButton:
             global_config: dict
     ):
         try:
-            await self.callback_query.message.edit_reply_markup(
-                InlineKeyboardMarkup(
-                    [
-                        [
-                            InlineKeyboardButton(
+            await self.callback_query.message.edit_text(
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(
+                            text=rich_text(self.callback_query.message.text or '')
+                        ),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.CLOSE_UPLOAD_DOWNLOAD if global_config.get('upload').get(
                                     'download_upload') else BotButton.OPEN_UPLOAD_DOWNLOAD,
                                 callback_data=BotCallbackText.UPLOAD_DOWNLOAD
                             ),
-                            InlineKeyboardButton(
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.CLOSE_UPLOAD_DOWNLOAD_DELETE if global_config.get('upload').get(
                                     'delete') else BotButton.OPEN_UPLOAD_DOWNLOAD_DELETE,
                                 callback_data=BotCallbackText.UPLOAD_DOWNLOAD_DELETE
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.RETURN,
                                 callback_data=BotCallbackText.SETTING
                             )
-                        ]
-                    ]
+                        ])
+                    ],
+                    skip_entity_detection=True
                 )
             )
         except MessageNotModified:
@@ -2341,64 +2408,68 @@ class KeyboardButton:
             user_config: dict
     ):
         try:
-            await self.callback_query.message.edit_reply_markup(
-                InlineKeyboardMarkup(
-                    [
-                        [
-                            InlineKeyboardButton(
+            await self.callback_query.message.edit_text(
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(
+                            text=rich_text(self.callback_query.message.text or '')
+                        ),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.VIDEO_ON if DownloadType.VIDEO in user_config.get(
                                     'download_type') else BotButton.VIDEO_OFF,
                                 callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VIDEO
                             ),
-                            InlineKeyboardButton(
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.PHOTO_ON if DownloadType.PHOTO in user_config.get(
                                     'download_type') else BotButton.PHOTO_OFF,
                                 callback_data=BotCallbackText.TOGGLE_DOWNLOAD_PHOTO
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.AUDIO_ON if DownloadType.AUDIO in user_config.get(
                                     'download_type') else BotButton.AUDIO_OFF,
                                 callback_data=BotCallbackText.TOGGLE_DOWNLOAD_AUDIO
                             ),
-                            InlineKeyboardButton(
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.VOICE_ON if DownloadType.VOICE in user_config.get(
                                     'download_type') else BotButton.VOICE_OFF,
                                 callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VOICE
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.ANIMATION_ON if DownloadType.ANIMATION in user_config.get(
                                     'download_type') else BotButton.ANIMATION_OFF,
                                 callback_data=BotCallbackText.TOGGLE_DOWNLOAD_ANIMATION
                             ),
-                            InlineKeyboardButton(
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.DOCUMENT_ON if DownloadType.DOCUMENT in user_config.get(
                                     'download_type') else BotButton.DOCUMENT_OFF,
                                 callback_data=BotCallbackText.TOGGLE_DOWNLOAD_DOCUMENT
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.VIDEO_NOTE_ON if DownloadType.VIDEO_NOTE in user_config.get(
                                     'download_type') else BotButton.VIDEO_NOTE_OFF,
                                 callback_data=BotCallbackText.TOGGLE_DOWNLOAD_VIDEO_NOTE
                             ),
-                            InlineKeyboardButton(
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.LIVE_PHOTO_ON if DownloadType.LIVE_PHOTO in user_config.get(
                                     'download_type') else BotButton.LIVE_PHOTO_OFF,
                                 callback_data=BotCallbackText.TOGGLE_DOWNLOAD_LIVE_PHOTO
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.RETURN,
                                 callback_data=BotCallbackText.SETTING
                             )
-                        ]
-                    ]
+                        ])
+                    ],
+                    skip_entity_detection=True
                 )
             )
         except MessageNotModified:
@@ -2409,71 +2480,75 @@ class KeyboardButton:
             global_config: dict
     ):
         try:
-            await self.callback_query.message.edit_reply_markup(
-                InlineKeyboardMarkup(
-                    [
-                        [
-                            InlineKeyboardButton(
+            await self.callback_query.message.edit_text(
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(
+                            text=rich_text(self.callback_query.message.text or '')
+                        ),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.VIDEO_ON if global_config.get('forward_type').get(
                                     'video') else BotButton.VIDEO_OFF,
                                 callback_data=BotCallbackText.TOGGLE_FORWARD_VIDEO
                             ),
-                            InlineKeyboardButton(
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.PHOTO_ON if global_config.get('forward_type').get(
                                     'photo') else BotButton.PHOTO_OFF,
                                 callback_data=BotCallbackText.TOGGLE_FORWARD_PHOTO
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.AUDIO_ON if global_config.get('forward_type').get(
                                     'audio') else BotButton.AUDIO_OFF,
                                 callback_data=BotCallbackText.TOGGLE_FORWARD_AUDIO
                             ),
-                            InlineKeyboardButton(
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.VOICE_ON if global_config.get('forward_type').get(
                                     'voice') else BotButton.VOICE_OFF,
                                 callback_data=BotCallbackText.TOGGLE_FORWARD_VOICE
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.ANIMATION_ON if global_config.get('forward_type').get(
                                     'animation') else BotButton.ANIMATION_OFF,
                                 callback_data=BotCallbackText.TOGGLE_FORWARD_ANIMATION
                             ),
-                            InlineKeyboardButton(
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.DOCUMENT_ON if global_config.get('forward_type').get(
                                     'document') else BotButton.DOCUMENT_OFF,
                                 callback_data=BotCallbackText.TOGGLE_FORWARD_DOCUMENT
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.TEXT_ON if global_config.get('forward_type').get(
                                     'text') else BotButton.TEXT_OFF,
                                 callback_data=BotCallbackText.TOGGLE_FORWARD_TEXT
                             ),
-                            InlineKeyboardButton(
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.VIDEO_NOTE_ON if global_config.get('forward_type').get(
                                     'video_note') else BotButton.VIDEO_NOTE_OFF,
                                 callback_data=BotCallbackText.TOGGLE_FORWARD_VIDEO_NOTE
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.LIVE_PHOTO_ON if global_config.get('forward_type').get(
                                     'live_photo') else BotButton.LIVE_PHOTO_OFF,
                                 callback_data=BotCallbackText.TOGGLE_FORWARD_LIVE_PHOTO
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.RETURN,
                                 callback_data=BotCallbackText.SETTING
                             )
-                        ]
-                    ]
+                        ])
+                    ],
+                    skip_entity_detection=True
                 )
             )
         except MessageNotModified:
@@ -2483,72 +2558,70 @@ class KeyboardButton:
     def toggle_download_chat_type_filter_button(
             filter_config: dict
     ):
-        return InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        text=BotButton.VIDEO_ON if
-                        filter_config['download_type'][
-                            DownloadType.VIDEO] else BotButton.VIDEO_OFF,
-                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO
-                    ),
-                    InlineKeyboardButton(
-                        text=BotButton.PHOTO_ON if
-                        filter_config['download_type'][
-                            DownloadType.PHOTO] else BotButton.PHOTO_OFF,
-                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        text=BotButton.AUDIO_ON if
-                        filter_config['download_type'][
-                            DownloadType.AUDIO] else BotButton.AUDIO_OFF,
-                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO
-                    ),
-                    InlineKeyboardButton(
-                        text=BotButton.VOICE_ON if
-                        filter_config['download_type'][
-                            DownloadType.VOICE] else BotButton.VOICE_OFF,
-                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        text=BotButton.ANIMATION_ON if
-                        filter_config['download_type'][
-                            DownloadType.ANIMATION] else BotButton.ANIMATION_OFF,
-                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION
-                    ),
-                    InlineKeyboardButton(
-                        text=BotButton.DOCUMENT_ON if
-                        filter_config['download_type'][
-                            DownloadType.DOCUMENT] else BotButton.DOCUMENT_OFF,
-                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        text=BotButton.VIDEO_NOTE_ON if
-                        filter_config['download_type'][
-                            DownloadType.VIDEO_NOTE] else BotButton.VIDEO_NOTE_OFF,
-                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE
-                    ),
-                    InlineKeyboardButton(
-                        text=BotButton.LIVE_PHOTO_ON if
-                        filter_config['download_type'][
-                            DownloadType.LIVE_PHOTO] else BotButton.LIVE_PHOTO_OFF,
-                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_LIVE_PHOTO
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        text=BotButton.RETURN,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
-                    )
-                ]
-            ]
-        )
+        return [
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.VIDEO_ON if
+                    filter_config['download_type'][
+                        DownloadType.VIDEO] else BotButton.VIDEO_OFF,
+                    callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO
+                ),
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.PHOTO_ON if
+                    filter_config['download_type'][
+                        DownloadType.PHOTO] else BotButton.PHOTO_OFF,
+                    callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_PHOTO
+                )
+            ]),
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.AUDIO_ON if
+                    filter_config['download_type'][
+                        DownloadType.AUDIO] else BotButton.AUDIO_OFF,
+                    callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_AUDIO
+                ),
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.VOICE_ON if
+                    filter_config['download_type'][
+                        DownloadType.VOICE] else BotButton.VOICE_OFF,
+                    callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VOICE
+                )
+            ]),
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.ANIMATION_ON if
+                    filter_config['download_type'][
+                        DownloadType.ANIMATION] else BotButton.ANIMATION_OFF,
+                    callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_ANIMATION
+                ),
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.DOCUMENT_ON if
+                    filter_config['download_type'][
+                        DownloadType.DOCUMENT] else BotButton.DOCUMENT_OFF,
+                    callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_DOCUMENT
+                )
+            ]),
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.VIDEO_NOTE_ON if
+                    filter_config['download_type'][
+                        DownloadType.VIDEO_NOTE] else BotButton.VIDEO_NOTE_OFF,
+                    callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_VIDEO_NOTE
+                ),
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.LIVE_PHOTO_ON if
+                    filter_config['download_type'][
+                        DownloadType.LIVE_PHOTO] else BotButton.LIVE_PHOTO_OFF,
+                    callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_LIVE_PHOTO
+                )
+            ]),
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.RETURN,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
+                )
+            ])
+        ]
 
     async def toggle_table_button(
             self,
@@ -2556,35 +2629,39 @@ class KeyboardButton:
             choice: Union[str, None] = None
     ) -> None:
         try:
-            await self.callback_query.message.edit_reply_markup(
-                InlineKeyboardMarkup(
-                    [
-                        [
-                            InlineKeyboardButton(
+            await self.callback_query.message.edit_text(
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(
+                            text=rich_text(self.callback_query.message.text or '')
+                        ),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.CLOSE_LINK_TABLE if config.get(
                                     'export_table').get('link') else BotButton.OPEN_LINK_TABLE,
                                 callback_data=BotCallbackText.TOGGLE_LINK_TABLE
                             ),
-                            InlineKeyboardButton(
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.CLOSE_COUNT_TABLE if config.get(
                                     'export_table').get('count') else BotButton.OPEN_COUNT_TABLE,
                                 callback_data=BotCallbackText.TOGGLE_COUNT_TABLE
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.CLOSE_UPLOAD_TABLE if config.get(
                                     'export_table').get('upload') else BotButton.OPEN_UPLOAD_TABLE,
                                 callback_data=BotCallbackText.TOGGLE_UPLOAD_TABLE
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.RETURN,
                                 callback_data=BotCallbackText.SETTING
                             )
-                        ]
-                    ]
+                        ])
+                    ],
+                    skip_entity_detection=True
                 )
             )
         except MessageNotModified:
@@ -2616,38 +2693,47 @@ class KeyboardButton:
 
     async def back_table_button(self):
         try:
-            await self.callback_query.message.edit_reply_markup(
-                InlineKeyboardMarkup(
-                    [
-                        [
-                            InlineKeyboardButton(
+            await self.callback_query.message.edit_text(
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(
+                            text=rich_text(self.callback_query.message.text or '')
+                        ),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.RESELECT,
                                 callback_data=BotCallbackText.BACK_TABLE
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
+                        ]),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.HELP_PAGE,
                                 callback_data=BotCallbackText.BACK_HELP
                             )
-                        ]
-                    ]
-                ))
+                        ])
+                    ],
+                    skip_entity_detection=True
+                )
+            )
         except MessageNotModified:
             pass
 
     async def task_assign_button(self):
         try:
-            await self.callback_query.message.edit_reply_markup(
-                InlineKeyboardMarkup(
-                    [
-                        [
-                            InlineKeyboardButton(
+            await self.callback_query.message.edit_text(
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(
+                            text=rich_text(self.callback_query.message.text or '')
+                        ),
+                        pyrogram.types.InputRichBlockButtons(buttons=[
+                            pyrogram.types.RichMessageButton(
                                 text=BotButton.TASK_ASSIGN,
                                 callback_data=BotCallbackText.NULL
                             )
-                        ]
-                    ]
+                        ])
+                    ],
+                    skip_entity_detection=True
                 )
             )
         except MessageNotModified:
@@ -2655,35 +2741,29 @@ class KeyboardButton:
 
     @staticmethod
     def restrict_forward_button():
-        return (
-            InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton(
-                            BotButton.DOWNLOAD,
-                            callback_data=BotCallbackText.DOWNLOAD
-                        ),
-                        InlineKeyboardButton(
-                            BotButton.DOWNLOAD_UPLOAD,
-                            callback_data=BotCallbackText.DOWNLOAD_UPLOAD
-                        ),
-                    ]
-                ]
-            )
-        )
+        return [
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    BotButton.DOWNLOAD,
+                    callback_data=BotCallbackText.DOWNLOAD
+                ),
+                pyrogram.types.RichMessageButton(
+                    BotButton.DOWNLOAD_UPLOAD,
+                    callback_data=BotCallbackText.DOWNLOAD_UPLOAD
+                )
+            ])
+        ]
 
     @staticmethod
     def single_button(text: str, callback_data: str):
-        return InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        text=text,
-                        callback_data=callback_data
-                    )
-                ]
-            ]
-        )
+        return [
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    text=text,
+                    callback_data=callback_data
+                )
+            ])
+        ]
 
     @staticmethod
     def download_chat_filter_button(
@@ -2691,48 +2771,46 @@ class KeyboardButton:
             has_topic: bool = False
     ):
         topic_row = [
-            [
-                InlineKeyboardButton(
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
                     text=BotButton.TOPIC_SETTING,
                     callback_data=BotCallbackText.DOWNLOAD_CHAT_TOPIC_FILTER
                 )
-            ]
+            ])
         ] if has_topic else []
-        return InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        text=BotButton.DATE_RANGE_SETTING,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER
-                    ),
-                    InlineKeyboardButton(
-                        text=BotButton.DOWNLOAD_DTYPE_SETTING,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER
-                    ),
-                ],
-                [
-                    InlineKeyboardButton(
-                        text=BotButton.KEYWORD_FILTER_SETTING,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER
-                    ),
-                    InlineKeyboardButton(
-                        text=BotButton.INCLUDE_COMMENT if include_comment else BotButton.IGNORE_COMMENT,
-                        callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_COMMENT
-                    ),
-                ],
-                *topic_row,
-                [
-                    InlineKeyboardButton(
-                        text=BotButton.EXECUTE_TASK,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID
-                    ),
-                    InlineKeyboardButton(
-                        text=BotButton.CANCEL_TASK,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
-                    )
-                ]
-            ]
-        )
+        return [
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.DATE_RANGE_SETTING,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER
+                ),
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.DOWNLOAD_DTYPE_SETTING,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_DTYPE_FILTER
+                )
+            ]),
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.KEYWORD_FILTER_SETTING,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_KEYWORD_FILTER
+                ),
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.INCLUDE_COMMENT if include_comment else BotButton.IGNORE_COMMENT,
+                    callback_data=BotCallbackText.TOGGLE_DOWNLOAD_CHAT_COMMENT
+                )
+            ]),
+            *topic_row,
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.EXECUTE_TASK,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_ID
+                ),
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.CANCEL_TASK,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
+                )
+            ])
+        ]
 
     @staticmethod
     def topic_filter_button(
@@ -2762,20 +2840,20 @@ class KeyboardButton:
                 mark = '✅' if topic[topic_key] else '❌'
                 topic_id = topic_key.split('(')[0]
                 row.append(
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=f'{mark}{topic_key}',
                         callback_data=f'{BotCallbackPrefix.TOGGLE_TOPIC}{topic_id}'
                     )
                 )
-            keyboard.append(row)
+            keyboard.append(pyrogram.types.InputRichBlockButtons(buttons=row))
         # 单个批量开关放在话题按钮与翻页排之间,跨页作用于全部话题,减少逐个点击的步骤。
         # 只剩一个开启(即"全部关闭保留1"的结果态)时显示为"全部打开",其余状态为"全部关闭",
         # 点击后在两态间互相切换;话题数<=1时不渲染,避免出现点了无反应的死按钮。
         if len(topic) > 1:
             only_one_enabled: bool = list(topic.values()).count(True) == 1
             keyboard.append(
-                [
-                    InlineKeyboardButton(
+                pyrogram.types.InputRichBlockButtons(buttons=[
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.ENABLE_ALL if only_one_enabled else _(
                             '{disable_all} (but keep the topic with id 1)').format(
                             disable_all=BotButton.DISABLE_ALL
@@ -2783,36 +2861,36 @@ class KeyboardButton:
                         callback_data=(BotCallbackText.TOPIC_ENABLE_ALL if only_one_enabled
                                        else BotCallbackText.TOPIC_DISABLE_ALL)
                     )
-                ]
+                ])
             )
         if total_pages > 1:
             keyboard.append(
-                [
-                    InlineKeyboardButton(
+                pyrogram.types.InputRichBlockButtons(buttons=[
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.TOPIC_PREV_PAGE,
                         # 第一页点上一页循环到最后一页,避免停在原地无反馈。
                         callback_data=f'{BotCallbackPrefix.TOPIC_PAGE}{page - 1 if page > 1 else total_pages}'
                     ),
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.TOPIC_PAGE_INFO.format(page=page, total=total_pages),
                         callback_data=f'{BotCallbackPrefix.TOPIC_RANGE}1_{total_pages}'
                     ),
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.TOPIC_NEXT_PAGE,
                         # 最后一页点下一页循环到第一页,避免停在原地无反馈。
                         callback_data=f'{BotCallbackPrefix.TOPIC_PAGE}{page + 1 if page < total_pages else 1}'
                     )
-                ]
+                ])
             )
         keyboard.append(
-            [
-                InlineKeyboardButton(
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
                     text=BotButton.RETURN,
                     callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
                 )
-            ]
+            ])
         )
-        return InlineKeyboardMarkup(keyboard), page, total_pages
+        return keyboard, page, total_pages
 
     @staticmethod
     def topic_page_menu_button(
@@ -2837,8 +2915,8 @@ class KeyboardButton:
         keyboard = []
         if span <= max_buttons:
             for row_start in range(start, end + 1, per_row):
-                keyboard.append([
-                    InlineKeyboardButton(
+                keyboard.append(pyrogram.types.InputRichBlockButtons(buttons=[
+                    pyrogram.types.RichMessageButton(
                         text=str(n),
                         callback_data=f'{BotCallbackPrefix.TOPIC_PAGE}{n}',
                         # 当前所在页用绿色按钮标记,与日期/年份面板的选中态风格一致。
@@ -2846,7 +2924,7 @@ class KeyboardButton:
                                else pyrogram.enums.ButtonStyle.DEFAULT)
                     )
                     for n in range(row_start, min(row_start + per_row, end + 1))
-                ])
+                ]))
         else:
             width = max(1, (span + max_buttons - 1) // max_buttons)
             ranges = []
@@ -2856,8 +2934,8 @@ class KeyboardButton:
                 ranges.append((cursor, range_end))
                 cursor = range_end + 1
             for index in range(0, len(ranges), per_row):
-                keyboard.append([
-                    InlineKeyboardButton(
+                keyboard.append(pyrogram.types.InputRichBlockButtons(buttons=[
+                    pyrogram.types.RichMessageButton(
                         text=f'{range_start}~{range_end}',
                         callback_data=f'{BotCallbackPrefix.TOPIC_RANGE}{range_start}_{range_end}',
                         # 当前页落在某区间时,该区间也标记绿色,与页码层选中态呼应,指明下钻路径。
@@ -2865,47 +2943,45 @@ class KeyboardButton:
                                else pyrogram.enums.ButtonStyle.DEFAULT)
                     )
                     for range_start, range_end in ranges[index:index + per_row]
-                ])
+                ]))
         # 已在顶层时不再显示「返回顶层」:否则点击等于重绘自己,只会抛MessageNotModified,用户看到毫无反应。
         footer = []
         if start > 1 or end < total_pages:
             footer.append(
-                InlineKeyboardButton(
+                pyrogram.types.RichMessageButton(
                     text=BotButton.TOPIC_BACK_TO_TOP,
                     callback_data=f'{BotCallbackPrefix.TOPIC_RANGE}1_{total_pages}'
                 )
             )
         footer.append(
-            InlineKeyboardButton(
+            pyrogram.types.RichMessageButton(
                 text=BotButton.RETURN,
                 callback_data=BotCallbackText.DOWNLOAD_CHAT_TOPIC_FILTER
             )
         )
-        keyboard.append(footer)
-        return InlineKeyboardMarkup(keyboard)
+        keyboard.append(pyrogram.types.InputRichBlockButtons(buttons=footer))
+        return keyboard
 
     @staticmethod
     def filter_date_range_button():
-        return InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        text=BotButton.SELECT_START_DATE,
-                        callback_data=BotCallbackText.FILTER_START_DATE
-                    ),
-                    InlineKeyboardButton(
-                        text=BotButton.SELECT_END_DATE,
-                        callback_data=BotCallbackText.FILTER_END_DATE
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        text=BotButton.RETURN,
-                        callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
-                    )
-                ]
-            ]
-        )
+        return [
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.SELECT_START_DATE,
+                    callback_data=BotCallbackText.FILTER_START_DATE
+                ),
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.SELECT_END_DATE,
+                    callback_data=BotCallbackText.FILTER_END_DATE
+                )
+            ]),
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.RETURN,
+                    callback_data=BotCallbackText.DOWNLOAD_CHAT_FILTER
+                )
+            ])
+        ]
 
     async def calendar_keyboard(
             self,
@@ -2927,19 +3003,19 @@ class KeyboardButton:
         else:
             return None
         nav_row = [
-            InlineKeyboardButton('◀️', callback_data=f'time_dec_month_{_dtype}_{prev_year}_{prev_month}'),
+            pyrogram.types.RichMessageButton('◀️', callback_data=f'time_dec_month_{_dtype}_{prev_year}_{prev_month}'),
             # 中间的「年-月」按钮可点击,用于打开年份选择键盘;打开时选中年份即日历当前年。
-            InlineKeyboardButton(
+            pyrogram.types.RichMessageButton(
                 f'{year}-{month:02d}',
                 callback_data=f'select_year_{_dtype}_{year}_{month}_{year}'
             ),
-            InlineKeyboardButton('▶️', callback_data=f'time_inc_month_{_dtype}_{next_year}_{next_month}')
+            pyrogram.types.RichMessageButton('▶️', callback_data=f'time_inc_month_{_dtype}_{next_year}_{next_month}')
         ]
-        keyboard.append(nav_row)
+        keyboard.append(pyrogram.types.InputRichBlockButtons(buttons=nav_row))
 
         week_days = [_('Mon'), _('Tue'), _('Wed'), _('Thu'), _('Fri'), _('Sat'), _('Sun')]
-        week_row = [InlineKeyboardButton(day, callback_data=BotCallbackText.NULL) for day in week_days]
-        keyboard.append(week_row)
+        week_row = [pyrogram.types.RichMessageButton(day, callback_data=BotCallbackText.NULL) for day in week_days]
+        keyboard.append(pyrogram.types.InputRichBlockButtons(buttons=week_row))
 
         cal = calendar.monthcalendar(year, month)
         # 已选日期与当前展示的年月一致时,用绿色按钮标记那一天。
@@ -2952,35 +3028,44 @@ class KeyboardButton:
             row = []
             for day in week:
                 if day == 0:
-                    row.append(InlineKeyboardButton(' ', callback_data=BotCallbackText.NULL))
+                    row.append(pyrogram.types.RichMessageButton(' ', callback_data=BotCallbackText.NULL))
                 else:
                     date_str = f'{year}-{month:02d}-{day:02d} 00:00:00'
                     day_style = pyrogram.enums.ButtonStyle.SUCCESS if day == selected_day else pyrogram.enums.ButtonStyle.DEFAULT
-                    row.append(InlineKeyboardButton(
+                    row.append(pyrogram.types.RichMessageButton(
                         text=str(day),
                         callback_data=f'set_specific_time_{_dtype}_{date_str}',
                         style=day_style
                     ))
-            keyboard.append(row)
+            keyboard.append(pyrogram.types.InputRichBlockButtons(buttons=row))
 
         keyboard.append(
-            [
-                InlineKeyboardButton(
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
                     text=BotButton.CONFIRM_AND_RETURN,
                     callback_data=BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER
                 ),
-                InlineKeyboardButton(
+                pyrogram.types.RichMessageButton(
                     text=BotButton.CANCEL_TASK,
                     callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
                 )
-            ]
+            ])
         )
-        markup = InlineKeyboardMarkup(keyboard)
         # 传入chat_id时才挂载任务身份,避免影响其他复用此日历的场合。
         if chat_id is not None:
-            markup = attach_task(markup, chat_id)
+            keyboard = attach_task(keyboard, chat_id)
         try:
-            await self.callback_query.message.edit_reply_markup(markup)
+            await self.callback_query.message.edit_text(
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(
+                            text=rich_text(self.callback_query.message.text or '')
+                        ),
+                        *keyboard
+                    ],
+                    skip_entity_detection=True
+                )
+            )
         except MessageNotModified:
             pass
 
@@ -3004,41 +3089,54 @@ class KeyboardButton:
         else:
             return None
         nav_row = [
-            InlineKeyboardButton('◀️', callback_data=f'select_year_{_dtype}_{year - 12}_{month}_{selected_year}'),
-            InlineKeyboardButton(f'{start_year}~{end_year}', callback_data=BotCallbackText.NULL),
-            InlineKeyboardButton('▶️', callback_data=f'select_year_{_dtype}_{year + 12}_{month}_{selected_year}')
+            pyrogram.types.RichMessageButton(
+                '◀️',
+                callback_data=f'select_year_{_dtype}_{year - 12}_{month}_{selected_year}'),
+            pyrogram.types.RichMessageButton(f'{start_year}~{end_year}', callback_data=BotCallbackText.NULL),
+            pyrogram.types.RichMessageButton(
+                '▶️',
+                callback_data=f'select_year_{_dtype}_{year + 12}_{month}_{selected_year}')
         ]
-        keyboard.append(nav_row)
+        keyboard.append(pyrogram.types.InputRichBlockButtons(buttons=nav_row))
         for row_start in range(start_year, end_year + 1, 4):
             row = []
             for _year in range(row_start, row_start + 4):
                 # 选中的年份用绿色按钮标记,与其余年份区分。
                 year_style = pyrogram.enums.ButtonStyle.SUCCESS if _year == selected_year else pyrogram.enums.ButtonStyle.DEFAULT
-                row.append(InlineKeyboardButton(
+                row.append(pyrogram.types.RichMessageButton(
                     text=str(_year),
                     callback_data=f'set_year_{_dtype}_{_year}_{month}',
                     style=year_style
                 ))
-            keyboard.append(row)
+            keyboard.append(pyrogram.types.InputRichBlockButtons(buttons=row))
         keyboard.append(
-            [
-                InlineKeyboardButton(
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
                     text=BotButton.RETURN,
                     # 返回始终回到选中的年份,翻页不会改变它。
                     callback_data=f'set_year_{_dtype}_{selected_year}_{month}'
                 ),
-                InlineKeyboardButton(
+                pyrogram.types.RichMessageButton(
                     text=BotButton.CANCEL_TASK,
                     callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
                 )
-            ]
+            ])
         )
-        markup = InlineKeyboardMarkup(keyboard)
         # 传入chat_id时才挂载任务身份,避免影响其他复用此日历的场合。
         if chat_id is not None:
-            markup = attach_task(markup, chat_id)
+            keyboard = attach_task(keyboard, chat_id)
         try:
-            await self.callback_query.message.edit_reply_markup(markup)
+            await self.callback_query.message.edit_text(
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(
+                            text=rich_text(self.callback_query.message.text or '')
+                        ),
+                        *keyboard
+                    ],
+                    skip_entity_detection=True
+                )
+            )
         except MessageNotModified:
             pass
 
@@ -3061,64 +3159,64 @@ class KeyboardButton:
             return new_dt.strftime('%Y-%m-%d %H:%M:%S')
 
         time_keyboard = [
-            [
-                InlineKeyboardButton(
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
                     text=_('Step value: {adjust_step}').format(adjust_step=adjust_step),
                     callback_data=f'adjust_step_{dtype}_{adjust_step}'
                 )
-            ],
-            [
-                InlineKeyboardButton(
+            ]),
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
                     text='◀️',
                     callback_data=f'set_time_{_dtype}_{_get_updated_time(hour, -adjust_step)}'
                 ),
-                InlineKeyboardButton(
+                pyrogram.types.RichMessageButton(
                     text=_('Hour'), callback_data=BotCallbackText.NULL
                 ),
-                InlineKeyboardButton(
+                pyrogram.types.RichMessageButton(
                     text='▶️',
                     callback_data=f'set_time_{_dtype}_{_get_updated_time(hour, adjust_step)}'
                 )
-            ],
-            [
-                InlineKeyboardButton(
+            ]),
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
                     text='◀️',
                     callback_data=f'set_time_{_dtype}_{_get_updated_time(minute, -adjust_step)}'
                 ),
-                InlineKeyboardButton(
+                pyrogram.types.RichMessageButton(
                     text=_('Minute'), callback_data=BotCallbackText.NULL
                 ),
-                InlineKeyboardButton(
+                pyrogram.types.RichMessageButton(
                     text='▶️',
                     callback_data=f'set_time_{_dtype}_{_get_updated_time(minute, adjust_step)}'
                 )
-            ],
-            [
-                InlineKeyboardButton(
+            ]),
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
                     text='◀️',
                     callback_data=f'set_time_{_dtype}_{_get_updated_time(second, -adjust_step)}'
                 ),
-                InlineKeyboardButton(
+                pyrogram.types.RichMessageButton(
                     text=_('Second'), callback_data=BotCallbackText.NULL
                 ),
-                InlineKeyboardButton(
+                pyrogram.types.RichMessageButton(
                     text='▶️',
                     callback_data=f'set_time_{_dtype}_{_get_updated_time(second, adjust_step)}'
                 )
-            ],
-            [
-                InlineKeyboardButton(
+            ]),
+            pyrogram.types.InputRichBlockButtons(buttons=[
+                pyrogram.types.RichMessageButton(
                     text=BotButton.CONFIRM_AND_RETURN,
                     callback_data=BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER
                 ),
-                InlineKeyboardButton(
+                pyrogram.types.RichMessageButton(
                     text=BotButton.CANCEL_TASK,
                     callback_data=BotCallbackText.DOWNLOAD_CHAT_ID_CANCEL
                 )
-            ]
+            ])
         ]
 
-        return InlineKeyboardMarkup(time_keyboard)
+        return time_keyboard
 
     @staticmethod
     def keyword_filter_button(
@@ -3127,39 +3225,39 @@ class KeyboardButton:
         """关键词过滤设置按钮。"""
         if adding_keywords:
             keyword_buttons = [
-                [
-                    InlineKeyboardButton(
+                pyrogram.types.InputRichBlockButtons(buttons=[
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.INPUT_KEYWORD,
                         callback_data=BotCallbackText.NULL
                     )
-                ],
-                [
-                    InlineKeyboardButton(
+                ]),
+                pyrogram.types.InputRichBlockButtons(buttons=[
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.CONFIRM_KEYWORD,
                         callback_data=BotCallbackText.CONFIRM_KEYWORD
                     ),
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.CANCEL,
                         callback_data=BotCallbackText.CANCEL_KEYWORD_INPUT
                     )
-                ]
+                ])
             ]
         else:
             keyword_buttons = [
-                [
-                    InlineKeyboardButton(
+                pyrogram.types.InputRichBlockButtons(buttons=[
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.INPUT_KEYWORD,
                         callback_data=BotCallbackText.NULL
                     )
-                ],
-                [
-                    InlineKeyboardButton(
+                ]),
+                pyrogram.types.InputRichBlockButtons(buttons=[
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.RETURN,
                         callback_data=BotCallbackText.CANCEL_KEYWORD_INPUT
                     )
-                ]
+                ])
             ]
-        return InlineKeyboardMarkup(keyword_buttons)
+        return keyword_buttons
 
 
 class CallbackData:
@@ -3248,11 +3346,17 @@ class BackHandler(CallbackHandler):
         elif ctx.data == BotCallbackText.BACK_TABLE:
             meta = await downloader.table()
             try:
-                await query.message.edit_text(meta.get('text'))
-            except MessageNotModified:
-                pass
-            try:
-                await query.message.edit_reply_markup(meta.get('keyboard'))
+                await query.message.edit_text(
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(
+                                text=rich_text(meta.get('text', ''))
+                            ),
+                            *meta.get('button_blocks', [])
+                        ],
+                        skip_entity_detection=True
+                    )
+                )
             except MessageNotModified:
                 pass
 
@@ -3374,10 +3478,17 @@ class AddAuthHandler(CallbackHandler):
         # 打开输入模式,提示root发送待授权用户ID或@用户名,并支持取消。
         try:
             await query.message.edit_text(
-                text=_('➕Enter the 「ID」 or 「@username」 of the user to authorize:'),
-                reply_markup=KeyboardButton.single_button(
-                    text=_('🔙Cancel'),
-                    callback_data=BotCallbackText.CANCEL_AUTH_INPUT
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(
+                            text=rich_text(_('➕Enter the 「ID」 or 「@username」 of the user to authorize:'))
+                        ),
+                        *KeyboardButton.single_button(
+                            text=_('🔙Cancel'),
+                            callback_data=BotCallbackText.CANCEL_AUTH_INPUT
+                        )
+                    ],
+                    skip_entity_detection=True
                 )
             )
         except MessageNotModified:
@@ -3811,12 +3922,17 @@ class ListenRemoveHandler(CallbackHandler):
             downloader.listen_download_chat.pop(link)
             downloader.listen_download_owner.pop(link, None)
             try:
-                await query.message.edit_text(link)
-            except MessageNotModified:
-                pass
-            try:
-                await query.message.edit_reply_markup(
-                    KeyboardButton.single_button(text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL))
+                await query.message.edit_text(
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(text=rich_text(link)),
+                            *KeyboardButton.single_button(
+                                text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL
+                            )
+                        ],
+                        skip_entity_detection=True
+                    )
+                )
             except MessageNotModified:
                 pass
             p = _('Listen-and-download removed, channel link: "{link}".').format(link=link)
@@ -3838,12 +3954,17 @@ class ListenRemoveHandler(CallbackHandler):
         joined = ' -> '.join(m)
         p = _('Listen-and-forward removed, forward rule: "{joined}".').format(joined=joined)
         try:
-            await query.message.edit_text(' ➡️ '.join(m))
-        except MessageNotModified:
-            pass
-        try:
-            await query.message.edit_reply_markup(
-                KeyboardButton.single_button(text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL))
+            await query.message.edit_text(
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(text=rich_text(' ➡️ '.join(m))),
+                        *KeyboardButton.single_button(
+                            text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL
+                        )
+                    ],
+                    skip_entity_detection=True
+                )
+            )
         except MessageNotModified:
             pass
         console.log(p, style='#FF4689')
@@ -3940,11 +4061,17 @@ class DownloadChatHandler(CallbackHandler):
                 if downloader.download_chat_active.get(user_id) == chat_id:
                     downloader.download_chat_active.pop(user_id, None)
                 await query.message.edit_text(
-                    text=query.message.text,
-                    entities=query.message.entities,
-                    reply_markup=kb.single_button(
-                        text=BotButton.TASK_CANCEL,
-                        callback_data=BotCallbackText.NULL
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(
+                                text=rich_text(query.message.text or '')
+                            ),
+                            *kb.single_button(
+                                text=BotButton.TASK_CANCEL,
+                                callback_data=BotCallbackText.NULL
+                            )
+                        ],
+                        skip_entity_detection=True
                     )
                 )
         elif data in (BotCallbackText.DOWNLOAD_CHAT_FILTER, BotCallbackText.DOWNLOAD_CHAT_DATE_FILTER):
@@ -3954,12 +4081,19 @@ class DownloadChatHandler(CallbackHandler):
                     return None
             try:
                 await query.message.edit_text(
-                    text=self.__filter_prompt(downloader, chat_id),
-                    reply_markup=attach_task(
-                        kb.download_chat_filter_button(
-                            downloader.download_chat_filter[chat_id]['comment'], has_topic
-                        ) if data == BotCallbackText.DOWNLOAD_CHAT_FILTER else kb.filter_date_range_button(),
-                        chat_id
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(
+                                text=rich_text(self.__filter_prompt(downloader, chat_id))
+                            ),
+                            *attach_task(
+                                kb.download_chat_filter_button(
+                                    downloader.download_chat_filter[chat_id]['comment'], has_topic
+                                ) if data == BotCallbackText.DOWNLOAD_CHAT_FILTER else kb.filter_date_range_button(),
+                                chat_id
+                            )
+                        ],
+                        skip_entity_detection=True
                     )
                 )
             except MessageNotModified:
@@ -4009,14 +4143,22 @@ class DownloadChatHandler(CallbackHandler):
             current_date = datetime.datetime.fromtimestamp(
                 downloader.download_chat_filter[chat_id]['date_range'][f'{dtype}_date']
             ).strftime('%Y-%m-%d %H:%M:%S')
-            await query.message.edit_reply_markup(
-                reply_markup=attach_task(
-                    kb.time_keyboard(
-                        dtype=dtype,
-                        date=current_date,
-                        adjust_step=new_step
-                    ),
-                    chat_id
+            await query.message.edit_text(
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(
+                            text=rich_text(query.message.text or '')
+                        ),
+                        *attach_task(
+                            kb.time_keyboard(
+                                dtype=dtype,
+                                date=current_date,
+                                adjust_step=new_step
+                            ),
+                            chat_id
+                        )
+                    ],
+                    skip_entity_detection=True
                 )
             )
         elif data.startswith(('time_inc_', 'time_dec_')):
@@ -4100,17 +4242,24 @@ class DownloadChatHandler(CallbackHandler):
             downloader.download_chat_filter[chat_id]['date_range'][date_type] = timestamp
             try:
                 await query.message.edit_text(
-                    text=_('📅Select {p_s_d} date:\n{filter_prompt}').format(
-                        p_s_d=p_s_d,
-                        filter_prompt=self.__filter_prompt(downloader, chat_id)
-                    ),
-                    reply_markup=attach_task(
-                        kb.time_keyboard(
-                            dtype=dtype,
-                            date=date,
-                            adjust_step=downloader.download_chat_filter[chat_id]['date_range']['adjust_step']
-                        ),
-                        chat_id
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(text=rich_text(_(
+                                '📅Select {p_s_d} date:\n{filter_prompt}'
+                            ).format(
+                                p_s_d=p_s_d,
+                                filter_prompt=self.__filter_prompt(downloader, chat_id)
+                            ))),
+                            *attach_task(
+                                kb.time_keyboard(
+                                    dtype=dtype,
+                                    date=date,
+                                    adjust_step=downloader.download_chat_filter[chat_id]['date_range']['adjust_step']
+                                ),
+                                chat_id
+                            )
+                        ],
+                        skip_entity_detection=True
                     )
                 )
             except MessageNotModified:
@@ -4134,10 +4283,19 @@ class DownloadChatHandler(CallbackHandler):
                     keyword_list.remove(keyword)
             try:
                 await query.message.edit_text(
-                    text=self.__filter_prompt(downloader, chat_id),
-                    reply_markup=attach_task(
-                        KeyboardButton.keyword_filter_button(downloader.adding_keywords.get(chat_id, [])),
-                        chat_id
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(
+                                text=rich_text(self.__filter_prompt(downloader, chat_id))
+                            ),
+                            *attach_task(
+                                KeyboardButton.keyword_filter_button(
+                                    downloader.adding_keywords.get(chat_id, [])
+                                ),
+                                chat_id
+                            )
+                        ],
+                        skip_entity_detection=True
                     )
                 )
             except MessageNotModified:
@@ -4171,10 +4329,19 @@ class DownloadChatHandler(CallbackHandler):
                 elif data == BotCallbackText.TOGGLE_DOWNLOAD_CHAT_DTYPE_LIVE_PHOTO:
                     self.__toggle_download_chat_dtype(downloader, chat_id, 'live_photo')
                 await query.message.edit_text(
-                    text=self.__filter_prompt(downloader, chat_id),
-                    reply_markup=attach_task(
-                        kb.toggle_download_chat_type_filter_button(downloader.download_chat_filter[chat_id]),
-                        chat_id
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(
+                                text=rich_text(self.__filter_prompt(downloader, chat_id))
+                            ),
+                            *attach_task(
+                                kb.toggle_download_chat_type_filter_button(
+                                    downloader.download_chat_filter[chat_id]
+                                ),
+                                chat_id
+                            )
+                        ],
+                        skip_entity_detection=True
                     )
                 )
             except MessageNotModified:
@@ -4203,10 +4370,19 @@ class DownloadChatHandler(CallbackHandler):
                     )
                 try:
                     await query.message.edit_text(
-                        text=panel_text,
-                        reply_markup=attach_task(
-                            kb.keyword_filter_button(downloader.adding_keywords.get(chat_id, [])),
-                            chat_id
+                        rich_message=pyrogram.types.InputRichMessage(
+                            blocks=[
+                                pyrogram.types.InputRichBlockParagraph(
+                                    text=rich_text(panel_text)
+                                ),
+                                *attach_task(
+                                    kb.keyword_filter_button(
+                                        downloader.adding_keywords.get(chat_id, [])
+                                    ),
+                                    chat_id
+                                )
+                            ],
+                            skip_entity_detection=True
                         )
                     )
                 except MessageNotModified:
@@ -4228,13 +4404,20 @@ class DownloadChatHandler(CallbackHandler):
                 )
                 try:
                     await query.message.edit_text(
-                        text=self.__filter_prompt(downloader, chat_id),
-                        reply_markup=attach_task(
-                            kb.download_chat_filter_button(
-                                include_comment=downloader.download_chat_filter[chat_id]['comment'],
-                                has_topic=has_topic
-                            ),
-                            chat_id
+                        rich_message=pyrogram.types.InputRichMessage(
+                            blocks=[
+                                pyrogram.types.InputRichBlockParagraph(
+                                    text=rich_text(self.__filter_prompt(downloader, chat_id))
+                                ),
+                                *attach_task(
+                                    kb.download_chat_filter_button(
+                                        include_comment=downloader.download_chat_filter[chat_id]['comment'],
+                                        has_topic=has_topic
+                                    ),
+                                    chat_id
+                                )
+                            ],
+                            skip_entity_detection=True
                         )
                     )
                 except MessageNotModified:
@@ -4251,13 +4434,20 @@ class DownloadChatHandler(CallbackHandler):
                 downloader.download_chat_filter[chat_id]['keyword'] = {}
                 try:
                     await query.message.edit_text(
-                        text=self.__filter_prompt(downloader, chat_id),
-                        reply_markup=attach_task(
-                            kb.download_chat_filter_button(
-                                include_comment=downloader.download_chat_filter[chat_id]['comment'],
-                                has_topic=has_topic
-                            ),
-                            chat_id
+                        rich_message=pyrogram.types.InputRichMessage(
+                            blocks=[
+                                pyrogram.types.InputRichBlockParagraph(
+                                    text=rich_text(self.__filter_prompt(downloader, chat_id))
+                                ),
+                                *attach_task(
+                                    kb.download_chat_filter_button(
+                                        include_comment=downloader.download_chat_filter[chat_id]['comment'],
+                                        has_topic=has_topic
+                                    ),
+                                    chat_id
+                                )
+                            ],
+                            skip_entity_detection=True
                         )
                     )
                 except MessageNotModified:
@@ -4267,10 +4457,19 @@ class DownloadChatHandler(CallbackHandler):
             downloader.download_chat_filter[chat_id]['comment'] = not status
             try:
                 await query.message.edit_text(
-                    text=self.__filter_prompt(downloader, chat_id),
-                    reply_markup=attach_task(
-                        kb.download_chat_filter_button(downloader.download_chat_filter[chat_id]['comment'], has_topic),
-                        chat_id
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(
+                                text=rich_text(self.__filter_prompt(downloader, chat_id))
+                            ),
+                            *attach_task(
+                                kb.download_chat_filter_button(
+                                    downloader.download_chat_filter[chat_id]['comment'], has_topic
+                                ),
+                                chat_id
+                            )
+                        ],
+                        skip_entity_detection=True
                     )
                 )
             except MessageNotModified:
@@ -4337,8 +4536,13 @@ class DownloadChatHandler(CallbackHandler):
                 text = self.__filter_prompt(downloader, chat_id)
             try:
                 await query.message.edit_text(
-                    text=text,
-                    reply_markup=attach_task(markup, chat_id)
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(text=rich_text(text)),
+                            *attach_task(markup, chat_id)
+                        ],
+                        skip_entity_detection=True
+                    )
                 )
             except MessageNotModified:
                 pass

@@ -1097,19 +1097,19 @@ def build_task_callback(callback: str, chat_id, separator: str = '|', limit: int
 
 
 def attach_task(
-        markup: pyrogram.types.InlineKeyboardMarkup,
+        button_blocks: list,
         chat_id,
         separator: str = '|',
         limit: int = 64
-) -> pyrogram.types.InlineKeyboardMarkup:
-    """为键盘上所有可点击按钮挂载任务身份,使同一用户的多个任务各写各的配置。"""
-    for row in markup.inline_keyboard:
-        for button in row:
+) -> list:
+    """为富文本按钮块上所有可点击按钮挂载任务身份,使同一用户的多个任务各写各的配置。"""
+    for block in button_blocks:
+        for button in block.buttons:
             data = button.callback_data
             if not data or data == BotCallbackText.NULL:  # NULL为占位按钮,不参与回调。
                 continue
             button.callback_data = build_task_callback(data, chat_id, separator, limit)
-    return markup
+    return button_blocks
 
 
 def parse_task_callback(data: str, separator: str = '|') -> Tuple[str, Union[str, None]]:
