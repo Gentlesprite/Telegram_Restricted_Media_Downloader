@@ -2230,29 +2230,17 @@ class Bot:
     async def send_rich_table(self, message: pyrogram.types.Message, chunks: list) -> None:
         """通过机器人将统计表的Markdown分片以富文本消息发送给用户。
 
-        chunks为Markdown字符串列表:首片编辑原消息(以便键盘挂接),
-        其余分片作为新消息发送,规避单条富文本消息的长度上限。
+        chunks为Markdown字符串列表,全部作为新消息发送,避免覆盖原菜单消息:
+        调用方随后会把原菜单编辑成导出设置面板,若首片编辑原消息会导致表格被覆盖。
         """
         if self.bot is None or not chunks:
             return None
         chat_id: int = message.chat.id
-        first, *rest = chunks
-        try:
-            await self.bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=message.id,
-                rich_message=pyrogram.types.InputRichMessage(markdown=first)
-            )
-        except MessageNotModified:
-            pass
-        except Exception as e:
-            log.error(_('Failed to send statistics table via bot (first part) due to "{error}"').format(
-                error=e
-            ))
-        for index, chunk in enumerate(rest, start=2):
+        for index, chunk in enumerate(chunks, start=1):
             try:
                 await self.bot.send_rich_message(
                     chat_id=chat_id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
                     rich_message=pyrogram.types.InputRichMessage(markdown=chunk)
                 )
             except Exception as e:
