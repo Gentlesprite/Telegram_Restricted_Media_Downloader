@@ -1597,7 +1597,7 @@ class Bot:
         async def __listen_info(_listen_chat: dict, _text: str):
             if edit_message is not None:
                 # 按钮点击:就地编辑当前消息,避免向(可能为机器人的)会话发送新消息。
-                text = _text
+                text = _text.rstrip('\n')
                 for link in _listen_chat:
                     args: list = link.split()
                     if len(args) == 1:
@@ -1616,7 +1616,7 @@ class Bot:
                 chat_id=target if target is not None else message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
                 link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                text=_text
+                text=_text.rstrip('\n')
             )
             for link in _listen_chat:
                 args: list = link.split()
