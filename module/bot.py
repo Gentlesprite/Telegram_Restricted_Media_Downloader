@@ -2985,8 +2985,10 @@ class KeyboardButton:
             year: Optional[int] = datetime.datetime.now().year,
             month: Optional[int] = datetime.datetime.now().month,
             selected_date: Optional[str] = None,
-            chat_id=None
+            chat_id=None,
+            text: Union[str, None] = None
     ):
+        """渲染日期选择日历,text为提示正文时与日历合并编辑避免覆盖。"""
         keyboard: list = []
         prev_month: int = month - 1 if month > 1 else 12
         prev_year: int = year if month > 1 else year - 1
@@ -3055,7 +3057,10 @@ class KeyboardButton:
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
                         pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(extract_message_text(self.callback_query.message))
+                            text=rich_text(
+                                text if text is not None
+                                else extract_message_text(self.callback_query.message)
+                            )
                         ),
                         *keyboard
                     ],
@@ -4117,19 +4122,16 @@ class DownloadChatHandler(CallbackHandler):
                 selected_date = selected_time.strftime('%Y-%m-%d %H:%M:%S')
                 year = selected_time.year
                 month = selected_time.month
-            try:
-                await query.message.edit_text(text=_('📅Select {p_s_d} date:\n{filter_prompt}').format(
-                    p_s_d=p_s_d,
-                    filter_prompt=self.__filter_prompt(downloader, chat_id)
-                ))
-            except MessageNotModified:
-                pass
             await kb.calendar_keyboard(
                 dtype=dtype,
                 year=year,
                 month=month,
                 selected_date=selected_date,
-                chat_id=chat_id
+                chat_id=chat_id,
+                text=_('📅Select {p_s_d} date:\n{filter_prompt}').format(
+                    p_s_d=p_s_d,
+                    filter_prompt=self.__filter_prompt(downloader, chat_id)
+                )
             )
         elif data.startswith('adjust_step_'):
             parts = data.split('_')
