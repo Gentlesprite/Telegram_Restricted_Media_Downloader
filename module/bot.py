@@ -1615,8 +1615,9 @@ class Bot:
                     await edit_message.edit_text(
                         rich_message=pyrogram.types.InputRichMessage(
                             blocks=[
-                                pyrogram.types.InputRichBlockParagraph(
-                                    text=_('🌫️No channels are being monitored.')
+                                pyrogram.types.InputRichBlockSectionHeading(
+                                    text=_('🌫️No channels are being monitored.'),
+                                    size=3
                                 ),
                                 *self.menu_keyboard('listen')
                             ],
@@ -1631,8 +1632,9 @@ class Bot:
                     reply_parameters=ReplyParameters(message_id=message.id),
                     rich_message=pyrogram.types.InputRichMessage(
                         blocks=[
-                            pyrogram.types.InputRichBlockParagraph(
-                                text=_('🌫️No channels are being monitored.')
+                            pyrogram.types.InputRichBlockSectionHeading(
+                                text=_('🌫️No channels are being monitored.'),
+                                size=3
                             ),
                             *self.menu_keyboard('listen')
                         ],
@@ -3516,8 +3518,9 @@ class AddAuthHandler(CallbackHandler):
             await query.message.edit_text(
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
-                        pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(_('➕Enter the 「ID」 or 「@username」 of the user to authorize:'))
+                        pyrogram.types.InputRichBlockSectionHeading(
+                            text=rich_text(_('➕Enter the 「ID」 or 「@username」 of the user to authorize:')),
+                            size=3
                         ),
                         *KeyboardButton.single_button(
                             text=_('🔙Cancel'),
@@ -3913,8 +3916,9 @@ class AuthUserHandler(CallbackHandler):
                 await query.message.edit_text(
                     rich_message=pyrogram.types.InputRichMessage(
                         blocks=[
-                            pyrogram.types.InputRichBlockParagraph(
-                                text=rich_text(_('User `{uid}` is no longer authorized.').format(uid=uid))
+                            pyrogram.types.InputRichBlockSectionHeading(
+                                text=rich_text(_('User `{uid}` is no longer authorized.').format(uid=uid)),
+                                size=3
                             ),
                             *bot.menu_keyboard('auth')
                         ],
@@ -3937,8 +3941,9 @@ class AuthUserHandler(CallbackHandler):
             await query.message.edit_text(
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
-                        pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(_('✅User `{uid}` authorization removed.').format(uid=uid))
+                        pyrogram.types.InputRichBlockSectionHeading(
+                            text=rich_text(_('✅User `{uid}` authorization removed.').format(uid=uid)),
+                            size=3
                         ),
                         *bot.menu_keyboard('auth')
                     ],
@@ -3968,7 +3973,10 @@ class ListenRemoveHandler(CallbackHandler):
                 await query.message.edit_text(
                     rich_message=pyrogram.types.InputRichMessage(
                         blocks=[
-                            pyrogram.types.InputRichBlockParagraph(text=rich_text(link)),
+                            pyrogram.types.InputRichBlockSectionHeading(
+                                text=rich_text(link),
+                                size=3
+                            ),
                             *KeyboardButton.single_button(
                                 text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL
                             )
@@ -4000,7 +4008,10 @@ class ListenRemoveHandler(CallbackHandler):
             await query.message.edit_text(
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
-                        pyrogram.types.InputRichBlockParagraph(text=rich_text(' ➡️ '.join(m))),
+                        pyrogram.types.InputRichBlockSectionHeading(
+                            text=rich_text(' ➡️ '.join(m)),
+                            size=3
+                        ),
                         *KeyboardButton.single_button(
                             text=BotButton.ALREADY_REMOVE, callback_data=BotCallbackText.NULL
                         )
