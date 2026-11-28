@@ -8,7 +8,7 @@ requires-python = ">=3.13.2"
 license = "GPL-3.0-or-later"
 dependencies = [
     "kurigram==2.2.28",
-    "kuricrypt>=0.1.0",
+    "kuricrypt==0.1.2",
     "pygments>=2.19.2",
     "pymediainfo==7.0.1",
     "pyreadline3>=3.5.4",
