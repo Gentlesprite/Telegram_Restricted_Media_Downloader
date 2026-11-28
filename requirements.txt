@@ -1,4 +1,4 @@
-kurigram@https://github.com/kurigram-org/kurigram/archive/553229e65f2abea69ebdaf3975e39fca202d9207.zip
+kurigram==2.2.28
 kuricrypt>=0.1.0
 rich==15.0.0
 PyYAML

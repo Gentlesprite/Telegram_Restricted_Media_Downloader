@@ -54,7 +54,7 @@ from module import (
     TRMD_WEB_SESSION,
     SOFTWARE_SHORT_NAME,
     REFERRAL_RECORD_PATH,
-    REQUIRE_PYROGRAM_VERSION
+    REQUIRE_KURIGRAM_VERSION
 )
 from module.enums import (
     Link,
@@ -893,7 +893,7 @@ def check_kurigram_version(warning: Optional[bool] = False) -> bool:
         return True
     show_current_pyrogram_version: str = pyrogram.__version__
     current_pyrogram_version: tuple = tuple(map(int, show_current_pyrogram_version.split('.')))
-    require_pyrogram_version: tuple = REQUIRE_PYROGRAM_VERSION
+    require_pyrogram_version: tuple = REQUIRE_KURIGRAM_VERSION
     show_require_pyrogram_version = '.'.join(map(str, require_pyrogram_version))
     if current_pyrogram_version < require_pyrogram_version:
         if warning:

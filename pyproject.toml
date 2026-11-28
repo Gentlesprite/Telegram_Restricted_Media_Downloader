@@ -7,7 +7,7 @@ readme = "README.md"
 requires-python = ">=3.13.2"
 license = "GPL-3.0-or-later"
 dependencies = [
-    "kurigram==2.2.27",
+    "kurigram==2.2.28",
     "kuricrypt>=0.1.0",
     "pygments>=2.19.2",
     "pymediainfo==7.0.1",
@@ -16,6 +16,3 @@ dependencies = [
     "qrcode>=8.2",
     "rich==15.0.0",
 ]
-
-[tool.uv.sources]
-kurigram = { url = "https://github.com/kurigram-org/kurigram/archive/553229e65f2abea69ebdaf3975e39fca202d9207.zip" }

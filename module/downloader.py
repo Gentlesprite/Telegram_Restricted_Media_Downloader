@@ -61,7 +61,7 @@ from module import (
     log,
     console,
     FORWARD_LIMIT,
-    REQUIRE_PYROGRAM_VERSION
+    REQUIRE_KURIGRAM_VERSION
 )
 from module.web import Web
 from module.remote import rc
@@ -3113,7 +3113,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                     error=e
                 ))
             package_name = 'kurigram'
-            require_version = '.'.join(map(str, REQUIRE_PYROGRAM_VERSION))
+            require_version = '.'.join(map(str, REQUIRE_KURIGRAM_VERSION))
             None if check_kurigram_version(warning=False) else console.print(
                 Issues.UPDATE_PACKAGE_TIP.format(
                     package_name=package_name,
