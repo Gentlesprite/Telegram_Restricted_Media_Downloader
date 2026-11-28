@@ -1859,13 +1859,16 @@ class Bot:
                 )
             ])
         ]
-        text = _('🔐「Authorized users」management, please select an action:')
+        text = _('🔐「Authorized users」management')
         if edit_message is not None:
             try:
                 await edit_message.edit_text(
                     rich_message=pyrogram.types.InputRichMessage(
                         blocks=[
-                            pyrogram.types.InputRichBlockParagraph(text=rich_text(text)),
+                            pyrogram.types.InputRichBlockSectionHeading(
+                                text=rich_text(text),
+                                size=2
+                            ),
                             *auth_button_blocks
                         ],
                         skip_entity_detection=True
@@ -1878,7 +1881,10 @@ class Bot:
                 chat_id=message.from_user.id,
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
-                        pyrogram.types.InputRichBlockParagraph(text=rich_text(text)),
+                        pyrogram.types.InputRichBlockSectionHeading(
+                            text=rich_text(text),
+                            size=2
+                        ),
                         *auth_button_blocks
                     ],
                     skip_entity_detection=True
@@ -4678,7 +4684,10 @@ class MenuButtonHandler(CallbackHandler):
                 await query.edit_message_text(
                     rich_message=pyrogram.types.InputRichMessage(
                         blocks=[
-                            pyrogram.types.InputRichBlockParagraph(text=BotButton.DOWNLOAD_MENU_TITLE),
+                            pyrogram.types.InputRichBlockSectionHeading(
+                                text=BotButton.DOWNLOAD_MENU_TITLE,
+                                size=2
+                            ),
                             *downloader.menu_keyboard('download')
                         ],
                         skip_entity_detection=True
@@ -4692,7 +4701,10 @@ class MenuButtonHandler(CallbackHandler):
                 await query.edit_message_text(
                     rich_message=pyrogram.types.InputRichMessage(
                         blocks=[
-                            pyrogram.types.InputRichBlockParagraph(text=BotButton.LISTEN_MENU_TITLE),
+                            pyrogram.types.InputRichBlockSectionHeading(
+                                text=BotButton.LISTEN_MENU_TITLE,
+                                size=2
+                            ),
                             *downloader.menu_keyboard('listen')
                         ],
                         skip_entity_detection=True
@@ -4706,7 +4718,10 @@ class MenuButtonHandler(CallbackHandler):
                 await query.edit_message_text(
                     rich_message=pyrogram.types.InputRichMessage(
                         blocks=[
-                            pyrogram.types.InputRichBlockParagraph(text=BotButton.UPLOAD_MENU_TITLE),
+                            pyrogram.types.InputRichBlockSectionHeading(
+                                text=BotButton.UPLOAD_MENU_TITLE,
+                                size=2
+                            ),
                             *downloader.menu_keyboard('upload')
                         ],
                         skip_entity_detection=True

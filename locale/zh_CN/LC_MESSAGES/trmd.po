@@ -455,14 +455,14 @@ msgstr "🕵️监听"
 msgid "📤Upload"
 msgstr "📤上传"
 
-msgid "⬇️Create 「download」 task:"
-msgstr "⬇️创建「下载」任务:"
+msgid "⬇️Create 「download」 task"
+msgstr "⬇️创建「下载」任务"
 
-msgid "🕵️Create 「listen」 task:"
-msgstr "🕵️创建「监听」任务:"
+msgid "🕵️Create 「listen」 task"
+msgstr "🕵️创建「监听」任务"
 
-msgid "📤Create 「upload」 task:"
-msgstr "📤创建「上传」任务:"
+msgid "📤Create 「upload」 task"
+msgstr "📤创建「上传」任务"
 
 msgid "🔐Authorized users"
 msgstr "🔐授权用户"
@@ -1064,8 +1064,8 @@ msgstr "👥用户`{uid}`已在授权列表中,是否移除?"
 msgid "✅Added authorized user 「ID」:\n`{uid}`"
 msgstr "✅已添加授权用户「ID」:\n`{uid}`"
 
-msgid "🔐「Authorized users」management, please select an action:"
-msgstr "🔐「授权用户」管理,请选择操作:"
+msgid "🔐「Authorized users」management"
+msgstr "🔐「授权用户」管理"
 
 msgid "🌫️No additional authorized users; only 「root」 can use the bot."
 msgstr "🌫️目前没有额外的授权用户,仅「root」可使用机器人。"
