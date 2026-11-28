@@ -434,6 +434,9 @@ msgstr "🔑添加/移除授权用户"
 msgid "👥View authorization list"
 msgstr "👥查看授权列表"
 
+msgid "📊Export table"
+msgstr "📊导出表格"
+
 msgid "📊Export table settings"
 msgstr "📊导出表格设置"
 

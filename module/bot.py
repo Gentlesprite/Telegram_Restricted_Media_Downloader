@@ -2304,7 +2304,7 @@ class KeyboardButton:
                                 callback_data=BotCallbackText.NOTICE
                             ),
                             pyrogram.types.RichMessageButton(
-                                text=BotButton.EXPORT_TABLE,
+                                text=BotButton.EXPORT_TABLE_SETTING,
                                 callback_data=BotCallbackText.EXPORT_TABLE
                             )
                         ]),
