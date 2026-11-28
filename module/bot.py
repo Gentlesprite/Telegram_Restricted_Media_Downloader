@@ -1085,6 +1085,10 @@ class Bot:
             command_rows.append([f'/{item[0]}', _desc, rich_text(_syntax)])
 
         blocks: List[pyrogram.types.InputRichBlock] = [
+            pyrogram.types.InputRichBlockSectionHeading(
+                text=f'💎 {SOFTWARE_SHORT_NAME}',
+                size=1
+            ),
             pyrogram.types.InputRichBlockTable(
                 cells=[
                     [
@@ -1108,9 +1112,12 @@ class Bot:
                         ))
                     ]
                 ],
-                caption=f'💎 {SOFTWARE_SHORT_NAME}',
                 is_bordered=True,
                 is_striped=True
+            ),
+            pyrogram.types.InputRichBlockSectionHeading(
+                text=_('🎮️ Available commands'),
+                size=1
             ),
             pyrogram.types.InputRichBlockTable(
                 cells=[
@@ -1122,13 +1129,16 @@ class Bot:
                       ] + [
                           [pyrogram.types.RichBlockTableCell(text=cell) for cell in row] for row in command_rows
                       ],
-                caption=_('🎮️ Available commands'),
                 is_bordered=True,
                 is_striped=True
             )
         ]
         if web is not None:
             web_link: str = f'{web.protocol}://{web.LOCAL_IP}:{web.port}'
+            blocks.append(pyrogram.types.InputRichBlockSectionHeading(
+                text=_('🌐 Web configuration'),
+                size=1
+            ))
             blocks.append(pyrogram.types.InputRichBlockTable(
                 cells=[
                     [
@@ -1152,13 +1162,16 @@ class Bot:
                         pyrogram.types.RichBlockTableCell(text=pyrogram.types.RichTextUrl(text=web_link, url=web_link))
                     ]
                 ],
-                caption=_('🌐 Web configuration'),
                 is_bordered=True,
                 is_striped=True
             ))
             if is_docker():
                 blocks.append(pyrogram.types.InputRichBlockParagraph(text=Issues.DOCKER_HOST_IP_TIP))
         if more_feature:
+            blocks.append(pyrogram.types.InputRichBlockSectionHeading(
+                text=_('✨ Other features'),
+                size=1
+            ))
             blocks.append(pyrogram.types.InputRichBlockTable(
                 cells=[
                     [
@@ -1171,7 +1184,6 @@ class Bot:
                             'Forward messages of type `Video`, `Photo`, `Audio`, `Voice`, `GIF`, `Document`, `Video note`, or `Live photo` to me to create download tasks.')))
                     ]
                 ],
-                caption=_('✨ Other features'),
                 is_bordered=True,
                 is_striped=True
             ))
