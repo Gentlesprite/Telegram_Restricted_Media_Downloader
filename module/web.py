@@ -878,7 +878,7 @@ class Web:
 
     @staticmethod
     def format_storage(storage: TRMDStorage) -> dict:
-        """格式化网页记录的展示信息,频道列优先取记录里的标题,与下载板块的"标题(ID)"样式一致。"""
+        """格式化网页记录的展示信息,频道列优先取记录里的标题,与下载板块的"标题(ID)"样式一致。上传记录的扩展名统一转为小写,避免同一后缀因大小写不同在筛选面板中显示为多项。"""
         chat_id: str = str(storage.chat_id) if storage.chat_id is not None else ''
         display_id: str = parse_chat_id(storage.link, chat_id)
         chat_name: str = storage.chat_name or ChatInfo.get(display_id)
@@ -893,7 +893,7 @@ class Web:
             'size': MetaData.suitable_units_display(storage.file_size),
             'size_byte': storage.file_size,
             'type': _(normalize_msgid(
-                storage.file_type)) if storage.storage_type == StorageType.DOWNLOAD else storage.file_type,
+                storage.file_type)) if storage.storage_type == StorageType.DOWNLOAD else storage.file_type.lower(),
             'status': _(normalize_msgid(storage.status)),
             'state': storage.status,
             'error': storage.error_msg,
