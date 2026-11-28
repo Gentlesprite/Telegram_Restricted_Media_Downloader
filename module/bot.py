@@ -1594,50 +1594,15 @@ class Bot:
             target: Union[int, None] = None,
             edit_message: Union[pyrogram.types.Message, None] = None
     ):
-        async def __listen_info(_listen_chat: dict, _text: str):
-            if edit_message is not None:
-                # 按钮点击:就地编辑当前消息,避免向(可能为机器人的)会话发送新消息。
-                text = _text.rstrip('\n')
-                for link in _listen_chat:
-                    args: list = link.split()
-                    if len(args) == 1:
-                        text = f'{text}\n{link}'
-                    elif len(args) == 2:
-                        text = f'{text}\n{args[0]} ➡️ {args[1]}'
-                await self.safe_edit_message(
-                    client=client,
-                    message=edit_message,
-                    last_message_id=edit_message.id,
-                    text=safe_message(text),
-                    entities=edit_message.entities
-                )
-                return text
-            last_message = await client.send_message(
-                chat_id=target if target is not None else message.from_user.id,
-                reply_parameters=ReplyParameters(message_id=message.id),
-                link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                text=_text.rstrip('\n')
-            )
+        def __listen_info(_listen_chat: dict, _text: str) -> str:
+            text = _text.rstrip('\n')
             for link in _listen_chat:
                 args: list = link.split()
-                len_args: int = len(args)
-                if len_args == 1:
-                    last_message = await self.safe_edit_message(
-                        client=client,
-                        message=message,
-                        last_message_id=last_message.id,
-                        text=safe_message(f'{last_message.text}\n{link}'),
-                        entities=last_message.entities
-                    )
-                elif len_args == 2:
-                    forward_emoji = ' ➡️ '
-                    last_message = await self.safe_edit_message(
-                        client=client,
-                        message=message,
-                        last_message_id=last_message.id,
-                        text=safe_message(f'{last_message.text}\n{args[0]}{forward_emoji}{args[1]}'),
-                        entities=last_message.entities
-                    )
+                if len(args) == 1:
+                    text = f'{text}\n{link}'
+                elif len(args) == 2:
+                    text = f'{text}\n{args[0]} ➡️ {args[1]}'
+            return text
 
         if not self.listen_forward_chat and not self.listen_download_chat:
             if edit_message is not None:
@@ -1663,17 +1628,18 @@ class Bot:
                     text=_('🌫️No channels are being monitored.')
                 )
         else:
-            listen_text = ''
+            listen_sections = []
             if self.listen_download_chat:
-                listen_text = await __listen_info(
+                listen_sections.append(__listen_info(
                     self.listen_download_chat,
                     _('🕵️The following links are created `listen download` channels:\n')
-                )
+                ))
             if self.listen_forward_chat:
-                listen_text = await __listen_info(
+                listen_sections.append(__listen_info(
                     self.listen_forward_chat,
                     _('📲The following links are created `listen forward` channels:\n')
-                )
+                ))
+            listen_text = '\n\n'.join(listen_sections)
             if edit_message is not None:
                 try:
                     await edit_message.edit_text(
@@ -1687,6 +1653,18 @@ class Bot:
                     )
                 except MessageNotModified:
                     pass
+            else:
+                await client.send_rich_message(
+                    chat_id=target if target is not None else message.from_user.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(text=rich_text(listen_text)),
+                            *self.menu_keyboard('listen')
+                        ],
+                        skip_entity_detection=True
+                    )
+                )
 
     async def auth_user(
             self,

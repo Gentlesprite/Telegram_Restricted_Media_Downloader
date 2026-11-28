@@ -140,7 +140,7 @@ FORWARD_LIMIT = 33  # 每分钟允许的最大转发次数。
 AUTHOR = 'Gentlesprite'
 __version__ = '2.2.1'
 __license__ = 'GPL-3.0-or-later'
-__update_date__ = '2026-11-28 15:10:40'
+__update_date__ = '2026-11-28 15:14:13'
 __copyright__ = _('Copyright (C) {year} {author} <https://github.com/{author}>').format(year=__update_date__[:4], author=AUTHOR)
 REQUIRE_KURIGRAM_VERSION = (2, 2, 28)
 SOFTWARE_FULL_NAME = 'Telegram Restricted Media Downloader'
