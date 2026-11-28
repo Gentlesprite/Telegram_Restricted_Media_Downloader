@@ -1609,16 +1609,6 @@ class Bot:
             target: Union[int, None] = None,
             edit_message: Union[pyrogram.types.Message, None] = None
     ):
-        def __listen_info(_listen_chat: dict, _text: str) -> str:
-            text = _text.rstrip('\n')
-            for link in _listen_chat:
-                args: list = link.split()
-                if len(args) == 1:
-                    text = f'{text}\n{link}'
-                elif len(args) == 2:
-                    text = f'{text}\n{args[0]} ➡️ {args[1]}'
-            return text
-
         if not self.listen_forward_chat and not self.listen_download_chat:
             if edit_message is not None:
                 try:
@@ -1650,24 +1640,57 @@ class Bot:
                     )
                 )
         else:
-            listen_sections = []
+            listen_blocks: List[pyrogram.types.InputRichBlock] = []
             if self.listen_download_chat:
-                listen_sections.append(__listen_info(
-                    self.listen_download_chat,
-                    _('🕵️The following links are created `listen download` channels:\n')
+                download_cells = [
+                                     [pyrogram.types.RichBlockTableCell(
+                                         text=_('Channel'),
+                                         is_header=True
+                                     )]
+                                 ] + [
+                                     [pyrogram.types.RichBlockTableCell(text=rich_text(link))]
+                                     for link in self.listen_download_chat
+                                 ]
+                listen_blocks.append(pyrogram.types.InputRichBlockSectionHeading(
+                    text=rich_text(_('🕵️Listen download')),
+                    size=1
+                ))
+                listen_blocks.append(pyrogram.types.InputRichBlockTable(
+                    cells=download_cells,
+                    is_bordered=True,
+                    is_striped=True
                 ))
             if self.listen_forward_chat:
-                listen_sections.append(__listen_info(
-                    self.listen_forward_chat,
-                    _('📲The following links are created `listen forward` channels:\n')
+                forward_cells = [
+                                    [
+                                        pyrogram.types.RichBlockTableCell(text=_('Listening channel'), is_header=True),
+                                        pyrogram.types.RichBlockTableCell(text=_('Forwarding channel'), is_header=True)
+                                    ]
+                                ] + [
+                                    [
+                                        pyrogram.types.RichBlockTableCell(text=rich_text(link.split()[0])),
+                                        pyrogram.types.RichBlockTableCell(text=rich_text(link.split()[1]))
+                                    ] if len(link.split()) == 2 else [
+                                        pyrogram.types.RichBlockTableCell(text=rich_text(link)),
+                                        pyrogram.types.RichBlockTableCell(text='')
+                                    ]
+                                    for link in self.listen_forward_chat
+                                ]
+                listen_blocks.append(pyrogram.types.InputRichBlockSectionHeading(
+                    text=rich_text(_('📲Listen forward')),
+                    size=1
                 ))
-            listen_text = '\n\n'.join(listen_sections)
+                listen_blocks.append(pyrogram.types.InputRichBlockTable(
+                    cells=forward_cells,
+                    is_bordered=True,
+                    is_striped=True
+                ))
             if edit_message is not None:
                 try:
                     await edit_message.edit_text(
                         rich_message=pyrogram.types.InputRichMessage(
                             blocks=[
-                                pyrogram.types.InputRichBlockParagraph(text=rich_text(listen_text)),
+                                *listen_blocks,
                                 *self.menu_keyboard('listen')
                             ],
                             skip_entity_detection=True
@@ -1681,7 +1704,7 @@ class Bot:
                     reply_parameters=ReplyParameters(message_id=message.id),
                     rich_message=pyrogram.types.InputRichMessage(
                         blocks=[
-                            pyrogram.types.InputRichBlockParagraph(text=rich_text(listen_text)),
+                            *listen_blocks,
                             *self.menu_keyboard('listen')
                         ],
                         skip_entity_detection=True

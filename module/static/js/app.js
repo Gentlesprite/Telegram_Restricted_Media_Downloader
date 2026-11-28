@@ -863,7 +863,7 @@ function listenRow(kind, source, target) {
         '<span class="cell-name"><span class="ficon">🕵️</span>' +
         '<span class="fname" title="' + escAttr(source) + '">' + esc(source) + '</span></span>';
     if (target) {
-        html += '<span class="cell-name"><span class="ficon">➡️</span>' +
+        html += '<span class="cell-name">' +
             '<span class="fname" title="' + escAttr(target) + '">' + esc(target) + '</span></span>';
     }
     html += '<span class="cell-action"><button class="btn-del" type="button" title="' + escAttr(_('Remove listener')) + '"' +

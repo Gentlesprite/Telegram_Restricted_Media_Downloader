@@ -1511,11 +1511,11 @@ msgstr "失败下载"
 msgid "{name} must be an integer between 1 and 10."
 msgstr "{name}必须是1到10之间的整数。"
 
-msgid "📲The following links are created `listen forward` channels:\n"
-msgstr "📲以下链接为已创建的`监听转发`频道:\n"
+msgid "📲Listen forward"
+msgstr "📲监听转发"
 
-msgid "🕵️The following links are created `listen download` channels:\n"
-msgstr "🕵️以下链接为已创建的`监听下载`频道:\n"
+msgid "🕵️Listen download"
+msgstr "🕵️监听下载"
 
 msgid "❌The same channel cannot have two listeners at the same time.\n(You have created a listen-and-forward for the following link with `/listen_forward`)"
 msgstr "❌同一频道不能同时存在两个监听\n(您已使用`/listen_forward`创建了以下链接的监听转发)"
