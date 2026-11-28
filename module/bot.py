@@ -2680,13 +2680,15 @@ class KeyboardButton:
                     error=_e
                 ))
 
-    async def back_table_button(self):
+    async def back_table_button(self, text: Union[str, None] = None):
+        """重建统计表返回菜单,text为None时沿用当前消息正文。"""
         try:
+            paragraph_text = text if text is not None else extract_message_text(self.callback_query.message)
             await self.callback_query.message.edit_text(
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
                         pyrogram.types.InputRichBlockParagraph(
-                            text=rich_text(extract_message_text(self.callback_query.message))
+                            text=rich_text(paragraph_text)
                         ),
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
@@ -3605,19 +3607,13 @@ class TableHandler(CallbackHandler):
                 await kb.choice_export_table_button(choice=choice)
                 return None
             elif res is False:
-                try:
-                    await query.message.edit_text(false_text)
-                except MessageNotModified:
-                    pass
+                await kb.back_table_button(text=false_text)
+                return None
             else:
-                try:
-                    await query.message.edit_text(
-                        _('❌`{prompt_string}` printing failed.\n(see the terminal for details)').format(
-                            prompt_string=prompt_string
-                        ))
-                except MessageNotModified:
-                    pass
-            await kb.back_table_button()
+                await kb.back_table_button(text=_('❌`{prompt_string}` printing failed.\n(see the terminal for details)').format(
+                    prompt_string=prompt_string
+                ))
+                return None
         elif data in (
                 BotCallbackText.TOGGLE_LINK_TABLE,
                 BotCallbackText.TOGGLE_COUNT_TABLE,
@@ -3651,28 +3647,19 @@ class TableHandler(CallbackHandler):
                 res = downloader.app.print_upload_table(upload_tasks=UploadTask.TASKS, export=True, only_export=True)
             if res:
                 folder = 'form' if is_docker() else folder
-                try:
-                    await query.message.edit_text(
-                        _('✅`{prompt_string}` has been sent to your 「terminal」 and 「exported」 as a table.\n(Check the `{folder}` folder in the software directory)').format(
-                            prompt_string=prompt_string,
-                            folder=folder
-                        ))
-                except MessageNotModified:
-                    pass
+                await kb.back_table_button(text=_('✅`{prompt_string}` has been sent to your 「terminal」 and 「exported」 as a table.\n(Check the `{folder}` folder in the software directory)').format(
+                    prompt_string=prompt_string,
+                    folder=folder
+                ))
+                return None
             elif res is False:
-                try:
-                    await query.message.edit_text(_('🌫️No links to count.'))
-                except MessageNotModified:
-                    pass
+                await kb.back_table_button(text=_('🌫️No links to count.'))
+                return None
             else:
-                try:
-                    await query.message.edit_text(
-                        _('❌`{prompt_string}` export failed.\n(see the terminal for details)').format(
-                            prompt_string=prompt_string
-                        ))
-                except MessageNotModified:
-                    pass
-            await kb.back_table_button()
+                await kb.back_table_button(text=_('❌`{prompt_string}` export failed.\n(see the terminal for details)').format(
+                    prompt_string=prompt_string
+                ))
+                return None
 
     @staticmethod
     async def __toggle_export_table(ctx: CallbackContext, table_type: str) -> None:
