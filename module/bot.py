@@ -1621,11 +1621,18 @@ class Bot:
                 except MessageNotModified:
                     pass
             else:
-                await client.send_message(
-                    chat_id=message.from_user.id,
+                await client.send_rich_message(
+                    chat_id=target if target is not None else message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS,
-                    text=_('🌫️No channels are being monitored.')
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(
+                                text=_('🌫️No channels are being monitored.')
+                            ),
+                            *self.menu_keyboard('listen')
+                        ],
+                        skip_entity_detection=True
+                    )
                 )
         else:
             listen_sections = []
