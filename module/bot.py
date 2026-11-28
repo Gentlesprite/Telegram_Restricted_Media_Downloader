@@ -407,6 +407,15 @@ class Bot:
                     link_preview_options=Bot.LINK_PREVIEW_OPTIONS
                 )
                 return None
+        elif field == BotStepKeyword.PATH:
+            if not os.path.exists(text):
+                await _client.send_message(
+                    chat_id=message.from_user.id,
+                    reply_parameters=ReplyParameters(message_id=message.id),
+                    text=_('❌Please enter a valid path and send it again.'),
+                    link_preview_options=Bot.LINK_PREVIEW_OPTIONS
+                )
+                return None
         elif field in ('start_id', 'end_id'):
             if not text.isdigit():
                 await _client.send_message(

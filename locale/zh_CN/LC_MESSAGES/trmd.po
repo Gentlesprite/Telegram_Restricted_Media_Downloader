@@ -947,6 +947,9 @@ msgstr "功能"
 msgid "❌Please enter a valid link and send it again."
 msgstr "❌请输入有效的链接,请重新发送。"
 
+msgid "❌Please enter a valid path and send it again."
+msgstr "❌请输入有效的路径,请重新发送。"
+
 msgid "❌Please enter a numeric ID and send it again."
 msgstr "❌请输入数字ID,请重新发送。"
 
