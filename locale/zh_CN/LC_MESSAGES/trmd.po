@@ -1080,7 +1080,7 @@ msgid "⛔This action is only available to 「root」."
 msgstr "⛔该操作仅「root」可用。"
 
 msgid "➕Enter the 「ID」 or 「@username」 of the user to authorize:"
-msgstr "➕请输入要授权的用户「ID」或`@用户名`:"
+msgstr "➕请输入要授权的用户「ID」或「@用户名」:"
 
 msgid "🌫️No links to count."
 msgstr "🌫️没有链接需要统计。"
@@ -2290,9 +2290,6 @@ msgstr "已{f_s}\"{param}\"类型的下载。"
 
 msgid "Forward for \"{f_s}\" {param}."
 msgstr "已{f_s}\"{param}\"类型的转发。"
-
-msgid "Listen-and-forward removed, forward rule: \"{joined}\"."
-msgstr "已删除监听转发,转发规则:\"{joined}\"。"
 
 msgid "📅Select {p_s_d} date:\n{filter_prompt}"
 msgstr "📅选择{p_s_d}日期:\n{filter_prompt}"

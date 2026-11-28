@@ -2323,7 +2323,7 @@ class KeyboardButton:
                 )
                 return None
             message = self.callback_query.message
-            await message._client.send_rich_message(
+            await message._client.send_rich_message(  # noqa.
                 chat_id=message.chat.id,
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=buttons,
@@ -4005,7 +4005,7 @@ class ListenRemoveHandler(CallbackHandler):
         downloader.listen_forward_owner.pop(link, None)
         m = link.split()
         joined = ' -> '.join(m)
-        p = _('Listen-and-forward removed, forward rule: "{joined}".').format(joined=joined)
+        p = _('Listen-and-forward removed, forward rule: "{rule}".').format(rule=joined)
         try:
             await query.message.edit_text(
                 rich_message=pyrogram.types.InputRichMessage(
