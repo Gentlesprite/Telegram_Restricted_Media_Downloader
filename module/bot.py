@@ -2294,8 +2294,9 @@ class KeyboardButton:
             await self.callback_query.message.edit_text(
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
-                        pyrogram.types.InputRichBlockParagraph(
-                            text=BotButton.SETTING
+                        pyrogram.types.InputRichBlockSectionHeading(
+                            text=BotButton.SETTING,
+                            size=2
                         ),
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
@@ -2354,8 +2355,9 @@ class KeyboardButton:
             await self.callback_query.message.edit_text(
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
-                        pyrogram.types.InputRichBlockParagraph(
-                            text=BotButton.UPLOAD_SETTING
+                        pyrogram.types.InputRichBlockSectionHeading(
+                            text=BotButton.UPLOAD_SETTING,
+                            size=2
                         ),
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
@@ -2390,8 +2392,9 @@ class KeyboardButton:
             await self.callback_query.message.edit_text(
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
-                        pyrogram.types.InputRichBlockParagraph(
-                            text=BotButton.DOWNLOAD_SETTING
+                        pyrogram.types.InputRichBlockSectionHeading(
+                            text=BotButton.DOWNLOAD_SETTING,
+                            size=2
                         ),
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
@@ -2462,8 +2465,9 @@ class KeyboardButton:
             await self.callback_query.message.edit_text(
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
-                        pyrogram.types.InputRichBlockParagraph(
-                            text=BotButton.FORWARD_SETTING
+                        pyrogram.types.InputRichBlockSectionHeading(
+                            text=BotButton.FORWARD_SETTING,
+                            size=2
                         ),
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
@@ -2611,8 +2615,9 @@ class KeyboardButton:
             await self.callback_query.message.edit_text(
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
-                        pyrogram.types.InputRichBlockParagraph(
-                            text=BotButton.EXPORT_TABLE_SETTING
+                        pyrogram.types.InputRichBlockSectionHeading(
+                            text=BotButton.EXPORT_TABLE_SETTING,
+                            size=2
                         ),
                         pyrogram.types.InputRichBlockButtons(buttons=[
                             pyrogram.types.RichMessageButton(
