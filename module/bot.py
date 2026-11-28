@@ -66,7 +66,6 @@ from module.config import GlobalConfig
 from module.path_tool import safe_scan_directory_file
 from module.stdio import (
     MetaData,
-    PanelTable,
     ConnectionStatus
 )
 from module.task import (
@@ -75,6 +74,7 @@ from module.task import (
 )
 from module.utils import (
     is_docker,
+    rich_text,
     parse_link,
     safe_index,
     attach_task,
@@ -84,8 +84,8 @@ from module.utils import (
     normalize_msgid,
     is_allow_upload,
     get_valid_chat_id,
-    parse_task_callback,
-    format_limited_text
+    format_limited_text,
+    parse_task_callback
 )
 from module.enums import (
     Issues,
@@ -844,151 +844,152 @@ class Bot:
         return last_bot_messages[-1]
 
     @staticmethod
-    def menu_keyboard(level: str = 'main', is_root: bool = False) -> InlineKeyboardMarkup:
-        """按层级返回内联键盘:main为分组主菜单,download/listen/upload/auth为二级子菜单。"""
+    def menu_keyboard(level: str = 'main', is_root: bool = False) -> list:
+        """按层级返回富文本按钮块:main为分组主菜单,download/listen/upload/auth为二级子菜单。"""
         config: dict = rc.cached_config()
         if level == 'download':
-            return InlineKeyboardMarkup([
+            button_rows = [
                 [
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.CMD_DOWNLOAD,
                         callback_data=BotCallbackText.COMMAND_DOWNLOAD
                     ),
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.CMD_DOWNLOAD_CHAT,
                         callback_data=BotCallbackText.COMMAND_DOWNLOAD_CHAT
                     )
                 ],
                 [
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.HELP_PAGE,
                         callback_data=BotCallbackText.MENU_BACK
                     )
                 ]
-            ])
-        if level == 'listen':
-            return InlineKeyboardMarkup([
+            ]
+        elif level == 'listen':
+            button_rows = [
                 [
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.LISTEN_DOWNLOAD_BTN,
-                        callback_data=BotCallbackText.LISTEN_DOWNLOAD_BTN),
-                    InlineKeyboardButton(
+                        callback_data=BotCallbackText.LISTEN_DOWNLOAD_BTN
+                    ),
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.LISTEN_FORWARD_BTN,
                         callback_data=BotCallbackText.LISTEN_FORWARD_BTN
                     )
                 ],
                 [
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.LOOKUP_LISTEN_INFO,
                         callback_data=BotCallbackText.LOOKUP_LISTEN_INFO
                     )
                 ],
                 [
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.HELP_PAGE,
                         callback_data=BotCallbackText.MENU_BACK
                     )
                 ]
-            ])
-        if level == 'upload':
-            return InlineKeyboardMarkup([
+            ]
+        elif level == 'upload':
+            button_rows = [
                 [
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.CMD_UPLOAD,
                         callback_data=BotCallbackText.COMMAND_UPLOAD
                     ),
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.CMD_UPLOAD_R,
                         callback_data=BotCallbackText.COMMAND_UPLOAD_R
                     )
                 ],
                 [
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.HELP_PAGE,
                         callback_data=BotCallbackText.MENU_BACK
                     )
                 ]
-            ])
-        if level == 'auth':
-            return InlineKeyboardMarkup([
+            ]
+        elif level == 'auth':
+            button_rows = [
                 [
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.AUTH,
                         callback_data=BotCallbackText.AUTH
                     ),
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.LOOKUP_AUTH_INFO,
                         callback_data=BotCallbackText.LOOKUP_AUTH_INFO
                     )
                 ],
                 [
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.HELP_PAGE,
                         callback_data=BotCallbackText.MENU_BACK
                     )
                 ]
-            ])
-        feature_rows = [
-            [
-                InlineKeyboardButton(
-                    text=BotButton.MENU_DOWNLOAD,
-                    callback_data=BotCallbackText.MENU_DOWNLOAD,
-                    style=pyrogram.enums.ButtonStyle.PRIMARY
-                ),
-                InlineKeyboardButton(
-                    text=BotButton.MENU_UPLOAD,
-                    callback_data=BotCallbackText.MENU_UPLOAD,
-                    style=pyrogram.enums.ButtonStyle.PRIMARY
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text=BotButton.CMD_FORWARD,
-                    callback_data=BotCallbackText.COMMAND_FORWARD,
-                    style=pyrogram.enums.ButtonStyle.PRIMARY
-                ),
-                InlineKeyboardButton(
-                    text=BotButton.MENU_LISTEN,
-                    callback_data=BotCallbackText.MENU_LISTEN,
-                    style=pyrogram.enums.ButtonStyle.PRIMARY
-                )
             ]
-        ]
-        auth_row = [
-            [
-                InlineKeyboardButton(
-                    text=BotButton.AUTH_MENU,
-                    callback_data=BotCallbackText.MENU_AUTH,
-                    style=pyrogram.enums.ButtonStyle.PRIMARY
-                )
-            ]
-        ] if is_root else []
-        proxy_seller_url: str = config.get('proxy_seller', rc.DEFAULT_PROXY_SELLER)
-        proxy_seller_row: list = [[
-            InlineKeyboardButton(
-                text=BotButton.PROXY_SELLER,
-                url=proxy_seller_url,
-                style=pyrogram.enums.ButtonStyle.DANGER
-            )
-        ]] if proxy_seller_url else []
-        return InlineKeyboardMarkup(
-            feature_rows + auth_row + [
+        else:
+            feature_rows = [
                 [
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
+                        text=BotButton.MENU_DOWNLOAD,
+                        callback_data=BotCallbackText.MENU_DOWNLOAD,
+                        style=pyrogram.enums.ButtonStyle.PRIMARY
+                    ),
+                    pyrogram.types.RichMessageButton(
+                        text=BotButton.MENU_UPLOAD,
+                        callback_data=BotCallbackText.MENU_UPLOAD,
+                        style=pyrogram.enums.ButtonStyle.PRIMARY
+                    )
+                ],
+                [
+                    pyrogram.types.RichMessageButton(
+                        text=BotButton.CMD_FORWARD,
+                        callback_data=BotCallbackText.COMMAND_FORWARD,
+                        style=pyrogram.enums.ButtonStyle.PRIMARY
+                    ),
+                    pyrogram.types.RichMessageButton(
+                        text=BotButton.MENU_LISTEN,
+                        callback_data=BotCallbackText.MENU_LISTEN,
+                        style=pyrogram.enums.ButtonStyle.PRIMARY
+                    )
+                ]
+            ]
+            auth_row = [
+                [
+                    pyrogram.types.RichMessageButton(
+                        text=BotButton.AUTH_MENU,
+                        callback_data=BotCallbackText.MENU_AUTH,
+                        style=pyrogram.enums.ButtonStyle.PRIMARY
+                    )
+                ]
+            ] if is_root else []
+            proxy_seller_url: str = config.get('proxy_seller', rc.DEFAULT_PROXY_SELLER)
+            proxy_seller_row: list = [[
+                pyrogram.types.RichMessageButton(
+                    text=BotButton.PROXY_SELLER,
+                    url=proxy_seller_url,
+                    style=pyrogram.enums.ButtonStyle.DANGER
+                )
+            ]] if proxy_seller_url else []
+            button_rows = feature_rows + auth_row + [
+                [
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.GITHUB,
                         url=config.get('github', rc.DEFAULT_GITHUB) + '/releases'
                     ),
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.SUBSCRIBE_CHANNEL,
                         url=config.get('subscribe_channel', rc.DEFAULT_SUBSCRIBE_CHANNEL)
                     )
                 ],
                 [
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.VIDEO_TUTORIAL,
                         url=config.get('video_tutorial', rc.DEFAULT_VIDEO_TUTORIAL)
                     ),
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.PAY,
                         callback_data=BotCallbackText.PAY,
                         style=pyrogram.enums.ButtonStyle.SUCCESS
@@ -996,23 +997,23 @@ class Bot:
                 ],
                 *proxy_seller_row,
                 [
-                    InlineKeyboardButton(
+                    pyrogram.types.RichMessageButton(
                         text=BotButton.SETTING,
                         callback_data=BotCallbackText.SETTING
                     )
                 ]
             ]
-        )
+        return [
+            pyrogram.types.InputRichBlockButtons(buttons=row) for row in button_rows
+        ]
 
     async def help(
             self,
             client: Union[pyrogram.Client, None] = None,
             message: Union[pyrogram.types.Message, None] = None,
             user_id: Union[int, None] = None
-    ) -> Union[None, dict]:  # client与message都为None时,返回keyboard与text。
+    ) -> Union[None, dict]:  # client与message都为None时,返回富文本块。
         web = getattr(self, 'web', None)  # 网页面板实例,用于展示认证信息。
-        web_auth: str = ''
-        docker_host_ip_tip: str = ''
         more_feature: bool = False
         if user_id is not None:
             uid = user_id
@@ -1022,24 +1023,13 @@ class Bot:
             uid = None
         if uid is None or not self.root or uid == self.root[0]:
             more_feature = True
-        if web is not None:
-            docker_host_ip_tip: str = f'\n{Issues.DOCKER_HOST_IP_TIP}' if is_docker() else docker_host_ip_tip
-            web_link: str = f'{web.protocol}://{web.LOCAL_IP}:{web.port}'
-            web_rows = [
-                [_('Port'), str(web.port)],
-                [_('Username'), f'`{web.username}`'],
-                [_('Password'), f'`{web.password}`'],
-                [_('Link'), f'[{web_link}]({web_link})'],
-            ]
-            web_panel = PanelTable(title=_('🌐 Web configuration'), header=(_('Attribute'), _('Content')), data=web_rows)
-            web_auth = web_panel.to_markdown_chunks()[0]
         config: dict = rc.cached_config()
         update_version: str = check_update(  # 远程版本更高时返回该版本号,用于提示可更新。
             remote_version=config.get('version', __version__),
             local_version=__version__
         )
         version: str = f'{VERSION_SEMVER}({update_version}⬆)' if update_version else VERSION_SEMVER
-        keyboard = self.menu_keyboard(
+        button_blocks = self.menu_keyboard(
             'main',
             is_root=(uid is None) or (not self.root) or (uid == self.root[0])
         )
@@ -1065,57 +1055,109 @@ class Bot:
             # 按首个\n拆分:前半为说明,后半为语法示例(无\n则语法列为空)。
             _parts = item[1].split('\n', 1)
             _desc = _parts[0]
-            _syntax = _parts[1] if len(_parts) > 1 else '&ndash;'
-            command_rows.append([f'/{item[0]}', _desc, _syntax])
-        parts = [
-            PanelTable(
-                title=f'💎 {SOFTWARE_SHORT_NAME}',
-                header=(_('Attribute'), _('Content')),
-                data=[
-                    [_('Version'), f'`{version}`'],
-                    [_('Copyright'), f'`{__copyright__.replace(" <https://github.com/Gentlesprite>", "")}`'],
-                    [_('License'), f'`{_("Licensed under the terms of the {license}.").format(license=__license__)}`']
-                ]
-            ).to_markdown_chunks()[0],
-            '',
-            PanelTable(
-                title=_('🎮️ Available commands'),
-                header=(_('Command'), _('Description'), _('Syntax')),
-                data=command_rows
-            ).to_markdown_chunks()[0]
-        ]
-        if web_auth:
-            parts.append('')
-            parts.append(web_auth.rstrip('\n'))
-        if docker_host_ip_tip:
-            parts.append('')
-            parts.append(Issues.DOCKER_HOST_IP_TIP)
-        if more_feature:
-            parts.append('')
-            feature_panel = PanelTable(
-                title=_('✨ Other features'),
-                header=(_('Function'), _('Description')),
-                data=[
+            _syntax = _parts[1] if len(_parts) > 1 else '–'
+            command_rows.append([f'/{item[0]}', _desc, rich_text(_syntax)])
+
+        blocks: List[pyrogram.types.InputRichBlock] = [
+            pyrogram.types.InputRichBlockTable(
+                cells=[
                     [
-                        _('📨 Forward message'),
-                        _('Forward messages of type `Video`, `Photo`, `Audio`, `Voice`, `GIF`, `Document`, `Video note`, or `Live photo` to me to create download tasks.')
+                        pyrogram.types.RichBlockTableCell(text=_('Attribute'), is_header=True),
+                        pyrogram.types.RichBlockTableCell(text=_('Content'), is_header=True)
+                    ],
+                    [
+                        pyrogram.types.RichBlockTableCell(text=_('Version')),
+                        pyrogram.types.RichBlockTableCell(text=pyrogram.types.RichTextCode(version))
+                    ],
+                    [
+                        pyrogram.types.RichBlockTableCell(text=_('Copyright')),
+                        pyrogram.types.RichBlockTableCell(text=pyrogram.types.RichTextCode(
+                            __copyright__.replace(' <https://github.com/Gentlesprite>', '')
+                        ))
+                    ],
+                    [
+                        pyrogram.types.RichBlockTableCell(text=_('License')),
+                        pyrogram.types.RichBlockTableCell(text=pyrogram.types.RichTextCode(
+                            _('Licensed under the terms of the {license}.').format(license=__license__)
+                        ))
                     ]
-                ]
+                ],
+                caption=f'💎 {SOFTWARE_SHORT_NAME}',
+                is_bordered=True,
+                is_striped=True
+            ),
+            pyrogram.types.InputRichBlockTable(
+                cells=[
+                          [
+                              pyrogram.types.RichBlockTableCell(text=_('Command'), is_header=True),
+                              pyrogram.types.RichBlockTableCell(text=_('Description'), is_header=True),
+                              pyrogram.types.RichBlockTableCell(text=_('Syntax'), is_header=True)
+                          ]
+                      ] + [
+                          [pyrogram.types.RichBlockTableCell(text=cell) for cell in row] for row in command_rows
+                      ],
+                caption=_('🎮️ Available commands'),
+                is_bordered=True,
+                is_striped=True
             )
-            parts.append(feature_panel.to_markdown_chunks()[0])
-        text = '\n'.join(parts)
+        ]
+        if web is not None:
+            web_link: str = f'{web.protocol}://{web.LOCAL_IP}:{web.port}'
+            blocks.append(pyrogram.types.InputRichBlockTable(
+                cells=[
+                    [
+                        pyrogram.types.RichBlockTableCell(text=_('Attribute'), is_header=True),
+                        pyrogram.types.RichBlockTableCell(text=_('Content'), is_header=True)
+                    ],
+                    [
+                        pyrogram.types.RichBlockTableCell(text=_('Port')),
+                        pyrogram.types.RichBlockTableCell(text=str(web.port))
+                    ],
+                    [
+                        pyrogram.types.RichBlockTableCell(text=_('Username')),
+                        pyrogram.types.RichBlockTableCell(text=pyrogram.types.RichTextCode(web.username))
+                    ],
+                    [
+                        pyrogram.types.RichBlockTableCell(text=_('Password')),
+                        pyrogram.types.RichBlockTableCell(text=pyrogram.types.RichTextCode(web.password))
+                    ],
+                    [
+                        pyrogram.types.RichBlockTableCell(text=_('Link')),
+                        pyrogram.types.RichBlockTableCell(text=pyrogram.types.RichTextUrl(text=web_link, url=web_link))
+                    ]
+                ],
+                caption=_('🌐 Web configuration'),
+                is_bordered=True,
+                is_striped=True
+            ))
+            if is_docker():
+                blocks.append(pyrogram.types.InputRichBlockParagraph(text=Issues.DOCKER_HOST_IP_TIP))
+        if more_feature:
+            blocks.append(pyrogram.types.InputRichBlockTable(
+                cells=[
+                    [
+                        pyrogram.types.RichBlockTableCell(text=_('Function'), is_header=True),
+                        pyrogram.types.RichBlockTableCell(text=_('Description'), is_header=True)
+                    ],
+                    [
+                        pyrogram.types.RichBlockTableCell(text=_('📨 Forward message')),
+                        pyrogram.types.RichBlockTableCell(text=rich_text(_(
+                            'Forward messages of type `Video`, `Photo`, `Audio`, `Voice`, `GIF`, `Document`, `Video note`, or `Live photo` to me to create download tasks.')))
+                    ]
+                ],
+                caption=_('✨ Other features'),
+                is_bordered=True,
+                is_striped=True
+            ))
+        blocks.extend(button_blocks)
         if not all([client, message]):
-            return {
-                'keyboard': keyboard,
-                'text': text
-            }
+            return {'blocks': blocks}
         await client.send_rich_message(
             chat_id=message.from_user.id,
             rich_message=pyrogram.types.InputRichMessage(
-                markdown=text,
+                blocks=blocks,
                 skip_entity_detection=True
-            ),
-            reply_markup=keyboard
+            )
         )
 
     async def start(
@@ -1541,7 +1583,7 @@ class Bot:
                     text=safe_message(text),
                     entities=edit_message.entities
                 )
-                return
+                return text
             last_message = await client.send_message(
                 chat_id=target if target is not None else message.from_user.id,
                 reply_parameters=ReplyParameters(message_id=message.id),
@@ -1573,8 +1615,16 @@ class Bot:
             if edit_message is not None:
                 try:
                     await edit_message.edit_text(
-                        text=_('🌫️No channels are being monitored.'),
-                        reply_markup=self.menu_keyboard('listen'))
+                        rich_message=pyrogram.types.InputRichMessage(
+                            blocks=[
+                                pyrogram.types.InputRichBlockParagraph(
+                                    text=_('🌫️No channels are being monitored.')
+                                ),
+                                *self.menu_keyboard('listen')
+                            ],
+                            skip_entity_detection=True
+                        )
+                    )
                 except MessageNotModified:
                     pass
             else:
@@ -1585,19 +1635,28 @@ class Bot:
                     text=_('🌫️No channels are being monitored.')
                 )
         else:
+            listen_text = ''
             if self.listen_download_chat:
-                await __listen_info(
+                listen_text = await __listen_info(
                     self.listen_download_chat,
                     _('🕵️The following links are created `listen download` channels:\n')
                 )
             if self.listen_forward_chat:
-                await __listen_info(
+                listen_text = await __listen_info(
                     self.listen_forward_chat,
                     _('📲The following links are created `listen forward` channels:\n')
                 )
             if edit_message is not None:
                 try:
-                    await edit_message.edit_reply_markup(self.menu_keyboard('listen'))
+                    await edit_message.edit_text(
+                        rich_message=pyrogram.types.InputRichMessage(
+                            blocks=[
+                                pyrogram.types.InputRichBlockParagraph(text=rich_text(listen_text)),
+                                *self.menu_keyboard('listen')
+                            ],
+                            skip_entity_detection=True
+                        )
+                    )
                 except MessageNotModified:
                     pass
 
@@ -1634,22 +1693,28 @@ class Bot:
 
         edit_message 非空时(输入模式),结果直接编辑该消息而非另发一条,避免重复提示。
         """
-        auth_kb = self.menu_keyboard('auth')
+        auth_blocks = self.menu_keyboard('auth')
         # 统一通过 pyrogram 校验用户是否存在,支持用户ID或@用户名。
         target = target.lstrip('@')
 
-        async def _respond(text: str, reply_markup=None):
+        async def _respond(text: str, button_blocks: list = None):
+            blocks = [pyrogram.types.InputRichBlockParagraph(text=rich_text(text))]
+            if button_blocks:
+                blocks.extend(button_blocks)
+            rich_message = pyrogram.types.InputRichMessage(
+                blocks=blocks,
+                skip_entity_detection=True
+            )
             if edit_message is not None:
                 try:
-                    await edit_message.edit_text(text=text, reply_markup=reply_markup)
+                    await edit_message.edit_text(rich_message=rich_message)
                 except MessageNotModified:
                     pass
             else:
-                await client.send_message(
+                await client.send_rich_message(
                     chat_id=message.from_user.id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=text,
-                    reply_markup=reply_markup
+                    rich_message=rich_message
                 )
 
         try:
@@ -1662,7 +1727,7 @@ class Bot:
                     target=target,
                     error=e
                 ),
-                reply_markup=auth_kb if edit_message is not None else None
+                button_blocks=auth_blocks if edit_message is not None else None
             )
             return None
         if uid is None:
@@ -1671,25 +1736,23 @@ class Bot:
         if self.root and uid == self.root[0]:
             await _respond(
                 text=_('👑This user is 「root」 and already has full permissions.'),
-                reply_markup=auth_kb if edit_message is not None else None
+                button_blocks=auth_blocks if edit_message is not None else None
             )
             return None
         # 已存在则展示移除按钮,不再重复添加。
         if uid in self.gc.authorized_users:
             await _respond(
                 text=_('👥User `{uid}` is already authorized. Remove?').format(uid=uid),
-                reply_markup=InlineKeyboardMarkup([
-                    [
-                        InlineKeyboardButton(
-                            text=BotButton.REMOVE_AUTH,
-                            callback_data=f'{BotCallbackText.REMOVE_AUTH_USER}_{uid}'
-                        ),
-                        InlineKeyboardButton(
-                            text=BotButton.LOOKUP_AUTH_INFO,
-                            callback_data=BotCallbackText.LOOKUP_AUTH_INFO
-                        )
-                    ]
-                ])
+                button_blocks=[pyrogram.types.InputRichBlockButtons(buttons=[
+                    pyrogram.types.RichMessageButton(
+                        text=BotButton.REMOVE_AUTH,
+                        callback_data=f'{BotCallbackText.REMOVE_AUTH_USER}_{uid}'
+                    ),
+                    pyrogram.types.RichMessageButton(
+                        text=BotButton.LOOKUP_AUTH_INFO,
+                        callback_data=BotCallbackText.LOOKUP_AUTH_INFO
+                    )
+                ])]
             )
             return None
         # 热添加授权用户:实时写入过滤器并持久化到全局配置。
@@ -1699,7 +1762,7 @@ class Bot:
         self.gc.save_config(self.gc.config)
         await _respond(
             text=_('✅Added authorized user 「ID」:\n`{uid}`').format(uid=uid),
-            reply_markup=auth_kb
+            button_blocks=auth_blocks
         )
         log.info(_('Added authorized user: {uid}, current authorized users: {users}.').format(
             uid=uid,
@@ -1806,19 +1869,30 @@ class Bot:
         """展示当前已授权的额外用户列表。edit_message 非空时(按钮点击)直接编辑该消息。"""
         users = self.gc.authorized_users
         chat_id = target if target is not None else message.from_user.id
-        auth_kb = self.menu_keyboard('auth')
+        auth_blocks = self.menu_keyboard('auth')
 
         async def _respond(text: str):
             if edit_message is not None:
                 try:
-                    await edit_message.edit_text(text=text, reply_markup=auth_kb)
+                    await edit_message.edit_text(
+                        rich_message=pyrogram.types.InputRichMessage(
+                            blocks=[
+                                pyrogram.types.InputRichBlockParagraph(text=rich_text(text)),
+                                *auth_blocks
+                            ],
+                            skip_entity_detection=True
+                        )
+                    )
                 except MessageNotModified:
                     pass
             else:
-                await client.send_message(
+                await client.send_rich_message(
                     chat_id=chat_id,
                     reply_parameters=ReplyParameters(message_id=message.id),
-                    text=text
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[pyrogram.types.InputRichBlockParagraph(text=rich_text(text))],
+                        skip_entity_detection=True
+                    )
                 )
 
         if not users:
@@ -3167,11 +3241,7 @@ class BackHandler(CallbackHandler):
             meta = await downloader.help()
             try:
                 await query.message.edit_text(
-                    rich_message=pyrogram.types.InputRichMessage(
-                        markdown=meta.get('text'),
-                        skip_entity_detection=True
-                    ),
-                    reply_markup=meta.get('keyboard')
+                    rich_message=pyrogram.types.InputRichMessage(blocks=meta['blocks'])
                 )
             except MessageNotModified:
                 pass
@@ -3333,8 +3403,13 @@ class CancelAuthInputHandler(CallbackHandler):
         )
         try:
             await query.message.edit_text(
-                text=_('🔐Authorized user management'),
-                reply_markup=downloader.menu_keyboard('auth')
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(text=_('🔐Authorized user management')),
+                        *downloader.menu_keyboard('auth')
+                    ],
+                    skip_entity_detection=True
+                )
             )
         except MessageNotModified:
             pass
@@ -3682,8 +3757,16 @@ class AuthUserHandler(CallbackHandler):
         if uid not in bot.gc.authorized_users:
             try:
                 await query.message.edit_text(
-                    text=_('User `{uid}` is no longer authorized.').format(uid=uid),
-                    reply_markup=bot.menu_keyboard('auth'))
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(
+                                text=rich_text(_('User `{uid}` is no longer authorized.').format(uid=uid))
+                            ),
+                            *bot.menu_keyboard('auth')
+                        ],
+                        skip_entity_detection=True
+                    )
+                )
             except MessageNotModified:
                 pass
             return None
@@ -3698,8 +3781,16 @@ class AuthUserHandler(CallbackHandler):
         # 移除结果直接显示在text中,并复位为授权用户菜单(添加/移除、查看、返回)。
         try:
             await query.message.edit_text(
-                text=_('✅User `{uid}` authorization removed.').format(uid=uid),
-                reply_markup=bot.menu_keyboard('auth'))
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[
+                        pyrogram.types.InputRichBlockParagraph(
+                            text=rich_text(_('✅User `{uid}` authorization removed.').format(uid=uid))
+                        ),
+                        *bot.menu_keyboard('auth')
+                    ],
+                    skip_entity_detection=True
+                )
+            )
         except MessageNotModified:
             pass
         log.info(_('{prefix}Current authorized users: {users}').format(prefix=p, users=bot.gc.authorized_users))
@@ -4389,24 +4480,42 @@ class MenuButtonHandler(CallbackHandler):
         if data == BotCallbackText.MENU_DOWNLOAD:
             try:
                 await query.edit_message_text(
-                    text=BotButton.DOWNLOAD_MENU_TITLE,
-                    reply_markup=downloader.menu_keyboard('download'))
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(text=BotButton.DOWNLOAD_MENU_TITLE),
+                            *downloader.menu_keyboard('download')
+                        ],
+                        skip_entity_detection=True
+                    )
+                )
             except MessageNotModified:
                 pass
             return None
         elif data == BotCallbackText.MENU_LISTEN:
             try:
                 await query.edit_message_text(
-                    text=BotButton.LISTEN_MENU_TITLE,
-                    reply_markup=downloader.menu_keyboard('listen'))
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(text=BotButton.LISTEN_MENU_TITLE),
+                            *downloader.menu_keyboard('listen')
+                        ],
+                        skip_entity_detection=True
+                    )
+                )
             except MessageNotModified:
                 pass
             return None
         elif data == BotCallbackText.MENU_UPLOAD:
             try:
                 await query.edit_message_text(
-                    text=BotButton.UPLOAD_MENU_TITLE,
-                    reply_markup=downloader.menu_keyboard('upload'))
+                    rich_message=pyrogram.types.InputRichMessage(
+                        blocks=[
+                            pyrogram.types.InputRichBlockParagraph(text=BotButton.UPLOAD_MENU_TITLE),
+                            *downloader.menu_keyboard('upload')
+                        ],
+                        skip_entity_detection=True
+                    )
+                )
             except MessageNotModified:
                 pass
             return None
@@ -4421,11 +4530,7 @@ class MenuButtonHandler(CallbackHandler):
             menu = await downloader.help(user_id=query.from_user.id)
             try:
                 await query.edit_message_text(
-                    rich_message=pyrogram.types.InputRichMessage(
-                        markdown=menu['text'],
-                        skip_entity_detection=True
-                    ),
-                    reply_markup=menu['keyboard']
+                    rich_message=pyrogram.types.InputRichMessage(blocks=menu['blocks'])
                 )
             except MessageNotModified:
                 pass

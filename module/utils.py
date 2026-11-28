@@ -128,6 +128,19 @@ def safe_message(text: str, max_length: int = 3969) -> List[str]:
         return [part1] + safe_message(part2, max_length)
 
 
+def rich_text(text: str) -> Union[str, list]:
+    """将文本中的反引号代码标记转换为等宽富文本。"""
+    if not isinstance(text, str) or '`' not in text:
+        return text
+    parts = []
+    for index, segment in enumerate(text.split('`')):
+        if segment:
+            parts.append(
+                pyrogram.types.RichTextCode(segment) if index % 2 else segment
+            )
+    return parts
+
+
 async def safe_delete_message(message: pyrogram.types.Message) -> bool:
     try:
         await message.delete()
