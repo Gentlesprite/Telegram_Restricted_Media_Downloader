@@ -1082,9 +1082,6 @@ msgstr "⛔该操作仅「root」可用。"
 msgid "➕Enter the 「ID」 or 「@username」 of the user to authorize:"
 msgstr "➕请输入要授权的用户「ID」或`@用户名`:"
 
-msgid "🔐Authorized user management"
-msgstr "🔐授权用户管理"
-
 msgid "🌫️No links to count."
 msgstr "🌫️没有链接需要统计。"
 

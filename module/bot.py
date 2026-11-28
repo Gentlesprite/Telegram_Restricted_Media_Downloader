@@ -3513,7 +3513,10 @@ class CancelAuthInputHandler(CallbackHandler):
             await query.message.edit_text(
                 rich_message=pyrogram.types.InputRichMessage(
                     blocks=[
-                        pyrogram.types.InputRichBlockParagraph(text=_('🔐Authorized user management')),
+                        pyrogram.types.InputRichBlockSectionHeading(
+                            text=_('🔐「Authorized users」management'),
+                            size=2
+                        ),
                         *downloader.menu_keyboard('auth')
                     ],
                     skip_entity_detection=True
