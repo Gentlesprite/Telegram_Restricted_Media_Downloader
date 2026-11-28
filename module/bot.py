@@ -1943,35 +1943,31 @@ class Bot:
         chat_id = target if target is not None else message.from_user.id
         auth_blocks = self.menu_keyboard('auth')
 
-        async def _respond(text: str):
-            if edit_message is not None:
-                try:
-                    await edit_message.edit_text(
-                        rich_message=pyrogram.types.InputRichMessage(
-                            blocks=[
-                                pyrogram.types.InputRichBlockParagraph(text=rich_text(text)),
-                                *auth_blocks
-                            ],
-                            skip_entity_detection=True
-                        )
-                    )
-                except MessageNotModified:
-                    pass
-            else:
-                await client.send_rich_message(
-                    chat_id=chat_id,
-                    reply_parameters=ReplyParameters(message_id=message.id),
+        if not users:
+            text = _('🌫️No additional authorized users; only 「root」 can use the bot.')
+        else:
+            lines = '\n'.join(str(u) for u in users)
+            text = _('👥The following 「ID」s are authorized:\n`{lines}`').format(lines=lines)
+        heading = pyrogram.types.InputRichBlockSectionHeading(text=rich_text(text), size=3)
+        if edit_message is not None:
+            try:
+                await edit_message.edit_text(
                     rich_message=pyrogram.types.InputRichMessage(
-                        blocks=[pyrogram.types.InputRichBlockParagraph(text=rich_text(text))],
+                        blocks=[heading, *auth_blocks],
                         skip_entity_detection=True
                     )
                 )
-
-        if not users:
-            await _respond(_('🌫️No additional authorized users; only 「root」 can use the bot.'))
-            return None
-        lines = '\n'.join(str(u) for u in users)
-        await _respond(_('👥The following 「ID」s are authorized:\n`{lines}`').format(lines=lines))
+            except MessageNotModified:
+                pass
+        else:
+            await client.send_rich_message(
+                chat_id=chat_id,
+                reply_parameters=ReplyParameters(message_id=message.id),
+                rich_message=pyrogram.types.InputRichMessage(
+                    blocks=[heading],
+                    skip_entity_detection=True
+                )
+            )
 
     async def handle_forwarded_media(
             self,
