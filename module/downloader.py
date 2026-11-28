@@ -2339,7 +2339,8 @@ class TelegramRestrictedMediaDownloader(Bot):
                     )
 
                 )
-                return None
+                # 零匹配属于任务正常结束,返回空列表让调用方清理频道配置与用户指针。
+                return []
             # 快路径媒体组(无关键词且未开评论区):成员随遍历逐条归组,遍历结束后album_members才完整,此处统一补建;
             # 慢路径中展开失败的组同样在此兜底;已即时创建过的组跳过,避免重复创建。
             for group_id in media_group_added:

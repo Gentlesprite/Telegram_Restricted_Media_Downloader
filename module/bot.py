@@ -4039,7 +4039,7 @@ class DownloadChatHandler(CallbackHandler):
                 log.info(_('Executing /download_chat task, current filter config: {filter}.').format(
                     filter=downloader.download_chat_filter
                 ))
-                # 仅派发成功(返回匹配到的链接列表)才清除配置;失败时保留配置与原菜单,便于直接重试。
+                # 仅任务结束(返回列表,含零匹配的空列表)才清除配置;运行时异常保留配置与原菜单,便于直接重试。
                 if await downloader.download_chat(chat_id=chat_id, callback_query=query) is not None:
                     self.__remove_chat_id(downloader, chat_id)
                     # 仅当指针指向本次结束的任务时才清理,避免误清同一用户的其它任务。
