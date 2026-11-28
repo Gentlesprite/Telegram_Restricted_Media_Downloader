@@ -325,7 +325,7 @@ def get_file_size(file_path: str, temp_ext: str = '.temp') -> int:
 
 def get_mime_from_extension(file_path: str) -> str:
     ext = file_path.split('.')[-1].lower()
-    return Extension.ALL_REVERSE.get(ext, 'application/octet-stream')
+    return Extension.REVERSE.get(ext, 'application/octet-stream')
 
 
 def extract_full_extension(filename: Union[str, None]):
