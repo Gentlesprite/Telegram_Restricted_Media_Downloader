@@ -1199,7 +1199,7 @@ class TelegramRestrictedMediaDownloader(Bot):
                         client=client,
                         message=message,
                         last_message_id=last_message.id,
-                        text=safe_message(f'{last_message.text}\n{link}'),
+                        text=safe_message(f'{extract_message_text(last_message)}\n{link}'),
                         entities=last_message.entities,
                         button_blocks=[
                             pyrogram.types.InputRichBlockButtons(buttons=[
